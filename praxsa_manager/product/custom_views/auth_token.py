@@ -1,0 +1,29 @@
+from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.authtoken.models import Token
+from rest_framework.response import Response
+from ..models import Client
+
+class CustomAuthToken(ObtainAuthToken):
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data,
+                                           context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        token, created = Token.objects.get_or_create(user=user)
+        client = Client.objects.get(user_id = user)
+        response = {
+            'token': token.key,
+            'user_id': user.pk,
+            'email': user.email,
+            'name': user.first_name,
+            'lastname': user.last_name,
+            'phone_number': client.phone_number,
+            'ci_nit': client.ci_nit
+        }
+        if client:
+            response['name'] = client.name
+            response['lastname'] = client.last_name
+            response['phone_number'] = client.phone_number
+            response['ci_nit'] = client.ci_nit
+        return Response(response)

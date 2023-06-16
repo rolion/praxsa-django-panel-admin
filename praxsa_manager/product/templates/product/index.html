@@ -1,0 +1,10 @@
+{% if latest_brand_list %}
+    <ul>
+    {% for brand in latest_brand_list %}
+        <!-- <li><a href="/polls/{{ question.id }}/">{{ brand.name }}</a></li> -->
+        <li><a href="{% url 'product:car_brand' brand.id %}">{{ brand.name }}</a></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No polls are available.</p>
+{% endif %}
