@@ -80,25 +80,29 @@ class Client(models.Model):
         return f'{self.name} {self.last_name}'
 
 class Sale_Header(models.Model):
-    date = models.DateTimeField()
-    client_id = models.ForeignKey(Client, on_delete=models.DO_NOTHING, verbose_name="Client")
-    name = models.CharField(max_length=400, default=" ", null=False)
-    email = models.CharField(validators=[EmailValidator()], null=True)
-    ci_nit = models.CharField(validators=[RegexValidator('\d*')],null=True)
-    car_plate = models.CharField(max_length=10, default="", null=True)
-    phone_number = models.CharField(validators=[RegexValidator('(\+)*\d{7,11}')], default="", verbose_name="Phone Number")
-    car_model_id = models.ForeignKey(Car_Model, on_delete=models.DO_NOTHING, verbose_name="Model")
-    total_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Total Price")
+    date = models.DateTimeField(verbose_name="Fecha")
+    client_id = models.ForeignKey(Client, on_delete=models.DO_NOTHING, verbose_name="Cliente")
+    name = models.CharField(max_length=400, default=" ", null=False, verbose_name="Nombre Completo")
+    email = models.CharField(validators=[EmailValidator()], null=True,verbose_name="Email")
+    ci_nit = models.CharField(validators=[RegexValidator('\d*')],null=True, verbose_name="CI/NIT")
+    car_plate = models.CharField(max_length=10, default="", null=True, verbose_name="Placa Auto")
+    phone_number = models.CharField(validators=[RegexValidator('(\+)*\d{7,11}')], default="", verbose_name="Numero Telefónico")
+    car_model_id = models.ForeignKey(Car_Model, on_delete=models.DO_NOTHING, verbose_name="Modelo")
+    total_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Total Pagar")
+    class Meta:
+        verbose_name = 'Proforma'
     
     
 class Sale_Detail(models.Model):
-    sales_header_id = models.ForeignKey(Sale_Header, related_name='items', on_delete=models.DO_NOTHING, verbose_name="Sale")
-    car_part_id = models.ForeignKey(Car_Part, on_delete=models.DO_NOTHING, null=True, verbose_name="Car Part")
-    width = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    length = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    installation_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    window_film_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    quantity = models.PositiveIntegerField(default=0)
-    window_film_id = models.ForeignKey(Window_Film, on_delete=models.DO_NOTHING, verbose_name="Window Film", null=True)
+    sales_header_id = models.ForeignKey(Sale_Header, related_name='items', on_delete=models.DO_NOTHING, verbose_name="Proforma")
+    car_part_id = models.ForeignKey(Car_Part, on_delete=models.DO_NOTHING, null=True, verbose_name="Parte Auto")
+    width = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Ancho" )
+    length = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Largo")
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Precio")
+    installation_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Costo Instalación")
+    window_film_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Costo Lámina")
+    quantity = models.PositiveIntegerField(default=0, verbose_name="Cantidad")
+    window_film_id = models.ForeignKey(Window_Film, on_delete=models.DO_NOTHING, verbose_name="Lámina", null=True)
+    class Meta:
+        verbose_name = 'Detalle Venta'
     
