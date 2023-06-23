@@ -1,0 +1,120 @@
+<script src="ng-modal-content.component.ts"></script>
+<div class="modal-header">
+  <h4 class="modal-title">{{estado}}</h4>
+  <button type="button" class="btn-close" aria-label="Close" (click)="activeModal.dismiss('Cross click')">
+    
+  </button>
+</div>
+<div class="modal-body justify-content-center">
+  <div *ngIf="estado == STATUS_INICIAR_SESSION">
+    <!-- <div class="spinner-border text-primary justify-content-center" role="status">
+      <span class="sr-only">Loading...</span>
+    </div> -->
+    <app-login
+      (userLogin) = "onLogin($event)"
+      (newUser) = "onMoveToCreateAccount($event)"
+    ></app-login>
+  </div>
+  <div *ngIf="estado == STATUS_CREATE_ACCOUNT">
+    <app-create-user
+      (userCreated) = 'onUserCreated($event)'
+    ></app-create-user>
+  </div>
+  <div *ngIf="estado == STATUS_VALIDANDO_USUARIO">
+    <div class="spinner-border" role="status">
+      <span class="sr-only">Loading...</span>
+    </div>
+  </div>
+  <div *ngIf="estado == STATUS_OBTENER_DATOS_USUARIO">
+    <form #personForm="ngForm" (ngSubmit)="generateProforma()">
+      <div class="form-floating mb-3">
+        
+        <input type="text" class="form-control" id="name" placeholder="Agregar su nombre"
+               required
+               [(ngModel)]="person.name" name="name"
+               #name="ngModel">
+        <label for="name" >Nombre</label>
+        <div [hidden]="name.valid || name.pristine"
+             class="alert alert-danger">
+          El nombre es requerido
+        </div>
+      </div>
+      <div class="form-floating mb-3">
+        <input type="text" class="form-control" id="ci" placeholder="Agregar su C.I."
+               required
+               [(ngModel)]="person.ci" name="ci"
+               #ci="ngModel">
+        <label for="ci">C.I.</label>
+        <div [hidden]="ci.valid || ci.pristine"
+             class="alert alert-danger">
+          Su C.I. es requerido
+        </div>
+      </div>
+      <div class="form-floating mb-3">
+        <input type="text" class="form-control" id="phonenumber" placeholder="Agregar su teléfono Celular"
+               required
+               [(ngModel)]="person.phonenumber" name="phonenumber"
+               #phonenumber="ngModel">
+        <label for="phonenumber">Telefono</label>
+          <div [hidden]="phonenumber.valid || phonenumber.pristine"
+               class="alert alert-danger">
+            Su número Celular es requerido
+          </div>
+      </div>
+
+
+      <div class="form-floating mb-3">
+        
+        <input type="text" class="form-control" id="placa" placeholder="Agregar la placa de su vehiculo"
+               required
+               [(ngModel)]="person.placa" name="placa"
+               #placa="ngModel">
+        <label for="placa">Placa</label>
+        <div [hidden]="placa.valid || placa.pristine"
+             class="alert alert-danger">
+          Su número Celular es requerido
+        </div>
+      </div>
+
+      <div class="form-floating mb-3">
+        
+        <input type="email" class="form-control" id="email" placeholder="Agregar su email"
+               required
+               [(ngModel)]="person.email" name="email"
+               #email="ngModel">
+        <label for="email">Email</label>
+        <div [hidden]="email.valid || email.pristine"
+             class="alert alert-danger">
+          Su email Celular es requerido
+        </div>
+      </div>
+      <button type="submit" class="btn btn-success" [disabled]="!personForm.form.valid">Crear Proforma</button>
+    </form>
+  </div>
+  <div *ngIf="estado == STATUS_RESERVAR_FACEBOOK">
+    <div class="row justify-content-center"  style="margin: 0 0.5em 0;">
+      <div class="row">
+        <p>su código de proforma es: </p>
+        <div class="input-group mb-2">
+          <input type="text" class="form-control"  #inputTarget value="{{id}}" readonly >
+          <div class="input-group-append">
+            <button class="btn btn-secondary">
+              <fa-icon [icon]="faCopy"></fa-icon>
+            </button>
+          </div>
+        </div>
+        <p>por favor, copie el código de proforma </p>
+        <p>y adjúntela como mensaje al realizar la reserva en nuestra fan page de Facebook</p>
+        <p>puedes ver tu proforma, <a routerLink='proforma/{{id}}' >aqui</a><p>
+      </div>
+      <div class="row">
+          <a href="https://fb.com/book/praxsa3m/" style="background-color: #203b94" target="_blank" class="btn btn-info ">
+            Reservar en Facebook
+          </a>
+      </div>
+    </div>
+  </div>
+  <div *ngIf="estado == STATUS_ERROR" class="row"  style="margin: 0 0.5em 0;">
+    <p>{{ERROR_MESSAGE}}</p>
+  </div>
+</div>

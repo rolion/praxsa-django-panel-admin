@@ -1,0 +1,52 @@
+<nav class="navbar navbar-expand-lg navbar-light .navbar-container">
+ <div class="container-fluid">
+  <button class="navbar-toggler"
+  type="button"
+  (click)="collapse.toggle()"
+  [attr.aria-expanded]="!isCollapsed"
+  aria-controls="navbarText"
+  aria-label="Toggle navigation">
+<span class="navbar-toggler-icon"></span>
+</button>
+<a class="navbar-brand" href="#">
+<img src="assets/img/praxsa-image-1.jpeg" width="55" height="55" alt="praxsa-logo">
+</a>
+<div class="collapse navbar-collapse" #collapse="ngbCollapse" [(ngbCollapse)]="isCollapsed">
+<ul class="navbar-nav me-auto">
+<li class="nav-item active">
+
+<a class="nav-link" href="http://windowfilm.praxsasrl.com/">Praxsa </a>
+</li>
+<li class="nav-item active">
+
+<a class="nav-link" routerLink="/">Calculadora <span class="sr-only"></span></a>
+</li>
+<li *ngIf=" currentUser !== null " class="nav-item active">
+
+<a class="nav-link" routerLink="/my-invoice">Mis proformas <span class="sr-only"></span></a>
+</li>
+<li class="nav-item">
+<div ngbDropdown class="d-inline-block">
+  <button class="btn menu-dropdown" id="privacidadDropDown" ngbDropdownToggle>Privacidad</button>
+  <div ngbDropdownMenu class="option-container" aria-labelledby="privacidadDropDown">
+    <a ngbDropdownItem routerLink="/politica">Política</a>
+    <a ngbDropdownItem routerLink="/eliminacion-datos">Eliminación de datos</a>
+  </div>
+</div>
+</li>
+</ul>
+<form *ngIf=" currentUser !== null; else login" class="mr-5">
+<p class="current-user">{{currentUser.name}} |
+<button type="button" class="logout" (click)="logout() ">Logout
+</button>
+</p>
+</form>
+<ng-template #login>
+<div class="nav-item">
+<a class="nav-link" routerLink="/login">Iniciar Session <span class="sr-only">(current)</span></a>
+</div>
+
+</ng-template>
+</div>
+ </div>
+</nav>

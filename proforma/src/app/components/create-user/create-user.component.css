@@ -1,0 +1,14 @@
+label {
+    font-weight: 500;
+    color: #203b84;
+}
+input{
+    margin-bottom: 0.5em;
+}
+i{
+    font-weight: 700;
+}
+
+button {
+    margin-top: 0.5em;
+}

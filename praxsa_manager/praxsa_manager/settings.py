@@ -11,19 +11,30 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+import environ
+import os
+
+env = environ.Env(
+    # set casting, default value
+    DEBUG=(bool, False)
+)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+# BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Take environment variables from .env file
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-g=e6yjv1c8*y$pg$12the__i21w)(+@%44#ema9y597r7v$@*y'
+# print(env('SECRET_KEY'))
 
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = env('SECRET_KEY') #'django-insecure-g=e6yjv1c8*y$pg$12the__i21w)(+@%44#ema9y597r7v$@*y'
+# print(env('DEBUG'))
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env('DEBUG')
 
 # Application definition
 
@@ -52,12 +63,12 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ALLOWED_HOSTS=['localhost', '127.0.0.1']
+ALLOWED_HOSTS=['localhost', '127.0.0.1', 'web', 'nginx']
 # ALLOWED_HOSTS = ['*'] 
 
 CORS_ORIGIN_ALLOW_ALL = False
 
-CORS_ORIGIN_WHITELIST = ['http://localhost:8000', 'http://127.0.0.1:8000','http://127.0.0.1:4200', 'http://localhost:4200']
+CORS_ORIGIN_WHITELIST = ['http://localhost:8000', 'http://127.0.0.1:8000','http://127.0.0.1:4200', 'http://localhost:4200', 'http://localhost:5000', 'http://nginx:5000','http://nginx:5000','http://nginx:80','http://nginx:80']
 
 CSRF_USE_SESSIONS = False
 CSRF_COOKIE_HTTPONLY = False  # this is the default, and should be kept this way
@@ -99,11 +110,11 @@ WSGI_APPLICATION = 'praxsa_manager.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        "NAME": "praxsa",
-        "USER": "admin",
-        "PASSWORD": "example",
-        "HOST": "127.0.0.1",
-        "PORT": "5432",
+        "NAME": env('POSTGRES_DB'),
+        "USER": env('POSTGRES_USER'),
+        "PASSWORD": env('POSTGRES_PASSWORD'),
+        "HOST": env('DB_HOST'),
+        "PORT": env('DB_PORT'),
     }
 }
 
@@ -142,7 +153,21 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+
+print('base dir ', BASE_DIR)
+print('base static dir ',  BASE_DIR / 'static/')
+
+STATICFILES_DIRS = [
+        BASE_DIR / 'static'
+    ]
+
+if env('ENV') == "PROD":
+    STATIC_ROOT =  BASE_DIR / 'staticfiles'
+    
+
+
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

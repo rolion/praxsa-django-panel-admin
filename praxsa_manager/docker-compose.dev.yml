@@ -1,0 +1,33 @@
+version: '3.1'
+
+services:
+  db:
+    image: postgres
+    restart: always
+    env_file: .env-dev
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    networks:
+      - nginx_nw
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+    networks:
+      - nginx_nw
+
+
+volumes:
+  postgres:
+    external: true
+  static:
+    external: true
+networks:
+  web_nw:
+    external: true
+  nginx_nw:
+    external: true

@@ -1,0 +1,55 @@
+<form [formGroup]="credentialForm" (ngSubmit)="onSubmit()" class="form">
+    <div class="row">
+        <div class="col-12">
+            <div class="mb-6 ">
+                <label for="password" class="form-label">
+                Email*
+                </label>
+                <input id="username" 
+                    type="text" 
+                    formControlName="username" 
+                    class="form-control"
+                    placeholder="introduzca su email"
+                    required>
+                    <div *ngIf="myForm['username'].invalid && myForm['username'].touched && myForm['username'].errors?.['required']" class="invalid-feedback">
+                        porfavor inserte su correo electronico
+                    </div>
+                    <div *ngIf=" myForm['username'].invalid && myForm['username'].touched && myForm['username'].errors?.['email']" class="invalid-feedback">
+                        agregue su nombre de usuario, por ejemplo juan@gmail.com
+                    </div>
+            </div>
+            
+            <div>
+                <label for="password" class="form-label">
+                Password*
+                </label>
+                
+                <input id="password" 
+                    type="password" 
+                    formControlName="password" 
+                    [ngClass] = "{'is-invalid': myForm['password'].invalid && myForm['password'].touched, 'form-control': true}" 
+                    required>
+                    <div *ngIf=" myForm['password'].invalid && myForm['password'].touched && myForm['password'].errors?.['required']" class="invalid-feedback">
+                        introduzca su contraseña
+                    </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-12 d-flex justify-content-center ">
+                    <button class="button" type="submit" class="btn btn-success" >Iniciar sessión</button>
+                </div>
+                <div class="col-12 d-flex justify-content-center ">
+                    <a [routerLink]="" (click)="createAccout()" class="createAccount">Crear cuenta</a>
+                </div>
+            </div>
+            
+            <ngb-toast  [delay]="2000" class="bg-danger text-light"
+                        *ngFor="let error of errors | keyvalue"
+            >
+                {{error.value}}
+            </ngb-toast>
+    
+        </div>
+    </div>
+  
+  </form>
+

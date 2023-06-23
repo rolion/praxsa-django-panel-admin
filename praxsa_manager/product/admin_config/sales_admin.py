@@ -12,7 +12,10 @@ class SalesDetailInLine(admin.TabularInline):
         
     
 class SalesAdmin(admin.ModelAdmin):
-    list_display = ['client_id', 
+    list_display = [
+        'id',
+                    'sales_status',
+                    'client_id', 
                     'car_model_id',
                     'total_price',
                     'date']

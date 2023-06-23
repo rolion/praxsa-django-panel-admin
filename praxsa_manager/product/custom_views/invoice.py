@@ -53,6 +53,7 @@ class InvoiceView(APIView):
                         "car_brand_name": invoice.car_model_id.car_brand_id.name,
                         'total_price': invoice.total_price,
                         'date': invoice.date.strftime("%d/%m/%Y"),
+                        'status': invoice.sales_status,
                         'carPartItems': items}
                 return Response(data = data  , status=status.HTTP_200_OK)
             else:
@@ -86,6 +87,7 @@ class ListUserInvoice(APIView):
                     'car_model_name': invoice.car_model_id.name,
                     'total_price': invoice.total_price,
                     'date': invoice.date.strftime("%d%m/%Y"),
+                    'status': invoice.sales_status,
                     'id': invoice.id
                     
             },Sale_Header.objects.filter(client_id= client) ))

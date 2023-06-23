@@ -1,0 +1,115 @@
+<div class="container">
+        <form [formGroup]="createUserForm" (ngSubmit)="onSubmit()" class="form">
+            <div class="row">
+                <div class="col-12">
+                    <i>los campos con * son requeridos</i>
+                    <div class="mb-6 ">
+                        <label for="password" class="form-label">
+                        Email*
+                        </label>
+                        <input id="username" 
+                            type="text" 
+                            formControlName="username" 
+                            [ngClass] = "{'is-invalid': myForm['username'].invalid && myForm['username'].touched, 'form-control': true}"
+                            placeholder="introduzca su email"
+                            required>
+                            <div *ngIf="myForm['username'].invalid && myForm['username'].touched && myForm['username'].errors?.['required']" class="invalid-feedback">
+                                porfavor inserte su correo electronico
+                            </div>
+                            <div *ngIf=" myForm['username'].invalid && myForm['username'].touched && myForm['username'].errors?.['email']" class="invalid-feedback">
+                                agregue un correo con el formato correcto, por ejemplo juan@gmail.com
+                            </div>
+                    </div>
+                    
+                    <div>
+                        <label for="password" class="form-label">
+                        Password*
+                        </label>
+                        
+                        <input id="password" 
+                            type="password" 
+                            formControlName="password" 
+                            [ngClass] = "{'is-invalid': myForm['password'].invalid && myForm['password'].touched, 'form-control': true}" 
+                            required>
+                            <div *ngIf=" myForm['password'].invalid && myForm['password'].touched && myForm['password'].errors?.['required']" class="invalid-feedback">
+                                introduzca su contraseña
+                            </div>
+                    </div>
+            
+                    <div>
+                        <label for="name" class="form-label">
+                        Nombre*
+                        </label>
+                        <input id="name" 
+                            type="text" 
+                            formControlName="name" 
+                            [ngClass] = "{'is-invalid': myForm['name'].invalid && myForm['name'].touched, 'form-control': true}"
+                            placeholder="introduzca su nombre"
+                            required>
+                            <div *ngIf=" myForm['name'].invalid && myForm['name'].touched && myForm['name'].errors?.['required']" class="invalid-feedback">
+                                porfavor inserte su nombre
+                            </div>
+                    </div>
+            
+                    <div>
+                        <label for="lastname" class="form-label">
+                        Apellido*
+                        </label>
+                        <input id="lastname" 
+                            type="text" 
+                            formControlName="lastname" 
+                            [ngClass] = "{'is-invalid': myForm['lastname'].invalid && myForm['lastname'].touched, 'form-control': true}"
+                            placeholder="introduzca su apellido"
+                            required>
+                            <div *ngIf=" myForm['lastname'].invalid && myForm['lastname'].touched && myForm['lastname'].errors?.['required']" class="invalid-feedback">
+                                    porfavor inserte su apellido
+                            </div>
+                    </div>
+            
+                    <div>
+                        <label for="phoneNumber" class="form-label">
+                        phoneNumber*
+                        </label>
+                        <input 
+                            id="phoneNumber" 
+                            type="text" 
+                            formControlName="phoneNumber" 
+                            placeholder="introduzca su telefono"
+                            pattern="(\+)*\d{7,11}"
+                            [ngClass] = "{'is-invalid': myForm['phoneNumber'].invalid && myForm['phoneNumber'].touched, 'form-control': true}"
+                            required
+                            >
+                            <div *ngIf=" myForm['phoneNumber'].invalid && myForm['phoneNumber'].touched && myForm['phoneNumber'].errors?.['required']" class="invalid-feedback">
+                                    porfavor inserte su numero telefonico
+                            </div>
+                    </div>
+            
+                    <div>
+                        <label for="ci_nit" class="form-label">
+                        CI/NIT
+                        </label>
+                        <input 
+                            id="ci_nit" 
+                            type="text"
+                            pattern="\d*" 
+                            maxlength="20"
+                            formControlName="ci_nit"
+                            class="form-control" >
+                    </div>
+            
+                    <button class="button" type="submit" class="btn btn-success" [disabled]="!this.createUserForm.valid">Crear</button>
+                    
+                </div>
+                <div class="col-12">
+                    <ngb-toast [delay]="2500" class="bg-danger text-light"
+                                *ngFor="let error of errors | keyvalue"
+                    >
+                        {{error.value}}
+                    </ngb-toast>
+                </div>
+            </div>
+          
+        </form>
+    
+</div>
+

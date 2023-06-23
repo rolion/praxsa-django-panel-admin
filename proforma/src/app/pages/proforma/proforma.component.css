@@ -1,0 +1,15 @@
+.proforma-head-container{
+  display: flex;
+}
+.proforma-head-container label{
+  font-weight: bold;
+  margin-right: 20px;
+}
+thead{
+  background-color: #2a3181;
+  color: white;
+}
+
+.proforma-header-label{
+  font-weight: 700;
+}

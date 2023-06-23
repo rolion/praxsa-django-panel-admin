@@ -1,0 +1,103 @@
+<app-top-menu></app-top-menu>
+<div class="container">
+  <div class="title">
+
+    <div class="row">
+      <div class="col-5">
+        <h4 class="">Praxsa</h4>
+        <p class="mb-0">4to anillo, radial 26, calle #3</p>
+        <p class="mb-0">Santa Cruz de la Sierra</p>
+        <p class="mb-0">3 3352139</p>
+      </div>
+      <div class="col-3 offset-3">
+        <img  alt="logo-proforma" width="120" height="100" class="img-responsive rounded float-left" src="assets/img/praxsa-form-logo.jpeg">
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-12">
+        <h3>Proforma</h3>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-4">
+        <label class="font-weight-bold">Fecha</label>
+        <p>{{this.proforma?.date}}</p>
+      </div>
+      <div class="col-4 offset-4">
+        <label class="font-weight-bold">Cod. Proforma</label>
+      </div>
+      <div class="col-12">
+        <p class="font-weight-bold">Datos personales para la garantía</p>
+      </div>
+      <div class="col-12">
+        <h3 class="font-weight-bold">{{this.proforma?.name?.toUpperCase()}}</h3>
+      </div>
+      <div class="col-4 prof"><label class="proforma-header-label">C.I:</label> {{this.proforma?.ci_nit}}</div>
+      <div class="col-4 offset-4"><label class="proforma-header-label">Nro. Garantía:</label></div>
+      <div class="col-4"><label class="proforma-header-label">Nro. Celular:</label> {{this.proforma?.phone_number}}</div>
+      <div class="col-4 offset-4"><label class="proforma-header-label">Marca:</label> {{this.proforma?.car_brand_name}}</div>
+      <div class="col-4"><label class="proforma-header-label">Email:</label> {{this.proforma?.email}}</div>
+      <div class="col-4 offset-4"><label class="proforma-header-label">Modelo:</label> {{this.proforma?.car_model_name}}</div>
+      <div class="col-4 offset-8"><label class="proforma-header-label">Placa:</label> {{this.proforma?.car_plate}}</div>
+    </div>
+    <div class="row">
+      <div class="col-6"></div>
+    </div>
+    <div class="row">
+      <div class="">
+        <table class="table table-striped" id="proformaTable">
+          <thead>
+            <tr>
+              <th scope="col" >Item</th>
+              <th scope="col" >LAMINA</th>
+              <th scope="col">PRECIO TOTAL (Bs)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of this.proforma?.carPartItems ; index as i">
+              <td>{{item.car_part_name}}</td>
+              <td>
+                {{item.window_film_name}}
+              </td>
+              <td>
+                {{item.price.toFixed(2)}}
+              </td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <td></td>
+            <td>Descuento</td>
+            <td> 0</td>
+          </tfoot>
+          <tfoot>
+            <td></td>
+            <td>Total</td>
+            <td> {{this.proforma?.total_price?.toFixed(2)}}</td>
+          </tfoot>
+          
+        </table>
+        <div class="row">
+          <div class="col-12">
+            <p class="font-weight-bold">El precio final se contempla el I.V.A. y la instalación de la lamina</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="d-flex justify-content-center">
+        <a href="https://wa.me/59169272109"  target="_blank" class="btn btn-success">
+          Consultas
+          <fa-icon [icon]="faWhatsapp"></fa-icon>
+        </a>
+        <button type="button" class="btn btn-secondary" (click)="downloadProforma()">
+          Descargar
+          <fa-icon [icon]="faFilePdf"></fa-icon>
+        </button>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+

@@ -80,6 +80,13 @@ class Client(models.Model):
         return f'{self.name} {self.last_name}'
 
 class Sale_Header(models.Model):
+    req = 'req'
+    apr = 'apr'
+    inst = 'ins'
+    canc = 'can'
+    status = [
+        (req,'Requerido'), (apr,'Aprobado'), (inst,'Instalado'), (canc,'Cancelado')]
+    sales_status = models.CharField(choices=status, default="Requerido", verbose_name='Estado')
     date = models.DateTimeField(verbose_name="Fecha")
     client_id = models.ForeignKey(Client, on_delete=models.DO_NOTHING, verbose_name="Cliente")
     name = models.CharField(max_length=400, default=" ", null=False, verbose_name="Nombre Completo")

@@ -1,0 +1,16 @@
+<app-banner></app-banner>
+
+<div class="container d-flex justify-content-center">
+    <div>
+        <div class="row">
+            <div class="container">
+                <h2>
+                    Crear cuenta
+                </h2>
+            </div>
+        </div>
+        <div class="row">
+            <app-create-user (userCreated) = "onMoveToLogin($event)"></app-create-user>
+        </div>
+    </div>
+</div>

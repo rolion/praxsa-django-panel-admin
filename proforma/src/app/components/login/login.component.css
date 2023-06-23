@@ -1,0 +1,7 @@
+.createAccount{
+    cursor: pointer;
+}
+div label {
+    color: #203b84;
+    font-weight: bold;
+}

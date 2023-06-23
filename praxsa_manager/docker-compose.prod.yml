@@ -1,0 +1,61 @@
+version: '3.1'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - static:/praxsa_manager/staticfiles
+    restart: always
+    ports:
+      - "5000"
+    networks:
+      - web_nw
+      - nginx_nw
+    depends_on:
+      - db
+      
+  nginx:
+    container_name: nginx
+    build:
+      context: nginx/
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    volumes:
+      - static:/praxsa_manager/staticfiles
+    networks:
+      - nginx_nw
+    depends_on:
+      - web
+
+  db:
+    image: postgres
+    restart: always
+    env_file: .env
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    networks:
+      - nginx_nw
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+    networks:
+      - nginx_nw
+
+volumes:
+  postgres:
+    external: true
+  static:
+    external: true
+networks:
+  web_nw:
+    external: true
+  nginx_nw:
+    external: true
