@@ -1,5 +1,5 @@
 import { NgModule } from '@angular/core';
-import { BrowserModule } from '@angular/platform-browser';
+import { BrowserModule , provideClientHydration} from '@angular/platform-browser';
 import { AppComponent } from './app.component';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import {TopMenuComponent} from "./components/top-menu/top-menu.component";
@@ -57,6 +57,7 @@ import { BannerComponent } from './components/banner/banner.component';
   providers: [
     {provide: LocationStrategy, useClass: HashLocationStrategy},
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
+    provideClientHydration(),
 
   ],
   bootstrap: [AppComponent]
