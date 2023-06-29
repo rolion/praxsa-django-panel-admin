@@ -55,10 +55,9 @@ import { BannerComponent } from './components/banner/banner.component';
     DataTablesModule
   ],
   providers: [
+    provideClientHydration(),
     {provide: LocationStrategy, useClass: HashLocationStrategy},
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
-    provideClientHydration(),
-
   ],
   bootstrap: [AppComponent]
 })

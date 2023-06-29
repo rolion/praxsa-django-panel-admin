@@ -7,10 +7,12 @@ import {map} from 'rxjs/operators';
 import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {Marca} from '../model/marca';
 import { environment } from '../../environments/environment';
+import { icalculatorInfo } from '../interface/iCalculator';
 
 @Injectable({
   providedIn: 'root'
 })
+
 export class DataService {
 
   modeloArray: Modelo[] = [];
@@ -20,13 +22,10 @@ export class DataService {
   headers = new HttpHeaders({'Content-Type': 'text; charset=UTF-8'});
   constructor(private http: HttpClient) { }
 
-  getCalculatorInfo(): Observable<{modelos:Modelo[], 
-                                    marca: Marca[], 
-                                    lamina: Film[], 
-                                    model_parts: CarPartItem[],
-                                    lamina_price: Car_Part_Film_Price[]}>{
+  getCalculatorInfo(): Observable<icalculatorInfo>{
+    console.log('app base dir ', environment.APP_BASE_REF)
     return this.http
-      .get(`${environment.APP_BASE_REF}/product/get_call_info`)
+      .get<icalculatorInfo>(`${environment.APP_BASE_REF}/product/get_call_info`)
       .pipe(
         map((res: any)  => {
           const modelos: Modelo[] = [];

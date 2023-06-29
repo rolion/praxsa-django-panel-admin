@@ -63,12 +63,18 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ALLOWED_HOSTS=['localhost', '127.0.0.1', 'web', 'nginx']
+ALLOWED_HOSTS=['localhost', '127.0.0.1', 'web', 'nginx', 'proforma']
 # ALLOWED_HOSTS = ['*'] 
 
 CORS_ORIGIN_ALLOW_ALL = False
 
-CORS_ORIGIN_WHITELIST = ['http://localhost:8000', 'http://127.0.0.1:8000','http://127.0.0.1:4200', 'http://localhost:4200', 'http://localhost:5000', 'http://nginx:5000','http://nginx:5000','http://nginx:80','http://nginx:80']
+CORS_ORIGIN_WHITELIST = ['http://localhost:8000', 
+                         'http://localhost:8081', 
+                         'http://127.0.0.1:8000',
+                         'http://127.0.0.1:4200', 
+                         'http://localhost:4200', 
+                         'http://localhost:4000', 
+                         'http://localhost']
 
 CSRF_USE_SESSIONS = False
 CSRF_COOKIE_HTTPONLY = False  # this is the default, and should be kept this way

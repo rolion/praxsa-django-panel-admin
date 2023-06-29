@@ -3,18 +3,8 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-  // firebase: {
-  //   projectId: 'praxsa-stg',
-  //   appId: '1:173551196494:web:bb1ed6dfc86ddb0586e61f',
-  //   storageBucket: 'praxsa-stg.appspot.com',
-  //   locationId: 'us-central',
-  //   apiKey: 'AIzaSyCA9Kjv-_VkwpKvv9FiwVaUK1aleLfG8vY',
-  //   authDomain: 'praxsa-stg.firebaseapp.com',
-  //   messagingSenderId: '173551196494',
-  //   measurementId: 'G-PERLK3BB33',
-  // },
-  APP_BASE_REF: 'http://localhost:8000',
-  production: false
+  APP_BASE_REF: 'http://web:5000',
+  production: true
 };
 
 /*

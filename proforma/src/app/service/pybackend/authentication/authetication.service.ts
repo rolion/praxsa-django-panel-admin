@@ -30,7 +30,7 @@ export class AutheticationService {
 
   createUser(newUser: User): Observable<{data: User}>{
     return this.http 
-      .post<User>(`${this.base_url}/product/create_client`, newUser, this.httpOptions)
+      .post<User>(`/product/create_client`, newUser, this.httpOptions)
       .pipe(
         map((res: any)  => {
           return {data: res};
@@ -38,7 +38,7 @@ export class AutheticationService {
       )
   }
   login(crendentials: Credentials): Observable<User>{
-    return this.http.post<Credentials>(`${this.base_url}/product/api-token-auth/`, crendentials, this.httpOptions)
+    return this.http.post<Credentials>(`/product/api-token-auth/`, crendentials, this.httpOptions)
     .pipe(map((res: any) => {
         this.local.saveData('token', res.token)
         this.local.saveData('name', res.name)
