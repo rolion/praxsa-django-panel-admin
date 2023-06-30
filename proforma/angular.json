@@ -72,12 +72,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "browserTarget": "proforma:build:production",
-              "proxyConfig": "src/app/proxy.conf.json"
+              "browserTarget": "proforma:build:production"
             },
             "development": {
-              "browserTarget": "proforma:build:development",
-              "proxyConfig": "src/app/proxy.conf.json"
+              "browserTarget": "proforma:build:development"
             }
           },
           "defaultConfiguration": "development"

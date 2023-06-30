@@ -23,9 +23,9 @@ export class DataService {
   constructor(private http: HttpClient) { }
 
   getCalculatorInfo(): Observable<icalculatorInfo>{
-    console.log('app base dir ', environment.APP_BASE_REF)
+    console.log('app base dir ', environment.SERVER_APP_BASE_REF)
     return this.http
-      .get<icalculatorInfo>(`${environment.APP_BASE_REF}/product/get_call_info`)
+      .get<icalculatorInfo>(`${environment.SERVER_APP_BASE_REF}/product/get_call_info`)
       .pipe(
         map((res: any)  => {
           const modelos: Modelo[] = [];

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Inject, PLATFORM_ID, } from '@angular/core';
 import {HttpClient, HttpHeaders} from '@angular/common/http';
 import { User } from 'src/app/model/user';  
 import { BehaviorSubject, Observable } from 'rxjs';
@@ -6,6 +6,7 @@ import {map, retry} from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import { Credentials } from 'src/app/model/credentials';
 import { LocalStorageService } from '../../local-storage/local-storage.service';
+import { isPlatformBrowser } from '@angular/common';
 
 @Injectable({
   providedIn: 'root'
@@ -20,17 +21,20 @@ export class AutheticationService {
   base_url: String;
   private userLoginSource: BehaviorSubject<User|null>;
   isUserLoged: Observable<User|null>;
+  plataformId: Object;
 
 
-  constructor(private http: HttpClient, private local: LocalStorageService) {
+  constructor(private http: HttpClient, private local: LocalStorageService, @Inject(PLATFORM_ID) plataformId: Object) {
+    this.base_url = isPlatformBrowser(plataformId)? environment.BROWSER_APP_BASE_REF: environment.SERVER_APP_BASE_REF;
     this.userLoginSource = new BehaviorSubject(this.getUser())
     this.isUserLoged = this.userLoginSource.asObservable()
-    this.base_url = environment.APP_BASE_REF
+    this.plataformId = plataformId;
+    
    }
 
   createUser(newUser: User): Observable<{data: User}>{
     return this.http 
-      .post<User>(`/product/create_client`, newUser, this.httpOptions)
+      .post<User>(`${this.base_url}/product/create_client`, newUser, this.httpOptions)
       .pipe(
         map((res: any)  => {
           return {data: res};
@@ -38,7 +42,7 @@ export class AutheticationService {
       )
   }
   login(crendentials: Credentials): Observable<User>{
-    return this.http.post<Credentials>(`/product/api-token-auth/`, crendentials, this.httpOptions)
+    return this.http.post<Credentials>(`${this.base_url}/product/api-token-auth/`, crendentials, this.httpOptions)
     .pipe(map((res: any) => {
         this.local.saveData('token', res.token)
         this.local.saveData('name', res.name)

@@ -1,10 +1,11 @@
 import { HttpHeaders, HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable,  Inject, PLATFORM_ID, } from '@angular/core';
 import { Observable } from 'rxjs';
 import {map} from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 import { CarPartFilmItem, Invoice, ProformaCollection } from 'src/app/model/proformaCollection';
 import { param } from 'jquery';
+import { isPlatformBrowser } from '@angular/common';
 
 @Injectable({
   providedIn: 'root'
@@ -16,12 +17,16 @@ export class ProformaService {
     })
   };
 
-  constructor(private http: HttpClient) {}
+  base_url: Object;
+
+  constructor(private http: HttpClient, @Inject(PLATFORM_ID) plataformId: Object) {
+    this.base_url = isPlatformBrowser(plataformId)? environment.BROWSER_APP_BASE_REF: environment.SERVER_APP_BASE_REF;
+  }
 
   saveProforma(proforma: Invoice): Observable<{id: number}>{
     // let invoice: Invoice
     return this.http
-    .post<Invoice>(`${environment.APP_BASE_REF}/product/invoice`, proforma, this.httpOptions)
+    .post<Invoice>(`${this.base_url}/product/invoice`, proforma, this.httpOptions)
     .pipe(
       map(  (res:any)=>{
         return {id: res.id};
@@ -31,7 +36,7 @@ export class ProformaService {
 
   getProforma(invoice_id: number){
     return this.http
-    .get<Invoice>(`${environment.APP_BASE_REF}/product/invoice/${invoice_id}`,this.httpOptions)
+    .get<Invoice>(`${this.base_url}/product/invoice/${invoice_id}`,this.httpOptions)
     .pipe(
       map(  (res:any)=>{
         return res;
@@ -40,7 +45,7 @@ export class ProformaService {
   }
 
   getUserProforma(dataTablesParameters: any){
-    let url = `${environment.APP_BASE_REF}/product/invoice/all`;
+    let url = `${this.base_url}/product/invoice/all`;
     return this.http
     .get<{
       recordsTotal: number, 
