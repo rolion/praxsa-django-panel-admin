@@ -1,8 +1,8 @@
 FROM nginx
 COPY oscarleon_website.conf /etc/nginx/nginx.conf
-RUN mkdir /web/ssl/
-COPY /ssl/oscarleon_website_chain.crt /web/ssl/oscarleon_website_chain.crt
-COPY /ssl/server.key /web/ssl/server.key
+# RUN mkdir /web/ssl/
+# COPY /ssl/oscarleon_website_chain.crt /web/ssl/oscarleon_website_chain.crt
+# COPY /ssl/server.key /web/ssl/server.key
 
 # COPY default.conf /etc/nginx/default.conf
 EXPOSE 443

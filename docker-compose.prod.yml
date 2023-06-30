@@ -37,7 +37,7 @@ services:
     volumes:
       - static:/praxsa_manager/staticfiles
       - laminas:/etc/nginx/html
-      - /ssl/:/web/ssl
+      - ../ssl/:/web/ssl
     networks:
       - web_nw
     depends_on:
