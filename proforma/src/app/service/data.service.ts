@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Inject, Injectable, PLATFORM_ID } from '@angular/core';
 import {Modelo} from '../model/modelo';
 import {CarPartItem} from '../model/item';
 import {Film, Car_Part_Film_Price} from '../model/lamina';
@@ -8,6 +8,7 @@ import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {Marca} from '../model/marca';
 import { environment } from '../../environments/environment';
 import { icalculatorInfo } from '../interface/iCalculator';
+import { isPlatformBrowser } from '@angular/common';
 
 @Injectable({
   providedIn: 'root'
@@ -19,13 +20,16 @@ export class DataService {
   itemArray: CarPartItem[] = [];
   precioArray: Film[] = [];
   marcaArray: Marca[] = [];
+  base_url: string;
   headers = new HttpHeaders({'Content-Type': 'text; charset=UTF-8'});
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient, @Inject(PLATFORM_ID) plataformId: Object) {
+    this.base_url = isPlatformBrowser(plataformId)? environment.BROWSER_APP_BASE_REF: environment.SERVER_APP_BASE_REF; 
+  }
 
   getCalculatorInfo(): Observable<icalculatorInfo>{
-    console.log('app base dir ', environment.SERVER_APP_BASE_REF)
+    // console.log('app base dir ', environment.SERVER_APP_BASE_REF)
     return this.http
-      .get<icalculatorInfo>(`${environment.SERVER_APP_BASE_REF}/product/get_call_info`)
+      .get<icalculatorInfo>(`${this.base_url}/product/get_call_info`)
       .pipe(
         map((res: any)  => {
           const modelos: Modelo[] = [];
