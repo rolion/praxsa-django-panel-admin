@@ -7,7 +7,9 @@ COPY . $HOME_DEV
 WORKDIR $HOME_DEV
 RUN npm install -g @angular/cli@16.1.0
 RUN npm i
-RUN ng build --base-href /laminas/
+RUN ng build 
+
+#--base-href /laminas/
 RUN ng run proforma:server
 
 # RUN addgroup -S app && adduser -S app -G app
