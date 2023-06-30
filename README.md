@@ -3,7 +3,7 @@ docker-compose -f docker-compose.prod.yml up -d --build
 python3 manage.py runserver
 
 # to deploy in prod
-docker-compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml up -d --build
 
 # to run migration
 python manage.py migrate 
