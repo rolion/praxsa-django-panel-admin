@@ -25,10 +25,11 @@ services:
     container_name: nginx
     build:
       context: nginx/
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.prod
     ports:
       - "80:80"
       - "8081:8081"
+      - "443:443"
     deploy:
       resources:
         limits:
