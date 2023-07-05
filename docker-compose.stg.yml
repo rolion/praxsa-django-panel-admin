@@ -25,18 +25,17 @@ services:
     container_name: nginx
     build:
       context: nginx/
-      dockerfile: Dockerfile.prod
+      dockerfile: Dockerfile.stg
     ports:
       - "80:80"
       - "8081:8081"
-      - "443:443"
     deploy:
       resources:
         limits:
           memory: 100M
     volumes:
       - static:/praxsa_manager/staticfiles
-      - laminas:/etc/nginx/html
+      # - laminas:/etc/nginx/html
     networks:
       - web_nw
     depends_on:
@@ -46,12 +45,12 @@ services:
     container_name: proforma
     build:
       context: proforma/
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.stg
     restart: always
     volumes:
       - laminas:/app/dist/proforma/browser
     ports:
-      - "4000:4000"
+      - "4200:4200"
     networks:
       - web_nw
     depends_on:
