@@ -23,10 +23,23 @@ def index(request):
 
 def get_car_part_info(request, car_model_id):
     car_part = Car_Model_Part.objects.select_related("car_part_id").filter(car_model_id = car_model_id)
-    items = list(map(lambda part: {'part_id': part.car_part_id.id, 'name': part.car_part_id.name, 'quantity': part.quantity, 'width': part.width, 'length': part.length}, car_part))
+    items = list(map(lambda part: {'part_id': part.car_part_id.id, 
+                                   'name': part.car_part_id.name, 
+                                   'quantity': part.quantity, 
+                                   'width': part.width, 
+                                   'length': part.length, 
+                                   'installation_price': part.installation_price
+                                   }, car_part))
     films = Window_Film_Reel.objects.select_related('window_film_id').all()
-    window_film = list(map(lambda film: {'name': film.window_film_id.name, 'reel_id':film.id, 'price': film.price, 'film_id': film.window_film_id.id}, films ))
-    return JsonResponse(data={'items': items, 'window_film': window_film}, safe=False)
+    window_film = list(map(lambda film: {'name': film.window_film_id.name, 
+                                         'reel_id':film.id, 
+                                         'price': film.price, 
+                                         'film_id': film.window_film_id.id, 
+                                         'width': film.width
+                                         }, films ))
+    return JsonResponse(data={'items': items, 
+                              'window_film': window_film
+                              }, safe=False)
 
 def get_call_info(request):
     """

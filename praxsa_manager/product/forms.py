@@ -3,7 +3,8 @@ from django.forms import ModelForm
 from .models import Sale_Detail
 
 class CarModelPartForm(ModelForm):
-    a = forms.Select()
+    sub_total =  forms.DecimalField(max_digits=10, decimal_places=2)
+    
     class Meta:
         model = Sale_Detail
         fields = "__all__"
