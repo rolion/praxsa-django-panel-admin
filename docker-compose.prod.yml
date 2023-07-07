@@ -5,7 +5,7 @@ services:
     container_name: web
     build:
       context: praxsa_manager/
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.prod
     volumes:
       - static:/praxsa_manager/staticfiles
     restart: always
