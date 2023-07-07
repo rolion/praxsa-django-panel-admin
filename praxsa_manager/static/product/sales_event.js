@@ -1,7 +1,14 @@
+
+
 jQuery(function($){
     $(document).ready(function(){
         let items=[];
-        let window_films = []
+        let window_films = [];
+        
+        
+        function get_car_model_element(){
+            return $('select[name="car_model_id"]')
+        }
 
         function get_item_by_id(id){
             return items.find(item => item.part_id == id)
@@ -42,6 +49,71 @@ jQuery(function($){
             return parent.find('td.field-sub_total input')
         }
 
+        function find_part_id_in_model_items(part_id, items){
+            if(items.length == 0){
+                return undefined;
+            }
+            return items.find(item => item.part_id == part_id)
+        }
+
+        function is_part_id_in_model_items(part_id, items){
+            if(items.length == 0){
+                return false;
+            }
+            return find_part_id_in_model_items(part_id, items) == undefined? false: true;
+        }
+
+        function show_only_model_items(){
+            let selects = $('table tbody td.field-car_part_id select');
+            selects.each(index => {
+                let element = $(selects[index])
+                let children = element.children('option');
+                children.each(childenIndex => {
+                    let option = children[childenIndex];
+                    let val = $(option).val()
+                    if(!isNaN(val) && !is_part_id_in_model_items(val, items)){
+                        $(option).hide()
+                    }
+                })
+            });
+        }
+
+        function loadCarInfo(carModelId){
+            if(!isNaN(carModelId)){
+                $.ajax({
+                    url: '/product/get_car_part_info/'+carModelId,
+                    type:"GET",
+                    success: function(result) {
+                        items = result.items;
+                        window_films = result.window_film;
+                        console.log('items ', items);
+                        if (items){
+                            add_car_part_event()
+                            add_window_film_event()
+                            show_only_model_items()
+                        }
+                    }
+                })
+            }
+        }
+
+        function disable_sale_detail_elements(){
+            $('td.field-width input').prop('readonly', true)
+            $('td.field-length input').prop('readonly', true)
+            $('td.field-quantity input').prop('readonly', true)
+            $('td.field-window_film_price input').prop('readonly', true)
+            $('td.field-installation_price input').prop('readonly', true)
+            $('td.field-sub_total input').prop('readonly', true)
+        }
+
+        function onLoad(){
+            let selectedModel = get_car_model_element();
+            disable_sale_detail_elements()
+            if(selectedModel && !isNaN(selectedModel.val())){
+                loadCarInfo(selectedModel.val())
+            }
+        }
+
         function sum_all_price(){
             let prices = $('table tbody td.field-sub_total input');
             let total_price = 0
@@ -60,6 +132,7 @@ jQuery(function($){
             get_sub_total_element_in_row(row).val(0)
             sum_all_price();
         }
+        
             
         function add_car_part_event(){
             document.getElementsByTagName('tbody')[3].addEventListener('change', function(e){
@@ -68,6 +141,7 @@ jQuery(function($){
                     console.log('value selected ', car_model_part_select.val())
                     car_part_item = get_item_by_id(car_model_part_select.val())
                     get_width_element_in_row(car_model_part_select).val(car_part_item.width)
+                    get_width_element_in_row(car_model_part_select).disabled = true
                     get_length_element_in_row(car_model_part_select).val(car_part_item.length)
                     get_quantity_element_in_row(car_model_part_select).val(car_part_item.quantity)
                     clean_film_selection(e.target);
@@ -97,7 +171,7 @@ jQuery(function($){
            let prices = windowFilmPrice.filter(film => parseFloat(film.width) === parseFloat(itemWidth))
            if(prices.length == 0 ) {
             let wider_films = window_films.filter(price => parseFloat(price.width) > parseFloat(itemWidth));
-            console.log('wider film ', wider_films)
+            
             prices = wider_films.reduce((acc, curr) =>{
                 if(acc != null && acc!=undefined){
                     let discriminate_acc = acc.width - itemWidth;
@@ -111,7 +185,6 @@ jQuery(function($){
                     return curr;
                 }
             } )
-            console.log('prices', prices)
             price = prices!= undefined && prices != null ? prices.price : 0
            } else {
             price = prices[0].price;
@@ -119,21 +192,16 @@ jQuery(function($){
            return parseFloat(price);
         }
         $('select[name="car_model_id"]').change(function(){
-            $.ajax({
-                url: '/product/get_car_part_info/'+$(this).val(),
-                type:"GET",
-                success: function(result) {
-                    items = result.items;
-                    window_films = result.window_film
-                    console.log('result =>',result)
-                    if (items){
-                        console.log('items =>',items)
-                        add_car_part_event()
-                        add_window_film_event()
-                    }
-                }
-            })
+            loadCarInfo($(this).val());
         })
-        
+
+        document.addEventListener('formset:added', (event) => {
+            if(items.length > 0){
+                show_only_model_items()
+                // disable_sale_detail_elements();
+            }
+            
+        });
+        onLoad();
     })
 })

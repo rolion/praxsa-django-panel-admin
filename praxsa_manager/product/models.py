@@ -55,7 +55,7 @@ class Window_Film_Reel(models.Model):
     width = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Ancho")
     length = models.DecimalField(max_digits=10, decimal_places=2,  verbose_name="Largo")
     price = models.DecimalField(max_digits=10, decimal_places=2,  verbose_name="Precio")
-    quantity = models.PositiveIntegerField()
+    quantity = models.PositiveIntegerField(verbose_name="Cantidad")
     class Meta:
         ordering = ['window_film_id']
         verbose_name = 'Bobina'
@@ -113,6 +113,7 @@ class Sale_Detail(models.Model):
     window_film_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Costo Lámina")
     quantity = models.PositiveIntegerField(default=0, verbose_name="Cantidad")
     window_film_id = models.ForeignKey(Window_Film, on_delete=models.DO_NOTHING, verbose_name="Lámina", null=True)
+    sub_total = models.DecimalField(max_digits=10, decimal_places=2, default=0,verbose_name="Sub Total")
     class Meta:
         verbose_name = 'Detalle Venta'
     
