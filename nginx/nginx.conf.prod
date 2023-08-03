@@ -12,26 +12,11 @@ http {
         server proforma:4000;
     }
 
- #   server {
- #       listen 80;
-#
- #       server_name praxsasrl.store;
-#
- #       return 301 https://$host$request_uri;
- #   }
-
-    # server {
-    #    listen 80;
-    #    server_name panel.praxsasrl.store;
-    #    return 301 https://panel.oscarleon.website$request_uri;
-    #}
-
-
     server {
 
         listen 80;
 
-        server_name panel.praxsasrl.store, www.panel.praxsasrl.store;
+        server_name panel.praxsasrl.store www.panel.praxsasrl.store;
 
         location / {
             root /etc/nginx/html/;
@@ -57,7 +42,7 @@ http {
 
         listen 80;
 
-        server_name praxsasrl.store, www.praxsasrl.store laminas.praxsasrl.store;
+        server_name praxsasrl.store www.praxsasrl.store laminas.praxsasrl.store;
 
         location / {
             root /etc/nginx/html/;
@@ -72,23 +57,4 @@ http {
         }
 
     }
-    #server {
-    #    listen 443 ssl; 
-    #        ssl_certificate /web/ssl/panel/ssl_chain.crt;
-    #
-    #        ssl_certificate_key /web/ssl/panel/panel_private.key;
-    #
-    #    server_name panel.oscarleon.website; # copy Your server name here
-    #    location / {
-    #        proxy_pass http://praxsa_server; # copy main hostname here
-    #        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    #        proxy_set_header Host $host;
-    #        proxy_redirect off;
-    #    }
-    #    location /static/ { # copy your STATIC_URL here
-    #        autoindex on;
-    #        alias /praxsa_manager/staticfiles/; # copy your static file path here
-    #    }
-    #    }
-
 }

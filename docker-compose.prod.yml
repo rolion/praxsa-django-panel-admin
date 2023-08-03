@@ -36,8 +36,8 @@ services:
       - static:/praxsa_manager/staticfiles
       - laminas:/etc/nginx/html
     environment:
-      - VIRTUAL_HOST=panel.praxsasrl.store,www.panel.praxsasrl.store,praxsasrl.store,www.praxsasrl.store,laminas.praxsasrl.store
-      - LETSENCRYPT_HOST=panel.praxsasrl.store,www.panel.praxsasrl.store,praxsasrl.store,www.praxsasrl.store,laminas.praxsasrl.store
+      - VIRTUAL_HOST=panel.praxsasrl.store,www.panel.praxsasrl.store,praxsasrl.store,laminas.praxsasrl.store,www.laminas.praxsasrl.store
+      - LETSENCRYPT_HOST=panel.praxsasrl.store,www.panel.praxsasrl.store,praxsasrl.store,laminas.praxsasrl.store,www.laminas.praxsasrl.store
       - LETSENCRYPT_EMAIL=roleonm@gmail.com
     networks:
       - proxy
