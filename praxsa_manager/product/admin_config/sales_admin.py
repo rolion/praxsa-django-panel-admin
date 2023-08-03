@@ -23,6 +23,7 @@ class SalesAdmin(admin.ModelAdmin):
     list_display = [
                     'id',
                     'sales_status',
+                    'codigo_garantia',
                     'client_id', 
                     'car_model_id',
                     'total_price',
