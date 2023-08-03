@@ -15,27 +15,68 @@ http {
     server {
         listen 80;
 
-        server_name oscarleon.website;
+        server_name praxsasrl.store;
 
         return 301 https://$host$request_uri;
     }
 
-    server {
-        listen 80;
-        server_name panel.oscarleon.website;
-        return 301 https://panel.oscarleon.website$request_uri;
-    }
+    # server {
+    #    listen 80;
+    #    server_name panel.oscarleon.website;
+    #    return 301 https://panel.oscarleon.website$request_uri;
+    #}
 
 
     server {
 
         listen 443 ssl;
 
-        ssl_certificate /web/ssl/oscarleon_website_chain.crt;
+        ssl_certificate /web/ssl/praxsasrl.crt;
 
-        ssl_certificate_key /web/ssl/server.key;
+        ssl_certificate_key /web/ssl/praxsasrl.key;
 
-        server_name oscarleon.website laminas.oscarleon.website;
+        server_name praxsasrl.store;
+
+        location /admin {
+            root /etc/nginx/html/;
+            index index.html index.htm;
+            try_files $uri $uri/ /index.html =404;
+
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Host $http_host;
+            proxy_redirect off;
+            proxy_pass http://praxsa_server/$uri;
+        }
+
+        location /product {
+            root /etc/nginx/html/;
+            index index.html index.htm;
+            try_files $uri $uri/ /index.html =404;
+
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Host $http_host;
+            proxy_redirect off;
+            proxy_pass http://praxsa_server/$uri;
+        }
+
+        location /praxsa_manager {
+            root /etc/nginx/html/;
+            index index.html index.htm;
+            try_files $uri $uri/ /index.html =404;
+
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Host $http_host;
+            proxy_redirect off;
+            proxy_pass http://praxsa_server/$uri;
+        }
+
+        location /static/ { # copy your STATIC_URL here
+            autoindex on;
+            alias /praxsa_manager/staticfiles/; # copy your static file path here
+        }
 
         location / {
             root /etc/nginx/html/;
@@ -49,31 +90,24 @@ http {
             proxy_pass http://praxsa_page;
         }
 
-        # location /laminas/ { # copy your STATIC_URL here
-        #     autoindex on;
-        #     alias /etc/nginx/html/; # copy your static file path here
-        #     try_files $uri $uri/ /index.html =404;
-        #     index index.html index.htm;
-        # }
-
     }
-    server {
-        listen 443 ssl; 
-        ssl_certificate /web/ssl/panel/ssl_chain.crt;
-
-        ssl_certificate_key /web/ssl/panel/panel_private.key;
-
-        server_name panel.oscarleon.website; # copy Your server name here
-        location / {
-            proxy_pass http://praxsa_server; # copy main hostname here
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header Host $host;
-            proxy_redirect off;
-        }
-        location /static/ { # copy your STATIC_URL here
-            autoindex on;
-            alias /praxsa_manager/staticfiles/; # copy your static file path here
-        }
-    }
+    #server {
+    #    listen 443 ssl; 
+    #        ssl_certificate /web/ssl/panel/ssl_chain.crt;
+    #
+    #        ssl_certificate_key /web/ssl/panel/panel_private.key;
+    #
+    #    server_name panel.oscarleon.website; # copy Your server name here
+    #    location / {
+    #        proxy_pass http://praxsa_server; # copy main hostname here
+    #        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    #        proxy_set_header Host $host;
+    #        proxy_redirect off;
+    #    }
+    #    location /static/ { # copy your STATIC_URL here
+    #        autoindex on;
+    #        alias /praxsa_manager/staticfiles/; # copy your static file path here
+    #    }
+    #    }
 
 }
