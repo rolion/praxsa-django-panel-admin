@@ -3,9 +3,9 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-  SERVER_APP_BASE_REF: 'http://web:5000',
-  BROWSER_APP_BASE_REF: 'https://panel.oscarleon.website',
-  production: true
+  SERVER_APP_BASE_REF: 'http://localhost:8000/',
+  BROWSER_APP_BASE_REF: 'http://localhost:8000/',
+  production: false
 };
 
 /*
