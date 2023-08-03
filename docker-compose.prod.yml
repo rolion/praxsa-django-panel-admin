@@ -12,7 +12,7 @@ services:
     ports:
       - "5000:5000"
     networks:
-      - web_nw
+      - proxy
     depends_on:
       - db
     deploy:
@@ -28,8 +28,6 @@ services:
       dockerfile: Dockerfile.prod
     ports:
       - "80:80"
-      - "8081:8081"
-      - "443:443"
     deploy:
       resources:
         limits:
@@ -37,9 +35,12 @@ services:
     volumes:
       - static:/praxsa_manager/staticfiles
       - laminas:/etc/nginx/html
-      - ../ssl/:/web/ssl
+    environment:
+      - VIRTUAL_HOST=panel.praxsasrl.store,www.panel.praxsasrl.store,praxsasrl.store,www.praxsasrl.store,laminas.praxsasrl.store
+      - LETSENCRYPT_HOST=panel.praxsasrl.store,www.panel.praxsasrl.store,praxsasrl.store,www.praxsasrl.store,laminas.praxsasrl.store
+      - LETSENCRYPT_EMAIL=roleonm@gmail.com
     networks:
-      - web_nw
+      - proxy
     depends_on:
       - web
 
@@ -54,7 +55,7 @@ services:
     ports:
       - "4000:4000"
     networks:
-      - web_nw
+      - proxy
     depends_on:
       - web
     deploy:
@@ -72,7 +73,7 @@ services:
     ports:
       - 5432:5432
     networks:
-      - web_nw
+      - proxy
     deploy:
       resources:
         limits:
@@ -95,7 +96,5 @@ volumes:
     external: true
 
 networks:
-  web_nw:
-    external: true
-  nginx_nw:
+  proxy:
     external: true

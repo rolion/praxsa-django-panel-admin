@@ -12,32 +12,28 @@ http {
         server proforma:4000;
     }
 
-    server {
-        listen 80;
-
-        server_name praxsasrl.store;
-
-        return 301 https://$host$request_uri;
-    }
+ #   server {
+ #       listen 80;
+#
+ #       server_name praxsasrl.store;
+#
+ #       return 301 https://$host$request_uri;
+ #   }
 
     # server {
     #    listen 80;
-    #    server_name panel.oscarleon.website;
+    #    server_name panel.praxsasrl.store;
     #    return 301 https://panel.oscarleon.website$request_uri;
     #}
 
 
     server {
 
-        listen 443 ssl;
+        listen 80;
 
-        ssl_certificate /web/ssl/ssl-bundle.crt;
+        server_name panel.praxsasrl.store, www.panel.praxsasrl.store;
 
-        ssl_certificate_key /web/ssl/praxsasrl.key;
-
-        server_name praxsasrl.store;
-
-        location /admin {
+        location / {
             root /etc/nginx/html/;
             index index.html index.htm;
             try_files $uri $uri/ /index.html =404;
@@ -49,34 +45,19 @@ http {
             proxy_pass http://praxsa_server/$uri;
         }
 
-        location /product {
-            root /etc/nginx/html/;
-            index index.html index.htm;
-            try_files $uri $uri/ /index.html =404;
-
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_set_header Host $http_host;
-            proxy_redirect off;
-            proxy_pass http://praxsa_server/$uri;
-        }
-
-        location /praxsa_manager {
-            root /etc/nginx/html/;
-            index index.html index.htm;
-            try_files $uri $uri/ /index.html =404;
-
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_set_header Host $http_host;
-            proxy_redirect off;
-            proxy_pass http://praxsa_server/$uri;
-        }
 
         location /static/ { # copy your STATIC_URL here
             autoindex on;
             alias /praxsa_manager/staticfiles/; # copy your static file path here
         }
+
+    }
+
+    server {
+
+        listen 80;
+
+        server_name praxsasrl.store, www.praxsasrl.store laminas.praxsasrl.store;
 
         location / {
             root /etc/nginx/html/;
