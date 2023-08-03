@@ -31,7 +31,7 @@ http {
 
         listen 443 ssl;
 
-        ssl_certificate /web/ssl/praxsasrl.crt;
+        ssl_certificate /web/ssl/praxsasrl.csr;
 
         ssl_certificate_key /web/ssl/praxsasrl.key;
 
