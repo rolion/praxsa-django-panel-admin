@@ -63,11 +63,14 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ALLOWED_HOSTS=['oscarleon.website', 
+ALLOWED_HOSTS=[
+               'praxsasrl.store',
+               'oscarleon.website', 
                'panel.oscarleon.website', 
                'laminas.oscarleon.website', 
                '143.198.239.122', 
-               'proforma', 
+               '165.22.46.244',
+               'proforma',
                'web', 
                'nginx', 
                'localhost', 
@@ -75,7 +78,12 @@ ALLOWED_HOSTS=['oscarleon.website',
 # ALLOWED_HOSTS = ['*'] 
 
 CORS_ORIGIN_ALLOW_ALL = False
-CSRF_TRUSTED_ORIGINS=['https://oscarleon.website', 'https://panel.oscarleon.website', 'https://laminas.oscarleon.website']
+CSRF_TRUSTED_ORIGINS=['https://praxsasrl.store',
+                      'https://laminas.praxsasrl.store',
+                      'https://panel.praxsasrl.store',
+                      'https://oscarleon.website', 
+                      'https://panel.oscarleon.website', 
+                      'https://laminas.oscarleon.website']
 
 CORS_ORIGIN_WHITELIST = ['https://oscarleon.website',
                          'https://panel.oscarleon.website',

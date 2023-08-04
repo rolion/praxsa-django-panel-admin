@@ -18,6 +18,11 @@ http {
 
         server_name panel.praxsasrl.store www.panel.praxsasrl.store;
 
+        location /static/ { # copy your STATIC_URL here
+            autoindex on;
+            alias /praxsa_manager/staticfiles/; # copy your static file path here
+        }
+
         location / {
             root /etc/nginx/html/;
             index index.html index.htm;
@@ -31,10 +36,7 @@ http {
         }
 
 
-        location /static/ { # copy your STATIC_URL here
-            autoindex on;
-            alias /praxsa_manager/staticfiles/; # copy your static file path here
-        }
+        
 
     }
 

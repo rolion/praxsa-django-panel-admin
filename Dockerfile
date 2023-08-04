@@ -14,7 +14,7 @@ ENV HOME=/praxsa_manager/
 
 COPY praxsa_manager/ ./praxsa_manager
 COPY product/ ./product
-COPY .env-prod ./.env
+# COPY .env-prod ./.env
 COPY requirements-3.8.10.txt .
 COPY manage.py ./
 
