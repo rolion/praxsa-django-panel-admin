@@ -9,8 +9,8 @@ services:
     volumes:
       - static:/praxsa_manager/staticfiles
     restart: always
-    ports:
-      - "5000:5000"
+    expose:
+      - "5000"
     networks:
       - proxy
     depends_on:
@@ -52,8 +52,8 @@ services:
     restart: always
     volumes:
       - laminas:/app/dist/proforma/browser
-    ports:
-      - "4000:4000"
+    expose:
+      - "4000"
     networks:
       - proxy
     depends_on:
@@ -70,8 +70,8 @@ services:
     env_file: praxsa_manager/.env
     volumes:
       - postgres:/var/lib/postgresql/data
-    ports:
-      - 5432:5432
+    expose:
+      - "5432"
     networks:
       - proxy
     deploy:
