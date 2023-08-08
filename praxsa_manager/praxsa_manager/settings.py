@@ -65,6 +65,8 @@ MIDDLEWARE = [
 
 ALLOWED_HOSTS=[
                'praxsasrl.store',
+               'panel.praxsasrl.store',
+               'laminas.praxsasrl.store',
                'oscarleon.website', 
                'panel.oscarleon.website', 
                'laminas.oscarleon.website', 
