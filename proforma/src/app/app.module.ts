@@ -23,6 +23,7 @@ import { LoginPageComponent } from './pages/login-page/login-page.component';
 import { NewUserComponent } from './pages/new-user/new-user.component';
 import { ListaComponent } from './pages/lista/lista.component';
 import { BannerComponent } from './components/banner/banner.component';
+import { WindowsFilmComponent } from './pages/windows-film/windows-film.component';
 
 @NgModule({
   declarations: [
@@ -40,7 +41,8 @@ import { BannerComponent } from './components/banner/banner.component';
     LoginPageComponent,
     NewUserComponent,
     ListaComponent,
-    BannerComponent
+    BannerComponent,
+    WindowsFilmComponent
   ],
   imports: [
     BrowserModule,

@@ -10,6 +10,7 @@ import { ListProformaComponent } from './components/invoiceTable/list-proforma.c
 import { LoginPageComponent } from './pages/login-page/login-page.component';
 import { NewUserComponent } from './pages/new-user/new-user.component';
 import { ListaComponent } from './pages/lista/lista.component';
+import { WindowsFilmComponent } from './pages/windows-film/windows-film.component';
 // import { HomeV2Component } from './components/home-v2/home-v2.component';
 
 const routes: Routes = [
@@ -20,6 +21,7 @@ const routes: Routes = [
   { path: 'create-user', component: NewUserComponent},
   { path: 'login', component: LoginPageComponent},
   { path: 'my-invoice', component: ListaComponent},
+  { path: 'windows-film/:id', component: WindowsFilmComponent},
   { path: '**', component: NotfoundComponent },
 ];
 
