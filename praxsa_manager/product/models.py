@@ -2,6 +2,8 @@ from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator, EmailValidator
 from django.contrib.auth.models import User
 from tinymce.models import HTMLField
+from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
 
 
 class Car_Brand(models.Model):
@@ -97,10 +99,16 @@ class Sale_Header(models.Model):
     name = models.CharField(max_length=400, default=" ", null=False, verbose_name="Nombre Completo")
     email = models.CharField(validators=[EmailValidator()], null=True,verbose_name="Email")
     ci_nit = models.CharField(validators=[RegexValidator('\d*')],null=True, verbose_name="CI/NIT")
+    codigo_garantia = models.CharField(null=True, blank=True, verbose_name="Codigo Garantia", max_length=12, unique=True)
     car_plate = models.CharField(max_length=10, default="", null=True, verbose_name="Placa Auto")
     phone_number = models.CharField(validators=[RegexValidator('(\+)*\d{7,11}')], default="", verbose_name="Numero Telefónico")
     car_model_id = models.ForeignKey(Car_Model, on_delete=models.DO_NOTHING, verbose_name="Modelo")
     total_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Total Pagar")
+    
+    def clean(self):
+        if self.sales_status == self.inst and self.codigo_garantia is None:
+            raise ValidationError({"codigo_garantia": _("porfavor agregue el codigo de garantia")})
+    
     class Meta:
         verbose_name = 'Proforma'
     
