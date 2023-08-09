@@ -69,6 +69,7 @@
           <td>
             <select class="custom-select form-select"
                     aria-label="Default select example"
+                    [(ngModel)]="tableSelectedWindowsFilm[i]"
                     (change)="addLamina($event, i)"
                     required
             >
@@ -81,8 +82,8 @@
 
           </td>
           <td class="d-none d-sm-none d-md-table-cell"><a
-            *ngIf="reportItem.window_film_name; else elseBlock"
-            href="#/"
+            *ngIf="invoiceItem[i].window_film_url && invoiceItem[i].window_film_url.length >0; else elseBlock"
+            routerLink="{{invoiceItem[i].window_film_url}}"
             target="_blank"
           >ver más</a></td>
           <ng-template #elseBlock>Seleccione una Lamina.</ng-template>

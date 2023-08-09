@@ -21,6 +21,7 @@ urlpatterns = [
     path('api-token-auth/', CustomAuthToken.as_view()),
     path('invoice', InvoiceView.as_view()),
     path('invoice/<int:pk>/', InvoiceView.as_view()),
-    path('invoice/all', ListUserInvoice.as_view())
+    path('invoice/all', ListUserInvoice.as_view()),
+    path('layer/<int:layer_id>', views.get_layer_info, name='get_layer_info')
 ]
 urlpatterns = format_suffix_patterns(urlpatterns)

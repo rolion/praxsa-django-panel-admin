@@ -36,8 +36,11 @@ export class WindowsFilmComponent {
       {
         next: (res) =>{
           this.windowsFilmDao = res.layer;
-          // this.innerHtml = this.windowsFilmDao.content;
-          this.innerHtml = this.sanitizer.bypassSecurityTrustHtml(this.windowsFilmDao.content);;
+          this.innerHtml = null;
+          if(this.windowsFilmDao.content){
+            this.innerHtml = this.sanitizer.bypassSecurityTrustHtml(this.windowsFilmDao.content);;
+          } 
+          
           console.log(res.layer)
         },
         error: (error) => {console.log('error getting windwsfilm', error)}

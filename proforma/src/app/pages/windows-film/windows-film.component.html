@@ -2,5 +2,8 @@
 <div class="container">
     <h1><strong>{{this.windowsFilmDao.name}}</strong></h1>
     
-    <div id="" [innerHTML]="innerHtml"></div>
+    <div id="" [innerHTML]="innerHtml" *ngIf="innerHtml; else elseBlock"></div>
+    <ng-template #elseBlock><h2>Informacion no disponible</h2></ng-template>
+
+
 </div>

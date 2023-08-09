@@ -41,6 +41,11 @@ def get_car_part_info(request, car_model_id):
                               'window_film': window_film
                               }, safe=False)
 
+def get_layer_info(request, layer_id):
+    film = Window_Film.objects.get(pk = layer_id)
+    print('film -->', film)
+    return JsonResponse(data={'layer': {'name': film.name, 'content': film.content} }, safe=False)
+
 def get_call_info(request):
     """
     return calculator information, brand, models, car parts and car part price

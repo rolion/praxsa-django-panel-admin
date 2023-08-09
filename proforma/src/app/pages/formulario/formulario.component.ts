@@ -54,6 +54,7 @@ export class FormularioComponent implements OnInit, OnDestroy {
     model_parts: [new CarPartItem(0, "", 0, 0, 0, 0, 0)],
     lamina_price: [new Car_Part_Film_Price('', 0, 0, 0, 0, "")]
   };
+  tableSelectedWindowsFilm: String[] = [];
 
   setData(data: icalculatorInfo){
     this.dao.films = data.lamina;
@@ -114,6 +115,7 @@ export class FormularioComponent implements OnInit, OnDestroy {
     const selectedModel = this.modelosByMarca.find(item => item.id === +this.selectedModelId);
     if(selectedModel){
       const modelParts = this.getSelectedModelParts();
+      this.tableSelectedWindowsFilm = [];
       modelParts.forEach(carPart => {
         let {
           part_name: car_part_name, 
@@ -140,13 +142,20 @@ export class FormularioComponent implements OnInit, OnDestroy {
           window_film_price,
         )
         this.invoiceItem.push(proformaItem);
+        this.tableSelectedWindowsFilm.push("-1");
       });
     }
   }
 
   removeReportItem(reportIndex: number): void{
     if (reportIndex !== -1){
-      this.invoiceItem.splice(reportIndex, 1);
+      // this.invoiceItem.splice(reportIndex, 1);
+      this.invoiceItem[reportIndex].price = 0;
+      this.invoiceItem[reportIndex].length = 0;
+      this.invoiceItem[reportIndex].quantity = 0;
+      this.invoiceItem[reportIndex].window_film_id = 0;
+      this.invoiceItem[reportIndex].window_film_url = '';
+      this.tableSelectedWindowsFilm[reportIndex] = "-1";
       this.total = 0;
       this.invoiceItem.forEach(item => this.total += item.price);
     }
@@ -165,7 +174,8 @@ export class FormularioComponent implements OnInit, OnDestroy {
       } = this.getLaminaItemPrice(lamina, width, quantity, installation_price);
       this.invoiceItem[indexReport].price = totalPrice;
       this.invoiceItem[indexReport].window_film_price = filmPrice;
-      this.invoiceItem[indexReport].window_film_id = lamina.id
+      this.invoiceItem[indexReport].window_film_id = lamina.id;
+      this.invoiceItem[indexReport].window_film_url = 'windows-film/'+lamina.id;
       this.calculateTotal();
     }else{
       this.invoiceItem[indexReport].price = 0;

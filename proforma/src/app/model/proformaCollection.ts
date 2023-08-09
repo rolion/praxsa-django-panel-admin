@@ -46,6 +46,7 @@ export class CarPartFilmItem {
   window_film_name: string;
   installation_price: number;
   window_film_price: number;
+  window_film_url: string;
   constructor(
     car_part_id: number,
     car_part_name: string,
@@ -65,7 +66,7 @@ export class CarPartFilmItem {
     this.price = price;
     this.quantity = quantity;
     this.window_film_id = window_film_id;
-    //this.window_film_name = window_film_name;
+    this.window_film_url = '';
     this.installation_price= installation_price;
     this.window_film_price= window_film_price;
     this.window_film_name = '';

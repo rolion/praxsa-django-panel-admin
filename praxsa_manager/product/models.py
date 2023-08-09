@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator, EmailValidator
 from django.contrib.auth.models import User
+from tinymce.models import HTMLField
 
 
 class Car_Brand(models.Model):
@@ -44,6 +45,7 @@ class Car_Model_Part(models.Model):
 class Window_Film(models.Model):
     name = models.CharField(max_length=200, verbose_name="Nombre")
     description= models.TextField()
+    content = HTMLField(null=True)
     class Meta:
         ordering = ['name']
         verbose_name = 'Lamina'
