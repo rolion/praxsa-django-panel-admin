@@ -126,4 +126,21 @@ class Sale_Detail(models.Model):
     sub_total = models.DecimalField(max_digits=10, decimal_places=2, default=0,verbose_name="Sub Total")
     class Meta:
         verbose_name = 'Detalle Venta'
-    
+
+class Sucursal(models.Model):
+    name = models.CharField(max_length=20, default=" ", null=False, verbose_name="Nombre")
+    address = models.CharField(max_length=400, default=" ", null=False, verbose_name="direccion")
+    enable_to_install_windows_film = models.BooleanField(default=True, verbose_name="Habilitado")
+    def __str__(self):
+        return f'{self.name}'
+
+class inventario(models.Model):
+    sucursal_id = models.ForeignKey(Sucursal, on_delete=models.DO_NOTHING, verbose_name="Sucursal")
+    bobina = models.ForeignKey(Window_Film_Reel, on_delete=models.DO_NOTHING, verbose_name="Bobina")
+    quantity = models.PositiveIntegerField(verbose_name="Bobinas disponibles")
+    to_install = models.PositiveIntegerField(verbose_name="disponible para instalar")
+    installed = models.PositiveIntegerField(verbose_name="metros para instalados")
+
+class instalador_sucursal(models.Model):
+    sucursal_id = models.ForeignKey(Sucursal, on_delete=models.DO_NOTHING, verbose_name="Sucursal")
+    instalador = models.ForeignKey(User, on_delete=models.DO_NOTHING, verbose_name="Instalador")
