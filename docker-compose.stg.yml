@@ -9,10 +9,10 @@ services:
     volumes:
       - static:/praxsa_manager/staticfiles
     restart: always
-    ports:
-      - "5000:5000"
+    expose:
+      - "5000"
     networks:
-      - web_nw
+      - proxy
     depends_on:
       - db
     deploy:
@@ -26,18 +26,21 @@ services:
     build:
       context: nginx/
       dockerfile: Dockerfile.stg
-    ports:
-      - "80:80"
-      - "8081:8081"
+    expose:
+      - "80" 
     deploy:
       resources:
         limits:
           memory: 100M
+    environment:
+      - VIRTUAL_HOST=panel.oscarleon.website,www.panel.oscarleon.website,oscarleon.website,laminas.oscarleon.website,www.laminas.oscarleon.website
+      - LETSENCRYPT_HOST=panel.oscarleon.website,www.panel.oscarleon.website,oscarleon.website,laminas.oscarleon.website,www.laminas.oscarleon.website
+      - LETSENCRYPT_EMAIL=roleonm@gmail.com
     volumes:
       - static:/praxsa_manager/staticfiles
       # - laminas:/etc/nginx/html
     networks:
-      - web_nw
+      - proxy
     depends_on:
       - web
 
@@ -49,10 +52,10 @@ services:
     restart: always
     volumes:
       - laminas:/app/dist/proforma/browser
-    ports:
-      - "4200:4200"
+    expose:
+      - "4000"
     networks:
-      - web_nw
+      - proxy
     depends_on:
       - web
     deploy:
@@ -67,10 +70,10 @@ services:
     env_file: praxsa_manager/.env
     volumes:
       - postgres:/var/lib/postgresql/data
-    ports:
-      - 5432:5432
+    expose:
+      - "5432"
     networks:
-      - web_nw
+      - proxy
     deploy:
       resources:
         limits:
@@ -93,7 +96,5 @@ volumes:
     external: true
 
 networks:
-  web_nw:
-    external: true
-  nginx_nw:
+  proxy:
     external: true
