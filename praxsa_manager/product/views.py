@@ -41,13 +41,18 @@ def get_car_part_info(request, car_model_id):
                               'window_film': window_film
                               }, safe=False)
 
+def get_layer_info(request, layer_id):
+    film = Window_Film.objects.get(pk = layer_id)
+    print('film -->', film)
+    return JsonResponse(data={'layer': {'name': film.name, 'content': film.content} }, safe=False)
+
 def get_call_info(request):
     """
     return calculator information, brand, models, car parts and car part price
     """
     car_brands = Car_Brand.objects.all()
     brands = list(map(lambda brand: {'id': brand.id, 'name': brand.name}, car_brands))
-    car_models = Car_Model.objects.select_related('car_brand_id').all().order_by('-name')
+    car_models = Car_Model.objects.select_related('car_brand_id').all().order_by('name')
     models = list(map(lambda model: {'id': model.id, 'name':model.name, "brand_id": model.car_brand_id.id}, car_models))
     car_parts = Car_Part.objects.all()
     parts = list(map(lambda part: {'id': part.id, 'name': part.name}, car_parts))
