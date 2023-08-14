@@ -52,7 +52,7 @@ def get_call_info(request):
     """
     car_brands = Car_Brand.objects.all()
     brands = list(map(lambda brand: {'id': brand.id, 'name': brand.name}, car_brands))
-    car_models = Car_Model.objects.select_related('car_brand_id').all()
+    car_models = Car_Model.objects.select_related('car_brand_id').all().order_by('name')
     models = list(map(lambda model: {'id': model.id, 'name':model.name, "brand_id": model.car_brand_id.id}, car_models))
     car_parts = Car_Part.objects.all()
     parts = list(map(lambda part: {'id': part.id, 'name': part.name}, car_parts))

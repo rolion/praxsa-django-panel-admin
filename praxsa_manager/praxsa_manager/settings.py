@@ -88,7 +88,11 @@ CSRF_TRUSTED_ORIGINS=['https://praxsasrl.store',
                       'https://panel.oscarleon.website', 
                       'https://laminas.oscarleon.website']
 
-CORS_ORIGIN_WHITELIST = ['https://oscarleon.website',
+CORS_ORIGIN_WHITELIST = [
+                        'https://praxsasrl.store',
+                        'https://panel.praxsasrl.store',
+                        'https://laminas.praxsasrl.store',
+                        'https://oscarleon.website',
                          'https://panel.oscarleon.website',
                          'https://laminas.oscarleon.website',
                          'http://localhost:8000', 

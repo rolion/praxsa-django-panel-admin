@@ -7,10 +7,12 @@ COPY . $HOME_DEV
 WORKDIR $HOME_DEV
 RUN npm install -g @angular/cli@16.1.0
 RUN npm i
-RUN ng build --configuration=production
+RUN rm -r scr/environments/environment.ts
+COPY src/environments/environment.prod.ts ./src/environments/environment.ts
+RUN npm run build:production
 
 #--base-href /laminas/
-RUN ng run proforma:server
+# RUN ng run proforma:server
 
 # RUN addgroup -S app && adduser -S app -G app
 # EXPOSE 4000
