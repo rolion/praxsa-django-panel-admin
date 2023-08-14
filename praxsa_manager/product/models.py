@@ -85,6 +85,24 @@ class Client(models.Model):
         ordering = ['last_name', 'name']
     def __str__(self):
         return f'{self.name} {self.last_name}'
+    
+class Sucursal(models.Model):
+    name = models.CharField(max_length=20, default=" ", null=False, verbose_name="Nombre")
+    address = models.CharField(max_length=400, default=" ", null=False, verbose_name="direccion")
+    enable_to_install_windows_film = models.BooleanField(default=True, verbose_name="Habilitado")
+    def __str__(self):
+        return f'{self.name}'
+
+class inventario(models.Model):
+    sucursal_id = models.ForeignKey(Sucursal, on_delete=models.DO_NOTHING, verbose_name="Sucursal")
+    bobina = models.ForeignKey(Window_Film_Reel, on_delete=models.DO_NOTHING, verbose_name="Bobina")
+    quantity = models.PositiveIntegerField(verbose_name="Bobinas disponibles")
+    to_install = models.PositiveIntegerField(verbose_name="disponible para instalar")
+    installed = models.PositiveIntegerField(verbose_name="metros para instalados")
+
+class instalador_sucursal(models.Model):
+    sucursal_id = models.ForeignKey(Sucursal, on_delete=models.DO_NOTHING, verbose_name="Sucursal")
+    instalador = models.ForeignKey(User, on_delete=models.DO_NOTHING, verbose_name="Instalador")
 
 class Sale_Header(models.Model):
     req = 'req'
@@ -97,6 +115,7 @@ class Sale_Header(models.Model):
     date = models.DateTimeField(verbose_name="Fecha")
     client_id = models.ForeignKey(Client, on_delete=models.DO_NOTHING, verbose_name="Cliente")
     name = models.CharField(max_length=400, default=" ", null=False, verbose_name="Nombre Completo")
+    sucursal = models.ForeignKey(Sucursal, on_delete=models.DO_NOTHING,blank=True, null=True, verbose_name="Sucursal")
     email = models.CharField(validators=[EmailValidator()], null=True,verbose_name="Email")
     ci_nit = models.CharField(validators=[RegexValidator('\d*')],null=True, verbose_name="CI/NIT")
     codigo_garantia = models.CharField(null=True, blank=True, verbose_name="Codigo Garantia", max_length=12, unique=True)
@@ -127,20 +146,3 @@ class Sale_Detail(models.Model):
     class Meta:
         verbose_name = 'Detalle Venta'
 
-class Sucursal(models.Model):
-    name = models.CharField(max_length=20, default=" ", null=False, verbose_name="Nombre")
-    address = models.CharField(max_length=400, default=" ", null=False, verbose_name="direccion")
-    enable_to_install_windows_film = models.BooleanField(default=True, verbose_name="Habilitado")
-    def __str__(self):
-        return f'{self.name}'
-
-class inventario(models.Model):
-    sucursal_id = models.ForeignKey(Sucursal, on_delete=models.DO_NOTHING, verbose_name="Sucursal")
-    bobina = models.ForeignKey(Window_Film_Reel, on_delete=models.DO_NOTHING, verbose_name="Bobina")
-    quantity = models.PositiveIntegerField(verbose_name="Bobinas disponibles")
-    to_install = models.PositiveIntegerField(verbose_name="disponible para instalar")
-    installed = models.PositiveIntegerField(verbose_name="metros para instalados")
-
-class instalador_sucursal(models.Model):
-    sucursal_id = models.ForeignKey(Sucursal, on_delete=models.DO_NOTHING, verbose_name="Sucursal")
-    instalador = models.ForeignKey(User, on_delete=models.DO_NOTHING, verbose_name="Instalador")

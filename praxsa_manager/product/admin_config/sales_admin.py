@@ -1,5 +1,9 @@
+from typing import Any
 from django.contrib import admin
-from ..models import Sale_Detail
+from django.db.models.query import QuerySet
+from django.http.request import HttpRequest
+from ..models import Sale_Detail, instalador_sucursal
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from ..forms import CarModelPartForm
 
 class SalesDetailInLine(admin.TabularInline):
@@ -32,5 +36,18 @@ class SalesAdmin(admin.ModelAdmin):
     inlines = [
         SalesDetailInLine,
     ]
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
+        qs = super().get_queryset(request)
+        print('user ->', request.user)
+        if request.user.is_superuser:
+            return qs
+        sucursales = instalador_sucursal.objects.filter(instalador = request.user)
+        if len(sucursales) > 0:
+            qs_result = qs.filter(sucursal = sucursales[0].sucursal_id)
+        else:
+            qs_result = qs.filter(sucursal = -1)
+        
+        return qs_result
     
     list_per_page = 10
