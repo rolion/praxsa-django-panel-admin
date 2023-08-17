@@ -39,7 +39,6 @@ class SalesAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
         qs = super().get_queryset(request)
-        print('user ->', request.user)
         if request.user.is_superuser:
             return qs
         sucursales = instalador_sucursal.objects.filter(instalador = request.user)

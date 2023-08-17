@@ -96,9 +96,10 @@ class Sucursal(models.Model):
 class inventario(models.Model):
     sucursal_id = models.ForeignKey(Sucursal, on_delete=models.DO_NOTHING, verbose_name="Sucursal")
     bobina = models.ForeignKey(Window_Film_Reel, on_delete=models.DO_NOTHING, verbose_name="Bobina")
-    quantity = models.PositiveIntegerField(verbose_name="Bobinas disponibles")
-    to_install = models.PositiveIntegerField(verbose_name="disponible para instalar")
+    quantity = models.PositiveIntegerField(verbose_name="Cantidad")
+    to_install = models.PositiveIntegerField(verbose_name="metros disponible para instalar")
     installed = models.PositiveIntegerField(verbose_name="metros para instalados")
+    date = models.DateTimeField(verbose_name="Fecha", auto_now=True)
 
 class instalador_sucursal(models.Model):
     sucursal_id = models.ForeignKey(Sucursal, on_delete=models.DO_NOTHING, verbose_name="Sucursal")
