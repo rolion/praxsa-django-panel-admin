@@ -59,7 +59,9 @@ export class DataService {
           }
           if(res.model_parts && Array.isArray(res.model_parts)){
             res.model_parts.forEach((part: any) => {
-              model_parts.push(new CarPartItem(part.id, part.part_name, part.width, part.quantity, part.part_id, part.installation_price, part.model_id));
+              let modelPart = new CarPartItem(part.id, part.part_name, part.width, part.quantity, part.part_id, part.installation_price, part.model_id);
+              modelPart.length = part.length;
+              model_parts.push(modelPart);
             })
           }
           let response = {modelos, marca, lamina, model_parts, lamina_price}

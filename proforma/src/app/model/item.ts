@@ -2,6 +2,7 @@ export class CarPartItem{
   id: number;
   part_name: string;
   width: number;
+  length: number;
   quantity: number;
   part_id: number;
   installation_price: number;
@@ -19,6 +20,7 @@ export class CarPartItem{
       this.quantity= quantity;
       this.part_id= part_id;
       this.installation_price= installation_price;
-      this.model_id = model_id
+      this.model_id = model_id;
+      this.length = 0;
   }
   }

@@ -114,15 +114,17 @@ export class FormularioComponent implements OnInit, OnDestroy {
     const selectedModel = this.modelosByMarca.find(item => item.id === +this.selectedModelId);
     if(selectedModel){
       const modelParts = this.getSelectedModelParts();
+      this.invoiceItem = [];
       modelParts.forEach(carPart => {
         let {
           part_name: car_part_name, 
           width, 
+          length,
           quantity, 
           part_id: car_part_id,
           installation_price,
         } = carPart;
-        let length = 0;
+        // let length = 0;
         let price = 0;
         let window_film_id= 0;
         let window_film_name= "";
@@ -139,8 +141,10 @@ export class FormularioComponent implements OnInit, OnDestroy {
           installation_price,
           window_film_price,
         )
+        //proformaItem.length = 
         this.invoiceItem.push(proformaItem);
       });
+      console.log('proforma items ', this.invoiceItem)
     }
   }
 
@@ -148,7 +152,7 @@ export class FormularioComponent implements OnInit, OnDestroy {
     if (reportIndex !== -1){
       this.invoiceItem.splice(reportIndex, 1);
       this.total = 0;
-      this.invoiceItem.forEach(item => this.total += item.price);
+      this.invoiceItem.forEach(item => this.total += item.sub_total);
     }
   }
 
@@ -158,31 +162,34 @@ export class FormularioComponent implements OnInit, OnDestroy {
       const lamina = this.dao.films[laminaIndex - 1];
       let carPartFilmItem = this.invoiceItem[indexReport];
       let {
-        quantity, width ,installation_price,
-      } = carPartFilmItem
+        quantity, width ,installation_price, length
+      } = carPartFilmItem;
+      console.log('car part film item ', carPartFilmItem);
       let {
         filmPrice, totalPrice
-      } = this.getLaminaItemPrice(lamina, width, quantity, installation_price);
-      this.invoiceItem[indexReport].price = totalPrice;
+      } = this.getLaminaItemPrice(lamina, width, length, quantity, installation_price);
+      this.invoiceItem[indexReport].sub_total = totalPrice;
       this.invoiceItem[indexReport].window_film_price = filmPrice;
       this.invoiceItem[indexReport].window_film_id = lamina.id
       this.calculateTotal();
     }else{
-      this.invoiceItem[indexReport].price = 0;
+      this.invoiceItem[indexReport].sub_total = 0;
       this.invoiceItem[indexReport].window_film_price = 0;
       this.invoiceItem[indexReport].window_film_id = 0
     }
     this.calculateTotal();
   }
 
-  getLaminaItemPrice(lamina: Film, carPartWidth: number, filmQuantity: number, carPartInstallationPrice: number){
+  getLaminaItemPrice(lamina: Film, carPartWidth: number, carPartLength: number, itemQuantity: number, carPartInstallationPrice: number){
     let filmPrice = this.dao.getLamninaPriceByWidth(lamina.id, carPartWidth);
-    let totalPrice = filmPrice.price === 0? 0 :(carPartInstallationPrice + filmPrice.price) * filmQuantity;
+    let totalPrice = (carPartLength * itemQuantity * filmPrice.price) + (carPartInstallationPrice *itemQuantity) ;
+    console.log(`part length ${carPartLength}, itemQuantiti ${itemQuantity}, film price ${filmPrice.price}, carpart installation price ${carPartInstallationPrice}`)
+    // let totalPrice = filmPrice.price === 0? 0 :(carPartInstallationPrice + filmPrice.price) * filmQuantity;
     return {'filmPrice': filmPrice.price, totalPrice}
   }
 
   calculateTotal(): void{
-    this.total = this.invoiceItem.reduce((acc, current) =>acc+=current.price,0)
+    this.total = this.invoiceItem.reduce((acc, current) =>acc+=current.sub_total,0)
   }
 
   getInvoice(): Invoice{

@@ -25,6 +25,7 @@ export class ProformaService {
 
   saveProforma(proforma: Invoice): Observable<{id: number}>{
     // let invoice: Invoice
+    console.log('proforma to save ', proforma)
     return this.http
     .post<Invoice>(`${this.base_url}/product/invoice`, proforma, this.httpOptions)
     .pipe(
