@@ -59,6 +59,7 @@ def get_call_info(request):
     car_model_parts = Car_Model_Part.objects.all()
     model_parts = list(map(lambda model_part: {'id': model_part.id, 
                                                'width': model_part.width, 
+                                               'length': model_part.length,
                                                'quantity': model_part.quantity, 
                                                'model_id': model_part.car_model_id.id, 
                                                'part_id': model_part.car_part_id.id,

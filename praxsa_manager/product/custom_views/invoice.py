@@ -20,6 +20,7 @@ class InvoiceView(APIView):
         client = Client.objects.get(user_id = user)
         # import pdb; pdb.set_trace()
         request.data['client_id']= client.id
+        print('data ', request.data)
         serializer = SalesHeaderSerializer(data=request.data)
         if serializer.is_valid():
             invoice = serializer.save()
@@ -36,7 +37,7 @@ class InvoiceView(APIView):
                                                'car_part_name': item.car_part_id.name, 
                                                'width': item.width, 
                                                'length': item.length, 
-                                               'price': item.price, 
+                                               'sub_total': item.price, 
                                                'quantity': item.quantity, 
                                                'window_film_id': item.window_film_id.id, 
                                                'window_film_name': item.window_film_id.name,
