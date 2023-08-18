@@ -40,7 +40,7 @@ export class CarPartFilmItem {
   car_part_name: string;
   width : number;
   length: number;
-  price: number;
+  sub_total: number;
   quantity: number;
   window_film_id: number;
   window_film_name: string;
@@ -52,7 +52,7 @@ export class CarPartFilmItem {
     car_part_name: string,
     width : number,
     length: number,
-    price: number,
+    sub_total: number,
     quantity: number,
     window_film_id: number,
     //window_film_name: string,
@@ -63,7 +63,7 @@ export class CarPartFilmItem {
     this.car_part_name = car_part_name;
     this.width  = width;
     this.length = length;
-    this.price = price;
+    this.sub_total = sub_total;
     this.quantity = quantity;
     this.window_film_id = window_film_id;
     this.window_film_url = '';

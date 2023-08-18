@@ -16,7 +16,8 @@ class SaleDetailSerializer(serializers.ModelSerializer):
             "quantity",
             "window_film_id",
             'installation_price',
-            'window_film_price'
+            'window_film_price',
+            "price"
         ]
         
 class SalesHeaderSerializer(serializers.ModelSerializer):

@@ -14,7 +14,7 @@ class SalesDetailInLine(admin.TabularInline):
               'window_film_price', 
               'installation_price', 
               'quantity', 
-              'sub_total']
+              'price']
     model = Sale_Detail
     min_num = 1
     form = CarModelPartForm

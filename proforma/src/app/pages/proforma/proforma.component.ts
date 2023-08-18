@@ -67,7 +67,7 @@ export class ProformaComponent implements OnInit, OnDestroy {
         const pdfFoot = ['', 'Total', `${this.proforma.total_price.toFixed(2)} Bs`];
         this.proforma.carPartItems.forEach(object => {
           if(object != null){
-            pdfBody.push([object.car_part_name, object.window_film_name,`${object.price.toFixed(2)} Bs` ])
+            pdfBody.push([object.car_part_name, object.window_film_name,`${object.sub_total.toFixed(2)} Bs` ])
           }
         });
         this.pdf.setLogoBase64(this.pdfLogoImg);
