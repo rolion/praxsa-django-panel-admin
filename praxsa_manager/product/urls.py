@@ -5,6 +5,7 @@ from . import views
 from rest_framework.authtoken import views as rf_token
 from .custom_views.auth_token import CustomAuthToken
 from .custom_views.invoice import InvoiceView, ListUserInvoice
+from .custom_views.bobina import BobinaView
 app_name = 'product'
 urlpatterns = [
     # ex: /polls/
@@ -22,6 +23,7 @@ urlpatterns = [
     path('invoice', InvoiceView.as_view()),
     path('invoice/<int:pk>/', InvoiceView.as_view()),
     path('invoice/all', ListUserInvoice.as_view()),
+    path('bobina/<int:pk>', views.get_bobina, name='get_bobina'),
     path('layer/<int:layer_id>', views.get_layer_info, name='get_layer_info')
 ]
 urlpatterns = format_suffix_patterns(urlpatterns)

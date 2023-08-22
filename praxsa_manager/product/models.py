@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from tinymce.models import HTMLField
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
+from .helper.proforma import Proforma_Helper
 
 
 class Car_Brand(models.Model):
@@ -55,7 +56,9 @@ class Window_Film(models.Model):
         return self.name
     
 class Window_Film_Reel(models.Model):
-    window_film_id = models.ForeignKey(Window_Film, on_delete=models.DO_NOTHING, verbose_name="Lamina")
+    window_film_id = models.ForeignKey(Window_Film, 
+                                       on_delete=models.DO_NOTHING, 
+                                       verbose_name="Lamina")
     width = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Ancho")
     length = models.DecimalField(max_digits=10, decimal_places=2,  verbose_name="Largo")
     price = models.DecimalField(max_digits=10, decimal_places=2,  verbose_name="Precio")
@@ -97,22 +100,19 @@ class inventario(models.Model):
     sucursal_id = models.ForeignKey(Sucursal, on_delete=models.DO_NOTHING, verbose_name="Sucursal")
     bobina = models.ForeignKey(Window_Film_Reel, on_delete=models.DO_NOTHING, verbose_name="Bobina")
     quantity = models.PositiveIntegerField(verbose_name="Cantidad")
-    to_install = models.PositiveIntegerField(verbose_name="metros disponible para instalar")
-    installed = models.PositiveIntegerField(verbose_name="metros para instalados")
+    to_install = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="metros disponible para instalar")
+    installed = models.DecimalField(max_digits=10, decimal_places=2, default=0,  verbose_name="metros instalados")
     date = models.DateTimeField(verbose_name="Fecha", auto_now=True)
+    precio_compra_mtr_lineal = models.DecimalField( max_digits=10, decimal_places=2, default=0, verbose_name="Precio Compra Metro Lineal")
+    precio_venta_mtr_lineal = models.DecimalField( max_digits=10, decimal_places=2, default=0, verbose_name="Precio Venta Metro Lineal")
 
 class instalador_sucursal(models.Model):
     sucursal_id = models.ForeignKey(Sucursal, on_delete=models.DO_NOTHING, verbose_name="Sucursal")
     instalador = models.ForeignKey(User, on_delete=models.DO_NOTHING, verbose_name="Instalador")
 
 class Sale_Header(models.Model):
-    req = 'req'
-    apr = 'apr'
-    inst = 'ins'
-    canc = 'can'
-    status = [
-        (req,'Requerido'), (apr,'Aprobado'), (inst,'Instalado'), (canc,'Cancelado')]
-    sales_status = models.CharField(choices=status, default="Requerido", verbose_name='Estado')
+    helper = Proforma_Helper()
+    sales_status = models.CharField(choices=helper.status, default=helper.default_status, verbose_name='Estado')
     date = models.DateTimeField(verbose_name="Fecha")
     client_id = models.ForeignKey(Client, on_delete=models.DO_NOTHING, verbose_name="Cliente")
     name = models.CharField(max_length=400, default=" ", null=False, verbose_name="Nombre Completo")
@@ -126,7 +126,7 @@ class Sale_Header(models.Model):
     total_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Total Pagar")
     
     def clean(self):
-        if self.sales_status == self.inst and self.codigo_garantia is None:
+        if self.sales_status == self.helper.inst and self.codigo_garantia is None:
             raise ValidationError({"codigo_garantia": _("porfavor agregue el codigo de garantia")})
     
     class Meta:
@@ -138,12 +138,11 @@ class Sale_Detail(models.Model):
     car_part_id = models.ForeignKey(Car_Part, on_delete=models.DO_NOTHING, null=True, verbose_name="Item")
     width = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Ancho" )
     length = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Largo")
-    price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Precio")
+    sub_total = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Sub Total")
     installation_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Costo Instalación")
     window_film_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Costo Lámina")
     quantity = models.PositiveIntegerField(default=0, verbose_name="Cantidad")
     window_film_id = models.ForeignKey(Window_Film, on_delete=models.DO_NOTHING, verbose_name="Lámina", null=True)
-    sub_total = models.DecimalField(max_digits=10, decimal_places=2, default=0,verbose_name="Sub Total")
     class Meta:
         verbose_name = 'Detalle Venta'
 

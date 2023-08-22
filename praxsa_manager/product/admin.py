@@ -11,6 +11,7 @@ from .admin_config.window_film import WindowFilm
 from .admin_config.window_film_reel import WindowFilmReel
 from .admin_config.window_film_reel_storage import WindowFilmReelStorage
 from .admin_config.sales_admin import SalesAdmin
+from .admin_config.inventory import InventoryAdmin
 
 # admin.site.disable_action("delete_selected")
 admin.site.register(Car_Brand, CarBrand)
@@ -18,7 +19,7 @@ admin.site.register(Car_Model, CarModel)
 admin.site.register(Car_Model_Part, CarModelPart)
 admin.site.register(Car_Part)
 admin.site.register(Sucursal)
-admin.site.register(inventario)
+admin.site.register(inventario, InventoryAdmin)
 admin.site.register(instalador_sucursal)
 admin.site.register(Window_Film, WindowFilm)
 admin.site.register(Window_Film_Reel, WindowFilmReel)

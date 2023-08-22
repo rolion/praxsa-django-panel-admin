@@ -4,7 +4,7 @@ from django.db.models.query import QuerySet
 from django.http.request import HttpRequest
 from ..models import Sale_Detail, instalador_sucursal
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
-from ..forms import CarModelPartForm
+from ..Forms.car_model_part import CarModelPartForm
 
 class SalesDetailInLine(admin.TabularInline):
     fields = ['car_part_id', 
@@ -13,8 +13,8 @@ class SalesDetailInLine(admin.TabularInline):
               'length', 
               'window_film_price', 
               'installation_price', 
-              'quantity', 
-              'price']
+              'quantity',
+              'sub_total']
     model = Sale_Detail
     min_num = 1
     form = CarModelPartForm

@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.http.response import JsonResponse
+from django.http.response import JsonResponse, HttpResponseBadRequest
 from django.template import loader
 from .models import Car_Model_Part, Window_Film_Reel, Car_Brand, Car_Model, Car_Part, Window_Film
 from rest_framework import status
@@ -8,6 +8,10 @@ from rest_framework.response import Response
 from rest_framework import permissions
 from .serializer.client_serializer import ClientSerializer
 from django.db import transaction
+from rest_framework import status
+from .models import Window_Film_Reel
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
+
 
 from django.http import HttpResponse
 
@@ -20,6 +24,23 @@ def index(request):
     }
     # return HttpResponse(template.render(context, request))
     return render(request, "product/index.html", context)
+
+def get_bobina(request, pk):
+    try:
+            bobina = Window_Film_Reel.objects.get(id = pk)
+            # return Response(data = {'bobina': bobina}  , status=status.HTTP_200_OK)
+            return JsonResponse(data={'bobina': {
+                'window_film_id': bobina.window_film_id.id,
+                'width': bobina.width,
+                'length': bobina.length,
+                'price': bobina.price
+            }
+                              }, safe=False)
+
+    except ObjectDoesNotExist:
+            return HttpResponseBadRequest(data='not found', status=status.HTTP_404_NOT_FOUND)
+    except MultipleObjectsReturned:
+            return HttpResponseBadRequest(data='not found', status=status.HTTP_409_CONFLICT)
 
 def get_car_part_info(request, car_model_id):
     car_part = Car_Model_Part.objects.select_related("car_part_id").filter(car_model_id = car_model_id)
