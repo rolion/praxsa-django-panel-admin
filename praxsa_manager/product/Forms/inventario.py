@@ -6,14 +6,19 @@ from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 
 class InventarioForm(ModelForm):
 
-    def clean(self):
+    def clean_to_install(self):
         cleaned_data = super().clean()
         to_install = cleaned_data.get("to_install")
-        quantity = cleaned_data.get("quantity")
+        if to_install.compare(0) == -1: # to install < 0
+            raise ValidationError("no puede ser negativo!")
+        return True
+        
+    def clean_installed(self):
+        cleaned_data = super().clean()
         installed = cleaned_data.get("installed")
-        if to_install < installed:
-            self.add_error("los metros disponibles no pueden ser menor a los metros instalados")
-
+        if installed.compare(0) == -1: # installed < 0
+            raise ValidationError("no puede ser negativo!")
+        return True
     class Meta:
         model = inventario
         fields = "__all__"

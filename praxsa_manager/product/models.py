@@ -93,11 +93,13 @@ class Sucursal(models.Model):
     name = models.CharField(max_length=20, default=" ", null=False, verbose_name="Nombre")
     address = models.CharField(max_length=400, default=" ", null=False, verbose_name="direccion")
     enable_to_install_windows_film = models.BooleanField(default=True, verbose_name="Habilitado")
+    empleado = models.ManyToManyField(User, verbose_name='Emopleados')
+    # administrador = models.ManyToManyField(User, verbose_name='Admin Sucursal')
     def __str__(self):
         return f'{self.name}'
 
 class inventario(models.Model):
-    sucursal_id = models.ForeignKey(Sucursal, on_delete=models.DO_NOTHING, verbose_name="Sucursal")
+    sucursal = models.ForeignKey(Sucursal, on_delete=models.DO_NOTHING, verbose_name="Sucursal")
     bobina = models.ForeignKey(Window_Film_Reel, on_delete=models.DO_NOTHING, verbose_name="Bobina")
     quantity = models.PositiveIntegerField(verbose_name="Cantidad")
     to_install = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="metros disponible para instalar")
@@ -106,9 +108,9 @@ class inventario(models.Model):
     precio_compra_mtr_lineal = models.DecimalField( max_digits=10, decimal_places=2, default=0, verbose_name="Precio Compra Metro Lineal")
     precio_venta_mtr_lineal = models.DecimalField( max_digits=10, decimal_places=2, default=0, verbose_name="Precio Venta Metro Lineal")
 
-class instalador_sucursal(models.Model):
-    sucursal_id = models.ForeignKey(Sucursal, on_delete=models.DO_NOTHING, verbose_name="Sucursal")
-    instalador = models.ForeignKey(User, on_delete=models.DO_NOTHING, verbose_name="Instalador")
+# class instalador_sucursal(models.Model):
+#     sucursal_id = models.ForeignKey(Sucursal, on_delete=models.DO_NOTHING, verbose_name="Sucursal")
+#     instalador = models.ForeignKey(User, on_delete=models.DO_NOTHING, verbose_name="Instalador")
 
 class Sale_Header(models.Model):
     helper = Proforma_Helper()
@@ -124,7 +126,7 @@ class Sale_Header(models.Model):
     phone_number = models.CharField(validators=[RegexValidator('(\+)*\d{7,11}')], default="", verbose_name="Numero Telefónico")
     car_model_id = models.ForeignKey(Car_Model, on_delete=models.DO_NOTHING, verbose_name="Modelo")
     total_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Total Pagar")
-    
+    is_delete = models.BooleanField(default=False)
     def clean(self):
         if self.sales_status == self.helper.inst and self.codigo_garantia is None:
             raise ValidationError({"codigo_garantia": _("porfavor agregue el codigo de garantia")})
@@ -143,6 +145,7 @@ class Sale_Detail(models.Model):
     window_film_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Costo Lámina")
     quantity = models.PositiveIntegerField(default=0, verbose_name="Cantidad")
     window_film_id = models.ForeignKey(Window_Film, on_delete=models.DO_NOTHING, verbose_name="Lámina", null=True)
+    
     class Meta:
         verbose_name = 'Detalle Venta'
 

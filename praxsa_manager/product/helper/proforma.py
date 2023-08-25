@@ -1,6 +1,6 @@
+
 class Proforma_Helper:
 
-    
     def __init__(self):
         self.req = 'req'
         self.apr = 'apr'
@@ -8,5 +8,6 @@ class Proforma_Helper:
         self.canc = 'can'
         self.status = [(self.req,'Requerido'), (self.apr,'Aprobado'), (self.inst,'Instalado'), (self.canc,'Cancelado')]
         self.default_status = self.req
+
 
         

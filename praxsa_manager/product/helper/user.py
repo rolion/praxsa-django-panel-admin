@@ -1,9 +1,18 @@
 class User_Helper():
 
-    def is_user_admin(self, user):
-        user_groups = user.groups.values_list('name',flat = True)
+    def to_lowercase(self, groups):
+        return list(map(lambda group: group.lower(), groups))
+
+    def is_request_user_admin(self, user):
+        user_groups = self.to_lowercase(list(user.groups.values_list('name',flat = True)))
+        print('group ', user_groups)
         return 'admin' in list(user_groups)
     
-    def is_user_installer(self, user):
-        user_groups = user.groups.values_list('name',flat = True)
+    def is_request_user_installer(self, user):
+        user_groups = self.to_lowercase(list(user.groups.values_list('name',flat = True)))
+        print('group ', user_groups)
         return 'instalador' in list(user_groups)
+    
+    def is_request_user_supervisor(self, user):
+        user_groups = self.to_lowercase(list(user.groups.values_list('name',flat = True)))
+        return 'supervisor' in list(user_groups)
