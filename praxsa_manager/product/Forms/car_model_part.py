@@ -29,7 +29,6 @@ class CarModelPartForm(ModelForm):
     def is_inventory_valid(self, sucursal, lamina, mtr_to_install, width):
         print('metod is inventory valid, sucursal ', sucursal)
         return self.inv_helper.get_bobina_by_sucursal_lamina_width(sucursal_id=sucursal, lamina_id=lamina,width=width, length_to_sell= mtr_to_install )
-        
     
     def clean(self):
         cleaned_data = super().clean()

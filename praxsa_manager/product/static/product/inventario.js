@@ -49,6 +49,7 @@ jQuery(function($){
             }
         }
         if (is_bobina_selected()){
+            console.log('bobina was selected')
             get_bobina_information();
         }
     })})

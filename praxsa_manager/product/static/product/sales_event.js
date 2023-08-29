@@ -151,7 +151,6 @@ jQuery(function($){
 
         }
         function add_window_film_event(){
-            // document.getElementsByTagName('tbody')[3].addEventListener('change', function(e){
             document.querySelector("#items-group > div > fieldset > table").addEventListener('change', function(e){
                 if(e.target && e.target.matches('table tbody td.field-window_film_id select')){
                     let selected_film_id = parseInt($(e.target).val())

@@ -1,3 +1,4 @@
+from ..models import Sucursal
 class User_Helper():
 
     def to_lowercase(self, groups):
@@ -5,12 +6,11 @@ class User_Helper():
 
     def is_request_user_admin(self, user):
         user_groups = self.to_lowercase(list(user.groups.values_list('name',flat = True)))
-        print('group ', user_groups)
+        
         return 'admin' in list(user_groups)
     
     def is_request_user_installer(self, user):
         user_groups = self.to_lowercase(list(user.groups.values_list('name',flat = True)))
-        print('group ', user_groups)
         return 'instalador' in list(user_groups)
     
     def is_request_user_supervisor(self, user):

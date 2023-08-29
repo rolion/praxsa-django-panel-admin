@@ -5,6 +5,9 @@ class Proforma_Business:
     def __init__(self) -> None:
         self.helper = Proforma_Helper()
 
+    def get_proforma_by_id(self, id):
+        return Sale_Header.objects.get(pk = id)
+
     def delete_proforma(self, user, proforma):
         if proforma.sales_status == self.helper.req  :
             proforma.is_delete = True
