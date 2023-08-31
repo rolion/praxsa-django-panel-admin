@@ -1,4 +1,4 @@
-from ..models import Sale_Header, Sucursal
+from ..models import Sale_Header, Sucursal, Sale_Detail
 from ..helper.proforma import Proforma_Helper
 class Proforma_Business:
 
@@ -18,13 +18,30 @@ class Proforma_Business:
                 raise Exception('algo sali mal, contactar administrador')
         raise Exception('no se puede eliminar una proforma aprobada o instalada')
     
+    def delete_fisica(self, user, proforma):
+        try:
+            if user.is_superuser:
+                Sale_Detail.objects.filter(sales_header_id = proforma).delete()
+                return proforma.delete()
+            else:
+                print(f'user ${user.username} intento borrar una proforma ${proforma.id}')
+        except Exception as e:
+            print('algo salio mal ->>', str(e))
+            raise Exception('algo sali mal, contactar administrador')
+        raise Exception('no se puede eliminar una proforma aprobada o instalada')
+    
     def get_proforma_queryset_by_role(self, user, qs):
-        if user.is_superuser:
-            return qs.filter(is_delete = False)
-        sucursales = Sucursal.objects.filter(empleado__id = user.id)
-        if len(sucursales) > 0:
-            qs_result = qs.filter(sucursal__id = sucursales[0].id, is_delete = False)
-        else:
-            qs_result = qs.filter(sucursal = -1)
-        
-        return qs_result
+        try:
+            sucursales = Sucursal.objects.prefetch_related('empleado').filter(empleado__id = user.id, enable_to_install_windows_film = True)
+            # if user.is_superuser:
+            #     return qs.filter(is_delete = False)
+            sucursales = Sucursal.objects.prefetch_related('empleado').filter(empleado__id = user.id, enable_to_install_windows_film = True)
+            if len(sucursales) > 0:
+                qs_result = qs.select_related('sucursal').filter(sucursal__id = sucursales[0].id, is_delete = False)
+            else:
+                qs_result = None
+            return qs_result
+        except Exception as e:
+            print('algo salio mal, Proforma_Business - get_proforma_queryset_by_role', str(e))
+            return None
+            

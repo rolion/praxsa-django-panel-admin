@@ -11,7 +11,7 @@ from django.db import transaction
 from rest_framework import status
 from .models import Window_Film_Reel
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
-
+from .business.inventario import Inventario_Business
 
 from django.http import HttpResponse
 
@@ -42,7 +42,9 @@ def get_bobina(request, pk):
     except MultipleObjectsReturned:
             return HttpResponseBadRequest(data='not found', status=status.HTTP_409_CONFLICT)
 
-def get_car_part_info(request, car_model_id):
+def get_car_part_info(request, car_model_id, sucursal_id):
+    inv_Business = Inventario_Business()
+    inventario = inv_Business.get_inventory_by_sucursal(sucursal=sucursal_id)
     car_part = Car_Model_Part.objects.select_related("car_part_id").filter(car_model_id = car_model_id)
     items = list(map(lambda part: {'part_id': part.car_part_id.id, 
                                    'name': part.car_part_id.name, 
@@ -51,13 +53,13 @@ def get_car_part_info(request, car_model_id):
                                    'length': part.length, 
                                    'installation_price': part.installation_price
                                    }, car_part))
-    films = Window_Film_Reel.objects.select_related('window_film_id').all()
-    window_film = list(map(lambda film: {'name': film.window_film_id.name, 
-                                         'reel_id':film.id, 
-                                         'price': film.price, 
-                                         'film_id': film.window_film_id.id, 
-                                         'width': film.width
-                                         }, films ))
+    
+    window_film = list(map(lambda inv: {'name': inv.bobina.window_film_id.name, 
+                                         'reel_id':inv.bobina.id, 
+                                         'price': inv.precio_venta_mtr_lineal, 
+                                         'film_id': inv.bobina.window_film_id.id, 
+                                         'width': inv.bobina.width
+                                         }, inventario ))
     return JsonResponse(data={'items': items, 
                               'window_film': window_film
                               }, safe=False)

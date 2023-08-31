@@ -11,14 +11,14 @@ class InventarioForm(ModelForm):
         to_install = cleaned_data.get("to_install")
         if to_install.compare(0) == -1: # to install < 0
             raise ValidationError("no puede ser negativo!")
-        return True
+        return to_install
         
     def clean_installed(self):
         cleaned_data = super().clean()
         installed = cleaned_data.get("installed")
         if installed.compare(0) == -1: # installed < 0
             raise ValidationError("no puede ser negativo!")
-        return True
+        return installed
     class Meta:
         model = inventario
         fields = "__all__"

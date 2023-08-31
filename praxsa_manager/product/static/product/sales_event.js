@@ -13,8 +13,13 @@ jQuery(function($){
         function get_item_by_id(id){
             return items.find(item => item.part_id == id)
         }
-        function get_windows_film_by_id(id){
-            return window_films.find(film => film.film_id == id)
+
+        function get_sale_type_element(id){
+            return $('select[name="sales_type"]')
+        }
+
+        function get_sucursal_element(id){
+            return $('select[name="sucursal"]')
         }
         function get_width_element_in_row(brother_selector){
             let parent = $(brother_selector).parents("tr")
@@ -78,15 +83,16 @@ jQuery(function($){
             });
         }
 
-        function loadCarInfo(carModelId){
+        function loadCarInfo(carModelId, sucursalId){
             if(!isNaN(carModelId)){
                 $.ajax({
-                    url: '/product/get_car_part_info/'+carModelId,
+                    url: '/product/get_car_part_info/'+carModelId+'/'+sucursalId,
                     type:"GET",
                     success: function(result) {
                         items = result.items;
                         window_films = result.window_film;
                         console.log('items ', items);
+                        console.log('window films', window_films)
                         if (items){
                             add_car_part_event()
                             add_window_film_event()
@@ -96,21 +102,30 @@ jQuery(function($){
                 })
             }
         }
-
+        function is_sale_instalation_type(){
+            return get_sale_type_element().val() === 'venta_instalacion'
+        }
         function disable_sale_detail_elements(){
             $('td.field-width input').prop('readonly', true)
-            $('td.field-length input').prop('readonly', true)
             $('td.field-quantity input').prop('readonly', true)
             $('td.field-window_film_price input').prop('readonly', true)
             $('td.field-installation_price input').prop('readonly', true)
             $('td.field-sub_total input').prop('readonly', true)
+            $('td.field-car_part_id > select').prop('disabled', false)
+            if(is_sale_instalation_type()){
+                $('td.field-length input').prop('readonly', true)
+            }else {
+                $('td.field-length input').prop('readonly', false)
+                $('td.field-car_part_id select').prop('disabled', true)
+            }
         }
 
         function onLoad(){
             let selectedModel = get_car_model_element();
+            let user_sucursal = get_sucursal_element();
             disable_sale_detail_elements()
-            if(selectedModel && !isNaN(selectedModel.val())){
-                loadCarInfo(selectedModel.val())
+            if(selectedModel && user_sucursal && !isNaN(selectedModel.val()) && !isNaN(user_sucursal.val())){
+                loadCarInfo(selectedModel.val(), user_sucursal.val())
             }
         }
 
@@ -150,21 +165,46 @@ jQuery(function($){
             })
 
         }
+
+        function set_sale_instalation_values(){}
+        function set_film_length_sale(){}
         function add_window_film_event(){
             document.querySelector("#items-group > div > fieldset > table").addEventListener('change', function(e){
                 if(e.target && e.target.matches('table tbody td.field-window_film_id select')){
+                    console.log('cambio la lamina');
+                    let sale_type = get_sale_type_element();
                     let selected_film_id = parseInt($(e.target).val())
-                    let select_part = get_car_part_element_in_row(e.target)
-                    let itemWidth = get_width_element_in_row(e.target);
-                    let filmPrice =getWindowFilmPriceByWidth(itemWidth.val(), selected_film_id);
-                    let car_part = get_item_by_id(select_part.val())
-                    get_price_element_in_row(e.target).val(filmPrice)
-                    get_installation_price_element_in_row(e.target).val(car_part.installation_price)
-                    let subtotal = (filmPrice + parseFloat(car_part.installation_price))* car_part.quantity
-                    get_sub_total_element_in_row(e.target).val(subtotal)
-                    sum_all_price()
+                    if (is_sale_instalation_type()){
+                        let select_part = get_car_part_element_in_row(e.target)
+                        let itemWidth = get_width_element_in_row(e.target);
+                        let filmPrice =getWindowFilmPriceByWidth(itemWidth.val(), selected_film_id);
+                        let car_part = get_item_by_id(select_part.val())
+                        get_price_element_in_row(e.target).val(filmPrice)
+                        get_installation_price_element_in_row(e.target).val(car_part.installation_price)
+                        let subtotal = (filmPrice + parseFloat(car_part.installation_price))* car_part.quantity
+                        get_sub_total_element_in_row(e.target).val(subtotal)
+                        sum_all_price()
+                    }else{
+                        let filmReel = getFilmReel(selected_film_id);
+                        if (filmReel){
+                            get_width_element_in_row(e.target).val(filmReel.width)
+                            get_price_element_in_row(e.target).val(filmReel.price)
+                            let lengthElement = get_length_element_in_row(e.target)
+                            lengthElement.on('change', (e)=>{
+                                let subtotal = parseFloat($(e.target).val()) * filmReel.price;
+                                get_sub_total_element_in_row(e.target).val(subtotal)
+                                sum_all_price()
+                            })
+                        }
+                        
+                    }
+                    
                 }
             })
+        }
+
+        function getFilmReel(filmId){
+            return  window_films.find(reel_film => reel_film.film_id == filmId)
         }
         function getWindowFilmPriceByWidth(itemWidth, filmId){
            let price = 0;
@@ -193,8 +233,19 @@ jQuery(function($){
            return parseFloat(price);
         }
         $('select[name="car_model_id"]').change(function(){
-            loadCarInfo($(this).val());
+            // loadCarInfo($(this).val(), get_sucursal_element().val());
+            onLoad()
         })
+
+        $('select[name="sucursal"]').change(function(){
+            // loadCarInfo($(this).val(), get_sucursal_element().val());
+            onLoad()
+        })
+        $('select[name="sales_type"]').change(function(){
+            // loadCarInfo($(this).val(), get_sucursal_element().val());
+            disable_sale_detail_elements()
+        })
+
 
         document.addEventListener('formset:added', (event) => {
             if(items.length > 0){

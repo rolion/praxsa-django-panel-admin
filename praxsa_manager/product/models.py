@@ -69,7 +69,7 @@ class Window_Film_Reel(models.Model):
         verbose_name = 'Bobina'
         
     def __str__(self):
-        return self.window_film_id.name
+        return f'{self.window_film_id.name} - {self.width}'
     
 class Window_Film_Reel_Storage(models.Model):
     window_film_reel_id = models.ForeignKey(Window_Film_Reel, on_delete=models.DO_NOTHING, verbose_name="Bobina")
@@ -132,9 +132,6 @@ class Sale_Header(models.Model):
     car_model_id = models.ForeignKey(Car_Model, on_delete=models.DO_NOTHING, verbose_name="Modelo")
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Total Pagar")
     is_delete = models.BooleanField(default=False)
-    def clean(self):
-        if self.sales_status == self.helper.inst and self.codigo_garantia is None:
-            raise ValidationError({"codigo_garantia": _("porfavor agregue el codigo de garantia")})
     
     class Meta:
         verbose_name = 'Proforma'

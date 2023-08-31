@@ -8,7 +8,7 @@ from ..Forms.inventario import InventarioForm
     
 class InventoryAdmin(admin.ModelAdmin):
     list_display = ['sucursal', 
-                    'bobina',
+                    'get_bobina_name',
                     'get_bobina_width',
                     'quantity',
                     'to_install',
@@ -25,8 +25,13 @@ class InventoryAdmin(admin.ModelAdmin):
     get_bobina_width.short_description = 'Ancho Bobina'
     get_bobina_width.admin_order_field = 'bobina__width'
 
+    def get_bobina_name(self, obj):
+        return obj.bobina.window_film_id.name
+    get_bobina_name.short_description = 'Lamina'
+    get_bobina_name.admin_order_field = 'bobina__window_film_id__name'
+
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
-        qs = super().get_queryset(request)
+        qs = super().get_queryset(request).select_related('bobina', "sucursal", "bobina__window_film_id")
         helper = User_Helper()
 
         if request.user.is_superuser or helper.is_request_user_admin(request.user):
@@ -45,7 +50,7 @@ class InventoryAdmin(admin.ModelAdmin):
         if request.user.is_superuser or helper.is_request_user_admin(request.user):
             self.list_display = [
                     'sucursal', 
-                    'bobina',
+                    'get_bobina_name',
                     'get_bobina_width',
                     'quantity',
                     'to_install',
@@ -62,7 +67,7 @@ class InventoryAdmin(admin.ModelAdmin):
             self.readonly_fields = []
         elif helper.is_request_user_supervisor(request.user):
             self.list_display = [ 
-                    'bobina',
+                    'get_bobina_name',
                     'get_bobina_width',
                     'quantity',
                     'to_install',

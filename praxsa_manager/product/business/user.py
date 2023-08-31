@@ -11,12 +11,12 @@ class User_Business:
     def get_user_sucursal(self, username):
         try:
             user_account = User.objects.get(username = username)
-            sucursal = Sucursal.objects.filter(empleado__id = user_account.id)
+            sucursal = Sucursal.objects.filter(empleado__id = user_account.id, enable_to_install_windows_film = True )
             if len(sucursal) > 0:
                 return sucursal[0]
             return None
         except ObjectDoesNotExist:
-            print('get_user_sucursal ')
+            print('get_user_sucursal - ObjectDoesNotExist ')
             return None
         except FieldError as e:
             print(str(e))

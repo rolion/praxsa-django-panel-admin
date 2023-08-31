@@ -2,7 +2,8 @@ from django.contrib import admin
 from ..models import Car_Model_Part
 class CarPartInLine(admin.TabularInline):
     model = Car_Model_Part
-    min_num = 1
+    max = 1
+    extra = 0
     # form = CarModelPartForm
 
     
