@@ -26,12 +26,12 @@ class InventoryAdmin(admin.ModelAdmin):
     get_bobina_width.admin_order_field = 'bobina__width'
 
     def get_bobina_name(self, obj):
-        return obj.bobina.window_film_id.name
+        return obj.bobina.window_film.name
     get_bobina_name.short_description = 'Lamina'
-    get_bobina_name.admin_order_field = 'bobina__window_film_id__name'
+    get_bobina_name.admin_order_field = 'bobina__window_film__name'
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
-        qs = super().get_queryset(request).select_related('bobina', "sucursal", "bobina__window_film_id")
+        qs = super().get_queryset(request).select_related('bobina', "sucursal", "bobina__window_film")
         helper = User_Helper()
 
         if request.user.is_superuser or helper.is_request_user_admin(request.user):

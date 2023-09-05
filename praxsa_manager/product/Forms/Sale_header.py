@@ -9,9 +9,12 @@ class SaleHeaderForm(ModelForm):
 
     helper = Proforma_Helper()
     
-    def clean_codigo_garantia(self):
-        status = self.cleaned_data['sales_status']
-        if (status == self.helper.inst or status == self.helper.apr) and self.cleaned_data['codigo_garantia'] is None:
+    # def clean_codigo_garantia(self):
+        
+    def clean(self):
+        cleaned_data = super().clean()
+        status = cleaned_data.get('sales_status')
+        if (status == self.helper.nov) and self.cleaned_data['codigo_garantia'] is None:
             raise ValidationError("porfavor agregue el codigo de garantia")
         return self.cleaned_data['codigo_garantia']
     

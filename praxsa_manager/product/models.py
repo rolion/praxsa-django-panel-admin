@@ -56,7 +56,7 @@ class Window_Film(models.Model):
         return self.name
     
 class Window_Film_Reel(models.Model):
-    window_film_id = models.ForeignKey(Window_Film,
+    window_film = models.ForeignKey(Window_Film,
                                        related_name="bobina_lamina",
                                        on_delete=models.DO_NOTHING, 
                                        verbose_name="Lamina")
@@ -65,11 +65,11 @@ class Window_Film_Reel(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2,  verbose_name="Precio")
     quantity = models.PositiveIntegerField(verbose_name="Cantidad")
     class Meta:
-        ordering = ['window_film_id']
+        ordering = ['window_film']
         verbose_name = 'Bobina'
         
     def __str__(self):
-        return f'{self.window_film_id.name} - {self.width}'
+        return f'{self.window_film.name} - {self.width}'
     
 class Window_Film_Reel_Storage(models.Model):
     window_film_reel_id = models.ForeignKey(Window_Film_Reel, on_delete=models.DO_NOTHING, verbose_name="Bobina")
@@ -109,7 +109,7 @@ class inventario(models.Model):
     precio_compra_mtr_lineal = models.DecimalField( max_digits=10, decimal_places=2, default=0.0, verbose_name="Precio Compra Metro Lineal")
     precio_venta_mtr_lineal = models.DecimalField( max_digits=10, decimal_places=2, default=0.0, verbose_name="Precio Venta Metro Lineal")
     def __str__(self):
-        return f'{self.sucursal.name}-{self.bobina.window_film_id} '
+        return f'{self.sucursal.name}-{self.bobina.window_film.name} '
 
 
 # class instalador_sucursal(models.Model):
@@ -120,40 +120,45 @@ class Sale_Header(models.Model):
     helper = Proforma_Helper()
     sales_status = models.CharField(choices=helper.status, default=helper.default_status, verbose_name='Estado')
     sales_type = models.CharField(choices=helper.tipo_venta, default=helper.tipo_venta_instalacion, verbose_name='Tipo Venta')
-    date = models.DateTimeField(verbose_name="Fecha")
-    client_id = models.ForeignKey(Client, on_delete=models.DO_NOTHING, verbose_name="Cliente")
+    is_paid = models.BooleanField(default=False)
+    proforma_created_on = models.DateTimeField(verbose_name="Fecha Proforma", auto_now=True)
+    nota_venta_created_on = models.DateTimeField(verbose_name="Fecha Nota Venta", null=True, blank=True)
+    is_nota_venta_canceled = models.BooleanField(default=False)
+    is_nota_venta_refund = models.BooleanField(default=False)
     name = models.CharField(max_length=400, default=" ", null=False, verbose_name="Nombre Completo")
-    sucursal = models.ForeignKey(Sucursal, on_delete=models.DO_NOTHING,blank=True, null=True, verbose_name="Sucursal")
     email = models.CharField(validators=[EmailValidator()], null=True,verbose_name="Email")
     ci_nit = models.CharField(validators=[RegexValidator('\d*')],null=True, verbose_name="CI/NIT")
-    codigo_garantia = models.CharField(null=True, blank=True, verbose_name="Codigo Garantia", max_length=12, unique=True)
     car_plate = models.CharField(max_length=10, default="", null=True, verbose_name="Placa Auto")
     phone_number = models.CharField(validators=[RegexValidator('(\+)*\d{7,11}')], default="", verbose_name="Numero Telefónico")
+    sucursal = models.ForeignKey(Sucursal, on_delete=models.DO_NOTHING,blank=True, null=True, verbose_name="Sucursal")
+    codigo_garantia = models.CharField(null=True, blank=True, verbose_name="Codigo Garantia", max_length=12, unique=True)
     car_model_id = models.ForeignKey(Car_Model, on_delete=models.DO_NOTHING, verbose_name="Modelo")
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Total Pagar")
     is_delete = models.BooleanField(default=False)
     
     class Meta:
-        verbose_name = 'Proforma'
+        verbose_name = 'Venta'
+        ordering = ["-id","-proforma_created_on","-nota_venta_created_on"]
 
     def __str__(self) -> str:
-        return f'Proforma {self.id}'
+        prefijo = 'Proforma' if self.sales_status == self.helper.prof else 'Nota Venta'
+        return f'{prefijo} {self.id}'
     
     
 class Sale_Detail(models.Model):
-    sales_header_id = models.ForeignKey(Sale_Header, related_name='items', on_delete=models.DO_NOTHING, verbose_name="Proforma")
-    car_part_id = models.ForeignKey(Car_Part, on_delete=models.DO_NOTHING, blank=True, null=True, verbose_name="Item")
+    helper = Proforma_Helper()
+    sales_header = models.ForeignKey(Sale_Header, related_name='items', on_delete=models.DO_NOTHING, verbose_name="Proforma")
+    car_part = models.ForeignKey(Car_Part, on_delete=models.DO_NOTHING, blank=True, null=True, verbose_name="Item")
     width = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Ancho" )
     length = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Largo")
     sub_total = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Sub Total")
     installation_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Costo Instalación")
     window_film_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Costo Lámina")
     quantity = models.PositiveIntegerField(default=0, verbose_name="Cantidad")
-    window_film_id = models.ForeignKey(Window_Film, on_delete=models.DO_NOTHING, verbose_name="Lámina", null=True)
-    
+    window_film = models.ForeignKey(Window_Film, on_delete=models.DO_NOTHING, verbose_name="Lámina", null=True)
     class Meta:
         verbose_name = 'Detalle Venta'
     
     def __str__(self) -> str:
-        return f'Detalle Proforma {self.car_part_id}'
+        return f'Detalle'
 

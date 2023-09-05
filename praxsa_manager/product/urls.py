@@ -18,6 +18,7 @@ urlpatterns = [
     # path("<int:window_film_id>/window_film/", views.window_film, name="window_film"),
     path('get_car_part_info/<int:car_model_id>/<int:sucursal_id>', views.get_car_part_info, name= 'get_car_part_info'),
     path('get_call_info', views.get_call_info, name='get_call_info'),
+    path('get_inventory/<int:sucursal_id>', views.get_inventory, name='get_inventory'),
     path('create_client', views.create_client, name='create_client'),
     path('api-token-auth/', CustomAuthToken.as_view()),
     path('invoice', InvoiceView.as_view()),

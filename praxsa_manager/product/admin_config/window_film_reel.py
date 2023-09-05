@@ -4,7 +4,7 @@ from ..models import Window_Film_Reel_Storage
 from ..models import Window_Film_Reel
     
 class WindowFilmReel(admin.ModelAdmin):
-    list_display = ['window_film_id', 
+    list_display = ['window_film', 
                     'width',
                     'length',
                     'price',

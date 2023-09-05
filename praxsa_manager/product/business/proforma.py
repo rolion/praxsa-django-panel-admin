@@ -18,6 +18,27 @@ class Proforma_Business:
                 raise Exception('algo sali mal, contactar administrador')
         raise Exception('no se puede eliminar una proforma aprobada o instalada')
     
+    def abrir_proforma(self, proforma):
+        if proforma.sales_status is not self.helper.nov:
+            try:
+                proforma.sales_status = self.helper.prof
+                return proforma.save()
+            except Exception as e:
+                print('algo salio mal ->>', str(e))
+                raise Exception('algo salio mal, contactar administrador')
+    def crear_nota_venta(self, proforma):
+        if proforma.sales_status == self.helper.prof:
+            try:
+                ## todo validar inventario
+                ## si el inventario es valido, descontar del inventario
+                proforma.sales_status = self.helper.nov
+                return proforma.save()
+            except Exception as e:
+                print('algo salio mal ->>', str(e))
+                raise Exception('algo salio mal, contactar administrador')
+        else:
+            raise Exception('la proforma debe estar cerrada antes de crear la nota de venta')
+    
     def delete_fisica(self, user, proforma):
         try:
             if user.is_superuser:

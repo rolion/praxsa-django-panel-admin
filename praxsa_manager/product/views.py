@@ -9,7 +9,7 @@ from rest_framework import permissions
 from .serializer.client_serializer import ClientSerializer
 from django.db import transaction
 from rest_framework import status
-from .models import Window_Film_Reel
+from .models import Window_Film_Reel, inventario
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from .business.inventario import Inventario_Business
 
@@ -27,10 +27,10 @@ def index(request):
 
 def get_bobina(request, pk):
     try:
-            bobina = Window_Film_Reel.objects.get(id = pk)
+            bobina = Window_Film_Reel.objects.select_related('window_film').get(id = pk)
             # return Response(data = {'bobina': bobina}  , status=status.HTTP_200_OK)
             return JsonResponse(data={'bobina': {
-                'window_film_id': bobina.window_film_id.id,
+                'window_film': bobina.window_film.id,
                 'width': bobina.width,
                 'length': bobina.length,
                 'price': bobina.price
@@ -53,21 +53,42 @@ def get_car_part_info(request, car_model_id, sucursal_id):
                                    'length': part.length, 
                                    'installation_price': part.installation_price
                                    }, car_part))
+    widths = inv_Business.get_inventory_window_film_reel_widths(request.user)
+    inv_width = list(map(lambda w: w, widths.values_list('width', flat=True)))
     
-    window_film = list(map(lambda inv: {'name': inv.bobina.window_film_id.name, 
+    window_film = list(map(lambda inv: {'name': inv.bobina.window_film.name, 
                                          'reel_id':inv.bobina.id, 
                                          'price': inv.precio_venta_mtr_lineal, 
-                                         'film_id': inv.bobina.window_film_id.id, 
+                                         'film_id': inv.bobina.window_film.id, 
                                          'width': inv.bobina.width
                                          }, inventario ))
     return JsonResponse(data={'items': items, 
-                              'window_film': window_film
+                              'window_film': window_film,
+                              'inv_widths': inv_width
                               }, safe=False)
 
 def get_layer_info(request, layer_id):
     film = Window_Film.objects.get(pk = layer_id)
     print('film -->', film)
     return JsonResponse(data={'layer': {'name': film.name, 'content': film.content} }, safe=False)
+
+def get_inventory(request, sucursal_id):
+    """"
+     return sucursal inventory
+    """
+    try:
+        inv_buss = Inventario_Business()
+        query = inv_buss.get_total_meters_window_film_in_inventory(sucursal_id=sucursal_id)
+        inv = list(map(lambda i:{
+            'bobina_film_name': i['bobina__window_film__name'],
+            'bobina_film_id': i['bobina__window_film__id'],
+            'bobina_width': i['bobina__width'],
+            'bobina_metros_disponibles': float(i['total'])
+        }, query))
+        return JsonResponse(data={'inventario': inv}, safe=False)
+    except Exception as e:
+         print('algo salio mal -->', str(e))
+         return JsonResponse(data={'error':True, 'message': 'algo salio mal'}, status=500)
 
 def get_call_info(request):
     """

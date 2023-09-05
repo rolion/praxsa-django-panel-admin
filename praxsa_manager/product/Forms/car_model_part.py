@@ -1,24 +1,23 @@
 from django import forms
 from django.core.exceptions import FieldError
 from django.forms import ModelForm
-from ..models import Sale_Detail, Window_Film_Reel, Car_Model_Part
+from ..models import Sale_Detail, Window_Film_Reel, Car_Model_Part, Window_Film
 from django.core.exceptions import ValidationError
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from ..helper.proforma import Proforma_Helper
 from ..helper.inventory import Inventory_helper
+from ..business.inventario import Inventario_Business
+
+class CarItemField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        return obj.description
 
 class CarModelPartForm(ModelForm):
-    # sub_total =  forms.DecimalField(max_digits=10, decimal_places=2, disabled= True)
-    fields = ('car_part_id', 
-              'window_film_id', 
-              'width', 
-              'length', 
-              'window_film_price', 
-              'installation_price', 
-              'quantity', 
-              'sub_total')
+    
+    disponibilidad = forms.IntegerField(required=False, initial = 0, disabled=True)
     proforma_helper = Proforma_Helper()
     inv_helper = Inventory_helper()
+    inv_bussiness = Inventario_Business()
 
     def is_proforma_approved(self, proforma):
         return proforma.sales_status == self.proforma_helper.apr
@@ -36,91 +35,68 @@ class CarModelPartForm(ModelForm):
             raise ValidationError("sub total invalido, no puede ser 0")
         return cc_sub_total
     
-    # def clean_car_part_id(self):
+    # def clean_window_film(self):
+    #     cleaned_data = super().clean()
+    #     cc_window_film = cleaned_data.get("window_film")
     #     try:
-    #         cleaned_data = super().clean()
-    #         cc_car_part_id = cleaned_data.get('cc_car_part_id')
-    #         Car_Model_Part.objects.get(car_part_id=cc_car_part_id)
-    #     except MultipleObjectsReturned:
-    #         print('multiple object returned')
-    #     except ObjectDoesNotExist:
-    #         raise ValidationError("item invalido ", cc_car_part_id)
-    #     return cc_car_part_id
-    
-    def clean_window_film_id(self):
+    #         query = Window_Film.objects.filter(id = cc_window_film)
+    #         if query.exists() == False:
+    #             raise ValidationError('lamina no valida')
+    #         return cc_window_film
+    #     except Exception as e:
+    #         print('algo salio mal -->', str(e))
+    #         raise ValidationError('algo salio mal, contactar al adminsitrador')
+        
+    def clean_length(self):
         cleaned_data = super().clean()
-        cc_window_film_id = cleaned_data.get("window_film_id")
-        # cc_film_price = cleaned_data.get("window_film_price")
-        try:
-
-            Window_Film_Reel.objects.filter(window_film_id=cc_window_film_id)
-
-        except ObjectDoesNotExist:
-            # self.add_error("window_film_id", 'lamina invalida')
-            raise ValidationError("lamina invalida")
-        return cc_window_film_id
+        cc_length = cleaned_data.get("length")
+        if cc_length > 0:
+            return cc_length
+        else:
+            raise ValidationError('tiene que ser mayor a 0')
+    
+    def item_width_lte_film_width(self, item, model, width):
+        query = Car_Model_Part.objects.select_related('car_part_id', 'car_model_id').filter(car_model_id = model, car_part_id = item, width__lte = width)
+        return query.exists()
 
     
     def clean(self):
         cleaned_data = super().clean()
         cc_width = cleaned_data.get('width')
-        cc_length = cleaned_data.get('length')
-        cc_window_film_id = cleaned_data.get("window_film_id")
-        cc_car_part_id = cleaned_data.get('car_part_id')
+        cc_car_part_id = cleaned_data.get('car_part')
         cc_quantity = cleaned_data.get('quantity')
         cc_installation_price = cleaned_data.get('installation_price')
-        sale_header = cleaned_data.get("sales_header_id")
-        cc_sale_type = cleaned_data.get("sales_type")
+        cc_length = cleaned_data.get('length')
+        sale_header = cleaned_data.get("sales_header")
+        cc_window_film = cleaned_data.get("window_film")
+
+        print(f'header {sale_header}')
+        if sale_header.sales_type == self.proforma_helper.tipo_venta_instalacion:
+        
+            if self.item_width_lte_film_width(cc_car_part_id, sale_header.car_model_id, cc_width) == False:
+                self.add_error('window_film','el ancho de la bobina es menor que el ancho del item')
+            if cc_quantity < 1:
+                self.add_error('quantity','campo requerido')
+            if cc_installation_price < 1:
+                self.add_error('installation_price','campo requerido')
+            available_reel = self.inv_bussiness.available_window_film_reel_in_inventory_to_sell(width=cc_width, 
+                                                                                                windows_film=cc_window_film, 
+                                                                                                sucursal=sale_header.sucursal, 
+                                                                                                total_length_to_sell=cc_length * cc_quantity)
 
         if sale_header.sales_type == self.proforma_helper.tipo_venta_metro_lineal:
             if cc_car_part_id is not None:
-                self.add_error('car_part_id','este campo no es requerido en una venta por metro lineal, deseleccione el item')
+                self.add_error('car_part_id','este campo no es requerido')
             if cc_quantity > 0:
-                self.add_error('quantity','este campo no es requerido en una venta por metro lineal, colocar en 0')
-            if cc_installation_price.compare(0) == 1: # installation price es mayo que 0
-                self.add_error('installation_price','este campo no es requerido en una venta por metro lineal, colocar en 0')
-        else:
-            if cc_car_part_id is None:
-                self.add_error('car_part_id','Seleccione un item')
-            if cc_quantity == 0:
-                self.add_error('quantity','en una venta con instalacion, no puede ser 0')
-            if cc_installation_price.compare(0) == -1: # installation price es meno que 0
-                self.add_error('installation_price','en una venta por metro lineal, puede ser 0')
-            
-
-        if sale_header.id is not None and (self.is_proforma_approved(sale_header) or self.is_proforma_installed(sale_header)):
-            # validar la cantidad de metros disponibles en el inventario
-            try:
-                self.is_inventory_valid(sucursal = sale_header.sucursal, lamina=cc_window_film_id.id, mtr_to_install = cc_length, width=cc_width)
-            except FieldError as e: 
-                self.add_error('window_film_id', str(e))
-                return
-        # if sale_header.id is not None and self.is_proforma_installed(sale_header):
-        #     # todo, reducir la cantidad de inventario
-        #     try:
-        #         inventario = self.is_inventory_valid(sucursal = sale_header.sucursal, lamina=cc_window_film_id.id, mtr_to_install = cc_length, width=cc_width)
-        #         print('inventario bobina', inventario.bobina)
-        #         self.inv_helper.update_inventory(sucursal_id=sale_header.sucursal, bobina=inventario.bobina,length_to_reduce= cc_length)
-        #     except FieldError as e: 
-        #         self.add_error('window_film_id', str(e))
-        #         # return
-        #     except Exception as e:
-        #         self.add_error('window_film_id', str(e))
-                # return
-        print('clean called!1')
-
-    # def save(self, commit = True):
-    #     instance = super(CarModelPartForm, self).save(commit=False)
-    #     # if instance.is_valid():
-    #     print(f'header id {instance.sales_header_id.id}, header status {instance.sales_header_id.sales_status}, header type {instance.sales_header_id.sales_type}')
-    #     sale_header = instance.sales_header_id
-    #     if sale_header.id is not None and ( self.is_proforma_installed(sale_header) or self.is_proforma_approved(sale_header)):
-    #         print('actualizar inventario')
-    #         inventario = self.is_inventory_valid(sucursal = sale_header.sucursal, lamina=instance.window_film_id.id, mtr_to_install = instance.length, width=instance.width)
-    #         self.inv_helper.update_inventory(sucursal_id=sale_header.sucursal, bobina=inventario.bobina,length_to_reduce= instance.length)
-    #     instance.save()
-    #     return instance
-
+                self.add_error('quantity','campo no requerido')
+            if cc_installation_price.compare(0) is 1:
+                self.add_error('installation_price','campo no requerido')
+            available_reel = self.inv_bussiness.available_window_film_reel_in_inventory_to_sell(width=cc_width, 
+                                                                                                windows_film=cc_window_film, 
+                                                                                                sucursal=sale_header.sucursal, 
+                                                                                                total_length_to_sell=cc_length)
+        if available_reel.exists() is False:
+            self.add_error('window_film','no hay disponibilidad de lamina')
 
     def update_inventory(self, sucursal, bobina, length_to_reduce):
         self.inv_helper.update_inventory(sucursal_id= sucursal, bobina= bobina, length_to_reduce=length_to_reduce)
