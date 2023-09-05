@@ -1,9 +1,11 @@
 from ..models import Sale_Header, Sucursal, Sale_Detail
 from ..helper.proforma import Proforma_Helper
+from .inventario import Inventario_Business
 class Proforma_Business:
 
     def __init__(self) -> None:
         self.helper = Proforma_Helper()
+        self.inv_bussiness = Inventario_Business()
 
     def get_proforma_by_id(self, id):
         return Sale_Header.objects.get(pk = id)
@@ -31,7 +33,13 @@ class Proforma_Business:
             try:
                 ## todo validar inventario
                 ## si el inventario es valido, descontar del inventario
-                proforma.sales_status = self.helper.nov
+                detalles = Sale_Detail.objects.select_related('sales_header', 'window_film','sales_header__sucursal' ).filter(sales_header = proforma)
+                if detalles.exists():
+                    for detalle in list(detalles):
+                        to_reduce = detalle.length
+                        to_reduce = to_reduce * detalle.quantity if detalle.quantity > 0 else to_reduce
+                        self.inv_bussiness.update_inventory(sucursal = detalle.sales_header.sucursal, windows_film =detalle.window_film, width = detalle.width, length_to_reduce = to_reduce)
+                    proforma.sales_status = self.helper.nov
                 return proforma.save()
             except Exception as e:
                 print('algo salio mal ->>', str(e))

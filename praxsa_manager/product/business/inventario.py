@@ -17,17 +17,18 @@ class Inventario_Business:
         result = Window_Film.objects.filter(pk__in = q)
         return result
     
-    def update_inventory(self, sucursal_id, bobina, length_to_reduce):
-        invs = list(inventario.objects.filter(sucursal_id = sucursal_id, bobina= bobina, to_install__gte = length_to_reduce).order_by('date'))
-        if(len(invs) > 0):
+    def update_inventory(self, sucursal, windows_film, width, length_to_reduce):
+        query = inventario.objects.select_related('bobina', 'sucursal', 'bobina__window_film')
+        query = query.filter(sucursal = sucursal, bobina__window_film = windows_film, bobina__width = width, to_install__gte = length_to_reduce).order_by('date')
+        if(query.exists()):
             try:
-                bobina_inventario = invs[0]
+                bobina_inventario = query[0]
                 bobina_inventario.to_install = bobina_inventario.to_install - length_to_reduce
                 bobina_inventario.installed = bobina_inventario.installed + length_to_reduce
                 return bobina_inventario.save()
             except Exception as e:
                 print('exception ', str(e))
-        raise Exception('no hay laminas disponibles')
+        return False
     
     def is_window_film_available(self, sucursal_id, bobina, width, to_install):
         query = inventario.objects.select_related('bobina', 'sucursal')

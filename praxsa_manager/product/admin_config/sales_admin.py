@@ -12,7 +12,7 @@ from ..business.inventario import Inventario_Business
 from django.contrib import messages
 from ..helper.user import User_Helper
 from ..helper.proforma import Proforma_Helper
-from datetime import datetime
+from django.db import transaction
 
 class WidthChoiceField(forms.ModelChoiceField):
      def label_from_instance(self, obj):
@@ -136,12 +136,6 @@ class SalesAdmin(admin.ModelAdmin):
             return qs.filter(sucursal = -1)
         return  result
 
-    def response_change(self, request, obj):
-        print('response change')
-        if "_customaction" in request.POST:
-            print('custom action')
-        return super(SalesAdmin, self).response_change(request, obj)
-
     def get_readonly_fields(self, request, obj=None):
         # print ('admin obj', obj.sales_status )
         if obj is None:
@@ -191,9 +185,11 @@ class SalesAdmin(admin.ModelAdmin):
         except Exception as e:
             self.message_user(request=request,  message=str(e), level= messages.ERROR)
 
+    @transaction.atomic
     @admin.action(description="crear nota")
     def create_sales_note(self, request: HttpRequest, queryset: QuerySet):
         try:
+            
             [self.proforma_business.crear_nota_venta( proforma=qs) for qs in list(queryset)]
         except Exception as e:
             self.message_user(request=request,  message=str(e), level= messages.ERROR)
@@ -202,6 +198,13 @@ class SalesAdmin(admin.ModelAdmin):
     def fisical_delete_proforma(self, request: HttpRequest, queryset: QuerySet):
         try:
             [self.proforma_business.delete_fisica(user= request.user, proforma=qs) for qs in list(queryset)]
+        except Exception as e:
+            self.message_user(request=request,  message=str(e), level= messages.ERROR)
+
+    @admin.action(description="Crear Pago")
+    def crear_pago(self, request: HttpRequest, queryset: QuerySet):
+        try:
+            print('crear pago')
         except Exception as e:
             self.message_user(request=request,  message=str(e), level= messages.ERROR)
 
