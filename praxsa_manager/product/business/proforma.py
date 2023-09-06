@@ -30,6 +30,8 @@ class Proforma_Business:
                 raise Exception('algo salio mal, contactar administrador')
     def crear_nota_venta(self, proforma):
         if proforma.sales_status == self.helper.prof:
+            if proforma.codigo_garantia is None:
+                raise Exception(f'Agregue el codigo de garantia en proforma {proforma.id}')
             try:
                 ## todo validar inventario
                 ## si el inventario es valido, descontar del inventario

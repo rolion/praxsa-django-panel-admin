@@ -8,27 +8,12 @@ from ..helper.proforma import Proforma_Helper
 class SaleHeaderForm(ModelForm):
 
     helper = Proforma_Helper()
-    
-    # def clean_codigo_garantia(self):
         
     def clean(self):
         cleaned_data = super().clean()
         status = cleaned_data.get('sales_status')
-        if (status == self.helper.nov) and self.cleaned_data['codigo_garantia'] is None:
+        if (status == self.helper.nov) and cleaned_data.get('codigo_garantia') is None:
             raise ValidationError("porfavor agregue el codigo de garantia")
-        return self.cleaned_data['codigo_garantia']
-    
-    def save(self, commit = True):
-        instance = super(SaleHeaderForm, self).save(commit=False)
-        # if instance.is_valid():
-        print('instance ', instance)
-        # sale_header = instance.sales_header_id
-        # if sale_header.id is not None and ( self.is_proforma_installed(sale_header) or self.is_proforma_approved(sale_header)):
-        #     print('actualizar inventario')
-        #     inventario = self.is_inventory_valid(sucursal = sale_header.sucursal, lamina=instance.window_film_id.id, mtr_to_install = instance.length, width=instance.width)
-        #     self.inv_helper.update_inventory(sucursal_id=sale_header.sucursal, bobina=inventario.bobina,length_to_reduce= instance.length)
-        instance.save()
-        return instance
 
 
     class Meta:

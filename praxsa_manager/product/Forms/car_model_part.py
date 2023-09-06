@@ -70,7 +70,9 @@ class CarModelPartForm(ModelForm):
         sale_header = cleaned_data.get("sales_header")
         cc_window_film = cleaned_data.get("window_film")
 
-        print(f'header {sale_header}')
+        if cc_length is None:
+            self.add_error('length','este campo es requerido')
+            return
         if sale_header.sales_type == self.proforma_helper.tipo_venta_instalacion:
         
             if self.item_width_lte_film_width(cc_car_part_id, sale_header.car_model_id, cc_width) == False:
@@ -85,8 +87,8 @@ class CarModelPartForm(ModelForm):
                                                                                                 total_length_to_sell=cc_length * cc_quantity)
 
         if sale_header.sales_type == self.proforma_helper.tipo_venta_metro_lineal:
-            if cc_car_part_id is not None:
-                self.add_error('car_part_id','este campo no es requerido')
+        #     if cc_car_part_id is not None:
+        #         self.add_error('car_part_id','este campo no es requerido')
             if cc_quantity > 0:
                 self.add_error('quantity','campo no requerido')
             if cc_installation_price.compare(0) is 1:

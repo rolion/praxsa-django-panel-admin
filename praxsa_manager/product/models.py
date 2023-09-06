@@ -105,7 +105,7 @@ class inventario(models.Model):
     quantity = models.PositiveIntegerField(verbose_name="Cantidad")
     to_install = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, verbose_name="metros disponible para instalar")
     installed = models.DecimalField(max_digits=10, decimal_places=2, default=0.0,  verbose_name="metros instalados")
-    date = models.DateTimeField(verbose_name="Fecha", auto_now=True)
+    date = models.DateTimeField(verbose_name="Fecha", auto_now_add=True)
     precio_compra_mtr_lineal = models.DecimalField( max_digits=10, decimal_places=2, default=0.0, verbose_name="Precio Compra Metro Lineal")
     precio_venta_mtr_lineal = models.DecimalField( max_digits=10, decimal_places=2, default=0.0, verbose_name="Precio Venta Metro Lineal")
     def __str__(self):

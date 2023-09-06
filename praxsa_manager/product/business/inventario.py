@@ -19,7 +19,7 @@ class Inventario_Business:
     
     def update_inventory(self, sucursal, windows_film, width, length_to_reduce):
         query = inventario.objects.select_related('bobina', 'sucursal', 'bobina__window_film')
-        query = query.filter(sucursal = sucursal, bobina__window_film = windows_film, bobina__width = width, to_install__gte = length_to_reduce).order_by('date')
+        query = query.filter(sucursal = sucursal, bobina__window_film = windows_film, bobina__width = width, to_install__gte = length_to_reduce).order_by('date')[:1]
         if(query.exists()):
             try:
                 bobina_inventario = query[0]

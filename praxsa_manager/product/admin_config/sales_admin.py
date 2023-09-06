@@ -3,7 +3,7 @@ from django import forms
 from django.contrib import admin
 from django.db.models.query import QuerySet
 from django.http.request import HttpRequest
-from ..models import Sale_Detail, Sale_Detail, Window_Film, inventario
+from ..models import Sale_Detail, Sale_Detail
 from ..Forms.Sale_header import SaleHeaderForm
 from ..Forms.car_model_part import CarModelPartForm
 from ..business.proforma import Proforma_Business
@@ -44,13 +44,6 @@ class SalesDetailInLine(admin.TabularInline):
         formset.form.base_fields['width'].widget = forms.Select(choices=widths.values_list('width', 'width'))
         return formset
 
-    def has_change_permission(self, request: HttpRequest, obj=None):
-        if obj is None:
-            return True
-        if obj.sales_status == self.proforma_helper.nov:
-            return False
-        return True
-
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
             if db_field.name == "window_film":
                     result = self.inv_business.get_user_inventory_window_films(request.user)
@@ -75,6 +68,7 @@ class SalesAdmin(admin.ModelAdmin):
     inlines = [
         SalesDetailInLine,
     ]
+    # readonly_fields = ['sales_status']
     form = SaleHeaderForm
     list_per_page = 10
     actions =["open_proforma","create_sales_note","delete_proforma", "fisical_delete_proforma"]
@@ -117,16 +111,14 @@ class SalesAdmin(admin.ModelAdmin):
         proforma = self.proforma_business.get_proforma_by_id(id)
         return proforma.sales_status
 
-    # def has_change_permission(self, request: HttpRequest, obj=None):
-    #     if obj is None:
-    #         return False
-    #     if request.user.is_superuser:
-    #         return True
-    #     if obj.sales_status == self.proforma_helper.prof or (self.proforma_status(obj.id) == self.proforma_helper.prof):
-    #         return True
-    #     if self.user_helper.is_request_user_admin(request.user):
-    #         return True
-    #     return False
+    def has_change_permission(self, request: HttpRequest, obj=None):
+        if obj is None:
+            return True
+        if obj.sales_status == self.proforma_helper.prof:
+            return True
+        if obj.sales_status == self.proforma_helper.nov:
+            return False
+        return True
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
         qs = super().get_queryset(request)
@@ -139,36 +131,12 @@ class SalesAdmin(admin.ModelAdmin):
     def get_readonly_fields(self, request, obj=None):
         # print ('admin obj', obj.sales_status )
         if obj is None:
-            return []
-        if obj.is_paid == True and obj.sales_status == self.proforma_helper.nov:
-            return [
-                    'sales_status',
-                    'sales_type', 
-                    'sucursal',
-                    'codigo_garantia',
-                    'name', 
-                    'email', 
-                    'ci_nit', 
-                    'car_plate', 
-                    'phone_numbe', 
-                    'car_model_id', 
-                    'total_price',
-                    'phone_number'
-                    ]
+            return ['sales_status']
+        # if obj.sales_status == self.proforma_helper.nov:
+        #     return "__all__"
         if obj.sales_status == self.proforma_helper.nov:
-            return [
-                    'sales_status',
-                    'sales_type', 
-                    'sucursal',
-                    'name', 
-                    'email', 
-                    'ci_nit', 
-                    'car_plate', 
-                    'phone_numbe', 
-                    'car_model_id', 
-                    'total_price',
-                    'phone_number'
-                    ]
+            return '__all__'
+                    
         return ['sales_status']
     
     @admin.action(description="Eliminar Proforma")
@@ -189,7 +157,6 @@ class SalesAdmin(admin.ModelAdmin):
     @admin.action(description="crear nota")
     def create_sales_note(self, request: HttpRequest, queryset: QuerySet):
         try:
-            
             [self.proforma_business.crear_nota_venta( proforma=qs) for qs in list(queryset)]
         except Exception as e:
             self.message_user(request=request,  message=str(e), level= messages.ERROR)

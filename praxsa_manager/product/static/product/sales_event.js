@@ -210,6 +210,7 @@ jQuery(function($){
                     let length = parseFloat(get_length_element_in_row(target).val())
                     let subtotal = ((length * quantity) * film_price) + (installation_price * quantity)
                     get_sub_total_element_in_row(target).val(subtotal)
+                    sum_all_price()
                 }
                 
             }else{
@@ -218,6 +219,7 @@ jQuery(function($){
                     let length = parseFloat(get_length_element_in_row(target).val())
                     let subtotal = length * film_price
                     get_sub_total_element_in_row(target).val(subtotal)
+                    sum_all_price()
                 }
             }
          }
