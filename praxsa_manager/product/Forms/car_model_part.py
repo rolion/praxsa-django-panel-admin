@@ -91,7 +91,7 @@ class CarModelPartForm(ModelForm):
         #         self.add_error('car_part_id','este campo no es requerido')
             if cc_quantity > 0:
                 self.add_error('quantity','campo no requerido')
-            if cc_installation_price.compare(0) is 1:
+            if cc_installation_price.compare(0) == 1:
                 self.add_error('installation_price','campo no requerido')
             available_reel = self.inv_bussiness.available_window_film_reel_in_inventory_to_sell(width=cc_width, 
                                                                                                 windows_film=cc_window_film, 

@@ -36,10 +36,5 @@ RUN mkdir static
 RUN chown app:app staticfiles
 RUN chown -R app:app $HOME
 
-# USER app
-
-# CMD ["python", "manage.py", "collectstatic"]
-# WORKDIR /web_app/praxsa_manager
-
 EXPOSE 5000
 CMD ["gunicorn","--bind", "0.0.0.0:5000", "praxsa_manager.wsgi:application"]
