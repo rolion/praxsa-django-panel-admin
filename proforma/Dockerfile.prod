@@ -7,7 +7,7 @@ COPY . $HOME_DEV
 WORKDIR $HOME_DEV
 RUN npm install -g @angular/cli@16.1.0
 RUN npm i
-RUN rm -r scr/environments/environment.ts
+RUN rm -r src/environments/environment.ts
 COPY src/environments/environment.prod.ts ./src/environments/environment.ts
 RUN npm run build:production
 
