@@ -43,6 +43,7 @@ services:
       - proxy
     depends_on:
       - web
+      - proforma
 
   proforma:
     container_name: proforma
@@ -53,7 +54,7 @@ services:
     volumes:
       - laminas:/app/dist/proforma/browser
     expose:
-      - "4000"
+      - "4200"
     networks:
       - proxy
     depends_on:
