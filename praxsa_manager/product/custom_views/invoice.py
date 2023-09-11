@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework import authentication, permissions
 from rest_framework.response import Response
 from rest_framework import status
-from ..models import Client, Sale_Header, Sale_Detail
+from ..models import Client, Proforma_Header, Proforma_Detail
 from ..serializer.invoice_serializer import SalesHeaderSerializer
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.core import serializers
@@ -30,9 +30,9 @@ class InvoiceView(APIView):
     def get(self, request, pk, format=None):
         try:
             client = Client.objects.get(user_id= request.user)
-            invoice = Sale_Header.objects.get(id = pk)
+            invoice = Proforma_Header.objects.get(id = pk)
             if invoice.client_id.id == client.id:
-                details = Sale_Detail.objects.filter(sales_header_id = invoice)
+                details = Proforma_Detail.objects.filter(sales_header_id = invoice)
                 items = list(map(lambda item: {'car_part_id': item.car_part_id.id, 
                                                'car_part_name': item.car_part_id.name, 
                                                'width': item.width, 
@@ -91,9 +91,9 @@ class ListUserInvoice(APIView):
                     'status': invoice.sales_status,
                     'id': invoice.id
                     
-            },Sale_Header.objects.filter(client_id= client) ))
+            },Proforma_Header.objects.filter(client_id= client) ))
         print(list_invoice)
-        count = Sale_Header.objects.filter(client_id= client).count()
+        count = Proforma_Header.objects.filter(client_id= client).count()
         data = {
             "recordsTotal": count,
             "recordsFiltered": count,

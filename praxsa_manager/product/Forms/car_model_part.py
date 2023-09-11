@@ -1,7 +1,7 @@
 from django import forms
 from django.core.exceptions import FieldError
 from django.forms import ModelForm
-from ..models import Sale_Detail, Window_Film_Reel, Car_Model_Part, Window_Film
+from ..models import Proforma_Detail, Car_Model_Part
 from django.core.exceptions import ValidationError
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from ..helper.proforma import Proforma_Helper
@@ -34,18 +34,6 @@ class CarModelPartForm(ModelForm):
         if not cc_sub_total.compare(0) == 1:
             raise ValidationError("sub total invalido, no puede ser 0")
         return cc_sub_total
-    
-    # def clean_window_film(self):
-    #     cleaned_data = super().clean()
-    #     cc_window_film = cleaned_data.get("window_film")
-    #     try:
-    #         query = Window_Film.objects.filter(id = cc_window_film)
-    #         if query.exists() == False:
-    #             raise ValidationError('lamina no valida')
-    #         return cc_window_film
-    #     except Exception as e:
-    #         print('algo salio mal -->', str(e))
-    #         raise ValidationError('algo salio mal, contactar al adminsitrador')
         
     def clean_length(self):
         cleaned_data = super().clean()
@@ -104,6 +92,6 @@ class CarModelPartForm(ModelForm):
         self.inv_helper.update_inventory(sucursal_id= sucursal, bobina= bobina, length_to_reduce=length_to_reduce)
 
     class Meta:
-        model = Sale_Detail
+        model = Proforma_Detail
         fields = "__all__"
         

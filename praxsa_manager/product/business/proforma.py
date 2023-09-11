@@ -1,4 +1,4 @@
-from ..models import Sale_Header, Sucursal, Sale_Detail
+from ..models import Proforma_Header, Sucursal, Proforma_Detail
 from ..helper.proforma import Proforma_Helper
 from .inventario import Inventario_Business
 class Proforma_Business:
@@ -8,7 +8,7 @@ class Proforma_Business:
         self.inv_bussiness = Inventario_Business()
 
     def get_proforma_by_id(self, id):
-        return Sale_Header.objects.get(pk = id)
+        return Proforma_Header.objects.get(pk = id)
 
     def delete_proforma(self, user, proforma):
         if proforma.sales_status == self.helper.req  :
@@ -35,7 +35,7 @@ class Proforma_Business:
             try:
                 ## todo validar inventario
                 ## si el inventario es valido, descontar del inventario
-                detalles = Sale_Detail.objects.select_related('sales_header', 'window_film','sales_header__sucursal' ).filter(sales_header = proforma)
+                detalles = Proforma_Detail.objects.select_related('sales_header', 'window_film','sales_header__sucursal' ).filter(sales_header = proforma)
                 if detalles.exists():
                     for detalle in list(detalles):
                         to_reduce = detalle.length
@@ -52,7 +52,7 @@ class Proforma_Business:
     def delete_fisica(self, user, proforma):
         try:
             if user.is_superuser:
-                Sale_Detail.objects.filter(sales_header_id = proforma).delete()
+                Proforma_Detail.objects.filter(sales_header_id = proforma).delete()
                 return proforma.delete()
             else:
                 print(f'user ${user.username} intento borrar una proforma ${proforma.id}')

@@ -116,7 +116,7 @@ class inventario(models.Model):
 #     sucursal_id = models.ForeignKey(Sucursal, on_delete=models.DO_NOTHING, verbose_name="Sucursal")
 #     instalador = models.ForeignKey(User, on_delete=models.DO_NOTHING, verbose_name="Instalador")
 
-class Sale_Header(models.Model):
+class Proforma_Header(models.Model):
     helper = Proforma_Helper()
     sales_status = models.CharField(choices=helper.status, default=helper.default_status, verbose_name='Estado')
     sales_type = models.CharField(choices=helper.tipo_venta, default=helper.tipo_venta_instalacion, verbose_name='Tipo Venta')
@@ -144,10 +144,18 @@ class Sale_Header(models.Model):
         prefijo = 'Proforma' if self.sales_status == self.helper.prof else 'Nota Venta'
         return f'{prefijo} {self.id}'
     
+class Nota_trabajo(models.Model):
+    proforma = models.ForeignKey(Proforma_Header, on_delete=models.DO_NOTHING, blank=True, null=True, verbose_name="Proforma")
+    entrada_vehiculo = models.DateTimeField(verbose_name="Entrada Vehiculo", null=True, blank=True)
+    salida_vehiculo = models.DateTimeField(verbose_name="Salida Vehiculo", null=True, blank=True)
+    observaciones = models.TextField(verbose_name='Observaciones', blank=True, null=True)
+    instaladar = models.ForeignKey(User, verbose_name='Responsable',on_delete=models.DO_NOTHING, blank=True, null=True, related_name='instalador_laminas_nota_trabajo')
+    responsable = models.ForeignKey(User, verbose_name='Instalador',on_delete=models.DO_NOTHING, blank=True, null=True, related_name='responsable_proforma_nota_trabajo')
     
-class Sale_Detail(models.Model):
+    
+class Proforma_Detail(models.Model):
     helper = Proforma_Helper()
-    sales_header = models.ForeignKey(Sale_Header, related_name='items', on_delete=models.DO_NOTHING, verbose_name="Proforma")
+    sales_header = models.ForeignKey(Proforma_Header, related_name='items', on_delete=models.DO_NOTHING, verbose_name="Proforma")
     car_part = models.ForeignKey(Car_Part, on_delete=models.DO_NOTHING, blank=True, null=True, verbose_name="Item")
     width = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Ancho" )
     length = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Largo")

@@ -1,7 +1,7 @@
 from ..models import Sucursal
 from ..helper.user import User_Helper
 from django.contrib.auth.models import User
-from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned, FieldError
+from django.core.exceptions import ObjectDoesNotExist, FieldError
 
 class User_Business:
 

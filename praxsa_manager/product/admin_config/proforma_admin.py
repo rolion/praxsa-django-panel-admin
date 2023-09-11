@@ -3,7 +3,7 @@ from django import forms
 from django.contrib import admin
 from django.db.models.query import QuerySet
 from django.http.request import HttpRequest
-from ..models import Sale_Detail, Sale_Detail
+from ..models import Proforma_Detail
 from ..Forms.Sale_header import SaleHeaderForm
 from ..Forms.car_model_part import CarModelPartForm
 from ..business.proforma import Proforma_Business
@@ -28,7 +28,7 @@ class SalesDetailInLine(admin.TabularInline):
               'installation_price', 
               'quantity',
               'sub_total']
-    model = Sale_Detail
+    model = Proforma_Detail
     min_num = 0
     max = 1
     extra = 0
@@ -53,7 +53,7 @@ class SalesDetailInLine(admin.TabularInline):
         js=('product/sales_event.js',)
         
     
-class SalesAdmin(admin.ModelAdmin):
+class ProformaAdmin(admin.ModelAdmin):
     list_display = [
                     'id',
                     'sales_status',
@@ -102,7 +102,7 @@ class SalesAdmin(admin.ModelAdmin):
                 })]
     
     def get_form(self, request, obj=None, **kwargs):
-        form = super(SalesAdmin, self).get_form(request, obj, **kwargs)
+        form = super(ProformaAdmin, self).get_form(request, obj, **kwargs)
         if form.base_fields and 'sucursal' in form.base_fields:
             form.base_fields['sucursal'].initial = self.user_business.get_user_sucursal(username = request.user.username)
         return form
