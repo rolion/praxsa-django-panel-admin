@@ -1,7 +1,6 @@
 from ..models import Sucursal, Window_Film, inventario
-from ..helper.proforma import Proforma_Helper
-from django.db.models import Sum, F, CharField, Value
-from django.db.models.functions import Concat
+from django.db.models import Sum, F
+from ..utils.exception.nohaylaminas import NoHayLaminasDisponibles
 class Inventario_Business:
     
     def get_inventory_by_sucursal(self, sucursal):
@@ -21,14 +20,12 @@ class Inventario_Business:
         query = inventario.objects.select_related('bobina', 'sucursal', 'bobina__window_film')
         query = query.filter(sucursal = sucursal, bobina__window_film = windows_film, bobina__width = width, to_install__gte = length_to_reduce).order_by('date')[:1]
         if(query.exists()):
-            try:
-                bobina_inventario = query[0]
-                bobina_inventario.to_install = bobina_inventario.to_install - length_to_reduce
-                bobina_inventario.installed = bobina_inventario.installed + length_to_reduce
-                return bobina_inventario.save()
-            except Exception as e:
-                print('exception ', str(e))
-        return False
+            bobina_inventario = query[0]
+            bobina_inventario.to_install = bobina_inventario.to_install - length_to_reduce
+            bobina_inventario.installed = bobina_inventario.installed + length_to_reduce
+            return bobina_inventario.save()
+        raise NoHayLaminasDisponibles(f'no hay lamina disponible {windows_film.name}')
+        #return False
     
     def is_window_film_available(self, sucursal_id, bobina, width, to_install):
         query = inventario.objects.select_related('bobina', 'sucursal')

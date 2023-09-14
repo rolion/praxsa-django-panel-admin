@@ -32,7 +32,7 @@ class InvoiceView(APIView):
             client = Client.objects.get(user_id= request.user)
             invoice = Proforma_Header.objects.get(id = pk)
             if invoice.client_id.id == client.id:
-                details = Proforma_Detail.objects.filter(sales_header_id = invoice)
+                details = Proforma_Detail.objects.filter(proforma_header = invoice)
                 items = list(map(lambda item: {'car_part_id': item.car_part_id.id, 
                                                'car_part_name': item.car_part_id.name, 
                                                'width': item.width, 

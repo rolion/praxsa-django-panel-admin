@@ -31,7 +31,7 @@ class SalesHeaderSerializer(serializers.ModelSerializer):
         invoice = Proforma_Header.objects.create(date=datetime.now(), **validate_data)
         
         for item in items:
-            Proforma_Detail.objects.create(sales_header_id=invoice, **item)
+            Proforma_Detail.objects.create(proforma_header=invoice, **item)
             
         return invoice
         

@@ -137,7 +137,7 @@ class Proforma_Header(models.Model):
     is_delete = models.BooleanField(default=False)
     
     class Meta:
-        verbose_name = 'Venta'
+        verbose_name = 'Proforma'
         ordering = ["-id","-proforma_created_on","-nota_venta_created_on"]
 
     def __str__(self) -> str:
@@ -145,17 +145,29 @@ class Proforma_Header(models.Model):
         return f'{prefijo} {self.id}'
     
 class Nota_trabajo(models.Model):
-    proforma = models.ForeignKey(Proforma_Header, on_delete=models.DO_NOTHING, blank=True, null=True, verbose_name="Proforma")
+    proforma = models.OneToOneField(Proforma_Header, on_delete=models.DO_NOTHING, blank=True, null=True, verbose_name="Proforma")
     entrada_vehiculo = models.DateTimeField(verbose_name="Entrada Vehiculo", null=True, blank=True)
     salida_vehiculo = models.DateTimeField(verbose_name="Salida Vehiculo", null=True, blank=True)
     observaciones = models.TextField(verbose_name='Observaciones', blank=True, null=True)
-    instaladar = models.ForeignKey(User, verbose_name='Responsable',on_delete=models.DO_NOTHING, blank=True, null=True, related_name='instalador_laminas_nota_trabajo')
-    responsable = models.ForeignKey(User, verbose_name='Instalador',on_delete=models.DO_NOTHING, blank=True, null=True, related_name='responsable_proforma_nota_trabajo')
+    instaladar = models.ForeignKey(User, verbose_name='Instalador',on_delete=models.DO_NOTHING, null=True, related_name='instalador_laminas_nota_trabajo')
+    responsable = models.ForeignKey(User, verbose_name='Responsable',on_delete=models.DO_NOTHING, blank=True, null=True, related_name='responsable_proforma_nota_trabajo')
+    name = models.CharField(max_length=400, default=" ", null=False, verbose_name="Nombre Completo")
+    car_plate = models.CharField(max_length=10, default="", null=True, verbose_name="Placa Auto")
+    car_model = models.ForeignKey(Car_Model, on_delete=models.DO_NOTHING, verbose_name="Modelo", null=True, blank=True)
+    nota_venta_created_on = models.DateTimeField(verbose_name="Fecha Orden Trabajo",  auto_now_add=True)
+    cerrada = models.BooleanField(default=False)
+
+    def __str__(self) -> str:
+        return f'Nota Trabajo {self.id}'
+
+    class Meta:
+        verbose_name = 'Nota Trabajo'
+        ordering = ["-id","-nota_venta_created_on"]
     
     
 class Proforma_Detail(models.Model):
     helper = Proforma_Helper()
-    sales_header = models.ForeignKey(Proforma_Header, related_name='items', on_delete=models.DO_NOTHING, verbose_name="Proforma")
+    proforma_header = models.ForeignKey(Proforma_Header, related_name='items', on_delete=models.DO_NOTHING, verbose_name="Proforma")
     car_part = models.ForeignKey(Car_Part, on_delete=models.DO_NOTHING, blank=True, null=True, verbose_name="Item")
     width = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Ancho" )
     length = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Largo")
@@ -167,6 +179,18 @@ class Proforma_Detail(models.Model):
     class Meta:
         verbose_name = 'Detalle Venta'
     
+    def __str__(self) -> str:
+        return f'Detalle'
+    
+class Detalle_Nota_Trabajo(models.Model):
+    nota_trabajo = models.ForeignKey(Nota_trabajo, on_delete=models.DO_NOTHING, related_name='detalle_trabajo',verbose_name='Nota de trabajo')
+    detalle_proforma = models.ForeignKey(Proforma_Detail, on_delete=models.DO_NOTHING, blank=True, null=True, verbose_name="Detalle")
+    width = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Ancho" )
+    length = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Largo")
+    quantity = models.PositiveIntegerField(default=0, verbose_name="Cantidad")
+    window_film = models.ForeignKey(Window_Film, on_delete=models.DO_NOTHING, verbose_name="Lámina", null=True)
+    car_part = models.ForeignKey(Car_Part, on_delete=models.DO_NOTHING, blank=True, null=True, verbose_name="Item")
+
     def __str__(self) -> str:
         return f'Detalle'
 

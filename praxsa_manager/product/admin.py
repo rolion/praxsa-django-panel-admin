@@ -2,7 +2,9 @@ from django.contrib import admin
 
 admin.site.site_header = 'Praxsa Panel Admin'
 
-from .models import Car_Brand, Car_Model, Car_Part, Car_Model_Part, Window_Film, Window_Film_Reel, Window_Film_Reel_Storage, Client, Proforma_Header, Sucursal, inventario, Nota_trabajo #, instalador_sucursal
+from .models import Car_Brand, Car_Model, Car_Part, Car_Model_Part, Window_Film, Window_Film_Reel, Window_Film_Reel_Storage, Client
+
+from .models import Proforma_Header, Sucursal, inventario, Nota_trabajo #, instalador_sucursal
 # from .admin_config.car_model_winfow_film_part import CarModelWindowFilmPart
 from .admin_config.car_brand import CarBrand
 from .admin_config.car_model import CarModel
@@ -13,6 +15,7 @@ from .admin_config.window_film_reel_storage import WindowFilmReelStorage
 from .admin_config.proforma_admin import ProformaAdmin
 from .admin_config.inventory import InventoryAdmin
 from .admin_config.nota_trabajo import NotaTrabajoAdmin
+from .admin_config.nota_venta import NotaVentaAdmin
 
 # admin.site.disable_action("delete_selected")
 admin.site.register(Car_Brand, CarBrand)
@@ -28,3 +31,16 @@ admin.site.register(Window_Film_Reel_Storage, WindowFilmReelStorage)
 admin.site.register(Client)
 admin.site.register(Proforma_Header, ProformaAdmin)
 admin.site.register(Nota_trabajo, NotaTrabajoAdmin)
+class ProformaProxy(Proforma_Header):
+    class Meta:
+        verbose_name = 'Nota Venta'
+        ordering = ["-id","-proforma_created_on","-nota_venta_created_on"]
+        proxy = True
+
+    def __str__(self) -> str:
+        prefijo = 'Nota Veta'
+        return f'{prefijo} {self.id}'
+
+        
+
+admin.site.register(ProformaProxy, NotaVentaAdmin)

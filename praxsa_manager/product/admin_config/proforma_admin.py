@@ -14,9 +14,6 @@ from ..helper.user import User_Helper
 from ..helper.proforma import Proforma_Helper
 from django.db import transaction
 
-class WidthChoiceField(forms.ModelChoiceField):
-     def label_from_instance(self, obj):
-         return obj.width
 
 class SalesDetailInLine(admin.TabularInline):
     fields = ['car_part', 
@@ -71,7 +68,7 @@ class ProformaAdmin(admin.ModelAdmin):
     # readonly_fields = ['sales_status']
     form = SaleHeaderForm
     list_per_page = 10
-    actions =["open_proforma","create_sales_note","delete_proforma", "fisical_delete_proforma"]
+    actions =["open_proforma","create_sales_note","create_work_note","delete_proforma", "fisical_delete_proforma"]
     proforma_business = Proforma_Business()
     user_business = User_Business()
     user_helper = User_Helper()
@@ -154,10 +151,17 @@ class ProformaAdmin(admin.ModelAdmin):
             self.message_user(request=request,  message=str(e), level= messages.ERROR)
 
     @transaction.atomic
-    @admin.action(description="crear nota")
+    @admin.action(description="crear nota venta")
     def create_sales_note(self, request: HttpRequest, queryset: QuerySet):
         try:
             [self.proforma_business.crear_nota_venta( proforma=qs) for qs in list(queryset)]
+        except Exception as e:
+            self.message_user(request=request,  message=str(e), level= messages.ERROR)
+
+    @admin.action(description="crear nota trabajo")
+    def create_work_note(self, request: HttpRequest, queryset: QuerySet):
+        try:
+            [self.proforma_business.create_work_note( proforma=qs, responsable = request.user) for qs in list(queryset)]
         except Exception as e:
             self.message_user(request=request,  message=str(e), level= messages.ERROR)
 
