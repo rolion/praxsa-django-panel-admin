@@ -12,7 +12,7 @@ from ..business.inventario import Inventario_Business
 from django.contrib import messages
 from ..helper.user import User_Helper
 from ..helper.proforma import Proforma_Helper
-from django.db import transaction
+from django.http import HttpResponseRedirect
 
 class SalesDetailInLine(admin.TabularInline):
     fields = ['car_part', 
@@ -57,7 +57,8 @@ class NotaVentaAdmin(admin.ModelAdmin):
                     'name', 
                     'car_model_id',
                     'total_price',
-                    'proforma_created_on'
+                    'proforma_created_on',
+                    'is_paid'
                     ]
     exclude =  ["is_delete", "is_paid"]
     inlines = [
@@ -66,7 +67,7 @@ class NotaVentaAdmin(admin.ModelAdmin):
     # readonly_fields = ['sales_status']
     form = SaleHeaderForm
     list_per_page = 10
-    actions =[]s
+    actions =['gestion_pago']
     proforma_business = Proforma_Business()
     user_business = User_Business()
     user_helper = User_Helper()
@@ -74,7 +75,7 @@ class NotaVentaAdmin(admin.ModelAdmin):
     
     fieldsets = [('Nota Venta', {
                                 'classes':[], 
-                                "fields":['sales_status',
+                                "fields":[
                                           'sales_type',
                                           'sucursal',
                                           'codigo_garantia',
@@ -94,7 +95,38 @@ class NotaVentaAdmin(admin.ModelAdmin):
                     'classes': [],
                     'fields': ["car_plate", 
                                "car_model_id"]
-                })]
+                }),
+                ('Nota trabajo', {
+                     'classes':[],
+                     'fields':['view_notas_observaciones', 
+                               'view_notas_entrada_vehiculo', 
+                               'view_notas_salida_vehiculo']
+                })
+                ]
+    @admin.display(empty_value="-", description='Observaciones' )
+    def view_notas_observaciones(self, obj):
+        if obj is None:
+             return ''
+        if obj.nota_trabajo is None:
+             return ''
+        return obj.nota_trabajo.observaciones
+    
+    @admin.display(empty_value="-", description='Entrada Vehiculo')
+    def view_notas_entrada_vehiculo(self, obj):
+        if obj is None:
+             return ''
+        if obj.nota_trabajo is None:
+             return ''
+        return obj.nota_trabajo.entrada_vehiculo.strftime("%d-%m-%Y %H:%M:%S")
+
+    @admin.display(empty_value="-", description='Salida Vehiculo')
+    def view_notas_salida_vehiculo(self, obj):
+        if obj is None:
+             return ''
+        if obj.nota_trabajo is None:
+             return ''
+        return obj.nota_trabajo.salida_vehiculo.strftime("%d-%m-%Y %H:%M:%S")
+
     
     def has_change_permission(self, request: HttpRequest, obj=None):
         return False
@@ -106,3 +138,14 @@ class NotaVentaAdmin(admin.ModelAdmin):
             self.message_user(request=request,  message=str('Asigne una sucursal al usuario'), level= messages.ERROR)
             return qs.filter(sucursal = -1)
         return  result
+    
+
+    @admin.action(description="Gestionar Pago")
+    def gestion_pago(self, request: HttpRequest, queryset: QuerySet):
+        try:
+            qs = list(queryset)
+            if len(qs) > 0:
+                pago = self.proforma_business.create_nota_venta_pago(proforma=qs[0], user=request.user)
+                return HttpResponseRedirect(f'/admin/product/pago/{pago.id}/change')
+        except Exception as e:
+            self.message_user(request=request,  message=str(e), level= messages.ERROR)

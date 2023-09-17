@@ -172,11 +172,5 @@ class ProformaAdmin(admin.ModelAdmin):
         except Exception as e:
             self.message_user(request=request,  message=str(e), level= messages.ERROR)
 
-    @admin.action(description="Crear Pago")
-    def crear_pago(self, request: HttpRequest, queryset: QuerySet):
-        try:
-            print('crear pago')
-        except Exception as e:
-            self.message_user(request=request,  message=str(e), level= messages.ERROR)
 
     

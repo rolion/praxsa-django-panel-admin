@@ -1,10 +1,10 @@
 from django.db import models
-from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator, EmailValidator
+from django.core.validators import RegexValidator, EmailValidator
 from django.contrib.auth.models import User
 from tinymce.models import HTMLField
-from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from .helper.proforma import Proforma_Helper
+from .helper.pagos import Pagos_Helper
 
 
 class Car_Brand(models.Model):
@@ -120,7 +120,7 @@ class Proforma_Header(models.Model):
     helper = Proforma_Helper()
     sales_status = models.CharField(choices=helper.status, default=helper.default_status, verbose_name='Estado')
     sales_type = models.CharField(choices=helper.tipo_venta, default=helper.tipo_venta_instalacion, verbose_name='Tipo Venta')
-    is_paid = models.BooleanField(default=False)
+    is_paid = models.BooleanField(default=False, verbose_name='Pagado')
     proforma_created_on = models.DateTimeField(verbose_name="Fecha Proforma", auto_now=True)
     nota_venta_created_on = models.DateTimeField(verbose_name="Fecha Nota Venta", null=True, blank=True)
     is_nota_venta_canceled = models.BooleanField(default=False)
@@ -193,4 +193,14 @@ class Detalle_Nota_Trabajo(models.Model):
 
     def __str__(self) -> str:
         return f'Detalle'
+    
+class pago(models.Model):
+    helper = Pagos_Helper()
+    proforma = models.OneToOneField(Proforma_Header, on_delete=models.DO_NOTHING, verbose_name="Nota de Venta")
+    tipo_pago =models.CharField(choices=helper.types, default=helper.default_type, verbose_name='Tipo Pago')
+    cerrado = models.BooleanField(default=False)
+    created_on = models.DateTimeField(verbose_name="Fecha", auto_now_add=True)
+    created_by = models.ForeignKey(User, on_delete=models.DO_NOTHING, verbose_name='Creado por')
+    def __str__(self) -> str:
+        return f'Pago {self.id}'
 

@@ -1,7 +1,8 @@
-from ..models import Proforma_Header, Sucursal, Proforma_Detail, Nota_trabajo, Detalle_Nota_Trabajo
+from ..models import Proforma_Header, Sucursal, Proforma_Detail, Nota_trabajo, Detalle_Nota_Trabajo, pago
 from ..helper.proforma import Proforma_Helper
 from .inventario import Inventario_Business
 from ..utils.exception.nohaylaminas import NoHayLaminasDisponibles
+from ..utils.exception.proforma import ProformaException, NotaVentaException
 from django.db import IntegrityError, transaction
 class Proforma_Business:
 
@@ -136,4 +137,21 @@ class Proforma_Business:
         except Exception as e:
             print('algo salio mal, Proforma_Business - get_proforma_queryset_by_role', str(e))
             return None
+        
+    def create_nota_venta_pago(self, proforma, user):
+        if user is None:
+            raise NotaVentaException('el usuario es requerido para la gestion del pago')
+        if proforma is None:
+            raise NotaVentaException('la nota venta no puede ser nula')
+        if proforma.sales_status != self.helper.nov:
+            raise NotaVentaException(f'proforma {proforma.id} no es una nota venta')
+        
+        paidment = pago()
+        paidment.proforma = proforma
+        paidment.cerrado = False
+        paidment.created_by = user
+        paidment.save()
+        return paidment
+        
+
             
