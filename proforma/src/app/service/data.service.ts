@@ -29,7 +29,7 @@ export class DataService {
   getCalculatorInfo(): Observable<icalculatorInfo>{
     // console.log('app base dir ', environment.SERVER_APP_BASE_REF)
     return this.http
-      .get<icalculatorInfo>(`${this.base_url}/product/get_call_info`)
+      .get<icalculatorInfo>(`${this.base_url}/product/calculator_info`)
       .pipe(
         map((res: any)  => {
           const modelos: Modelo[] = [];

@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http.response import JsonResponse, HttpResponseBadRequest
 from django.template import loader
-from .models import Car_Model_Part, Window_Film_Reel, Car_Brand, Car_Model, Car_Part, Window_Film
+from .models import Car_Model_Part, Window_Film_Reel, Car_Brand, Car_Model, Car_Part, Window_Film, Sucursal
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -43,34 +43,41 @@ def get_bobina(request, pk):
             return HttpResponseBadRequest(data='not found', status=status.HTTP_409_CONFLICT)
 
 def get_car_part_info(request, car_model_id, sucursal_id):
-    inv_Business = Inventario_Business()
-    inventario = inv_Business.get_inventory_by_sucursal(sucursal=sucursal_id)
-    car_part = Car_Model_Part.objects.select_related("car_part_id").filter(car_model_id = car_model_id)
-    items = list(map(lambda part: {'part_id': part.car_part_id.id, 
-                                   'name': part.car_part_id.name, 
-                                   'quantity': part.quantity, 
-                                   'width': part.width, 
-                                   'length': part.length, 
-                                   'installation_price': part.installation_price
-                                   }, car_part))
-    widths = inv_Business.get_inventory_window_film_reel_widths(request.user)
-    inv_width = list(map(lambda w: w, widths.values_list('width', flat=True)))
-    
-    window_film = list(map(lambda inv: {'name': inv.bobina.window_film.name, 
-                                         'reel_id':inv.bobina.id, 
-                                         'price': inv.precio_venta_mtr_lineal, 
-                                         'film_id': inv.bobina.window_film.id, 
-                                         'width': inv.bobina.width
-                                         }, inventario ))
-    return JsonResponse(data={'items': items, 
-                              'window_film': window_film,
-                              'inv_widths': inv_width
-                              }, safe=False)
+    try:
+        inv_Business = Inventario_Business()
+        inventario = inv_Business.get_inventory_by_sucursal(sucursal=sucursal_id)
+        car_part = Car_Model_Part.objects.select_related("car_part_id").filter(car_model_id = car_model_id)
+        items = list(map(lambda part: {'part_id': part.car_part_id.id, 
+                                    'name': part.car_part_id.name, 
+                                    'quantity': part.quantity, 
+                                    'width': part.width, 
+                                    'length': part.length, 
+                                    'installation_price': part.installation_price
+                                    }, car_part))
+        widths = inv_Business.get_inventory_window_film_reel_widths(request.user)
+        inv_width = list(map(lambda w: w, widths.values_list('width', flat=True)))
+        
+        window_film = list(map(lambda inv: {'name': inv.bobina.window_film.name, 
+                                            'reel_id':inv.bobina.id, 
+                                            'price': inv.precio_venta_mtr_lineal, 
+                                            'film_id': inv.bobina.window_film.id, 
+                                            'width': inv.bobina.width
+                                            }, inventario ))
+        return JsonResponse(data={'items': items, 
+                                'window_film': window_film,
+                                'inv_widths': inv_width
+                                }, safe=False)
+    except Exception as e:
+        print('algo salio mal -->', str(e))
+        return JsonResponse(data={'error':True, 'message': 'algo salio mal'}, status=500)
 
 def get_layer_info(request, layer_id):
-    film = Window_Film.objects.get(pk = layer_id)
-    print('film -->', film)
-    return JsonResponse(data={'layer': {'name': film.name, 'content': film.content} }, safe=False)
+    try:
+        film = Window_Film.objects.get(pk = layer_id)
+        return JsonResponse(data={'layer': {'name': film.name, 'content': film.content} }, safe=False)
+    except Exception as e:
+        print('algo salio mal -->', str(e))
+        return JsonResponse(data={'error':True, 'message': 'algo salio mal'}, status=500)
 
 def get_inventory(request, sucursal_id):
     """"
@@ -87,44 +94,57 @@ def get_inventory(request, sucursal_id):
         }, query))
         return JsonResponse(data={'inventario': inv}, safe=False)
     except Exception as e:
-         print('algo salio mal -->', str(e))
-         return JsonResponse(data={'error':True, 'message': 'algo salio mal'}, status=500)
+        print('algo salio mal -->', str(e))
+        return JsonResponse(data={'error':True, 'message': 'algo salio mal'}, status=500)
 
-def get_call_info(request):
+def get_calculator_info(request):
     """
     return calculator information, brand, models, car parts and car part price
     """
-    car_brands = Car_Brand.objects.all()
-    brands = list(map(lambda brand: {'id': brand.id, 'name': brand.name}, car_brands))
-    car_models = Car_Model.objects.select_related('car_brand_id').all().order_by('name')
-    models = list(map(lambda model: {'id': model.id, 'name':model.name, "brand_id": model.car_brand_id.id}, car_models))
-    car_parts = Car_Part.objects.all()
-    parts = list(map(lambda part: {'id': part.id, 'name': part.name}, car_parts))
-    car_model_parts = Car_Model_Part.objects.all()
-    model_parts = list(map(lambda model_part: {'id': model_part.id, 
-                                               'width': model_part.width, 
-                                               'length': model_part.length,
-                                               'quantity': model_part.quantity, 
-                                               'model_id': model_part.car_model_id.id, 
-                                               'part_id': model_part.car_part_id.id,
-                                               'part_name': model_part.car_part_id.name,
-                                               'installation_price': float(model_part.installation_price)}, car_model_parts))
-    window_films = Window_Film.objects.all()
-    films = list(map(lambda film: {'id': film.id, 'name': film.name}, window_films))
-    window_film_reels = Window_Film_Reel.objects.select_related('window_film_id').all()
-    window_film = list(map(lambda film: {'name': film.window_film_id.name, 
-                                         'reel_id':film.id, 
-                                         'price': float(film.price), 
-                                         'film_id': film.window_film_id.id,
-                                         'width': film.width,
-                                         'film_name': film.window_film_id.name
-                                         }, window_film_reels ))
-    return JsonResponse(data={'brands': brands, 
-                              'models': models, 
-                              'parts': parts, 
-                              'model_parts': model_parts, 
-                              'films': films, 
-                              'car_part_film_price': window_film}, safe=False)
+    try:
+        car_brands = Car_Brand.objects.all()
+        brands = list(map(lambda brand: {'id': brand.id, 'name': brand.name}, car_brands))
+        car_models = Car_Model.objects.select_related('car_brand_id').all().order_by('name')
+        models = list(map(lambda model: {'id': model.id, 'name':model.name, "brand_id": model.car_brand_id.id}, car_models))
+        car_parts = Car_Part.objects.all()
+        parts = list(map(lambda part: {'id': part.id, 'name': part.name}, car_parts))
+        sucursales_query = Sucursal.objects.all().filter(enable_to_install_windows_film = True)
+        sucursales = list(map(lambda sucursal: {
+            'id': sucursal.id,
+            'name': sucursal.name,
+            'addres': sucursal.address
+
+        }, sucursales_query))
+        window_films = Window_Film.objects.all()
+        films = list(map(lambda film: {'id': film.id, 'name': film.name}, window_films))
+        return JsonResponse(data={'brands': brands, 
+                                'models': models, 
+                                'parts': parts,
+                                'films': films, 
+                                #   'car_part_film_price': window_film,
+                                'sucursales': sucursales}, safe=False)
+    except Exception as e:
+        print('algo salio mal -->', str(e))
+        return JsonResponse(data={'error':True, 'message': 'algo salio mal'}, status=500)
+
+
+def get_model_parts(request, model_id):
+    """Returns model parts"""
+    try:
+        car_model_parts = Car_Model_Part.objects.all().filter(car_model_id= model_id)
+        model_parts = list(map(lambda model_part: {'id': model_part.id, 
+                                                'width': model_part.width, 
+                                                'length': model_part.length,
+                                                'quantity': model_part.quantity, 
+                                                'model_id': model_part.car_model_id.id, 
+                                                'part_id': model_part.car_part_id.id,
+                                                'part_name': model_part.car_part_id.name,
+                                                'installation_price': float(model_part.installation_price)}, car_model_parts))
+        return JsonResponse(data={'car_parts': model_parts}, safe=False)
+    except Exception as e:
+        print('algo salio mal -->', str(e))
+        return JsonResponse(data={'error':True, 'message': 'algo salio mal'}, status=500)
+
     
 @api_view(['POST'])
 @permission_classes((permissions.AllowAny,))
