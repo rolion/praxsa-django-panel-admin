@@ -61,7 +61,7 @@ export class FormularioComponent implements OnInit, OnDestroy {
     this.dao.model = data.modelos;
     this.dao.marcas = data.marca;
     this.dao.prices = data.lamina_price;
-    // console.log('data ', data);
+    console.log('data ', data);
     this.dao.carParts = data.model_parts;
   }
 

@@ -117,6 +117,7 @@ def get_calculator_info(request):
         }, sucursales_query))
         window_films = Window_Film.objects.all()
         films = list(map(lambda film: {'id': film.id, 'name': film.name}, window_films))
+        print('films-->', films)
         return JsonResponse(data={'brands': brands, 
                                 'models': models, 
                                 'parts': parts,
