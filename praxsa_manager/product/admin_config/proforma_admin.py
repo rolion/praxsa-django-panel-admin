@@ -61,7 +61,7 @@ class ProformaAdmin(admin.ModelAdmin):
                     'total_price',
                     'proforma_created_on'
                     ]
-    exclude =  ["is_delete", "is_paid"]
+    exclude =  ["is_delete", "is_paid", 'created_by']
     inlines = [
         SalesDetailInLine,
     ]
@@ -135,6 +135,10 @@ class ProformaAdmin(admin.ModelAdmin):
             return '__all__'
                     
         return ['sales_status']
+    
+    def save_model(self, request, obj, form, change):
+        obj.created_by = request.user
+        super().save_model(request, obj, form, change)
     
     @admin.action(description="Eliminar Proforma")
     def delete_proforma(self, request: HttpRequest, queryset: QuerySet):

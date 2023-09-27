@@ -17,10 +17,9 @@ class InvoiceView(APIView):
     
     def post(self, request, *args, **kwargs):
         user = request.user
-        client = Client.objects.get(user_id = user)
         # import pdb; pdb.set_trace()
-        request.data['client_id']= client.id
-        print('data ', request.data)
+        request.data['created_by']= user.id
+        # print('data ', request.data)
         serializer = SalesHeaderSerializer(data=request.data)
         if serializer.is_valid():
             invoice = serializer.save()
@@ -29,36 +28,35 @@ class InvoiceView(APIView):
     
     def get(self, request, pk, format=None):
         try:
-            client = Client.objects.get(user_id= request.user)
-            invoice = Proforma_Header.objects.get(id = pk)
-            if invoice.client_id.id == client.id:
-                details = Proforma_Detail.objects.filter(proforma_header = invoice)
-                items = list(map(lambda item: {'car_part_id': item.car_part_id.id, 
-                                               'car_part_name': item.car_part_id.name, 
-                                               'width': item.width, 
-                                               'length': item.length, 
-                                               'sub_total': item.price, 
-                                               'quantity': item.quantity, 
-                                               'window_film_id': item.window_film_id.id, 
-                                               'window_film_name': item.window_film_id.name,
-                                               }, details))
-                
-                data = {'name': invoice.name,
-                        'clien_id': invoice.client_id.id,
-                        'email': invoice.email,
-                        'ci_nit': invoice.ci_nit,
-                        'car_plate': invoice.car_plate,
-                        'phone_number': invoice.phone_number,
-                        'car_model_id': invoice.car_model_id.id,
-                        'car_model_name': invoice.car_model_id.name,
-                        "car_brand_name": invoice.car_model_id.car_brand_id.name,
-                        'total_price': invoice.total_price,
-                        'date': invoice.date.strftime("%d/%m/%Y"),
-                        'status': invoice.sales_status,
-                        'carPartItems': items}
-                return Response(data = data  , status=status.HTTP_200_OK)
-            else:
-                return Response(data ={'not allowed'}  , status=status.HTTP_401_UNAUTHORIZED)
+            invoice = Proforma_Header.objects.select_related('car_model_id').get(id = pk)
+            # if invoice.client_id.id == client.id:
+            details = Proforma_Detail.objects.select_related('car_part','window_film').filter(proforma_header = invoice)
+           
+            items = list(map(lambda item: {'car_part_id': item.car_part.id, 
+                                            'car_part_name': item.car_part.name, 
+                                            'width': item.width, 
+                                            'length': item.length, 
+                                            'sub_total': item.sub_total, 
+                                            'quantity': item.quantity, 
+                                            'window_film_id': item.window_film.id, 
+                                            'window_film_name': item.window_film.name,
+                                            }, details))
+            
+            data = {'name': invoice.name,
+                    'email': invoice.email,
+                    'ci_nit': invoice.ci_nit,
+                    'car_plate': invoice.car_plate,
+                    'phone_number': invoice.phone_number,
+                    'car_model_id': invoice.car_model_id.id,
+                    'car_model_name': invoice.car_model_id.name,
+                    "car_brand_name": invoice.car_model_id.car_brand_id.name,
+                    'total_price': invoice.total_price,
+                    'proforma_created_on': invoice.proforma_created_on.strftime("%d/%m/%Y"),
+                    'status': invoice.sales_status,
+                    'carPartItems': items}
+            return Response(data = data  , status=status.HTTP_200_OK)
+            # else:
+            #     return Response(data ={'not allowed'}  , status=status.HTTP_401_UNAUTHORIZED)
         except ObjectDoesNotExist:
             return Response(data='not found', status=status.HTTP_404_NOT_FOUND)
         except MultipleObjectsReturned:
@@ -74,12 +72,12 @@ class ListUserInvoice(APIView):
     permission_classes = [permissions.IsAuthenticated]
     
     def get(self, request):
-        print(request.user)
-        client = Client.objects.get(user_id = request.user)
-        print(client)
+        print(request.user.id)
+        # client = Client.objects.get(user_id = request.user)
+        # print(client)
         list_invoice = list(map( lambda invoice: {
                     'name': invoice.name,
-                    'client_id': invoice.client_id.id,
+                    # 'client_id': invoice.client_id.id,
                     'email': invoice.email,
                     'ci_nit': invoice.ci_nit,
                     'car_plate': invoice.car_plate,
@@ -87,13 +85,13 @@ class ListUserInvoice(APIView):
                     'car_model_id': invoice.car_model_id.id,
                     'car_model_name': invoice.car_model_id.name,
                     'total_price': invoice.total_price,
-                    'date': invoice.date.strftime("%d%m/%Y"),
+                    'date': invoice.proforma_created_on.strftime("%d%m/%Y"),
                     'status': invoice.sales_status,
                     'id': invoice.id
                     
-            },Proforma_Header.objects.filter(client_id= client) ))
+            },Proforma_Header.objects.filter(created_by= request.user.id) ))
         print(list_invoice)
-        count = Proforma_Header.objects.filter(client_id= client).count()
+        count = Proforma_Header.objects.filter(created_by= request.user.id).count()
         data = {
             "recordsTotal": count,
             "recordsFiltered": count,

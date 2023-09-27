@@ -109,12 +109,7 @@ class inventario(models.Model):
     precio_compra_mtr_lineal = models.DecimalField( max_digits=10, decimal_places=2, default=0.0, verbose_name="Precio Compra Metro Lineal")
     precio_venta_mtr_lineal = models.DecimalField( max_digits=10, decimal_places=2, default=0.0, verbose_name="Precio Venta Metro Lineal")
     def __str__(self):
-        return f'{self.sucursal.name}-{self.bobina.window_film.name} '
-
-
-# class instalador_sucursal(models.Model):
-#     sucursal_id = models.ForeignKey(Sucursal, on_delete=models.DO_NOTHING, verbose_name="Sucursal")
-#     instalador = models.ForeignKey(User, on_delete=models.DO_NOTHING, verbose_name="Instalador")
+        return f'{self.sucursal.name}-{self.bobina.window_film.name}'
 
 class Proforma_Header(models.Model):
     helper = Proforma_Helper()
@@ -135,6 +130,7 @@ class Proforma_Header(models.Model):
     car_model_id = models.ForeignKey(Car_Model, on_delete=models.DO_NOTHING, verbose_name="Modelo")
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Total Pagar")
     is_delete = models.BooleanField(default=False)
+    created_by = models.ForeignKey(User, verbose_name='Creado Por',on_delete=models.DO_NOTHING, null=False, related_name='usuario_proforma')
     
     class Meta:
         verbose_name = 'Proforma'

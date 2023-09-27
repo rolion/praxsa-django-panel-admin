@@ -90,7 +90,9 @@ def get_inventory(request, sucursal_id):
             'bobina_film_name': i['bobina__window_film__name'],
             'bobina_film_id': i['bobina__window_film__id'],
             'bobina_width': i['bobina__width'],
-            'bobina_metros_disponibles': float(i['total'])
+            'bobina_metros_disponibles': float(i['total']),
+            'bobina_price': float(i['precio_venta_mtr_lineal']),
+            'bobina_id': i['bobina__window_film__id']
         }, query))
         return JsonResponse(data={'inventario': inv}, safe=False)
     except Exception as e:

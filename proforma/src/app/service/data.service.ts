@@ -1,6 +1,7 @@
 import { Inject, Injectable, PLATFORM_ID } from '@angular/core';
 import {Modelo} from '../model/modelo';
 import {CarPartItem} from '../model/item';
+import {Sucursal} from '../model/sucursal';
 import {Film, Car_Part_Film_Price} from '../model/lamina';
 import {Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
@@ -8,6 +9,8 @@ import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {Marca} from '../model/marca';
 import { environment } from '../../environments/environment';
 import { icalculatorInfo } from '../interface/iCalculator';
+import { iInventory } from '../interface/iInventory';
+import { iCarPart } from '../interface/iCarPart';
 import { isPlatformBrowser } from '@angular/common';
 
 @Injectable({
@@ -37,6 +40,13 @@ export class DataService {
           const lamina: Film[] = []
           const model_parts: CarPartItem[] = []
           const lamina_price: Car_Part_Film_Price[] = []
+          const sucursal: Sucursal[]= []
+          if(res.sucursales && Array.isArray(res.sucursales)){
+            res.sucursales.forEach((obj: Sucursal) => {
+              sucursal.push(obj)
+            })
+          }
+
           if(res.models && Array.isArray(res.models)){
             res.models.forEach((model: any) => {
               modelos.push(new Modelo( model.id, model.brand_id, model.name));
@@ -47,58 +57,52 @@ export class DataService {
               marca.push(new Marca( brand.id, brand.name));
             })
           }
-          if(res.films && Array.isArray(res.films)){
-            res.films.forEach((film: any) => {
-              lamina.push(new Film( film.id, film.name,));
-            })
-          }
-          if(res.car_part_film_price && Array.isArray(res.car_part_film_price)){
-            res.car_part_film_price .forEach((film: any) => {
-              lamina_price.push(new Car_Part_Film_Price(film.name, film.film_id, film.width, film.reel_id, film.price, ''));
-            })
-          }
+          // if(res.films && Array.isArray(res.films)){
+          //   res.films.forEach((film: any) => {
+          //     lamina.push(new Film( film.id, film.name,));
+          //   })
+          // }
+          // if(res.car_part_film_price && Array.isArray(res.car_part_film_price)){
+          //   res.car_part_film_price .forEach((film: any) => {
+          //     lamina_price.push(new Car_Part_Film_Price(film.name, film.film_id, film.width, film.reel_id, film.price, ''));
+          //   })
+          // }
           if(res.model_parts && Array.isArray(res.model_parts)){
             res.model_parts.forEach((part: any) => {
-              let modelPart = new CarPartItem(part.id, part.part_name, part.width, part.quantity, part.part_id, part.installation_price, part.model_id);
-              modelPart.length = part.length;
-              model_parts.push(modelPart);
+              //let modelPart = new CarPartItem(part.id, part.part_name, part.width, part.quantity, part.part_id, part.installation_price, part.model_id);
+              //modelPart.length = part.length;
+              model_parts.push(part);
             })
           }
-          let response = {modelos, marca, lamina, model_parts, lamina_price}
+          let response = {modelos, marca, lamina, model_parts, lamina_price, sucursal}
           
           return response
         })
       )
   }
-  getModelo(): Observable<Modelo[]>{
-    return  this.http
-      .get('assets/data/modelo.csv', {responseType: 'text'})
+  getInventario(sucursalId: Number):Observable<iInventory[]>{
+    return this.http
+    .get<iInventory[]>(`${this.base_url}/product/get_inventory/${sucursalId}`)
       .pipe(
-        map((res: any) => {
-          const csvToRowArray = res.split('\n');
-          const modelo: Modelo[] = [];
-          for (let index = 1; index < csvToRowArray.length - 1; index++) {
-            let row = csvToRowArray[index].split(',');
-            // console.log('row ', row)
-            modelo.push(new Modelo( parseInt( row[0], 10), parseInt( row[1], 10), row[2]));
+        map((res: any)  => {
+          let inventario: iInventory[]=[];
+          console.log('inventario data', res.inventario)
+          if(res.inventario && Array.isArray(res.inventario)){
+            inventario = res.inventario
           }
-          return modelo;
-        })
-      );
+          return inventario;
+    }))
   }
-  getMarca(): Observable<Marca[]>{
-    return  this.http
-      .get('assets/data/marca.csv', {responseType: 'text'})
-      .pipe(
-        map((res: any) => {
-          const csvToRowArray = res.split('\n');
-          const modelo: Marca[] = [];
-          for (let index = 1; index < csvToRowArray.length - 1; index++) {
-            let row = csvToRowArray[index].split(',');
-            modelo.push(new Marca( parseInt( row[0], 10), row[1]));
+  getModelParts(modelId: Number):Observable<iCarPart[]>{
+    return this.http
+    .get<iCarPart[]>(`${this.base_url}/product/model_parts/${modelId}`)
+    .pipe(
+      map((res: any)=>{
+        let carParts: iCarPart[]=[]
+          if(res.car_parts && Array.isArray(res.car_parts)){
+            carParts = res.car_parts
           }
-          return modelo;
-        })
-      );
+          return carParts;
+      }))
   }
 }

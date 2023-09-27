@@ -36,13 +36,13 @@ export class ProformaCollection{
 
 
 export class CarPartFilmItem {
-  car_part_id: number;
+  car_part: number;
   car_part_name: string;
   width : number;
   length: number;
   sub_total: number;
   quantity: number;
-  window_film_id: number;
+  window_film: number;
   window_film_name: string;
   installation_price: number;
   window_film_price: number;
@@ -59,13 +59,13 @@ export class CarPartFilmItem {
     installation_price: number,
     window_film_price: number,
   ){
-    this.car_part_id = car_part_id;
+    this.car_part = car_part_id;
     this.car_part_name = car_part_name;
     this.width  = width;
     this.length = length;
     this.sub_total = sub_total;
     this.quantity = quantity;
-    this.window_film_id = window_film_id;
+    this.window_film = window_film_id;
     this.window_film_url = '';
     this.installation_price= installation_price;
     this.window_film_price= window_film_price;
@@ -76,9 +76,9 @@ export class CarPartFilmItem {
 export class Invoice{
   carPartItems: CarPartFilmItem[];
   name: string;
-  client_id: number;
   ci_nit: string;
   car_plate: string;
+  sucursal: number;
   car_model_id: number;
   car_model_name: string;
   car_brand_id: number;
@@ -88,7 +88,7 @@ export class Invoice{
   ci: string | null | undefined;
   placa: string | null | undefined;
   total_price: number;
-  date: string;
+  proforma_created_on: string;
   status: string;
 
   constructor(
@@ -99,7 +99,6 @@ export class Invoice{
     car_brand_name: string,
     total_price: number){
     this.carPartItems = carPartItems;
-    this.client_id = 0;
     this.name = "";
     this.email = "",
     this.ci_nit = "",
@@ -110,7 +109,8 @@ export class Invoice{
     this.car_brand_name = car_brand_name,
     this.total_price = total_price;
     this.phone_number = '';
-    this.date = '';
+    this.proforma_created_on = '';
     this.status = '';
+    this.sucursal = 0;
   }
 }

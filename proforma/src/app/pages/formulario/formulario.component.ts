@@ -6,6 +6,7 @@ import {Modelo} from '../../model/modelo';
 import {CarPartItem} from '../../model/item';
 import {ReportItem} from '../../model/report';
 import {Marca} from '../../model/marca';
+import {Sucursal} from '../../model/sucursal';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import {NgModalContentComponent} from '../../components/ng-modal-content/ng-modal-content.component';
 import {ProformaCollection, CarPartFilmItem, Invoice} from '../../model/proformaCollection';
@@ -15,6 +16,7 @@ import {HttpClient} from "@angular/common/http";
 import { Car_Part_Film_Price, Film } from 'src/app/model/lamina';
 import { iDB } from './data'
 import { icalculatorInfo } from 'src/app/interface/iCalculator';
+import { iInventory } from 'src/app/interface/iInventory';
 // import { TransferState } from '@angular/platform-browser';
 
 
@@ -35,6 +37,7 @@ export class FormularioComponent implements OnInit, OnDestroy {
   allModels: Modelo[] = [];
   cantidad: number = 0;
   selectedModelId = -1 ;
+  selectedSucursalId = -1;
   selectedItemId = -1 ;
   report: ReportItem[] = [];
   invoiceItem: CarPartFilmItem[] = [];
@@ -50,9 +53,10 @@ export class FormularioComponent implements OnInit, OnDestroy {
   defaultData: icalculatorInfo = {
     modelos: [new Modelo(0, 0, '')],
     marca: [new Marca(0, '')],
-    lamina: [new Film(0, '', '')],
-    model_parts: [new CarPartItem(0, "", 0, 0, 0, 0, 0)],
-    lamina_price: [new Car_Part_Film_Price('', 0, 0, 0, 0, "")]
+    lamina: [new Film()],
+    model_parts: [new CarPartItem()],
+    lamina_price: [new Car_Part_Film_Price()],
+    sucursal: [new Sucursal()]
   };
   tableSelectedWindowsFilm: String[] = [];
 
@@ -61,8 +65,9 @@ export class FormularioComponent implements OnInit, OnDestroy {
     this.dao.model = data.modelos;
     this.dao.marcas = data.marca;
     this.dao.prices = data.lamina_price;
-    console.log('data ', data);
+    this.dao.sucursales = data.sucursal;
     this.dao.carParts = data.model_parts;
+    console.log('data ', data);
   }
 
   getCalculatorInfo(){
@@ -75,6 +80,42 @@ export class FormularioComponent implements OnInit, OnDestroy {
         this.setData(stateData);
       }
     })
+  }
+  getInventory(){
+    if (this.selectedSucursalId > 0){
+      this.dataService.getInventario(this.selectedSucursalId).subscribe(inventory => {
+        console.log('inventario', inventory)
+        this.dao.prices = inventory;
+        let initialValue: Car_Part_Film_Price[] = []
+        let film = inventory.reduce((acc, curr: iInventory)=> {
+          let isIn = (element: iInventory) => element && element.bobina_film_id == curr.bobina_film_id;
+          let exist = acc.findIndex(isIn);
+          if(exist == -1 && curr){
+            acc.push(curr)
+          }
+          return acc;
+        },initialValue).map((element)=>{
+          let film = new Film()
+          film.id = element.bobina_id;
+          film.name = element.bobina_film_name;
+          return film;
+        })
+        this.dao.films = film;
+        this.loadTable();
+      })
+    }
+   
+  }
+
+  // si sucursal, marca y model son seleccionados, load table no tendra problemas en cargar la tabla
+  getCarParts(){
+    if (this.selectedModelId > 0){
+      this.dataService.getModelParts(this.selectedModelId).subscribe(data => {
+        console.log('car parts', data)
+        this.dao.carParts = data;
+        this.loadTable();
+      })
+    }
   }
   ngOnInit(): void {
     if(this.transferState.hasKey(makeStateKey('data'))){
@@ -113,7 +154,7 @@ export class FormularioComponent implements OnInit, OnDestroy {
   
   loadTable(): void{
     const selectedModel = this.modelosByMarca.find(item => item.id === +this.selectedModelId);
-    if(selectedModel){
+    if(this.selectedSucursalId && this.selectedSucursalId > 0 && selectedModel && this.selectedSucursalId  > 0){
       const modelParts = this.getSelectedModelParts();
       this.tableSelectedWindowsFilm = [];
       this.invoiceItem = [];
@@ -157,7 +198,7 @@ export class FormularioComponent implements OnInit, OnDestroy {
       this.invoiceItem[reportIndex].sub_total = 0;
       this.invoiceItem[reportIndex].length = 0;
       this.invoiceItem[reportIndex].quantity = 0;
-      this.invoiceItem[reportIndex].window_film_id = 0;
+      this.invoiceItem[reportIndex].window_film = 0;
       this.invoiceItem[reportIndex].window_film_url = '';
       this.tableSelectedWindowsFilm[reportIndex] = "-1";
       this.total = 0;
@@ -179,23 +220,23 @@ export class FormularioComponent implements OnInit, OnDestroy {
       } = this.getLaminaItemPrice(lamina, width, length, quantity, installation_price);
       this.invoiceItem[indexReport].sub_total = totalPrice;
       this.invoiceItem[indexReport].window_film_price = filmPrice;
-      this.invoiceItem[indexReport].window_film_id = lamina.id;
+      this.invoiceItem[indexReport].window_film = lamina.id;
       this.invoiceItem[indexReport].window_film_url = 'windows-film/'+lamina.id;
       this.calculateTotal();
     }else{
       this.invoiceItem[indexReport].sub_total = 0;
       this.invoiceItem[indexReport].window_film_price = 0;
-      this.invoiceItem[indexReport].window_film_id = 0
+      this.invoiceItem[indexReport].window_film = 0
     }
     this.calculateTotal();
   }
 
   getLaminaItemPrice(lamina: Film, carPartWidth: number, carPartLength: number, itemQuantity: number, carPartInstallationPrice: number){
     let filmPrice = this.dao.getLamninaPriceByWidth(lamina.id, carPartWidth);
-    let totalPrice = (carPartLength * itemQuantity * filmPrice.price) + (carPartInstallationPrice *itemQuantity) ;
-    console.log(`part length ${carPartLength}, itemQuantiti ${itemQuantity}, film price ${filmPrice.price}, carpart installation price ${carPartInstallationPrice}`)
+    let totalPrice = (carPartLength * itemQuantity * filmPrice.bobina_price) + (carPartInstallationPrice *itemQuantity) ;
+    console.log(`part length ${carPartLength}, itemQuantiti ${itemQuantity}, film price ${filmPrice.bobina_price}, carpart installation price ${carPartInstallationPrice}`)
     // let totalPrice = filmPrice.price === 0? 0 :(carPartInstallationPrice + filmPrice.price) * filmQuantity;
-    return {'filmPrice': filmPrice.price, totalPrice}
+    return {'filmPrice': filmPrice.bobina_price, totalPrice}
   }
 
   calculateTotal(): void{
@@ -217,6 +258,7 @@ export class FormularioComponent implements OnInit, OnDestroy {
       marcaName,
       this.total
     )
+    invoice.sucursal = this.selectedSucursalId;
     return invoice;
   }
 

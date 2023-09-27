@@ -80,7 +80,7 @@ export class ProformaComponent implements OnInit, OnDestroy {
         this.pdf.setTitle('Proforma');
         this.pdf.setProformaDetail(
           // '',
-          this.proforma.date == null? '': this.proforma.date,
+          this.proforma.proforma_created_on == null? '': this.proforma.proforma_created_on,
           this.proforma.name == null? '': this.proforma.name,
           this.proforma.ci_nit== null ? '': this.proforma.ci_nit,
           this.proforma.email== null ? '': this.proforma.email,
