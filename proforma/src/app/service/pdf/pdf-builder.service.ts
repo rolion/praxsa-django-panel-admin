@@ -23,7 +23,6 @@ export class PdfBuilderService {
     this.xPosition = 14;
     this.mainColor = '#2a3181';
     this.blackColor = '#000000';
-
   }
   resetPdf(){
     this.doc= new jsPDF();
