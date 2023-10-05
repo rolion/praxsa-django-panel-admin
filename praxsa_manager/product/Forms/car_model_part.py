@@ -54,19 +54,19 @@ class CarModelPartForm(ModelForm):
         cc_installation_price = cleaned_data.get('installation_price')
         cc_length = cleaned_data.get('length')
         sale_header = cleaned_data.get("sales_header")
-        print('proforma-------->>', sale_header)
         cc_window_film = cleaned_data.get("window_film")
 
         if cc_length is None:
             self.add_error('length','este campo es requerido')
             return
-        if cc_installation_price < 1:
-                self.add_error('installation_price','campo requerido')
+        
         if sale_header is not None and sale_header.sales_type == self.proforma_helper.tipo_venta_instalacion:
             if self.item_width_lte_film_width(cc_car_part_id, sale_header.car_model_id, cc_width) == False:
                 self.add_error('window_film','el ancho de la bobina es menor que el ancho del item')
             if cc_quantity < 1:
                 self.add_error('quantity','campo requerido')
+            if cc_installation_price < 1:
+                self.add_error('installation_price','campo requerido')
             
             # available_reel = self.inv_bussiness.available_window_film_reel_in_inventory_to_sell(width=cc_width, 
             #                                                                                     windows_film=cc_window_film, 
