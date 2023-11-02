@@ -14,6 +14,8 @@ from ..helper.user import User_Helper
 from ..helper.proforma import Proforma_Helper
 from django.db import transaction
 from ..helper.pdf import PDFService
+from django.http import FileResponse
+import io
 
 
 class SalesDetailInLine(admin.TabularInline):
@@ -70,7 +72,8 @@ class ProformaAdmin(admin.ModelAdmin):
     # readonly_fields = ['sales_status']
     form = SaleHeaderForm
     list_per_page = 10
-    actions =["open_proforma","create_sales_note","create_work_note","delete_proforma", "fisical_delete_proforma", "print_proforma"]
+    # actions =["open_proforma","create_sales_note","create_work_note","delete_proforma", "fisical_delete_proforma", "print_proforma"]
+    actions =["open_proforma", "create_sales_note", "create_work_note", "print_proforma"]
     proforma_business = Proforma_Business()
     user_business = User_Business()
     user_helper = User_Helper()
@@ -179,11 +182,18 @@ class ProformaAdmin(admin.ModelAdmin):
             self.message_user(request=request,  message=str(e), level= messages.ERROR)
 
 
-    @admin.action(description="Imprimi")
+    @admin.action(description="Imprimir")
     def print_proforma(self, request: HttpRequest, queryset: QuerySet):
         # try:
-            pdf = PDFService()
-            pdf.create_file()
+            buffer = io.BytesIO()
+            pdf = PDFService(buffer= buffer)
+            print('qs ', queryset[0])
+            prodorma_detail = Proforma_Detail.objects.select_related("car_part", "window_film")
+            prodorma_detail = prodorma_detail.filter( proforma_header = queryset[0])
+            pdf.create_proforma(detail=prodorma_detail, header=queryset[0])
+            buffer.seek(0)
+            filename = f'proforma-{queryset[0].id}.pdf'
+            return FileResponse(buffer, as_attachment=True, filename=filename)
         # except Exception as e:
         #     self.message_user(request=request,  message=str(e), level= messages.ERROR)
 
