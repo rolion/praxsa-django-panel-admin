@@ -6,6 +6,8 @@ from .models import Car_Brand, Car_Model, Car_Part, Car_Model_Part, Window_Film,
 
 from .models import Proforma_Header, Sucursal, inventario, Nota_trabajo #, instalador_sucursal
 # from .admin_config.car_model_winfow_film_part import CarModelWindowFilmPart
+from .models import instalador
+
 from .admin_config.car_brand import CarBrand
 from .admin_config.car_model import CarModel
 from .admin_config.car_model_part import CarModelPart
@@ -17,8 +19,9 @@ from .admin_config.inventory import InventoryAdmin
 from .admin_config.nota_trabajo import NotaTrabajoAdmin
 from .admin_config.nota_venta import NotaVentaAdmin
 from .admin_config.pagos import PagosAdmin
+from .admin_config.installer import Installer
 
-# admin.site.disable_action("delete_selected")
+admin.site.register( instalador, Installer)
 admin.site.register(Car_Brand, CarBrand)
 admin.site.register(Car_Model, CarModel)
 admin.site.register(Car_Model_Part, CarModelPart)

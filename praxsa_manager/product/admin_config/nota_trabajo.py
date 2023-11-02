@@ -35,7 +35,6 @@ class NotaTrabajoAdmin(admin.ModelAdmin):
     inlines = [
         ProformaDetailInLine,
     ]
-    proforma_business = Proforma_Business()
     search_fields = ['id',
                      'car_plate',
                      'car_model__name',

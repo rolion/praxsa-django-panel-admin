@@ -95,12 +95,20 @@ class Client(models.Model):
     
 class Sucursal(models.Model):
     name = models.CharField(max_length=20, default=" ", null=False, verbose_name="Nombre")
-    address = models.CharField(max_length=400, default=" ", null=False, verbose_name="direccion")
+    address = models.CharField(max_length=400, default=" ", null=False, verbose_name="Dirección")
     enable_to_install_windows_film = models.BooleanField(default=True, verbose_name="Habilitado")
     empleado = models.ManyToManyField(User, verbose_name='Empleados')
     # administrador = models.ManyToManyField(User, verbose_name='Admin Sucursal')
     def __str__(self):
         return f'{self.name}'
+    
+class instalador(models.Model):
+    name = models.CharField(max_length=20, default=" ", null=False, verbose_name="Nombre")
+    address = models.CharField(max_length=400, default=" ", null=False, verbose_name="Dirección")
+    phonenumber = models.CharField(validators=[RegexValidator('(\+)*\d{7,11}')], verbose_name="Numero Telefónico")
+    sucursal = models.ManyToManyField(Sucursal)
+    def __str__(self):
+        return self.name
 
 class inventario(models.Model):
     sucursal = models.ForeignKey(Sucursal, on_delete=models.DO_NOTHING, verbose_name="Sucursal",related_name="sucursal_inventario")
@@ -148,7 +156,7 @@ class Nota_trabajo(models.Model):
     entrada_vehiculo = models.DateTimeField(verbose_name="Entrada Vehiculo", null=True, blank=True)
     salida_vehiculo = models.DateTimeField(verbose_name="Salida Vehiculo", null=True, blank=True)
     observaciones = models.TextField(verbose_name='Observaciones', blank=True, null=True)
-    instaladar = models.ForeignKey(User, verbose_name='Instalador',on_delete=models.DO_NOTHING, null=True, related_name='instalador_laminas_nota_trabajo')
+    instaladar = models.ForeignKey(instalador, verbose_name='Instalador',on_delete=models.DO_NOTHING, null=True, related_name='instalador_laminas_nota_trabajo')
     responsable = models.ForeignKey(User, verbose_name='Responsable',on_delete=models.DO_NOTHING, blank=True, null=True, related_name='responsable_proforma_nota_trabajo')
     name = models.CharField(max_length=400, default=" ", null=False, verbose_name="Nombre Completo")
     car_plate = models.CharField(max_length=10, default="", null=True, verbose_name="Placa Auto")
