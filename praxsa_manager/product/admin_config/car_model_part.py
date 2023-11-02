@@ -9,3 +9,9 @@ class CarModelPart(admin.ModelAdmin):
                     'length',
                     'quantity']
     list_per_page = 10
+
+    search_fields = ['id',
+                     'car_model_id__name',
+                     'car_part_id__name',
+                     'width', 
+                     'length',]

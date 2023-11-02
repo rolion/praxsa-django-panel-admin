@@ -64,7 +64,7 @@ class NotaVentaAdmin(admin.ModelAdmin):
     inlines = [
         SalesDetailInLine,
     ]
-    # readonly_fields = ['sales_status']
+    search_fields = ["id", 'sales_type', 'proforma_created_on', 'name', 'email']
     form = SaleHeaderForm
     list_per_page = 10
     actions =['gestion_pago']

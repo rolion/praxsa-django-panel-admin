@@ -41,6 +41,9 @@ class Car_Model_Part(models.Model):
     installation_price = models.DecimalField(max_digits=10,decimal_places=2, default=0, verbose_name="Precio Instalación")
     class Meta:
         verbose_name = 'Modelo Item'
+        constraints = [
+            models.UniqueConstraint(fields=['car_model_id', 'car_part_id'], name='unique_model_item'),
+        ]
         
     def __str__(self):
         return f'{self.car_part_id.name} - {self.car_model_id.name}'

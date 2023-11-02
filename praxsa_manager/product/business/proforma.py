@@ -138,6 +138,21 @@ class Proforma_Business:
             print('algo salio mal, Proforma_Business - get_proforma_queryset_by_role', str(e))
             return None
         
+    def get_nota_trabajo_queryset_by_role(self, user, qs):
+        try:
+            sucursales = Sucursal.objects.prefetch_related('empleado').filter(empleado__id = user.id, enable_to_install_windows_film = True)
+            # if user.is_superuser:
+            #     return qs.filter(is_delete = False)
+            sucursales = Sucursal.objects.prefetch_related('empleado').filter(empleado__id = user.id, enable_to_install_windows_film = True)
+            if len(sucursales) > 0:
+                qs_result = qs.select_related('proforma__sucursal').filter(proforma__sucursal__id = sucursales[0].id, proforma__is_delete = False)
+            else:
+                qs_result = None
+            return qs_result
+        except Exception as e:
+            print('algo salio mal, Proforma_Business - get_proforma_queryset_by_role', str(e))
+            return None
+        
     def create_nota_venta_pago(self, proforma, user):
         if user is None:
             raise NotaVentaException('el usuario es requerido para la gestion del pago')

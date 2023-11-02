@@ -66,6 +66,7 @@ class ProformaAdmin(admin.ModelAdmin):
     inlines = [
         SalesDetailInLine,
     ]
+    search_fields = ["id", 'sales_type', 'proforma_created_on', 'name', 'email']
     # readonly_fields = ['sales_status']
     form = SaleHeaderForm
     list_per_page = 10
