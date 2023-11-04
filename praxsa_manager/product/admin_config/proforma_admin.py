@@ -71,7 +71,6 @@ class ProformaAdmin(admin.ModelAdmin):
     # readonly_fields = ['sales_status']
     form = SaleHeaderForm
     list_per_page = 10
-    # actions =["open_proforma","create_sales_note","create_work_note","delete_proforma", "fisical_delete_proforma", "print_proforma"]
     actions =["open_proforma", "create_sales_note", "create_work_note", "print_proforma"]
     proforma_business = Proforma_Business()
     user_business = User_Business()
@@ -127,7 +126,6 @@ class ProformaAdmin(admin.ModelAdmin):
     def get_readonly_fields(self, request, obj=None):
         if obj is None:
             return []
-        print('is proforma close: ', obj.is_close)
         if obj.is_close == True:
             return '__all__'
                     

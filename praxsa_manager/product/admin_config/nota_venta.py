@@ -59,7 +59,7 @@ class NotaVentaAdmin(admin.ModelAdmin):
                     'total_price',
                     'view_notas_created_on'
                     ]
-    search_fields = ["id", 'created_on', 'name',]
+    search_fields = ['id','nota_trabajo__id','created_on', 'name',]
     form = NotaVentaForm
     list_per_page = 10
     actions =['gestion_pago', 'print_nota_venta']
@@ -91,7 +91,7 @@ class NotaVentaAdmin(admin.ModelAdmin):
              return ''
         if obj.nota_trabajo is None:
              return ''
-        return obj.nota_trabajo
+        return obj.nota_trabajo.id
     
     @admin.display(empty_value="-", description='Creado en')
     def view_notas_created_on(self, obj):

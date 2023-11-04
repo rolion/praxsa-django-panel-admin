@@ -114,9 +114,6 @@ class Proforma_Business:
     
     def get_proforma_queryset_by_role(self, user, qs):
         try:
-            # sucursales = Sucursal.objects.prefetch_related('empleado').filter(empleado__id = user.id, enable_to_install_windows_film = True)
-            # if user.is_superuser:
-            #     return qs.filter(is_delete = False)
             sucursales = Sucursal.objects.prefetch_related('empleado')
             sucursales = sucursales.filter(empleado__id = user.id, enable_to_install_windows_film = True)
             if len(sucursales) > 0:
