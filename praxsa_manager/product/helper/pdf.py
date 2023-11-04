@@ -33,7 +33,7 @@ class PDFService:
         self.canvas.setFillColor(aColor=self.main_color)
         self.canvas.drawString(text=title, x=self.x_position, y=-115 )
 
-    def set_proforma_header(self, fecha, nombre, ci, email, celular, marca, modelo, placa):
+    def set_proforma_header(self, fecha, nombre, ci, email, celular, marca, modelo, placa, codigo_proforma, codigo_garantia='Pendiente'):
       columnSeparation = 250
       fontSizeTitles = 12
       fontSizeNormal = 11
@@ -46,10 +46,12 @@ class PDFService:
       self.canvas.setFont(psfontname='Helvetica', size=fontSizeNormal)
       self.canvas.drawString(text=fecha, x = self.x_position, y=initialY + base_increment)
       self.canvas.setFont(psfontname='Helvetica-Bold', size=fontSizeTitles)
-      self.canvas.drawString(text='Cod. Proforma',
+      self.canvas.drawString(text=f'Cod. Proforma',
                              x = self.x_position + columnSeparation,
                              y=initialY
                              )
+      self.canvas.setFont(psfontname='Helvetica', size=fontSizeNormal)
+      self.canvas.drawString(text=str(codigo_proforma), x = self.x_position + columnSeparation, y=initialY + base_increment)
       self.canvas.setFont(psfontname='Helvetica-Bold', size=fontSizeNormal)
       self.canvas.drawString(text='Datos personales para la garantía', 
                              x = self.x_position,
@@ -69,7 +71,7 @@ class PDFService:
                              x = self.x_position, 
                              y=initialY + base_increment * 6)
       self.canvas.setFont(psfontname='Helvetica', size=fontSizeNormal)
-      self.canvas.drawString(text='Nro. Garantia:', 
+      self.canvas.drawString(text=f'Nro. Garantia: {codigo_garantia}', 
                              x = self.x_position +columnSeparation, 
                              y=initialY + base_increment * 4)
       self.canvas.setFont(psfontname='Helvetica', size=fontSizeNormal)
@@ -186,10 +188,10 @@ class PDFService:
                                     y=initialY + (base_increment) * row_increment)
             row_increment+=1
         
-    def create_proforma(self, header: Proforma_Header, detail: [Proforma_Detail]):
+    def create_proforma(self, header: Proforma_Header, detail: [Proforma_Detail], title ='Proforma',codigo_garantia = 'Pendiente'):
         self.set_company_name()
         self.set_company_addres(address='4to anillo, radial 26, calle #3', city='santa cruz', phoneNumber='3 352139')
-        self.set_title(title='Proforma')
+        self.set_title(title= title)
         self.set_proforma_header(fecha=header.proforma_created_on.strftime("%d-%m-%Y %H:%M:%S"), 
                                  nombre= header.name, 
                                  ci=header.ci_nit, 
@@ -197,7 +199,9 @@ class PDFService:
                                  marca= header.car_model_id.car_brand_id.name, 
                                  modelo= header.car_model_id.name, 
                                  placa= header.car_plate, 
-                                 celular= header.phone_number)
+                                 celular= header.phone_number,
+                                 codigo_garantia= codigo_garantia,
+                                 codigo_proforma = header.id)
         self.proforma_body(body=detail)
         self.canvas.showPage()
         self.canvas.save()

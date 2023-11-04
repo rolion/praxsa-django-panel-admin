@@ -124,35 +124,38 @@ class inventario(models.Model):
 
 class Proforma_Header(models.Model):
     helper = Proforma_Helper()
-    sales_status = models.CharField(choices=helper.status, default=helper.default_status, verbose_name='Estado')
+    # sales_status = models.CharField(choices=helper.status, default=helper.default_status, verbose_name='Estado')
     sales_type = models.CharField(choices=helper.tipo_venta, default=helper.tipo_venta_instalacion, verbose_name='Tipo Venta')
-    is_paid = models.BooleanField(default=False, verbose_name='Pagado')
+    # is_paid = models.BooleanField(default=False, verbose_name='Pagado')
     proforma_created_on = models.DateTimeField(verbose_name="Fecha Proforma", auto_now=True)
-    nota_venta_created_on = models.DateTimeField(verbose_name="Fecha Nota Venta", null=True, blank=True)
-    is_nota_venta_canceled = models.BooleanField(default=False)
-    is_nota_venta_refund = models.BooleanField(default=False)
+    # nota_venta_created_on = models.DateTimeField(verbose_name="Fecha Nota Venta", null=True, blank=True)
+    # is_nota_venta_canceled = models.BooleanField(default=False)
+    # is_nota_venta_refund = models.BooleanField(default=False)
     name = models.CharField(max_length=400, default=" ", null=False, verbose_name="Nombre Completo")
     email = models.CharField(validators=[EmailValidator()], null=True,verbose_name="Email")
     ci_nit = models.CharField(validators=[RegexValidator('\d*')],null=True, verbose_name="CI/NIT")
     car_plate = models.CharField(max_length=10, default="", null=True, verbose_name="Placa Auto")
     phone_number = models.CharField(validators=[RegexValidator('(\+)*\d{7,11}')], default="", verbose_name="Numero Telefónico")
     sucursal = models.ForeignKey(Sucursal, on_delete=models.DO_NOTHING,blank=True, null=True, verbose_name="Sucursal")
-    codigo_garantia = models.CharField(null=True, blank=True, verbose_name="Codigo Garantia", max_length=12, unique=True)
+    # codigo_garantia = models.CharField(null=True, blank=True, verbose_name="Codigo Garantia", max_length=12, unique=True)
     car_model_id = models.ForeignKey(Car_Model, on_delete=models.DO_NOTHING, verbose_name="Modelo")
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Total Pagar")
     is_delete = models.BooleanField(default=False)
-    created_by = models.ForeignKey(User, verbose_name='Creado Por',on_delete=models.DO_NOTHING, null=False, related_name='usuario_proforma')
+    created_by = models.ForeignKey(User, verbose_name='Creado Por',on_delete=models.DO_NOTHING, null=False, 
+                                   related_name='proforma_created_by')
+    is_close = models.BooleanField(default=False)
     
     class Meta:
         verbose_name = 'Proforma'
-        ordering = ["-id","-proforma_created_on","-nota_venta_created_on"]
+        ordering = ["-id","-proforma_created_on",]
 
     def __str__(self) -> str:
-        prefijo = 'Proforma' if self.sales_status == self.helper.prof else 'Nota Venta'
-        return f'{prefijo} {self.id}'
+        # prefijo = 'Proforma' if self.sales_status == self.helper.prof else 'Nota Venta'
+        return f'Proforma {self.id}'
     
 class Nota_trabajo(models.Model):
     proforma = models.OneToOneField(Proforma_Header, on_delete=models.DO_NOTHING, blank=True, null=True, verbose_name="Proforma")
+    codigo_garantia = models.CharField(null=True, blank=True, verbose_name="Codigo Garantia", max_length=12, unique=True)
     entrada_vehiculo = models.DateTimeField(verbose_name="Entrada Vehiculo", null=True, blank=True)
     salida_vehiculo = models.DateTimeField(verbose_name="Salida Vehiculo", null=True, blank=True)
     observaciones = models.TextField(verbose_name='Observaciones', blank=True, null=True)
@@ -162,7 +165,7 @@ class Nota_trabajo(models.Model):
     car_plate = models.CharField(max_length=10, default="", null=True, verbose_name="Placa Auto")
     car_model = models.ForeignKey(Car_Model, on_delete=models.DO_NOTHING, verbose_name="Modelo", null=True, blank=True)
     nota_venta_created_on = models.DateTimeField(verbose_name="Fecha Orden Trabajo",  auto_now_add=True)
-    cerrada = models.BooleanField(default=False)
+    is_close = models.BooleanField(default=False)
 
     def __str__(self) -> str:
         return f'Nota Trabajo {self.id}'
@@ -201,13 +204,40 @@ class Detalle_Nota_Trabajo(models.Model):
     def __str__(self) -> str:
         return f'Detalle'
     
+
+class Nota_Venta(models.Model):
+    nota_trabajo = models.OneToOneField(Nota_trabajo, on_delete=models.DO_NOTHING, verbose_name="Nota de Trabajo")
+    name = models.CharField(max_length=400, default=" ", null=False, verbose_name="Nombre Completo")
+    ci_nit = models.CharField(validators=[RegexValidator('\d*')],null=True, verbose_name="CI/NIT")
+    total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Total Pagar")
+    created_by = models.ForeignKey(User, verbose_name='Creado Por',
+                                   on_delete=models.DO_NOTHING, 
+                                   null=False, 
+                                   related_name='nota_venta_created_by')
+    created_on = models.DateTimeField(verbose_name="Creado en", null=True, blank=True)
+    is_close = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = 'Nota Venta'
+
+    def __str__(self) -> str:
+        return f'Nota Venta {self.id}'
+    
+    
 class pago(models.Model):
     helper = Pagos_Helper()
-    proforma = models.OneToOneField(Proforma_Header, on_delete=models.DO_NOTHING, verbose_name="Nota de Venta")
-    tipo_pago =models.CharField(choices=helper.types, default=helper.default_type, verbose_name='Tipo Pago')
+    nota_venta = models.OneToOneField(Nota_Venta, 
+                                      on_delete=models.DO_NOTHING, 
+                                      verbose_name="Nota de Venta",
+                                      blank=True)
+    tipo_pago =models.CharField(choices=helper.types, 
+                                default=helper.default_type, 
+                                verbose_name='Tipo Pago')
     cerrado = models.BooleanField(default=False)
     created_on = models.DateTimeField(verbose_name="Fecha", auto_now_add=True)
-    created_by = models.ForeignKey(User, on_delete=models.DO_NOTHING, verbose_name='Creado por')
+    created_by = models.ForeignKey(User, 
+                                   on_delete=models.DO_NOTHING, 
+                                   verbose_name='Creado por')
     def __str__(self) -> str:
         return f'Pago {self.id}'
 

@@ -56,15 +56,14 @@ class SalesDetailInLine(admin.TabularInline):
 class ProformaAdmin(admin.ModelAdmin):
     list_display = [
                     'id',
-                    'sales_status',
+                    # 'sales_status',
                     'sales_type',
-                    'codigo_garantia',
                     'name', 
                     'car_model_id',
                     'total_price',
                     'proforma_created_on'
                     ]
-    exclude =  ["is_delete", "is_paid", 'created_by']
+    exclude =  ["is_delete", "is_paid", 'created_by', 'is_close']
     inlines = [
         SalesDetailInLine,
     ]
@@ -81,10 +80,10 @@ class ProformaAdmin(admin.ModelAdmin):
     
     fieldsets = [('Proforma', {
                                 'classes':[], 
-                                "fields":['sales_status',
+                                "fields":[
+                                    # 'sales_status',
                                           'sales_type',
                                           'sucursal',
-                                          'codigo_garantia',
                                           'total_price',
                                           ]
                                 }
@@ -108,19 +107,14 @@ class ProformaAdmin(admin.ModelAdmin):
         if form.base_fields and 'sucursal' in form.base_fields:
             form.base_fields['sucursal'].initial = self.user_business.get_user_sucursal(username = request.user.username)
         return form
-    
-    def proforma_status(self, id):
-        proforma = self.proforma_business.get_proforma_by_id(id)
-        return proforma.sales_status
 
     def has_change_permission(self, request: HttpRequest, obj=None):
         if obj is None:
             return True
-        if obj.sales_status == self.proforma_helper.prof:
+        user = request.user
+        if obj.is_close == False or user.groups.filter(name='Admin').exists() or user.is_superuser:
             return True
-        if obj.sales_status == self.proforma_helper.nov:
-            return False
-        return True
+        return False
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
         qs = super().get_queryset(request)
@@ -131,15 +125,13 @@ class ProformaAdmin(admin.ModelAdmin):
         return  result
 
     def get_readonly_fields(self, request, obj=None):
-        # print ('admin obj', obj.sales_status )
         if obj is None:
-            return ['sales_status']
-        # if obj.sales_status == self.proforma_helper.nov:
-        #     return "__all__"
-        if obj.sales_status == self.proforma_helper.nov:
+            return []
+        print('is proforma close: ', obj.is_close)
+        if obj.is_close == True:
             return '__all__'
                     
-        return ['sales_status']
+        return []
     
     def save_model(self, request, obj, form, change):
         obj.created_by = request.user
@@ -156,14 +148,6 @@ class ProformaAdmin(admin.ModelAdmin):
     def open_proforma(self, request: HttpRequest, queryset: QuerySet):
         try:
             [self.proforma_business.abrir_proforma(proforma=qs) for qs in list(queryset)]
-        except Exception as e:
-            self.message_user(request=request,  message=str(e), level= messages.ERROR)
-
-    @transaction.atomic
-    @admin.action(description="crear nota venta")
-    def create_sales_note(self, request: HttpRequest, queryset: QuerySet):
-        try:
-            [self.proforma_business.crear_nota_venta( proforma=qs) for qs in list(queryset)]
         except Exception as e:
             self.message_user(request=request,  message=str(e), level= messages.ERROR)
 
@@ -194,8 +178,6 @@ class ProformaAdmin(admin.ModelAdmin):
             buffer.seek(0)
             filename = f'proforma-{queryset[0].id}.pdf'
             return FileResponse(buffer, as_attachment=True, filename=filename)
-        # except Exception as e:
-        #     self.message_user(request=request,  message=str(e), level= messages.ERROR)
 
 
     

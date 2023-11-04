@@ -18,13 +18,15 @@ class Inventario_Business:
     
     def update_inventory(self, sucursal, windows_film, width, length_to_reduce):
         query = inventario.objects.select_related('bobina', 'sucursal', 'bobina__window_film')
-        query = query.filter(sucursal = sucursal, bobina__window_film = windows_film, bobina__width = width, to_install__gte = length_to_reduce).order_by('date')[:1]
+        query = query.filter(sucursal = sucursal, bobina__window_film = windows_film, bobina__width__gte = width, to_install__gte = length_to_reduce).order_by('bobina__width','date')[:1]
+        # print(sucursal, windows_film, width, length_to_reduce)
+        # print('query', query[0].name, )
         if(query.exists()):
             bobina_inventario = query[0]
             bobina_inventario.to_install = bobina_inventario.to_install - length_to_reduce
             bobina_inventario.installed = bobina_inventario.installed + length_to_reduce
             return bobina_inventario.save()
-        raise NoHayLaminasDisponibles(f'no hay lamina disponible {windows_film.name}')
+        raise NoHayLaminasDisponibles(f'no hay lamina disponible {windows_film.name} {width}')
         #return False
     
     def is_window_film_available(self, sucursal_id, bobina, width, to_install):

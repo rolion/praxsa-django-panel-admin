@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from ..helper.proforma import Proforma_Helper
 
 class NotaTrabajoForm(ModelForm):
-
+    # codigo_garantia = forms.CharField(max_length=12)
 
     class Meta:
         model = Nota_trabajo

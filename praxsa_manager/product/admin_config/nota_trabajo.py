@@ -4,7 +4,9 @@ from django.contrib import admin
 from django.db.models.query import QuerySet
 from django.http.request import HttpRequest
 from django.contrib import messages
+from django.db import transaction
 from ..Forms.nota_trabajo import NotaTrabajoForm
+from ..business.proforma import Proforma_Business
 from ..business.orden_trabajo import Orden_Trabajo_Business
 from ..models import Detalle_Nota_Trabajo, Proforma_Detail, Proforma_Header
 from ..helper.pdf import PDFService
@@ -30,6 +32,8 @@ class NotaTrabajoAdmin(admin.ModelAdmin):
     list_display = [ 
               'id', 
               'name', 
+              'proforma',
+              'codigo_garantia',
               'car_plate', 
               'car_model']
     inlines = [
@@ -42,18 +46,17 @@ class NotaTrabajoAdmin(admin.ModelAdmin):
                      'proforma__name',]
     form = NotaTrabajoForm
     orden_trabajo_busi =Orden_Trabajo_Business()
+    proforma_business = Proforma_Business()
     list_per_page = 10
-    actions =["print_nota_trabajo"]
+    actions =["print_nota_trabajo", 'create_sales_note']
     fieldsets = [('Proforma', {
                                 'classes':[], 
-                                "fields":['proforma',
-                                          ]
+                                "fields":['proforma', 'codigo_garantia']
                                 }
                 ),
                 ("Cliente", {
                     'classes': [],
-                    'fields': [ 
-                               'name', 'car_model','car_plate'  ]
+                    'fields': [ 'name', 'car_model','car_plate'  ]
                 }),
                 ('Nota',{
                     'classes':[],
@@ -78,7 +81,10 @@ class NotaTrabajoAdmin(admin.ModelAdmin):
     def has_change_permission(self, request: HttpRequest, obj=None):
         if obj is None:
             return True
-        if obj.cerrada is True:
+        user = request.user
+        if obj.is_close == False or user.groups.filter(name='Admin').exists() or user.is_superuser:
+            return True
+        if obj.is_close is True:
             return False
         return True
 
@@ -91,11 +97,11 @@ class NotaTrabajoAdmin(admin.ModelAdmin):
             return ['proforma', 'responsable', 'name', 'car_plate', 'car_model']           
         return []
     
-    @admin.action(description="crear nota de venta")
-    def delete_proforma(self, request: HttpRequest, queryset: QuerySet):
+    @transaction.atomic
+    @admin.action(description="crear nota venta")
+    def create_sales_note(self, request: HttpRequest, queryset: QuerySet):
         try:
-           ## [self.orden_trabajo_business.delete_proforma(user= request.user, proforma=qs) for qs in list(queryset)]
-           print('todo')
+            [self.proforma_business.crear_nota_venta( nota_trabajo=qs, user= request.user) for qs in list(queryset)]
         except Exception as e:
             self.message_user(request=request,  message=str(e), level= messages.ERROR)
             
