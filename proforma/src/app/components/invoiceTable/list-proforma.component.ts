@@ -62,9 +62,6 @@ export class ListProformaComponent implements OnInit {
       },{
         title: 'Precio',
         data: 'total_price'
-      },{
-        title: 'Estado',
-        data: 'status'
       }],
       columnDefs: [
         {

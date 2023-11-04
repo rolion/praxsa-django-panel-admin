@@ -52,7 +52,6 @@ class InvoiceView(APIView):
                     "car_brand_name": invoice.car_model_id.car_brand_id.name,
                     'total_price': invoice.total_price,
                     'proforma_created_on': invoice.proforma_created_on.strftime("%d/%m/%Y"),
-                    'status': invoice.sales_status,
                     'carPartItems': items}
             return Response(data = data  , status=status.HTTP_200_OK)
             # else:
@@ -77,7 +76,6 @@ class ListUserInvoice(APIView):
         # print(client)
         list_invoice = list(map( lambda invoice: {
                     'name': invoice.name,
-                    # 'client_id': invoice.client_id.id,
                     'email': invoice.email,
                     'ci_nit': invoice.ci_nit,
                     'car_plate': invoice.car_plate,
@@ -86,7 +84,6 @@ class ListUserInvoice(APIView):
                     'car_model_name': invoice.car_model_id.name,
                     'total_price': invoice.total_price,
                     'date': invoice.proforma_created_on.strftime("%d%m/%Y"),
-                    'status': invoice.sales_status,
                     'id': invoice.id
                     
             },Proforma_Header.objects.filter(created_by= request.user.id) ))
