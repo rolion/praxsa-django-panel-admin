@@ -106,12 +106,33 @@ class ProformaAdmin(admin.ModelAdmin):
         if form.base_fields and 'sucursal' in form.base_fields:
             form.base_fields['sucursal'].initial = self.user_business.get_user_sucursal(username = request.user.username)
         return form
+    
+    def save_related(self, request, form, formsets, change):
+        to_reduce = 0
+        to_add = 0
+        proforma = form.instance
+        print(f'change {change}')
+        if change == True:
+            for formset in formsets:
+                formset.save(commit=False)
+                if formset.model == Proforma_Detail:
+                    for deleted_data in formset.deleted_objects:
+                        print(deleted_data)
+                        to_reduce = to_reduce + deleted_data.sub_total
+                    # for added_data in formset.new_objects:
+                    #     to_add = to_add + added_data.sub_total
+                    #     print(added_data)
+                    # for changed_data in formset.changed_objects:
+                    #     print(changed_data)
+                    
+            proforma.total_price = proforma.total_price - to_reduce
+            proforma.save()
+        super(ProformaAdmin, self).save_related(request, form, formsets, change)
 
     def has_change_permission(self, request: HttpRequest, obj=None):
         if obj is None:
             return True
-        user = request.user
-        if obj.is_close == False or user.groups.filter(name='Admin').exists() or user.is_superuser:
+        if obj.is_close == False:
             return True
         return False
 
@@ -129,7 +150,7 @@ class ProformaAdmin(admin.ModelAdmin):
         if obj.is_close == True:
             return '__all__'
                     
-        return []
+        return ['sucursal', ]
     
     def save_model(self, request, obj, form, change):
         obj.created_by = request.user

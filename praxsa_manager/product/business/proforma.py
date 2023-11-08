@@ -56,6 +56,7 @@ class Proforma_Business:
                     nota_trabajo.car_model = proforma.car_model_id
                     nota_trabajo.car_plate = proforma.car_plate
                     nota_trabajo.responsable = responsable
+                    nota_trabajo.entrada_vehiculo = datetime.now()
                     nota_trabajo.save()
                     for detalle in list(detalles):
                         detalle_nota_trabajo = Detalle_Nota_Trabajo()

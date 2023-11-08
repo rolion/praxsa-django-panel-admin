@@ -81,19 +81,14 @@ class NotaTrabajoAdmin(admin.ModelAdmin):
     def has_change_permission(self, request: HttpRequest, obj=None):
         if obj is None:
             return True
-        user = request.user
-        if obj.is_close == False or user.groups.filter(name='Admin').exists() or user.is_superuser:
+        if obj.is_close == False:
             return True
-        if obj.is_close is True:
-            return False
-        return True
 
     def get_readonly_fields(self, request, obj=None):
         # print ('admin obj', obj.sales_status )
         if obj is None:
             return []
         if obj.proforma is not None:
-            print('proforma is not none')
             return ['proforma', 'responsable', 'name', 'car_plate', 'car_model']           
         return []
     
