@@ -2,7 +2,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.colors import HexColor, black, white
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
-from ..models import Proforma_Header, Proforma_Detail
+from ..models import Detalle_Nota_Trabajo, Nota_trabajo, Proforma_Header, Proforma_Detail
 
 class PDFService:
 
@@ -145,7 +145,7 @@ class PDFService:
                                 x = self.x_position, 
                                 y=initialY + (base_increment) * (row_increment + 3))
       
-    def nota_trabajo_body(self, body: [Proforma_Detail]):
+    def nota_trabajo_body(self, body: [Detalle_Nota_Trabajo]):
         fontSizeNormal = 11
         initialY=-130
         base_increment=-15
@@ -163,9 +163,9 @@ class PDFService:
                                 x = self.x_position +300, 
                                 y=initialY + (base_increment +0.7) * 9)
         
-        self.canvas.drawString(text='Cantidad', 
-                                x = self.x_position +400, 
-                                y=initialY + (base_increment +0.7) * 9)
+        # self.canvas.drawString(text='Cantidad', 
+        #                         x = self.x_position +400, 
+        #                         y=initialY + (base_increment +0.7) * 9)
         row_increment =10
         self.canvas.setFont(psfontname='Helvetica', size=fontSizeNormal)
         self.canvas.setFillColor(aColor=black)
@@ -183,9 +183,9 @@ class PDFService:
                                     x = self.x_position +300, 
                                     y=initialY + (base_increment) * row_increment)
             # print('quantity ', item.quantity)
-            self.canvas.drawString(text=str(item.quantity), 
-                                    x = self.x_position +400, 
-                                    y=initialY + (base_increment) * row_increment)
+            # self.canvas.drawString(text=str(item.quantity), 
+            #                         x = self.x_position +400, 
+            #                         y=initialY + (base_increment) * row_increment)
             row_increment+=1
         
     def create_proforma(self, header: Proforma_Header, detail: [Proforma_Detail], title ='Proforma',codigo_garantia = 'Pendiente'):
@@ -206,7 +206,8 @@ class PDFService:
         self.canvas.showPage()
         self.canvas.save()
         
-    def create_nota_trabajo(self, header: Proforma_Header, detail: [Proforma_Detail]):
+    def create_nota_trabajo(self, nota_trabajo: Nota_trabajo, detail: [Detalle_Nota_Trabajo]):
+        header = nota_trabajo.proforma
         self.set_company_name()
         self.set_company_addres(address='4to anillo, radial 26, calle #3', city='santa cruz', phoneNumber='3 352139')
         self.set_title(title='Nota trabajo')
@@ -217,7 +218,9 @@ class PDFService:
                                  marca= header.car_model_id.car_brand_id.name, 
                                  modelo= header.car_model_id.name, 
                                  placa= header.car_plate, 
-                                 celular= header.phone_number)
+                                 celular= header.phone_number,
+                                 codigo_proforma= header.id,
+                                 codigo_garantia=nota_trabajo.codigo_garantia)
         self.nota_trabajo_body(body=detail)
         self.canvas.showPage()
         self.canvas.save()

@@ -13,16 +13,20 @@ from ..helper.pdf import PDFService
 from django.http import FileResponse
 import io
 class ProformaDetailInLine(admin.TabularInline):
-    fields = ['car_part', 
+    fields = [
+            # 'car_part', 
               'window_film', 
               'width', 
               'length',  
-              'quantity',]
-    readonly_fields = ['car_part', 
+            #   'quantity',
+              ]
+    readonly_fields = [
+            #   'car_part', 
               'window_film', 
               'width', 
               'length',  
-              'quantity',]
+            #   'quantity',
+              ]
     model = Detalle_Nota_Trabajo
     min_num = 0
     max = 1
@@ -106,10 +110,10 @@ class NotaTrabajoAdmin(admin.ModelAdmin):
         # try:
             buffer = io.BytesIO()
             pdf = PDFService(buffer= buffer)
-            # queryset[0] = queryset[0].select_related('proforma')
-            prodorma_detail = Proforma_Detail.objects.select_related("car_part", "window_film")
-            prodorma_detail = prodorma_detail.filter( proforma_header = queryset[0].proforma)
-            pdf.create_nota_trabajo(detail=prodorma_detail, header=queryset[0].proforma)
+            resumen_trabajo = Detalle_Nota_Trabajo.objects.select_related("window_film", 'nota_trabajo__proforma')
+            proforma = queryset[0].proforma
+            resumen_trabajo = resumen_trabajo.filter( nota_trabajo =  queryset[0])
+            pdf.create_nota_trabajo(detail=resumen_trabajo, nota_trabajo= queryset[0])
             buffer.seek(0)
             filename = f'Nota Trabajo-{queryset[0].id}.pdf'
             return FileResponse(buffer, as_attachment=True, filename=filename)

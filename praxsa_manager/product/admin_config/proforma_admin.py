@@ -117,7 +117,6 @@ class ProformaAdmin(admin.ModelAdmin):
                 formset.save(commit=False)
                 if formset.model == Proforma_Detail:
                     for deleted_data in formset.deleted_objects:
-                        print(deleted_data)
                         to_reduce = to_reduce + deleted_data.sub_total
                     # for added_data in formset.new_objects:
                     #     to_add = to_add + added_data.sub_total

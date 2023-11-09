@@ -40,6 +40,7 @@ class Proforma_Business:
                 with transaction.atomic():
                     detalles = Proforma_Detail.objects.select_related('proforma_header', 'window_film','proforma_header__sucursal' )
                     detalles = detalles.filter(proforma_header = proforma)
+                    sumary = []
                     if detalles.exists():
                         for detalle in list(detalles):
                             to_reduce = detalle.length
@@ -48,6 +49,11 @@ class Proforma_Business:
                                                                 windows_film =detalle.window_film, 
                                                                 width = detalle.width, 
                                                                 length_to_reduce = to_reduce)
+                            item_index = next((i for i, item in enumerate(sumary) if item["window_film"] == detalle.window_film and item["width"] == detalle.width ), None)
+                            if item_index is not None:
+                                sumary[item_index]['length'] = sumary[item_index]['length'] + to_reduce
+                            else:
+                                sumary.append({"window_film": detalle.window_film, "width": detalle.width, 'length':  to_reduce})
                     proforma.is_close = True
                     proforma.save()
                     nota_trabajo = Nota_trabajo()
@@ -58,15 +64,15 @@ class Proforma_Business:
                     nota_trabajo.responsable = responsable
                     nota_trabajo.entrada_vehiculo = datetime.now()
                     nota_trabajo.save()
-                    for detalle in list(detalles):
+                    for sumary_item in sumary:
                         detalle_nota_trabajo = Detalle_Nota_Trabajo()
-                        detalle_nota_trabajo.detalle_proforma= detalle
+                        # detalle_nota_trabajo.detalle_proforma= sumary_item
                         detalle_nota_trabajo.nota_trabajo = nota_trabajo
-                        detalle_nota_trabajo.car_part = detalle.car_part
-                        detalle_nota_trabajo.window_film = detalle.window_film
-                        detalle_nota_trabajo.width = detalle.width
-                        detalle_nota_trabajo.length = detalle.length
-                        detalle_nota_trabajo.quantity = detalle.quantity
+                        # detalle_nota_trabajo.car_part = sumary_item.car_part
+                        detalle_nota_trabajo.window_film = sumary_item["window_film"]
+                        detalle_nota_trabajo.width = sumary_item["width"]
+                        detalle_nota_trabajo.length = sumary_item["length"]
+                        # detalle_nota_trabajo.quantity = detalle.quantity
                         detalle_nota_trabajo.save()
                     return nota_trabajo
             except IntegrityError as e:

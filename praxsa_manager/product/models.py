@@ -194,15 +194,18 @@ class Proforma_Detail(models.Model):
     
 class Detalle_Nota_Trabajo(models.Model):
     nota_trabajo = models.ForeignKey(Nota_trabajo, on_delete=models.DO_NOTHING, related_name='detalle_trabajo',verbose_name='Nota de trabajo')
-    detalle_proforma = models.ForeignKey(Proforma_Detail, on_delete=models.DO_NOTHING, blank=True, null=True, verbose_name="Detalle")
+    # detalle_proforma = models.ForeignKey(Proforma_Detail, on_delete=models.DO_NOTHING, blank=True, null=True, verbose_name="Detalle")
     width = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Ancho" )
     length = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Largo")
-    quantity = models.PositiveIntegerField(default=0, verbose_name="Cantidad")
+    # quantity = models.PositiveIntegerField(default=0, verbose_name="Cantidad")
     window_film = models.ForeignKey(Window_Film, on_delete=models.DO_NOTHING, verbose_name="Lámina", null=True)
-    car_part = models.ForeignKey(Car_Part, on_delete=models.DO_NOTHING, blank=True, null=True, verbose_name="Item")
+    # car_part = models.ForeignKey(Car_Part, on_delete=models.DO_NOTHING, blank=True, null=True, verbose_name="Item")
 
+    class Meta:
+        verbose_name = 'Resumen Trabajo'
+    
     def __str__(self) -> str:
-        return f'Detalle'
+        return f'Resumen'
     
 
 class Nota_Venta(models.Model):
