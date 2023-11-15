@@ -28,6 +28,7 @@ class SalesDetailInLine(admin.TabularInline):
               'installation_price', 
               'quantity',
               'sub_total']
+    exclude =  ["inventario"]
     model = Proforma_Detail
     min_num = 0
     max = 1
@@ -43,6 +44,9 @@ class SalesDetailInLine(admin.TabularInline):
         widths = self.inv_business.get_inventory_window_film_reel_widths(request.user)
         formset.form.base_fields['width'].widget = forms.Select(choices=widths.values_list('width', 'width'))
         return formset
+    
+    # def save_model(self, request, obj, form, change):
+    #     super().save_model(request, obj, form, change)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
             if db_field.name == "window_film":
@@ -169,7 +173,7 @@ class ProformaAdmin(admin.ModelAdmin):
         except Exception as e:
             self.message_user(request=request,  message=str(e), level= messages.ERROR)
 
-    @admin.action(description="crear nota trabajo")
+    @admin.action(description="crear/actualizar nota trabajo")
     def create_work_note(self, request: HttpRequest, queryset: QuerySet):
         try:
             [self.proforma_business.create_work_note( proforma=qs, responsable = request.user) for qs in list(queryset)]

@@ -16,19 +16,36 @@ class Inventario_Business:
         result = Window_Film.objects.filter(pk__in = q)
         return result
     
-    def update_inventory(self, sucursal, windows_film, width, length_to_reduce):
+    def reduce_inventory(self, sucursal, windows_film, width, length_to_reduce):
         query = inventario.objects.select_related('bobina', 'sucursal', 'bobina__window_film')
-        query = query.filter(sucursal = sucursal, bobina__window_film = windows_film, bobina__width__gte = width, to_install__gte = length_to_reduce).order_by('bobina__width','date')[:1]
+        query = query.filter(sucursal = sucursal, 
+                             bobina__window_film = windows_film, 
+                             bobina__width__gte = width, 
+                             to_install__gte = length_to_reduce)
+        query = query.order_by('bobina__width','date')[:1]
         # print(sucursal, windows_film, width, length_to_reduce)
         # print('query', query[0].name, )
         if(query.exists()):
             bobina_inventario = query[0]
             bobina_inventario.to_install = bobina_inventario.to_install - length_to_reduce
             bobina_inventario.installed = bobina_inventario.installed + length_to_reduce
-            return bobina_inventario.save()
+            bobina_inventario.save()
+            return bobina_inventario
         raise NoHayLaminasDisponibles(f'no hay lamina disponible {windows_film.name} {width}')
         #return False
     
+    def return_to_inventory(self, detail_inventory, length_to_add):
+        try:
+            inv = inventario.objects.select_related('bobina', 'sucursal')
+            inv = inv.get(id = detail_inventory.id)
+            inv.to_install = inv.to_install + length_to_add
+            inv.installed = inv.installed - length_to_add
+            inv.save()
+            return True
+        except Exception as e:
+            print('no se pudo actualizar el inventario --->>', str(e))
+            return False
+        
     def is_window_film_available(self, sucursal_id, bobina, width, to_install):
         query = inventario.objects.select_related('bobina', 'sucursal')
         query = query.filter(sucursal__id = sucursal_id, bobina__id = bobina, width__gte=width, to_install__gte = to_install).order_by('date','width')

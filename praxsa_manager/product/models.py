@@ -141,8 +141,7 @@ class Proforma_Header(models.Model):
     car_model_id = models.ForeignKey(Car_Model, on_delete=models.DO_NOTHING, verbose_name="Modelo")
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Total Pagar")
     is_delete = models.BooleanField(default=False)
-    created_by = models.ForeignKey(User, verbose_name='Creado Por',on_delete=models.DO_NOTHING, null=False, 
-                                   related_name='proforma_created_by')
+    created_by = models.ForeignKey(User, verbose_name='Creado Por',on_delete=models.DO_NOTHING, null=False,related_name='proforma_created_by')
     is_close = models.BooleanField(default=False)
     
     class Meta:
@@ -165,7 +164,7 @@ class Nota_trabajo(models.Model):
     car_plate = models.CharField(max_length=10, default="", null=True, verbose_name="Placa Auto")
     car_model = models.ForeignKey(Car_Model, on_delete=models.DO_NOTHING, verbose_name="Modelo", null=True, blank=True)
     nota_venta_created_on = models.DateTimeField(verbose_name="Fecha Orden Trabajo",  auto_now_add=True)
-    is_close = models.BooleanField(default=False)
+    is_close = models.BooleanField(default=False) 
 
     def __str__(self) -> str:
         return f'Nota Trabajo {self.id}'
@@ -177,6 +176,7 @@ class Nota_trabajo(models.Model):
     
 class Proforma_Detail(models.Model):
     helper = Proforma_Helper()
+    inventario = models.ForeignKey(inventario, null=True, on_delete=models.DO_NOTHING)
     proforma_header = models.ForeignKey(Proforma_Header, related_name='items', on_delete=models.DO_NOTHING, verbose_name="Proforma")
     car_part = models.ForeignKey(Car_Part, on_delete=models.DO_NOTHING, blank=True, null=True, verbose_name="Item")
     width = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Ancho" )
@@ -193,6 +193,7 @@ class Proforma_Detail(models.Model):
         return f'Detalle'
     
 class Detalle_Nota_Trabajo(models.Model):
+    
     nota_trabajo = models.ForeignKey(Nota_trabajo, on_delete=models.DO_NOTHING, related_name='detalle_trabajo',verbose_name='Nota de trabajo')
     # detalle_proforma = models.ForeignKey(Proforma_Detail, on_delete=models.DO_NOTHING, blank=True, null=True, verbose_name="Detalle")
     width = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Ancho" )

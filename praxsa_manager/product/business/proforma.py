@@ -5,11 +5,13 @@ from ..utils.exception.nohaylaminas import NoHayLaminasDisponibles
 from ..utils.exception.proforma import ProformaException, NotaVentaException
 from django.db import IntegrityError, transaction
 from datetime import datetime
+from ..business.orden_trabajo import Orden_Trabajo_Business
 class Proforma_Business:
 
     def __init__(self) -> None:
         self.helper = Proforma_Helper()
         self.inv_bussiness = Inventario_Business()
+        self.orden_trabajo_bussiness = Orden_Trabajo_Business()
 
     def get_proforma_by_id(self, id):
         return Proforma_Header.objects.get(pk = id)
@@ -24,13 +26,25 @@ class Proforma_Business:
                 raise Exception('algo sali mal, contactar administrador')
         raise Exception('no se puede eliminar una proforma aprobada o instalada')
     
+    @transaction.atomic
     def abrir_proforma(self, proforma):
         if proforma.is_close == True:
             try:
-                proforma.is_close = False
-                return proforma.save()
+                with transaction.atomic():
+                    detalles = Proforma_Detail.objects.select_related('proforma_header', 'window_film','proforma_header__sucursal' )
+                    detalles = detalles.filter(proforma_header = proforma)
+                    proforma.is_close = False
+                    if detalles.exists():
+                        for detalle in list(detalles):
+                            to_add = detalle.length
+                            to_add = to_add * detalle.quantity if detalle.quantity > 0 else to_add
+                            result = self.inv_bussiness.return_to_inventory(detail_inventory= detalle.inventario,
+                                                                   length_to_add = to_add)
+                            if result is not True:
+                                raise Exception('no se actualizo el inventario')
+                    return proforma.save()
             except Exception as e:
-                print('algo salio mal ->>', str(e))
+                print('algo salio mal ->>', e)
                 raise Exception('algo salio mal, contactar administrador')
     
     @transaction.atomic
@@ -45,36 +59,23 @@ class Proforma_Business:
                         for detalle in list(detalles):
                             to_reduce = detalle.length
                             to_reduce = to_reduce * detalle.quantity if detalle.quantity > 0 else to_reduce
-                            self.inv_bussiness.update_inventory(sucursal = detalle.proforma_header.sucursal, 
+                            # update inventory
+                            inventario = self.inv_bussiness.reduce_inventory(sucursal = detalle.proforma_header.sucursal, 
                                                                 windows_film =detalle.window_film, 
                                                                 width = detalle.width, 
                                                                 length_to_reduce = to_reduce)
-                            item_index = next((i for i, item in enumerate(sumary) if item["window_film"] == detalle.window_film and item["width"] == detalle.width ), None)
+                            detalle.inventario = inventario
+                            detalle.save()
+                            item_index = next((i for i, item in enumerate(sumary) 
+                                               if item["window_film"] == detalle.window_film and item["width"] == inventario.bobina.width ), 
+                                               None)
                             if item_index is not None:
                                 sumary[item_index]['length'] = sumary[item_index]['length'] + to_reduce
                             else:
-                                sumary.append({"window_film": detalle.window_film, "width": detalle.width, 'length':  to_reduce})
+                                sumary.append({"window_film": detalle.window_film, "width": inventario.bobina.width, 'length':  to_reduce})
                     proforma.is_close = True
                     proforma.save()
-                    nota_trabajo = Nota_trabajo()
-                    nota_trabajo.proforma = proforma
-                    nota_trabajo.name = proforma.name
-                    nota_trabajo.car_model = proforma.car_model_id
-                    nota_trabajo.car_plate = proforma.car_plate
-                    nota_trabajo.responsable = responsable
-                    nota_trabajo.entrada_vehiculo = datetime.now()
-                    nota_trabajo.save()
-                    for sumary_item in sumary:
-                        detalle_nota_trabajo = Detalle_Nota_Trabajo()
-                        # detalle_nota_trabajo.detalle_proforma= sumary_item
-                        detalle_nota_trabajo.nota_trabajo = nota_trabajo
-                        # detalle_nota_trabajo.car_part = sumary_item.car_part
-                        detalle_nota_trabajo.window_film = sumary_item["window_film"]
-                        detalle_nota_trabajo.width = sumary_item["width"]
-                        detalle_nota_trabajo.length = sumary_item["length"]
-                        # detalle_nota_trabajo.quantity = detalle.quantity
-                        detalle_nota_trabajo.save()
-                    return nota_trabajo
+                    return self.orden_trabajo_bussiness.create_work_note(proforma=proforma, sumary=sumary,responsable= responsable)
             except IntegrityError as e:
                 raise Exception(f'ya existe una nota de trabajo asignada a la Proforma {proforma.id}')
             except NoHayLaminasDisponibles as e:
@@ -83,11 +84,11 @@ class Proforma_Business:
                 print('algo salio mal ->>', str(e))
                 print('error type', type(e))
                 raise Exception('algo salio mal, contactar administrador')
-        # else:
-        #     raise Exception('la proforma debe estar cerrada antes de crear la nota de venta')
         
 
     def crear_nota_venta(self, nota_trabajo, user):
+        if nota_trabajo.proforma.is_close == False:
+                    raise Exception(f'la proforma {nota_trabajo.proforma.id}, debe estar cerrada antes de crear la nota de venta')
         if nota_trabajo.codigo_garantia is not None:
             try:
                 nota_venta = Nota_Venta()
