@@ -20,11 +20,15 @@ class Inventario_Business:
         query = inventario.objects.select_related('bobina', 'sucursal', 'bobina__window_film')
         query = query.filter(sucursal = sucursal, 
                              bobina__window_film = windows_film, 
-                             bobina__width__gte = width, 
+                             bobina__width = width, 
                              to_install__gte = length_to_reduce)
         query = query.order_by('bobina__width','date')[:1]
         # print(sucursal, windows_film, width, length_to_reduce)
         # print('query', query[0].name, )
+        print('inventario existe ',query.exists())
+        print(f'width {width}, film {windows_film}')
+        print(query)
+        
         if(query.exists()):
             bobina_inventario = query[0]
             bobina_inventario.to_install = bobina_inventario.to_install - length_to_reduce

@@ -55,11 +55,13 @@ class Proforma_Business:
                     detalles = Proforma_Detail.objects.select_related('proforma_header', 'window_film','proforma_header__sucursal' )
                     detalles = detalles.filter(proforma_header = proforma)
                     sumary = []
+                    
                     if detalles.exists():
                         for detalle in list(detalles):
                             to_reduce = detalle.length
                             to_reduce = to_reduce * detalle.quantity if detalle.quantity > 0 else to_reduce
                             # update inventory
+                            print(f'detalle width {detalle.width}')
                             inventario = self.inv_bussiness.reduce_inventory(sucursal = detalle.proforma_header.sucursal, 
                                                                 windows_film =detalle.window_film, 
                                                                 width = detalle.width, 
