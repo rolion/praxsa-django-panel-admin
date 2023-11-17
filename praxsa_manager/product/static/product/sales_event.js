@@ -265,7 +265,7 @@ jQuery(function($){
             if(dispo){
                 return dispo.bobina_metros_disponibles
             }
-            film = window_films.find(film => film.film_id = film_id)
+            film = window_films.find(film => film.film_id == film_id)
             alert(`no se encontro la lamina ${film.name} en el inventario con ancho ${film_width}, utilice otra lamina o modifique el ancho`);
             console.log(`no se encontro la lamina en el inventario, id = ${film_id} width = ${film_width}`)
             return 0;
