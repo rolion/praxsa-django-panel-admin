@@ -6,7 +6,7 @@ from ..models import Car_Model_Part
     
 class CarModelPart(admin.ModelAdmin):
     list_display = ['car_model_id', 
-                    'car_part_id', 
+                    'car_part_id',
                     "width", 
                     'length',
                     'quantity']
@@ -21,4 +21,4 @@ class CarModelPart(admin.ModelAdmin):
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
         qs = super().get_queryset(request)
         
-        return  qs.select_related('car_model_id', 'car_part_id__name',)
+        return  qs.select_related('car_model_id', 'car_part_id',)
