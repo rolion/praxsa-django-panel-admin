@@ -30,7 +30,6 @@ export class DataService {
   }
 
   getCalculatorInfo(): Observable<icalculatorInfo>{
-    // console.log('app base dir ', environment.SERVER_APP_BASE_REF)
     return this.http
       .get<icalculatorInfo>(`${this.base_url}/product/calculator_info`)
       .pipe(
@@ -46,7 +45,6 @@ export class DataService {
               sucursal.push(obj)
             })
           }
-
           if(res.models && Array.isArray(res.models)){
             res.models.forEach((model: any) => {
               modelos.push(new Modelo( model.id, model.brand_id, model.name));
@@ -57,20 +55,8 @@ export class DataService {
               marca.push(new Marca( brand.id, brand.name));
             })
           }
-          // if(res.films && Array.isArray(res.films)){
-          //   res.films.forEach((film: any) => {
-          //     lamina.push(new Film( film.id, film.name,));
-          //   })
-          // }
-          // if(res.car_part_film_price && Array.isArray(res.car_part_film_price)){
-          //   res.car_part_film_price .forEach((film: any) => {
-          //     lamina_price.push(new Car_Part_Film_Price(film.name, film.film_id, film.width, film.reel_id, film.price, ''));
-          //   })
-          // }
           if(res.model_parts && Array.isArray(res.model_parts)){
             res.model_parts.forEach((part: any) => {
-              //let modelPart = new CarPartItem(part.id, part.part_name, part.width, part.quantity, part.part_id, part.installation_price, part.model_id);
-              //modelPart.length = part.length;
               model_parts.push(part);
             })
           }
@@ -86,7 +72,6 @@ export class DataService {
       .pipe(
         map((res: any)  => {
           let inventario: iInventory[]=[];
-          console.log('inventario data', res.inventario)
           if(res.inventario && Array.isArray(res.inventario)){
             inventario = res.inventario
           }

@@ -167,7 +167,6 @@ export class FormularioComponent implements OnInit, OnDestroy {
           part_id: car_part_id,
           installation_price,
         } = carPart;
-        // let length = 0;
         let price = 0;
         let window_film_id= 0;
         let window_film_name= "";
@@ -180,15 +179,13 @@ export class FormularioComponent implements OnInit, OnDestroy {
           price,
           quantity,
           window_film_id,
-          // window_film_name,
           installation_price,
           window_film_price,
         )
-        //proformaItem.length = 
         this.invoiceItem.push(proformaItem);
         this.tableSelectedWindowsFilm.push("-1");
       });
-      console.log('proforma items ', this.invoiceItem)
+      // console.log('proforma items ', this.invoiceItem)
     }
   }
 
@@ -214,14 +211,15 @@ export class FormularioComponent implements OnInit, OnDestroy {
       let {
         quantity, width ,installation_price, length
       } = carPartFilmItem;
-      console.log('car part film item ', carPartFilmItem);
+      // console.log('car part film item ', carPartFilmItem);
       let {
-        filmPrice, totalPrice
+        filmPrice, totalPrice, filmWidth
       } = this.getLaminaItemPrice(lamina, width, length, quantity, installation_price);
       this.invoiceItem[indexReport].sub_total = totalPrice;
       this.invoiceItem[indexReport].window_film_price = filmPrice;
       this.invoiceItem[indexReport].window_film = lamina.id;
       this.invoiceItem[indexReport].window_film_url = 'windows-film/'+lamina.id;
+      this.invoiceItem[indexReport].width = filmWidth;
       this.calculateTotal();
     }else{
       this.invoiceItem[indexReport].sub_total = 0;
@@ -234,9 +232,12 @@ export class FormularioComponent implements OnInit, OnDestroy {
   getLaminaItemPrice(lamina: Film, carPartWidth: number, carPartLength: number, itemQuantity: number, carPartInstallationPrice: number){
     let filmPrice = this.dao.getLamninaPriceByWidth(lamina.id, carPartWidth);
     let totalPrice = (carPartLength * itemQuantity * filmPrice.bobina_price) + (carPartInstallationPrice *itemQuantity) ;
-    console.log(`part length ${carPartLength}, itemQuantiti ${itemQuantity}, film price ${filmPrice.bobina_price}, carpart installation price ${carPartInstallationPrice}`)
-    // let totalPrice = filmPrice.price === 0? 0 :(carPartInstallationPrice + filmPrice.price) * filmQuantity;
-    return {'filmPrice': filmPrice.bobina_price, totalPrice}
+    // console.log(`part length ${carPartLength}, 
+    //               itemQuantiti ${itemQuantity}, 
+    //               film price ${filmPrice.bobina_price}, 
+    //               carpart installation price ${carPartInstallationPrice}
+    //               part width ${filmPrice.bobina_width}`)
+    return {'filmPrice': filmPrice.bobina_price, totalPrice, filmWidth: filmPrice.bobina_width}
   }
 
   calculateTotal(): void{
