@@ -234,6 +234,7 @@ class pago(models.Model):
                                       on_delete=models.DO_NOTHING, 
                                       verbose_name="Nota de Venta",
                                       blank=True)
+    monto = models.DecimalField(max_digits=10, decimal_places=2, default= 0)
     tipo_pago =models.CharField(choices=helper.types, 
                                 default=helper.default_type, 
                                 verbose_name='Tipo Pago')

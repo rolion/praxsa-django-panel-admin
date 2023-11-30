@@ -6,6 +6,7 @@ from django.http.request import HttpRequest
 from ..business.pago import Pago_Business
 from django.contrib import messages
 from datetime import datetime
+from ..models import Nota_Venta
 class PagosAdmin(admin.ModelAdmin):
     list_display = ['nota_venta', 
                     'view_proforma_monto',
@@ -15,6 +16,22 @@ class PagosAdmin(admin.ModelAdmin):
     actions = ['concluir_transaccion']
     list_per_page = 10
     form = PagosForm
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super(PagosAdmin, self).get_form(request, obj, **kwargs)
+        if (request.GET):
+            pago_form = PagosForm(request.GET)
+            pago_form.is_valid()
+            venta = Nota_Venta.objects.select_related('nota_trabajo').get(id = pago_form.cleaned_data['nota_venta'].id)
+            form.base_fields['monto'].initial = venta.total_price
+            form.base_fields['monto'].disabled = True
+        return form
+    
+    # def get_readonly_fields(self, request, obj=None):
+    #     print('obj', obj)
+    #     if obj is None:
+    #         return []
+    #     return ['monto', ]
 
     def save_model(self, request, obj, form, change):
         obj.created_by = request.user

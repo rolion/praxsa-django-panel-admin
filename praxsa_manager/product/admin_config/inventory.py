@@ -15,10 +15,12 @@ class InventoryAdmin(admin.ModelAdmin):
                     'installed',
                     'date']
     list_per_page = 10
+    search_fields = ['sucursal__name', 'bobina__window_film__name']
     form = InventarioForm
     class Media:
         js=('product/inventario.js',)
-        
+    
+    
 
     def get_bobina_width(self, obj):
         return obj.bobina.width
@@ -47,6 +49,7 @@ class InventoryAdmin(admin.ModelAdmin):
     
     def changelist_view(self, request, extra_context=None):
         helper = User_Helper()
+        
         if request.user.is_superuser or helper.is_request_user_admin(request.user):
             self.list_display = [
                     'sucursal', 
