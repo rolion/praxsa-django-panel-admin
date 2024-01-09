@@ -44,7 +44,6 @@ class InventoryAdmin(admin.ModelAdmin):
             qs_result = qs.filter(sucursal__id = sucursales[0].id)
         else:
             qs_result = qs.filter(sucursal_id = -1)
-        
         return qs_result
     
     def changelist_view(self, request, extra_context=None):
@@ -85,6 +84,12 @@ class InventoryAdmin(admin.ModelAdmin):
                     'installed',
                     'date']
         else:
-            self.list_display = []
+            self.list_display = [
+                    'get_bobina_name',
+                    'get_bobina_width',
+                    'quantity',
+                    'to_install',
+                    'installed',
+                    'date']
         return super(InventoryAdmin, self).changelist_view(request, extra_context)
 
