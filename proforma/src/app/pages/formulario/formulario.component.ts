@@ -219,7 +219,7 @@ export class FormularioComponent implements OnInit, OnDestroy {
       this.invoiceItem[indexReport].window_film_price = filmPrice;
       this.invoiceItem[indexReport].window_film = lamina.id;
       this.invoiceItem[indexReport].window_film_url = 'windows-film/'+lamina.id;
-      this.invoiceItem[indexReport].width = filmWidth;
+      // this.invoiceItem[indexReport].width = filmWidth;
       this.calculateTotal();
     }else{
       this.invoiceItem[indexReport].sub_total = 0;
@@ -230,14 +230,14 @@ export class FormularioComponent implements OnInit, OnDestroy {
   }
 
   getLaminaItemPrice(lamina: Film, carPartWidth: number, carPartLength: number, itemQuantity: number, carPartInstallationPrice: number){
-    let filmPrice = this.dao.getLamninaPriceByWidth(lamina.id, carPartWidth);
-    let totalPrice = (carPartLength * itemQuantity * filmPrice.bobina_price) + (carPartInstallationPrice *itemQuantity) ;
-    // console.log(`part length ${carPartLength}, 
-    //               itemQuantiti ${itemQuantity}, 
-    //               film price ${filmPrice.bobina_price}, 
-    //               carpart installation price ${carPartInstallationPrice}
-    //               part width ${filmPrice.bobina_width}`)
-    return {'filmPrice': filmPrice.bobina_price, totalPrice, filmWidth: filmPrice.bobina_width}
+    try{
+      let filmPrice = this.dao.getLamninaPriceByWidth(lamina.id, carPartWidth);
+      let totalPrice = (carPartLength * itemQuantity * filmPrice.bobina_price) + (carPartInstallationPrice *itemQuantity) ;
+      return {'filmPrice': filmPrice.bobina_price, totalPrice, filmWidth: filmPrice.bobina_width}
+    }catch {
+      return {'filmPrice': 0, 'totalPrice': 0, 'filmWidth':0}
+    }
+    
   }
 
   calculateTotal(): void{

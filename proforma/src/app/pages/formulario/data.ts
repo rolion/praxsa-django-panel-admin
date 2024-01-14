@@ -32,6 +32,9 @@ export class iDB
         let prices = laminaPrices.filter(film => film.bobina_width === width);
         if (prices.length == 0){
             let wider_films = laminaPrices.filter(price => price.bobina_width > width);
+            // if (wider_films.length ==0){
+            //     return null;
+            // }
             let price = wider_films.reduce((acc, curr) =>{
                 if(acc != null && acc!=undefined){
                     let discriminate_acc = acc.bobina_width - width;
