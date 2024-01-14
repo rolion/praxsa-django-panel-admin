@@ -2,14 +2,24 @@ from typing import Any
 from django.contrib import admin
 from ..models import Window_Film_Reel_Storage
 from ..models import Window_Film_Reel
+from django.db.models.query import QuerySet
+from django.http.request import HttpRequest
     
 class WindowFilmReel(admin.ModelAdmin):
     list_display = ['window_film', 
                     'width',
                     'length',
-                    'price',
-                    'quantity']
+                    'price',]
+    search_fields = ['window_film__name', 
+                    'width',
+                    'length',
+                    'price',]
     list_per_page = 10
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
+        qs = super().get_queryset(request)
+        result = qs.select_related('window_film')
+
+        return  result
     def save_model(self, request: Any, window_film_reel: Any, form: Any, change: Any) -> None:
         if change is False:
             reel = super().save_model(request, window_film_reel, form, change)

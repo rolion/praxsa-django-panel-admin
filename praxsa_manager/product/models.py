@@ -66,7 +66,6 @@ class Window_Film_Reel(models.Model):
     width = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Ancho")
     length = models.DecimalField(max_digits=10, decimal_places=2,  verbose_name="Largo")
     price = models.DecimalField(max_digits=10, decimal_places=2,  verbose_name="Precio")
-    quantity = models.PositiveIntegerField(verbose_name="Cantidad")
     class Meta:
         ordering = ['window_film']
         verbose_name = 'Bobina'
