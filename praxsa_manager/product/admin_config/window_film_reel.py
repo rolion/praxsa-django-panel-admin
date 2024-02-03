@@ -23,7 +23,7 @@ class WindowFilmReel(admin.ModelAdmin):
     def save_model(self, request: Any, window_film_reel: Any, form: Any, change: Any) -> None:
         if change is False:
             reel = super().save_model(request, window_film_reel, form, change)
-            total_length = window_film_reel.quantity*window_film_reel.length
+            total_length = 1*window_film_reel.length
             storage = Window_Film_Reel_Storage(window_film_reel_id=window_film_reel, total_length =  total_length)
             storage.save()
         else:

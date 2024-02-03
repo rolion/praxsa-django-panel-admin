@@ -32,21 +32,11 @@ admin.site.register(inventario, InventoryAdmin)
 # admin.site.register(instalador_sucursal)
 admin.site.register(Window_Film, WindowFilm)
 admin.site.register(Window_Film_Reel, WindowFilmReel)
-admin.site.register(Window_Film_Reel_Storage, WindowFilmReelStorage)
+# admin.site.register(Window_Film_Reel_Storage, WindowFilmReelStorage)
 admin.site.register(Client)
 admin.site.register(Proforma_Header, ProformaAdmin)
 admin.site.register(Nota_trabajo, NotaTrabajoAdmin)
 admin.site.register(pago, PagosAdmin)
-# admin.site.register(ProformaGarantia)
-# class NotaVenta(Proforma_Header):
-#     class Meta:
-#         verbose_name = 'Nota Venta'
-#         ordering = ["-id","-proforma_created_on","-nota_venta_created_on"]
-#         proxy = True
-
-#     def __str__(self) -> str:
-#         prefijo = 'Nota Veta'
-#         return f'{prefijo} {self.id}'
 
         
 
