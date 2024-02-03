@@ -2,7 +2,7 @@ from django.contrib import admin
 
 admin.site.site_header = 'Praxsa Panel Admin'
 
-from .models import Car_Brand, Car_Model, Car_Part, Car_Model_Part, Window_Film, Window_Film_Reel, Window_Film_Reel_Storage, Client, pago
+from .models import Car_Brand, Car_Model, Car_Part, Car_Model_Part, Window_Film, Window_Film_Reel, Client, pago
 
 from .models import Proforma_Header, Sucursal, inventario, Nota_trabajo, Nota_Venta #, instalador_sucursal
 # from .admin_config.car_model_winfow_film_part import CarModelWindowFilmPart

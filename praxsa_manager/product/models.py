@@ -73,12 +73,12 @@ class Window_Film_Reel(models.Model):
     def __str__(self):
         return f'{self.window_film.name} - {self.width}'
     
-class Window_Film_Reel_Storage(models.Model):
-    window_film_reel_id = models.ForeignKey(Window_Film_Reel, on_delete=models.DO_NOTHING, verbose_name="Bobina")
-    total_length= models.PositiveIntegerField(verbose_name="Largo Total")
-    class Meta:
-        ordering = ['window_film_reel_id']
-        verbose_name = 'Almacen Bobina'
+# class Window_Film_Reel_Storage(models.Model):
+#     window_film_reel_id = models.ForeignKey(Window_Film_Reel, on_delete=models.DO_NOTHING, verbose_name="Bobina")
+#     total_length= models.PositiveIntegerField(verbose_name="Largo Total")
+#     class Meta:
+#         ordering = ['window_film_reel_id']
+#         verbose_name = 'Almacen Bobina'
     
 class Client(models.Model):
     name = models.CharField(max_length=400)
