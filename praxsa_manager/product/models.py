@@ -68,8 +68,8 @@ class Window_Film_Reel(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2,  verbose_name="Precio")
     class Meta:
         ordering = ['window_film']
-        verbose_name = 'Bobina'
-        
+        verbose_name = 'Bobina'  
+    
     def __str__(self):
         return f'{self.window_film.name} - {self.width}'
     
