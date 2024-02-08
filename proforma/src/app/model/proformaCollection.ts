@@ -74,11 +74,13 @@ export class CarPartFilmItem {
 }
 
 export class Invoice{
+  id: number;
   carPartItems: CarPartFilmItem[];
   name: string;
   ci_nit: string;
   car_plate: string;
   sucursal: number;
+  sucursal_name: string;
   car_model_id: number;
   car_model_name: string;
   car_brand_id: number;
@@ -98,6 +100,7 @@ export class Invoice{
     car_brand_id: number, 
     car_brand_name: string,
     total_price: number){
+    this.id = 0;
     this.carPartItems = carPartItems;
     this.name = "";
     this.email = "",
@@ -112,5 +115,6 @@ export class Invoice{
     this.proforma_created_on = '';
     this.status = '';
     this.sucursal = 0;
+    this.sucursal_name = ''
   }
 }

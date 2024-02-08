@@ -61,6 +61,7 @@ export class ProformaComponent implements OnInit, OnDestroy {
       this.pdf.resetPdf();
       const marca = this.proforma.car_brand_name;
       const modelo = this.proforma.car_model_name;
+      console.log('proforma', this.proforma)
       if (marca && modelo){
         const pdfHead = ['Item', 'Lamina', 'Precio Total'];
         const pdfBody: any[] = [];
@@ -77,7 +78,7 @@ export class ProformaComponent implements OnInit, OnDestroy {
         this.pdf.setFoot(pdfFoot);
         this.pdf.setCompanyName('Praxsa');
         this.pdf.setCompanyAddress('4to anillo, radial 26, calle #3', 'Santa Cruz de la Sierra', '3 352139');
-        this.pdf.setTitle('Proforma');
+        this.pdf.setTitle('Proforma', this.proforma.id);
         this.pdf.setProformaDetail(
           // '',
           this.proforma.proforma_created_on == null? '': this.proforma.proforma_created_on,
@@ -86,7 +87,7 @@ export class ProformaComponent implements OnInit, OnDestroy {
           this.proforma.email== null ? '': this.proforma.email,
           this.proforma.phone_number== null ? '': this.proforma.phone_number,
           marca== null ? '': marca,
-          modelo== null ? '': modelo,this.proforma.car_plate ==null? '': this.proforma.car_plate );
+          modelo== null ? '': modelo,this.proforma.car_plate ==null? '': this.proforma.car_plate, this.proforma.sucursal_name );
         this.pdf.build();
         this.pdf.download();
       }
