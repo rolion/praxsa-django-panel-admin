@@ -28,7 +28,7 @@ class InvoiceView(APIView):
     
     def get(self, request, pk, format=None):
         try:
-            invoice = Proforma_Header.objects.select_related('car_model_id').get(id = pk)
+            invoice = Proforma_Header.objects.select_related('car_model_id', 'sucursal').get(id = pk)
             # if invoice.client_id.id == client.id:
             details = Proforma_Detail.objects.select_related('car_part','window_film').filter(proforma_header = invoice)
            
@@ -42,9 +42,13 @@ class InvoiceView(APIView):
                                             'window_film_name': item.window_film.name,
                                             }, details))
             
-            data = {'name': invoice.name,
+            data = {
+                    'id': pk,
+                    'name': invoice.name,
                     'email': invoice.email,
                     'ci_nit': invoice.ci_nit,
+                    'sucursal_name': invoice.sucursal.name,
+                    'sucursal': invoice.sucursal.id,
                     'car_plate': invoice.car_plate,
                     'phone_number': invoice.phone_number,
                     'car_model_id': invoice.car_model_id.id,
