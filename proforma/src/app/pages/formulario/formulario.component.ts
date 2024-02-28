@@ -215,7 +215,7 @@ export class FormularioComponent implements OnInit, OnDestroy {
       let {
         filmPrice, totalPrice, filmWidth
       } = this.getLaminaItemPrice(lamina, width, length, quantity, installation_price);
-      this.invoiceItem[indexReport].sub_total = totalPrice;
+      this.invoiceItem[indexReport].sub_total = +totalPrice.toFixed(2);
       this.invoiceItem[indexReport].window_film_price = filmPrice;
       this.invoiceItem[indexReport].window_film = lamina.id;
       this.invoiceItem[indexReport].window_film_url = 'windows-film/'+lamina.id;

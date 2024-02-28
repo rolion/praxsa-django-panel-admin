@@ -110,14 +110,14 @@
           >ver más</a></td>
           <ng-template #elseBlock>Seleccione una Lamina.</ng-template>
 
-          <!-- <td>{{reportItem.sub_total.toFixed(2)}}</td> -->
+          <td>{{reportItem.sub_total.toFixed(2)}}</td>
           <td></td>
           <td class="d-none d-sm-none d-md-table-cell"><button type="button" class="btn btn-danger" (click)="removeReportItem(i)">X</button></td>
         </tr>
         </tbody>
       </table>
       <div class="container-fluid d-flex justify-content-end">
-        <p class="fw-bold text-right" >Cre&eacute; la proforma para poder ver los precios</p>
+        <p class="fw-bold text-right" >{{total.toFixed(2)}}</p>
       </div>
     </div>
   </div>

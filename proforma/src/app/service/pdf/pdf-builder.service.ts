@@ -72,10 +72,10 @@ export class PdfBuilderService {
     this.doc.setTextColor(this.mainColor);
     this.doc.setFont('', 'bold');
     let center = this.pageWidth / 2
-    this.doc.text(title, center, 42, { align: 'center' });
-    this.doc.setFontSize(12);
+    this.doc.text(title, center, 42, { align: 'center' })
+    this.doc.setFontSize(12)
     this.doc.setFont('', 'normal');
-    this.doc.text(`Nro. ${id}`, center, 47, { align: 'center' });
+    this.doc.text(`Nro. ${id}`, center, 47, { align: 'center' })
   }
 
   
