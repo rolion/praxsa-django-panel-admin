@@ -13,9 +13,10 @@ class InventoryAdmin(admin.ModelAdmin):
                     'quantity',
                     'to_install',
                     'installed',
+                    'numero_referencia',
                     'date']
     list_per_page = 10
-    search_fields = ['sucursal__name', 'bobina__window_film__name']
+    search_fields = ['sucursal__name', 'bobina__window_film__name', 'numero_referencia']
     form = InventarioForm
     class Media:
         js=('product/inventario.js',)
@@ -57,6 +58,7 @@ class InventoryAdmin(admin.ModelAdmin):
                     'quantity',
                     'to_install',
                     'installed',
+                    'numero_referencia',
                     'date']
             self.fields = [
                     'sucursal', 
@@ -65,7 +67,8 @@ class InventoryAdmin(admin.ModelAdmin):
                     'to_install',
                     'installed',
                     'precio_compra_mtr_lineal',
-                    'precio_venta_mtr_lineal']
+                    'precio_venta_mtr_lineal',
+                    'numero_referencia']
             self.readonly_fields = []
         elif helper.is_request_user_supervisor(request.user):
             self.list_display = [ 
@@ -74,6 +77,7 @@ class InventoryAdmin(admin.ModelAdmin):
                     'quantity',
                     'to_install',
                     'installed',
+                    'numero_referencia',
                     'date']
             self.readonly_fields = [
                     'sucursal',
@@ -82,6 +86,7 @@ class InventoryAdmin(admin.ModelAdmin):
                     'precio_compra_mtr_lineal',
                     'to_install',
                     'installed',
+                    'numero_referencia',
                     'date']
         else:
             self.list_display = [
@@ -90,6 +95,7 @@ class InventoryAdmin(admin.ModelAdmin):
                     'quantity',
                     'to_install',
                     'installed',
+                    'numero_referencia',
                     'date']
         return super(InventoryAdmin, self).changelist_view(request, extra_context)
 

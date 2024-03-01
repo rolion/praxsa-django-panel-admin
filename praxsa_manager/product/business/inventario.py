@@ -59,7 +59,7 @@ class Inventario_Business:
     
     def get_total_meters_window_film_in_inventory(self, sucursal_id):
         query = inventario.objects.select_related('sucursal','bobina', 'bobina__window_film')
-        query = query.values("bobina__window_film__id", "bobina__window_film__name", "bobina__width", "precio_venta_mtr_lineal", "bobina__window_film__id")
+        query = query.order_by('bobina__window_film__name').values("bobina__window_film__id", "bobina__window_film__name", "bobina__width", "precio_venta_mtr_lineal", "bobina__window_film__id")
         return query.annotate(total=Sum("to_install")).filter(sucursal__id = sucursal_id)
     
     def available_window_film_reel_in_inventory_to_sell(self, sucursal, windows_film, width, total_length_to_sell):

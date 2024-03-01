@@ -1,14 +1,15 @@
 from django.db import models
-from django.core.validators import RegexValidator, EmailValidator
+from django.core.validators import RegexValidator, EmailValidator, MaxValueValidator
 from django.contrib.auth.models import User
 from tinymce.models import HTMLField
 from django.utils.translation import gettext_lazy as _
 from .helper.proforma import Proforma_Helper
 from .helper.pagos import Pagos_Helper
+import datetime
 
 
 class Car_Brand(models.Model):
-    name = models.CharField( max_length=200, verbose_name="Nombre")
+    name = models.CharField( max_length=200, verbose_name="Nombre", unique=True)
     class Meta:
         ordering = ['name']
         verbose_name = 'Marca'
@@ -17,7 +18,7 @@ class Car_Brand(models.Model):
     
 class Car_Model(models.Model):
     car_brand_id = models.ForeignKey(Car_Brand, on_delete=models.DO_NOTHING, verbose_name="Marca")
-    name = models.CharField(max_length=200, verbose_name="Nombre")
+    name = models.CharField(max_length=200, verbose_name="Nombre", unique=True)
     class Meta:
         ordering = ['car_brand_id']
         verbose_name = 'Modelo'
@@ -115,7 +116,8 @@ class inventario(models.Model):
     quantity = models.PositiveIntegerField(verbose_name="Cantidad")
     to_install = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, verbose_name="metros disponible para instalar")
     installed = models.DecimalField(max_digits=10, decimal_places=2, default=0.0,  verbose_name="metros instalados")
-    date = models.DateTimeField(verbose_name="Fecha", auto_now_add=True)
+    date = models.DateTimeField(verbose_name="Fecha", null=False)
+    numero_referencia = models.PositiveIntegerField( verbose_name="Numero Referencia",default=0, validators=[MaxValueValidator(limit_value=9999999999, message='solo se aceptan valores con 10 digitos')])
     precio_compra_mtr_lineal = models.DecimalField( max_digits=10, decimal_places=2, default=0.0, verbose_name="Precio Compra Metro Lineal")
     precio_venta_mtr_lineal = models.DecimalField( max_digits=10, decimal_places=2, default=0.0, verbose_name="Precio Venta Metro Lineal")
     def __str__(self):
