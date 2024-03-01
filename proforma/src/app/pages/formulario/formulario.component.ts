@@ -242,6 +242,7 @@ export class FormularioComponent implements OnInit, OnDestroy {
 
   calculateTotal(): void{
     this.total = this.invoiceItem.reduce((acc, current) =>acc+=current.sub_total,0)
+    this.total = +this.total.toFixed(2);
   }
 
   getInvoice(): Invoice{
