@@ -120,7 +120,7 @@ export class NgModalContentComponent implements OnInit {
       }
       this.estado = this.STATUS_GUARDANDO_PROFORMA;
       let invoiceClone = {...this.invoice};
-      invoiceClone.carPartItems = this.invoice.carPartItems.filter(item => item.window_film_id != 0)
+      invoiceClone.carPartItems = this.invoice.carPartItems.filter(item => item.window_film != 0)
       if(invoiceClone){
         this.be.saveProforma(invoiceClone).subscribe({
           next: (res) =>{

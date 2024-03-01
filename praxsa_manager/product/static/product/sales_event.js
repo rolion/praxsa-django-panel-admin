@@ -5,7 +5,6 @@ jQuery(function($){
         let inventario = [];
         let widths = []
         
-        
         function get_car_model_element(){
             return $('select[name="car_model_id"]')
         }
@@ -18,8 +17,15 @@ jQuery(function($){
             return $('select[name="sales_type"]')
         }
 
-        function get_sucursal_element(){
-            return $('select[name="sucursal"]')
+        function get_sucursal_id(){
+            console.log('call get sucursal element')
+            let user_sucursal = $('select[name="sucursal"]')
+            if (!isNaN(user_sucursal.val())){
+                return user_sucursal.val()
+            }
+            url = $("#proforma_header_form > div > fieldset:nth-child(1) > div.form-row.field-sucursal > div > div > div > a").attr("href")
+            sucursal_id= url.replace(/[\D+]/g, '')
+            return sucursal_id
         }
         function get_width_element_in_row(brother_selector){
             let parent = $(brother_selector).parents("tr")
@@ -127,9 +133,9 @@ jQuery(function($){
         }
         function disable_sale_detail_elements(){
             $('td.field-width input').prop('readonly', true)
-            $('td.field-quantity input').prop('readonly', true)
+            // $('td.field-quantity input').prop('readonly', true)
             $('td.field-window_film_price input').prop('readonly', true)
-            $('td.field-installation_price input').prop('readonly', true)
+            // $('td.field-installation_price input').prop('readonly', true)
             $('td.field-sub_total input').prop('readonly', true)
             $('td.field-car_part > select').prop('disabled', false)
             if(is_sale_instalation_type()){
@@ -141,23 +147,27 @@ jQuery(function($){
         }
 
         function onLoad(){
+            console.log('onload called')
             let selectedModel = get_car_model_element();
-            let user_sucursal = get_sucursal_element();
-            // disable_sale_detail_elements()
-            if(selectedModel && user_sucursal && !isNaN(selectedModel.val()) && !isNaN(user_sucursal.val())){
-                loadCarInfo(selectedModel.val(), user_sucursal.val())
-                loadInventory(user_sucursal.val())
+            let user_sucursal = get_sucursal_id();
+            disable_sale_detail_elements();
+            $('input[name="total_price"]').prop('readonly', true)
+            if(selectedModel && user_sucursal && !isNaN(selectedModel.val()) && !isNaN(user_sucursal)){
+                loadCarInfo(selectedModel.val(), user_sucursal)
+                loadInventory(user_sucursal)
+
             }
         }
 
         function sum_all_price(){
-            let prices = $('table tbody td.field-sub_total input');
+            let prices = $('table > tbody > tr > td.field-sub_total > input');
             let total_price = 0
             prices.each((index, selector) =>{
                 let item = $(selector);
                 let value = $.isNumeric(item.val().trim())? parseInt(item.val()):0
                 total_price += value
             }, 0)
+            console.log(`total price ${total_price}`)
             $('#id_total_price').val(total_price)
         }
 
@@ -255,12 +265,15 @@ jQuery(function($){
             if(dispo){
                 return dispo.bobina_metros_disponibles
             }
+            film = window_films.find(film => film.film_id == film_id)
+            alert(`no se encontro la lamina ${film.name} en el inventario con ancho ${film_width}, utilice otra lamina o modifique el ancho`);
             console.log(`no se encontro la lamina en el inventario, id = ${film_id} width = ${film_width}`)
             return 0;
         }
         update_diponibilidad_value = (dispo, target) => {
             get_wdisponibilidad_element_in_row(target).val(dispo)
         }
+
         updateFilmPrice = (filmId, width, target) => {
             let selected_film = getFilmByIdWidth(filmId, width);
             if(selected_film !=undefined){
@@ -297,14 +310,20 @@ jQuery(function($){
         }
 
         $('select[name="car_model_id"]').change(function(){
-            loadCarInfo($(this).val(), get_sucursal_element().val());
+            loadCarInfo($(this).val(), get_sucursal_id());
             onLoad()
         })
 
         document.addEventListener('formset:added', (event) => {
             if(items.length > 0){
                 show_only_model_items()
-                // disable_sale_detail_elements();
+                disable_sale_detail_elements();
+            }
+            
+        });
+        document.addEventListener('formset:removed', (event) => {
+            if(items.length > 0){
+                sum_all_price()
             }
             
         });

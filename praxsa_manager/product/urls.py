@@ -9,7 +9,8 @@ from .custom_views.bobina import BobinaView
 app_name = 'product'
 urlpatterns = [
     path('get_car_part_info/<int:car_model_id>/<int:sucursal_id>', views.get_car_part_info, name= 'get_car_part_info'),
-    path('get_call_info', views.get_call_info, name='get_call_info'),
+    path('calculator_info', views.get_calculator_info, name='get_calculator_info'),
+    path('model_parts/<int:model_id>', views.get_model_parts,name = 'get_model_parts'),
     path('get_inventory/<int:sucursal_id>', views.get_inventory, name='get_inventory'),
     path('create_client', views.create_client, name='create_client'),
     path('api-token-auth/', CustomAuthToken.as_view()),

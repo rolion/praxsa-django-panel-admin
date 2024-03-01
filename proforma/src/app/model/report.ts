@@ -41,7 +41,7 @@ export class ReportItem{
   calculateSubtotal(): void{
     if(this.lamina){
       this.cantidad = this.item.quantity;
-      this.precio = this.lamina_prices?.find(price =>(price.width === this.item.width && price.film_id === this.lamina?.id))?.price || 0
+      this.precio = this.lamina_prices?.find(price =>(price.bobina_width === this.item.width && price.bobina_film_id === this.lamina?.id))?.bobina_price || 0
       this.subtotal = this.precio === 0? 0 :(this.item.installation_price + this.precio) * this.item.quantity
     }else{
       this.subtotal = 0;

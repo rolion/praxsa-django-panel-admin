@@ -1,7 +1,6 @@
 from ..models import Sucursal, Window_Film, inventario
-from ..helper.proforma import Proforma_Helper
-from django.db.models import Sum, F, CharField, Value
-from django.db.models.functions import Concat
+from django.db.models import Sum, F
+from ..utils.exception.nohaylaminas import NoHayLaminasDisponibles
 class Inventario_Business:
     
     def get_inventory_by_sucursal(self, sucursal):
@@ -17,19 +16,40 @@ class Inventario_Business:
         result = Window_Film.objects.filter(pk__in = q)
         return result
     
-    def update_inventory(self, sucursal, windows_film, width, length_to_reduce):
+    def reduce_inventory(self, sucursal, windows_film, width, length_to_reduce):
         query = inventario.objects.select_related('bobina', 'sucursal', 'bobina__window_film')
-        query = query.filter(sucursal = sucursal, bobina__window_film = windows_film, bobina__width = width, to_install__gte = length_to_reduce).order_by('date')[:1]
+        query = query.filter(sucursal = sucursal, 
+                             bobina__window_film = windows_film, 
+                             bobina__width = width, 
+                             to_install__gte = length_to_reduce)
+        query = query.order_by('bobina__width','date')[:1]
+        # print(sucursal, windows_film, width, length_to_reduce)
+        # print('query', query[0].name, )
+        print('inventario existe ',query.exists())
+        print(f'width {width}, film {windows_film}')
+        print(query)
+        
         if(query.exists()):
-            try:
-                bobina_inventario = query[0]
-                bobina_inventario.to_install = bobina_inventario.to_install - length_to_reduce
-                bobina_inventario.installed = bobina_inventario.installed + length_to_reduce
-                return bobina_inventario.save()
-            except Exception as e:
-                print('exception ', str(e))
-        return False
+            bobina_inventario = query[0]
+            bobina_inventario.to_install = bobina_inventario.to_install - length_to_reduce
+            bobina_inventario.installed = bobina_inventario.installed + length_to_reduce
+            bobina_inventario.save()
+            return bobina_inventario
+        raise NoHayLaminasDisponibles(f'no hay lamina disponible {windows_film.name} {width}')
+        #return False
     
+    def return_to_inventory(self, detail_inventory, length_to_add):
+        try:
+            inv = inventario.objects.select_related('bobina', 'sucursal')
+            inv = inv.get(id = detail_inventory.id)
+            inv.to_install = inv.to_install + length_to_add
+            inv.installed = inv.installed - length_to_add
+            inv.save()
+            return True
+        except Exception as e:
+            print('no se pudo actualizar el inventario --->>', str(e))
+            return False
+        
     def is_window_film_available(self, sucursal_id, bobina, width, to_install):
         query = inventario.objects.select_related('bobina', 'sucursal')
         query = query.filter(sucursal__id = sucursal_id, bobina__id = bobina, width__gte=width, to_install__gte = to_install).order_by('date','width')
@@ -39,7 +59,7 @@ class Inventario_Business:
     
     def get_total_meters_window_film_in_inventory(self, sucursal_id):
         query = inventario.objects.select_related('sucursal','bobina', 'bobina__window_film')
-        query = query.values("bobina__window_film__id", "bobina__window_film__name", "bobina__width")
+        query = query.values("bobina__window_film__id", "bobina__window_film__name", "bobina__width", "precio_venta_mtr_lineal", "bobina__window_film__id")
         return query.annotate(total=Sum("to_install")).filter(sucursal__id = sucursal_id)
     
     def available_window_film_reel_in_inventory_to_sell(self, sucursal, windows_film, width, total_length_to_sell):
