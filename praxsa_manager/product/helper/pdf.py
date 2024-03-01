@@ -1,9 +1,13 @@
+import os
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.colors import HexColor, black, white
 from reportlab.lib.units import inch, mm, cm, pica
+from django.conf import settings
+from reportlab.lib.utils import Image as PilImage
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from ..models import Detalle_Nota_Trabajo, Nota_trabajo, Proforma_Header, Proforma_Detail
+
 
 class PDFService:
 
@@ -17,28 +21,29 @@ class PDFService:
         
         self.canvas.translate(27, 792)
         self.border = 14
-        self.top_border = -30
+        self.top_border = -42
 
     def set_company_name(self):
+        img = os.path.join(settings.BASE_DIR,'product/static/img/praxsa-logo.jpeg')
+        self.canvas.drawImage(img, x=self.border, y=self.top_border-38, width=50, height=50)
         self.canvas.setFont(psfontname='Helvetica', size=15)
         self.canvas.setFillColor(aColor=self.main_color)
-        # print(letter)
-        self.canvas.drawString(x=self.border, y=self.top_border, text= self.company_name.upper())
+        self.canvas.drawString(x=self.border + 50, y=self.top_border, text= self.company_name.upper())
 
     def set_company_addres(self, address, city, phoneNumber):
         self.canvas.setFont( psfontname='Helvetica',size=9)
         self.canvas.setFillColor(aColor=black)
-        self.canvas.drawString(text=address, x=self.border, y= self.top_border -10)
-        self.canvas.drawString(text=city, x=self.border, y=self.top_border -20)
-        self.canvas.drawString(text=phoneNumber, x=self.border, y=self.top_border -30, )
+        self.canvas.drawString(text=address, x=self.border + 50, y= self.top_border -10)
+        self.canvas.drawString(text=city, x=self.border + 50, y=self.top_border -20)
+        self.canvas.drawString(text=phoneNumber, x=self.border + 50, y=self.top_border -30, )
     
     def set_title(self, title, proforma_id):
         self.canvas.setFont(psfontname='Helvetica-Bold', size=22)
         self.canvas.setFillColor(aColor=self.main_color)
-        center = letter[0]/2
-        self.canvas.drawCentredString(text=title, x=center, y=self.top_border - 50, )
+        center = (letter[0]/2)-20
+        self.canvas.drawCentredString(text=title, x=center, y=self.top_border - 60, )
         self.canvas.setFont(psfontname='Helvetica', size=12)
-        self.canvas.drawCentredString(text=f'Nro. {proforma_id}', x=center, y=self.top_border - 65, )
+        self.canvas.drawCentredString(text=f'Nro. {proforma_id}', x=center, y=self.top_border - 75, )
 
     def set_proforma_header(self, fecha, nombre, ci, email, celular, marca, modelo, placa, codigo_proforma, sucursal ,codigo_garantia='Pendiente'):
       columnSeparation = 250
@@ -156,6 +161,17 @@ class PDFService:
       self.canvas.drawString(text="El precio final se contempla el I.V.A. y la instalación de la lamina", 
                                 x = self.x_position, 
                                 y=initialY + (base_increment) * (row_increment + 3))
+      self.canvas.setFont(psfontname='Helvetica', size=fontSizeNormal)
+      self.canvas.drawString(text="con la firma el cliente acepta el precio y la lamina seleccionada", 
+                                x = self.x_position, 
+                                y=initialY + (base_increment) * (row_increment + 4))
+      X2 =  520 + 14 
+      X1 = X2 - 150
+      y=initialY + (base_increment) * (row_increment + 6)
+      self.canvas.line(X1, y, X2, y)
+      center = X1 + (X2-X1)/2
+      y=initialY + (base_increment) * (row_increment + 7)
+      self.canvas.drawCentredString(text='Cliente', x=center, y=y )
       
     def nota_trabajo_body(self, body: [Detalle_Nota_Trabajo]):
         fontSizeNormal = 11
@@ -223,7 +239,7 @@ class PDFService:
         header = nota_trabajo.proforma
         self.set_company_name()
         self.set_company_addres(address='4to anillo, radial 26, calle #3', city='santa cruz', phoneNumber='3 352139')
-        self.set_title(title='Nota trabajo')
+        self.set_title(title='Nota trabajo', proforma_id=nota_trabajo.id)
         self.set_proforma_header(fecha=header.proforma_created_on.strftime("%d-%m-%Y %H:%M:%S"), 
                                  nombre= header.name, 
                                  ci=header.ci_nit, 
@@ -233,7 +249,8 @@ class PDFService:
                                  placa= header.car_plate, 
                                  celular= header.phone_number,
                                  codigo_proforma= header.id,
-                                 codigo_garantia=nota_trabajo.codigo_garantia)
+                                 codigo_garantia=nota_trabajo.codigo_garantia,
+                                 sucursal= header.sucursal)
         self.nota_trabajo_body(body=detail)
         self.canvas.showPage()
         self.canvas.save()
