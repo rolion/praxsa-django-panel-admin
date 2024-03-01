@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import jsPDF from 'jspdf';
 import TextOptionsLight from 'jspdf'
-import autoTable from 'jspdf-autotable';
+import autoTable, { Styles } from 'jspdf-autotable';
 import {HttpClient} from "@angular/common/http";
 
 @Injectable({
@@ -70,12 +70,12 @@ export class PdfBuilderService {
   setTitle(title: any, id: number): void{
     this.doc.setFontSize(22);
     this.doc.setTextColor(this.mainColor);
-    this.doc.setFont('', 'bold');
+    this.doc.setFont('Helvetica', 'bold');
     let center = this.pageWidth / 2
-    this.doc.text(title, center, 42, { align: 'center' })
-    this.doc.setFontSize(12)
-    this.doc.setFont('', 'normal');
-    this.doc.text(`Nro. ${id}`, center, 47, { align: 'center' })
+    this.doc.text(title, center, 42, { align: 'center' });
+    this.doc.setFontSize(12);
+    this.doc.setFont('Helvetica', 'normal');
+    this.doc.text(`Nro. ${id}`, center, 47, { align: 'center' });
   }
 
   
@@ -87,19 +87,19 @@ export class PdfBuilderService {
       let center = this.pageWidth / 2
       this.doc.setTextColor(this.blackColor);
       let startAtRigth = this.pageWidth - this.border;
-      this.doc.setFont('', 'bold').setFontSize(fontSizeTitles).text(`Fecha: ${fecha}`, startAtRigth,  50, { align: 'right' });
-      this.doc.setFont('', 'bold').setFontSize(fontSizeTitles).text(`Sucursal: ${sucursal}`, startAtRigth,  55, { align: 'right' });
+      this.doc.setFont('Helvetica', 'bold').setFontSize(fontSizeTitles).text(`Fecha: ${fecha}`, startAtRigth,  50, { align: 'right' });
+      this.doc.setFont('Helvetica', 'bold').setFontSize(fontSizeTitles).text(`Sucursal: ${sucursal}`, startAtRigth,  55, { align: 'right' });
 
-      this.doc.setFont('','bold').setFontSize(fontSizeNormal).text('Datos personales para la garantía', this.border, 60);
-      this.doc.setFont('','bold').setFontSize(fontSizeName).text(nombre.toUpperCase(), this.border, 67);
-      this.doc.setFont('', 'normal').setFontSize(fontSizeNormal).text(`C.I.: ${ci}`, this.border, 75);
-      this.doc.setFont('', 'normal').setFontSize(fontSizeNormal).text(`Nro. Celular: ${celular}`, this.border, 80);
-      this.doc.setFont('', 'normal').setFontSize(fontSizeNormal).text(`Correo: ${email}`, this.border, 85);
-      this.doc.setFont('','bold').setFontSize(fontSizeNormal).text('Datos Vehículo', center, 60);
-      this.doc.setFont('', 'normal').setFontSize(fontSizeNormal).text(`Nro. Garantia:`, center, 75)
-      this.doc.setFont('', 'normal').setFontSize(fontSizeNormal).text(`Marca: ${marca}`, center, 80);
-      this.doc.setFont('', 'normal').setFontSize(fontSizeNormal).text(`Modelo: ${modelo}`, center, 85);
-      this.doc.setFont('', 'normal').setFontSize(fontSizeNormal).text(`Placa: ${placa}`, center, 90);
+      this.doc.setFont('Helvetica','bold').setFontSize(fontSizeNormal).text('Datos personales para la garantía', this.border, 60);
+      this.doc.setFont('Helvetica','bold').setFontSize(fontSizeName).text(nombre.toUpperCase(), this.border, 67);
+      this.doc.setFont('Helvetica', 'normal').setFontSize(fontSizeNormal).text(`C.I.: ${ci}`, this.border, 75);
+      this.doc.setFont('Helvetica', 'normal').setFontSize(fontSizeNormal).text(`Nro. Celular: ${celular}`, this.border, 80);
+      this.doc.setFont('Helvetica', 'normal').setFontSize(fontSizeNormal).text(`Correo: ${email}`, this.border, 85);
+      this.doc.setFont('Helvetica','bold').setFontSize(fontSizeNormal).text('Datos Vehículo', center, 60);
+      this.doc.setFont('Helvetica', 'normal').setFontSize(fontSizeNormal).text(`Nro. Garantia:`, center, 75)
+      this.doc.setFont('Helvetica', 'normal').setFontSize(fontSizeNormal).text(`Marca: ${marca}`, center, 80);
+      this.doc.setFont('Helvetica', 'normal').setFontSize(fontSizeNormal).text(`Modelo: ${modelo}`, center, 85);
+      this.doc.setFont('Helvetica', 'normal').setFontSize(fontSizeNormal).text(`Placa: ${placa}`, center, 90);
   }
   setCustomText(customText: any): void{
     this.doc.setFontSize(11);
@@ -110,21 +110,27 @@ export class PdfBuilderService {
   }
   build(): void{
 
-    autoTable(this.doc, { head: [this.head], body: this.body , startY: 95} );
+    let headerStyle: Partial<Styles> = {
+      font: 'helvetica',
+      fontStyle: 'bold',
+      fillColor: '#2a3181',
+      textColor: '#FFFFFF'
+    }
+    autoTable(this.doc, {headStyles: headerStyle, head: [this.head], body: this.body , startY: 95} );
     // @ts-ignore
     let finalY = (this.doc as any).lastAutoTable.finalY;
-    this.doc.setFontSize(12).setFont('', 'bold').text(`SubTotal:`, 100, finalY+5);
-    this.doc.setFontSize(12).setFont('', 'normal').text(`${this.subTotal.toFixed(2)}Bs`, 140, finalY+5);
-    this.doc.setFontSize(12).setFont('', 'bold').text(`Descuento:`, 100, finalY+10);
-    this.doc.setFontSize(12).setFont('', 'normal').text(`0Bs`, 150, finalY+10);
-    this.doc.setFontSize(14).setFont('', 'normal').text(`${this.subTotal.toFixed(2)}Bs`, 140, finalY+15);
-    this.doc.setFontSize(11).setFont('', 'bold').text("El precio final se contempla el I.V.A. y la instalación de la lamina", this.border, finalY+20);
-    this.doc.setFontSize(11).setFont('', 'normal').text("con la firma el cliente acepta el precio y la lamina seleccionada", this.border, finalY+25);
+    this.doc.setFontSize(12).setFont('Helvetica', 'bold').text(`SubTotal:`, 100, finalY+5);
+    this.doc.setFontSize(12).setFont('Helvetica', 'normal').text(`${this.subTotal.toFixed(2)}Bs`, 140, finalY+5);
+    this.doc.setFontSize(12).setFont('Helvetica', 'bold').text(`Descuento:`, 100, finalY+10);
+    this.doc.setFontSize(12).setFont('Helvetica', 'normal').text(`0Bs`, 150, finalY+10);
+    this.doc.setFontSize(14).setFont('Helvetica', 'normal').text(`${this.subTotal.toFixed(2)}Bs`, 140, finalY+15);
+    this.doc.setFontSize(11).setFont('Helvetica', 'bold').text("El precio final se contempla el I.V.A. y la instalación de la lamina", this.border, finalY+20);
+    this.doc.setFontSize(11).setFont('Helvetica', 'normal').text("con la firma el cliente acepta el precio y la lamina seleccionada", this.border, finalY+25);
     let lineX1 = this.pageWidth - this.border - 50;
     let lineX2 = this.pageWidth - this.border;
     let lineY = finalY+ 35
     this.doc.line(lineX1, lineY, lineX2, lineY)
-    this.doc.setFontSize(11).setFont('', 'normal').text("Cliente", lineX1+25, finalY+40, {align: 'center'});
+    this.doc.setFontSize(11).setFont('Helvetica', 'normal').text("Cliente", lineX1+25, finalY+40, {align: 'center'});
   }
   download(): void{
     this.doc.save('proforma.pdf');
