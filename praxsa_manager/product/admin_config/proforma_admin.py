@@ -119,7 +119,6 @@ class ProformaAdmin(admin.ModelAdmin):
         to_reduce = 0
         to_add = 0
         proforma = form.instance
-        print(f'change {change}')
         if change == True:
             for formset in formsets:
                 formset.save(commit=False)
