@@ -151,9 +151,11 @@ jQuery(function($){
             let selectedModel = get_car_model_element();
             let user_sucursal = get_sucursal_id();
             disable_sale_detail_elements();
+            console.log('selected model ', selectedModel.val(), 'is NaN ', isNaN(selectedModel.val()))
             $('input[name="total_price"]').prop('readonly', true)
-            if(selectedModel && user_sucursal && !isNaN(selectedModel.val()) && !isNaN(user_sucursal)){
-                loadCarInfo(selectedModel.val(), user_sucursal)
+            if(selectedModel && user_sucursal && !isNaN(user_sucursal)){
+                model_id = isNaN(selectedModel.val()) || selectedModel.val()==''? 0 : selectedModel.val()
+                loadCarInfo(model_id, user_sucursal)
                 loadInventory(user_sucursal)
 
             }
@@ -237,7 +239,7 @@ jQuery(function($){
             // document.getElementsByTagName('tbody')[3].addEventListener('change', function(e){
             document.querySelector("#items-group > div > fieldset > table").addEventListener('change', function(e){
                 if(e.target && e.target.matches('table tbody td.field-car_part select')){
-                let car_model_part_select = $(e.target)
+                    let car_model_part_select = $(e.target)
                     console.log('value selected ', car_model_part_select.val())
                     car_part_item = get_item_by_id(car_model_part_select.val())
                     console.log('item selected ', car_part_item)
@@ -309,8 +311,15 @@ jQuery(function($){
             })
         }
 
-        $('select[name="car_model_id"]').change(function(){
-            loadCarInfo($(this).val(), get_sucursal_id());
+        $('select[name="car_model_id"], select[name="sales_type"]').change(function(){
+            // loadCarInfo($(this).val(), get_sucursal_id());
+            // if (get_sale_type_element().val() == 'venta_instalacion'){
+            //     // loadCarInfo($(this).val(), get_sucursal_id());
+            //     onLoad()
+            // }else{
+            //     disable_sale_detail_elements()
+            //     add_window_film_event()
+            // }
             onLoad()
         })
 

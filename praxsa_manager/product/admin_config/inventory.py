@@ -94,7 +94,7 @@ class InventoryAdmin(admin.ModelAdmin):
                     'to_install',
                     'installed',
                     'numero_referencia',
-                    'get_inventory_date_format']
+                    'date']
         else:
             self.list_display = [
                     'get_bobina_name',

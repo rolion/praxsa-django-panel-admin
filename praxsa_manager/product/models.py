@@ -125,21 +125,17 @@ class inventario(models.Model):
 
 class Proforma_Header(models.Model):
     helper = Proforma_Helper()
-    # sales_status = models.CharField(choices=helper.status, default=helper.default_status, verbose_name='Estado')
     sales_type = models.CharField(choices=helper.tipo_venta, default=helper.tipo_venta_instalacion, verbose_name='Tipo Venta')
-    # is_paid = models.BooleanField(default=False, verbose_name='Pagado')
     proforma_created_on = models.DateTimeField(verbose_name="Fecha Proforma", auto_now=True)
-    # nota_venta_created_on = models.DateTimeField(verbose_name="Fecha Nota Venta", null=True, blank=True)
-    # is_nota_venta_canceled = models.BooleanField(default=False)
-    # is_nota_venta_refund = models.BooleanField(default=False)
+
     name = models.CharField(max_length=400, default=" ", null=False, verbose_name="Nombre Completo")
     email = models.CharField(validators=[EmailValidator()], null=True,verbose_name="Email")
     ci_nit = models.CharField(validators=[RegexValidator('\d*')],null=True, verbose_name="CI/NIT")
-    car_plate = models.CharField(max_length=10, default="", null=True, verbose_name="Placa Auto")
+    car_plate = models.CharField(max_length=10, default="", blank=True, null=True, verbose_name="Placa Auto")
     phone_number = models.CharField(validators=[RegexValidator('(\+)*\d{7,11}')], default="", verbose_name="Numero Telefónico")
     sucursal = models.ForeignKey(Sucursal, on_delete=models.DO_NOTHING,blank=True, null=True, verbose_name="Sucursal")
-    # codigo_garantia = models.CharField(null=True, blank=True, verbose_name="Codigo Garantia", max_length=12, unique=True)
-    car_model_id = models.ForeignKey(Car_Model, on_delete=models.DO_NOTHING, verbose_name="Modelo")
+
+    car_model_id = models.ForeignKey(Car_Model, on_delete=models.DO_NOTHING, verbose_name="Modelo", blank=True, null=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Total Pagar")
     is_delete = models.BooleanField(default=False)
     created_by = models.ForeignKey(User, verbose_name='Creado Por',on_delete=models.DO_NOTHING, null=False,related_name='proforma_created_by')

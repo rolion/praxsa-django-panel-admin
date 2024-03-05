@@ -92,7 +92,7 @@ class Inventario_Business:
     # query = inventario.objects.select_related("bobina","bobina__window_film", "sucursal").filter(sucursal__enable_to_install_windows_film = True, sucursal__empleado = 1).order_by('bobina__window_film__id', 'bobina__width','date').distinct('bobina__window_film__id').annotate(film_id = F('bobina__window_film__id')).values_list('film_id')
     
     def get_inventory_window_film_reel_widths(self, user):
-        query = inventario.objects.select_related("bobina","bobina__window_film", "sucursal", "sucursal")
+        query = inventario.objects.select_related("bobina","bobina__window_film", "sucursal")
         query = query.filter(sucursal__empleado = user)
         query = query.order_by('bobina__width',).distinct('bobina__width')
         query = query.annotate( width = F('bobina__width'))

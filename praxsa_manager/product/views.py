@@ -43,17 +43,20 @@ def get_bobina(request, pk):
             return HttpResponseBadRequest(data='not found', status=status.HTTP_409_CONFLICT)
 
 def get_car_part_info(request, car_model_id, sucursal_id):
+    '''devuelve la informacion de item del auto seleccionado'''
     try:
         inv_Business = Inventario_Business()
         inventario = inv_Business.get_inventory_by_sucursal(sucursal=sucursal_id)
-        car_part = Car_Model_Part.objects.select_related("car_part_id").filter(car_model_id = car_model_id)
-        items = list(map(lambda part: {'part_id': part.car_part_id.id, 
-                                    'name': part.car_part_id.name, 
-                                    'quantity': part.quantity, 
-                                    'width': part.width, 
-                                    'length': part.length, 
-                                    'installation_price': part.installation_price
-                                    }, car_part))
+        items = []
+        if(car_model_id >0):
+            car_part = Car_Model_Part.objects.select_related("car_part_id").filter(car_model_id = car_model_id)
+            items = list(map(lambda part: {'part_id': part.car_part_id.id, 
+                                        'name': part.car_part_id.name, 
+                                        'quantity': part.quantity, 
+                                        'width': part.width, 
+                                        'length': part.length, 
+                                        'installation_price': part.installation_price
+                                        }, car_part))
         widths = inv_Business.get_inventory_window_film_reel_widths(request.user)
         inv_width = list(map(lambda w: w, widths.values_list('width', flat=True)))
         
@@ -70,6 +73,27 @@ def get_car_part_info(request, car_model_id, sucursal_id):
     except Exception as e:
         print('algo salio mal -->', str(e))
         return JsonResponse(data={'error':True, 'message': 'algo salio mal'}, status=500)
+    
+# def get_inventory_film_info(request, sucursal_id):
+#     '''return the available films in inventory and the widths'''
+#     try:
+#         inv_Business = Inventario_Business()
+#         widths = inv_Business.get_inventory_window_film_reel_widths(request.user)
+#         inv_width = list(map(lambda w: w, widths.values_list('width', flat=True)))
+#         inventario = inv_Business.get_inventory_by_sucursal(sucursal=sucursal_id)
+#         window_film = list(map(lambda inv: {'name': inv.bobina.window_film.name, 
+#                                             'reel_id':inv.bobina.id, 
+#                                             'price': inv.precio_venta_mtr_lineal, 
+#                                             'film_id': inv.bobina.window_film.id, 
+#                                             'width': inv.bobina.width
+#                                             }, inventario ))
+#         return JsonResponse(data={
+#                                 'window_film': window_film,
+#                                 'inv_widths': inv_width
+#                                 }, safe=False)
+#     except Exception as e:
+#         print('algo salio mal -->', str(e))
+#         return JsonResponse(data={'error':True, 'message': 'algo salio mal'}, status=500)
 
 def get_layer_info(request, layer_id):
     try:
