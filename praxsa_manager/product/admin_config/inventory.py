@@ -14,7 +14,7 @@ class InventoryAdmin(admin.ModelAdmin):
                     'to_install',
                     'installed',
                     'numero_referencia',
-                    'date']
+                    'get_inventory_date_format']
     list_per_page = 10
     search_fields = ['sucursal__name', 'bobina__window_film__name', 'numero_referencia']
     form = InventarioForm
@@ -32,6 +32,11 @@ class InventoryAdmin(admin.ModelAdmin):
         return obj.bobina.window_film.name
     get_bobina_name.short_description = 'Lamina'
     get_bobina_name.admin_order_field = 'bobina__window_film__name'
+
+    def get_inventory_date_format(self, obj):
+        return obj.date.strftime("%d-%m-%Y %H:%M:%S")
+    get_inventory_date_format.short_description = 'Fecha'
+    get_inventory_date_format.admin_order_field = 'date'
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
         qs = super().get_queryset(request).select_related('bobina', "sucursal", "bobina__window_film")
@@ -59,7 +64,7 @@ class InventoryAdmin(admin.ModelAdmin):
                     'to_install',
                     'installed',
                     'numero_referencia',
-                    'date']
+                    'get_inventory_date_format']
             self.fields = [
                     'sucursal', 
                     'bobina',
@@ -68,7 +73,8 @@ class InventoryAdmin(admin.ModelAdmin):
                     'installed',
                     'precio_compra_mtr_lineal',
                     'precio_venta_mtr_lineal',
-                    'numero_referencia']
+                    'numero_referencia',
+                    'get_inventory_date_format']
             self.readonly_fields = []
         elif helper.is_request_user_supervisor(request.user):
             self.list_display = [ 
@@ -78,7 +84,8 @@ class InventoryAdmin(admin.ModelAdmin):
                     'to_install',
                     'installed',
                     'numero_referencia',
-                    'date']
+                    'get_inventory_date_format',
+                    ]
             self.readonly_fields = [
                     'sucursal',
                     'bobina',
@@ -87,7 +94,7 @@ class InventoryAdmin(admin.ModelAdmin):
                     'to_install',
                     'installed',
                     'numero_referencia',
-                    'date']
+                    'get_inventory_date_format']
         else:
             self.list_display = [
                     'get_bobina_name',
@@ -96,6 +103,6 @@ class InventoryAdmin(admin.ModelAdmin):
                     'to_install',
                     'installed',
                     'numero_referencia',
-                    'date']
+                    'get_inventory_date_format']
         return super(InventoryAdmin, self).changelist_view(request, extra_context)
 

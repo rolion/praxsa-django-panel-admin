@@ -65,13 +65,13 @@ class ProformaAdmin(admin.ModelAdmin):
                     'name', 
                     'car_model_id',
                     'total_price',
-                    'proforma_created_on'
+                    'get_proforma_date_format'
                     ]
     exclude =  ["is_delete", "is_paid", 'created_by', 'is_close']
     inlines = [
         SalesDetailInLine,
     ]
-    search_fields = ["id", 'sales_type', 'proforma_created_on', 'name', 'email']
+    search_fields = ["id", 'sales_type', 'proforma_created_on', 'name', 'email', 'car_model_id__name']
     # readonly_fields = ['sales_status']
     form = SaleHeaderForm
     list_per_page = 10
@@ -80,6 +80,10 @@ class ProformaAdmin(admin.ModelAdmin):
     user_business = User_Business()
     user_helper = User_Helper()
     proforma_helper = Proforma_Helper()
+    def get_proforma_date_format(self, obj):
+        return obj.proforma_created_on.strftime("%d-%m-%Y %H:%M:%S")
+    get_proforma_date_format.short_description = 'Fecha'
+    get_proforma_date_format.admin_order_field = 'proforma_created_on'
     
     fieldsets = [('Proforma', {
                                 'classes':[], 
@@ -122,11 +126,6 @@ class ProformaAdmin(admin.ModelAdmin):
                 if formset.model == Proforma_Detail:
                     for deleted_data in formset.deleted_objects:
                         to_reduce = to_reduce + deleted_data.sub_total
-                    # for added_data in formset.new_objects:
-                    #     to_add = to_add + added_data.sub_total
-                    #     print(added_data)
-                    # for changed_data in formset.changed_objects:
-                    #     print(changed_data)
                     
             proforma.total_price = proforma.total_price - to_reduce
             proforma.save()
@@ -193,7 +192,6 @@ class ProformaAdmin(admin.ModelAdmin):
         # try:
             buffer = io.BytesIO()
             pdf = PDFService(buffer= buffer)
-            print('qs ', queryset[0])
             prodorma_detail = Proforma_Detail.objects.select_related("car_part", "window_film")
             prodorma_detail = prodorma_detail.filter( proforma_header = queryset[0])
             pdf.create_proforma(detail=prodorma_detail, header=queryset[0])
