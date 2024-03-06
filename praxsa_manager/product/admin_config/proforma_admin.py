@@ -3,7 +3,7 @@ from django import forms
 from django.contrib import admin
 from django.db.models.query import QuerySet
 from django.http.request import HttpRequest
-from ..models import Proforma_Detail
+from ..models import Nota_trabajo, Proforma_Detail
 from ..Forms.Sale_header import SaleHeaderForm
 from ..Forms.car_model_part import CarModelPartForm
 from ..business.proforma import Proforma_Business
@@ -156,6 +156,34 @@ class ProformaAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         obj.created_by = request.user
         super().save_model(request, obj, form, change)
+    
+    @transaction.atomic
+    def delete_queryset(self, request, qs: QuerySet):
+        idsQS = qs.all()
+        ids = idsQS.values_list('id', flat=True)
+        inventory_list = Nota_trabajo.objects.select_related('proforma').filter(proforma__id__in = ids)
+        if len(inventory_list) > 0:
+            messages.set_level(request, messages.ERROR) 
+            messages.error(
+                request=request,
+                message=str('no se puede eliminar proformas que ya estan registradas como notas de trabajo')
+            )
+        else:
+            try:
+                # entries = qs.select_for_update()
+                # print(qs)
+                # print(entries)
+                with transaction.atomic():
+                    for entry in list(qs):
+                        entry.is_delete = True
+                        entry.save()
+            except Exception as e:
+                print(e)
+                messages.set_level(request, messages.ERROR) 
+                messages.error(
+                    request=request,
+                    message=str('Algo salio mal, contactar al adminsitrador')
+                )
     
     @admin.action(description="Eliminar Proforma")
     def delete_proforma(self, request: HttpRequest, queryset: QuerySet):
