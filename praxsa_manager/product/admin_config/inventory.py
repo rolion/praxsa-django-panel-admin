@@ -74,7 +74,7 @@ class InventoryAdmin(admin.ModelAdmin):
                     'precio_compra_mtr_lineal',
                     'precio_venta_mtr_lineal',
                     'numero_referencia',
-                    'get_inventory_date_format']
+                    'date']
             self.readonly_fields = []
         elif helper.is_request_user_supervisor(request.user):
             self.list_display = [ 
