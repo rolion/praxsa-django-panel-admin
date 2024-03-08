@@ -114,8 +114,6 @@ jQuery(function($){
                                 let model_name = get_car_model_element().children("option").filter(":selected").text()
                                 let rows = '';
                                 resume = items.reduce((acc, curr)=>{
-                                    if (acc == undefined){
-                                    }
                                     if (`${curr.width}` in acc){
                                         acc[`${curr.width}`] =parseFloat(acc[`${curr.width}`]) + parseFloat(curr.length)
                                     }else{
