@@ -109,7 +109,51 @@ jQuery(function($){
                         if (items){
                             add_car_part_event()
                             add_window_film_event()
-                            show_only_model_items()
+                            //show_only_model_items()
+                            if (is_sale_instalation_type() == false && items.length > 0){
+                                let model_name = get_car_model_element().children("option").filter(":selected").text()
+                                let rows = '';
+                                items.forEach(function(item){
+                                    rows+= `
+                                            <tr class="form-row has_original dynamic-items" id="">
+                                                <td class="field-car_part">
+                                                    <p>${item.name}</p>
+                                                </td>
+                                                <td class="field-width">
+                                                    <p>${item.width}</p>
+                                                </td>
+                                                <td class="field-length">
+                                                    <p>${item.length}</p>
+                                                </td>
+                                                <td class="field-quantity">
+                                                    <p>${item.quantity}</p>
+                                                </td>
+                                            </tr>
+                                    `
+                                })
+                                let container = `
+                                <br>
+                                <div id="model-item-helper" class="tabular inline-related last-related">
+                                    <fieldset class="module ">
+                                        <h2> ${model_name}</h2>
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th class="column-car_part">Item</th>
+                                                    <th class="column-width">Ancho</th>
+                                                    <th class="column-length">Largo</th>
+                                                    <th class="column-quantity">Cantidad</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                            ${rows}
+                                            </tbody>
+                                        </table>
+                                    </fieldset>
+                                </div>`
+                                $('#model-item-helper').remove()
+                                $('#items-group').append(container)
+                        }
                         }
                     }
                 })
@@ -151,9 +195,11 @@ jQuery(function($){
             let selectedModel = get_car_model_element();
             let user_sucursal = get_sucursal_id();
             disable_sale_detail_elements();
+            console.log('selected model ', selectedModel.val(), 'is NaN ', isNaN(selectedModel.val()))
             $('input[name="total_price"]').prop('readonly', true)
-            if(selectedModel && user_sucursal && !isNaN(selectedModel.val()) && !isNaN(user_sucursal)){
-                loadCarInfo(selectedModel.val(), user_sucursal)
+            if(selectedModel && user_sucursal && !isNaN(user_sucursal)){
+                model_id = isNaN(selectedModel.val()) || selectedModel.val()==''? 0 : selectedModel.val()
+                loadCarInfo(model_id, user_sucursal)
                 loadInventory(user_sucursal)
 
             }
@@ -233,23 +279,23 @@ jQuery(function($){
                 }
             }
          }
-        function add_car_part_event(){
-            // document.getElementsByTagName('tbody')[3].addEventListener('change', function(e){
-            document.querySelector("#items-group > div > fieldset > table").addEventListener('change', function(e){
-                if(e.target && e.target.matches('table tbody td.field-car_part select')){
+
+        function onChangeTableRow(e){
+            if(e.target && e.target.matches('table tbody td.field-car_part select')){
                 let car_model_part_select = $(e.target)
-                    console.log('value selected ', car_model_part_select.val())
-                    car_part_item = get_item_by_id(car_model_part_select.val())
-                    console.log('item selected ', car_part_item)
-                    get_width_element_in_row(car_model_part_select).val(get_ancho(car_part_item))
-                    //get_width_element_in_row(car_model_part_select).disabled = true
-                    get_length_element_in_row(car_model_part_select).val(car_part_item.length)
-                    get_quantity_element_in_row(car_model_part_select).val(car_part_item.quantity)
-                    get_installation_price_element_in_row(e.target).val(car_part_item.installation_price)
-                    calculate_subtotal(e.target)
-                    // clean_film_selection(e.target);
-                }
-            })
+                console.log('value selected ', car_model_part_select.val())
+                car_part_item = get_item_by_id(car_model_part_select.val())
+                console.log('item selected ', car_part_item)
+                get_width_element_in_row(car_model_part_select).val(get_ancho(car_part_item))
+                get_length_element_in_row(car_model_part_select).val(car_part_item.length)
+                get_quantity_element_in_row(car_model_part_select).val(car_part_item.quantity)
+                get_installation_price_element_in_row(e.target).val(car_part_item.installation_price)
+                calculate_subtotal(e.target)
+            }
+        }
+        function add_car_part_event(){
+            document.querySelector("#items-group > div > fieldset > table").removeEventListener('change', onChangeTableRow)
+            document.querySelector("#items-group > div > fieldset > table").addEventListener('change', onChangeTableRow)
 
          }
 
@@ -282,37 +328,53 @@ jQuery(function($){
             let dispo = get_disponibilidad_lamina(filmId, width)
             update_diponibilidad_value(dispo, target)
          }
-        function add_window_film_event(){
-            document.querySelector("#items-group > div > fieldset > table").addEventListener('change', function(e){
-                if(e.target && e.target.matches('table tbody td.field-window_film select')){
-                    console.log('cambio la lamina');
-                    // let sale_type = get_sale_type_element();
-                    let selected_film_id = parseInt($(e.target).val())
-                    
-                    let selected_width = get_width_element_in_row(e.target).val();
+        
+        function onLaminaChangeEvent(e){
+            if(e.target && e.target.matches('table tbody td.field-window_film select')){
+                console.log('cambio la lamina');
+                // let sale_type = get_sale_type_element();
+                let selected_film_id = parseInt($(e.target).val())
+                
+                let selected_width = get_width_element_in_row(e.target).val();
+                updateFilmPrice(selected_film_id, selected_width, e.target)
+                calculate_subtotal(e.target)
+            }
+            if(e.target && e.target.matches('table tbody td.field-width select')){
+                console.log('cambio el ancho');
+                let selected_width = parseFloat($(e.target).val())
+                let selected_film_id =get_window_film_element_in_row(e.target).val();
+                if(selected_film_id){
+                    console.log('se eligio una lamina')
                     updateFilmPrice(selected_film_id, selected_width, e.target)
                     calculate_subtotal(e.target)
                 }
-                if(e.target && e.target.matches('table tbody td.field-width select')){
-                    console.log('cambio el ancho');
-                    let selected_width = parseFloat($(e.target).val())
-                    let selected_film_id =get_window_film_element_in_row(e.target).val();
-                    if(selected_film_id){
-                        console.log('se eligio una lamina')
-                        updateFilmPrice(selected_film_id, selected_width, e.target)
-                        calculate_subtotal(e.target)
-                    }
-                }
-                if(e.target && e.target.matches('table tbody td.field-length input')){
-                    calculate_subtotal(e.target)
-                }
-            })
+            }
+            if(e.target && e.target.matches('table tbody td.field-length input')){
+                calculate_subtotal(e.target)
+            }
+        }
+        
+        function add_window_film_event(){
+            document.querySelector("#items-group > div > fieldset > table").removeEventListener('change', onLaminaChangeEvent)
+            document.querySelector("#items-group > div > fieldset > table").addEventListener('change', onLaminaChangeEvent)
         }
 
-        $('select[name="car_model_id"]').change(function(){
-            loadCarInfo($(this).val(), get_sucursal_id());
+        $('select[name="car_model_id"], select[name="sales_type"]').change(function(e){
             onLoad()
+            
         })
+
+        
+        $('select[name="car_model_id"]').change(function(e){
+            delete_buttons = $('td.delete > div > a')
+            if (delete_buttons.length > 0){
+                delete_buttons.each(function(index, button){
+
+                    button.click()
+                })
+            }
+        })
+        
 
         document.addEventListener('formset:added', (event) => {
             if(items.length > 0){
@@ -327,6 +389,6 @@ jQuery(function($){
             }
             
         });
-        onLoad();
+        //onLoad();
     })
 })
