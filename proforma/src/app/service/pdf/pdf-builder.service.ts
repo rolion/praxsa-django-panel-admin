@@ -121,9 +121,9 @@ export class PdfBuilderService {
     let finalY = (this.doc as any).lastAutoTable.finalY;
     this.doc.setFontSize(12).setFont('Helvetica', 'bold').text(`SubTotal:`, 100, finalY+5);
     this.doc.setFontSize(12).setFont('Helvetica', 'normal').text(`${this.subTotal.toFixed(2)}Bs`, 140, finalY+5);
-    this.doc.setFontSize(12).setFont('Helvetica', 'bold').text(`Descuento:`, 100, finalY+10);
-    this.doc.setFontSize(12).setFont('Helvetica', 'normal').text(`0Bs`, 150, finalY+10);
-    this.doc.setFontSize(14).setFont('Helvetica', 'normal').text(`${this.subTotal.toFixed(2)}Bs`, 140, finalY+15);
+    // this.doc.setFontSize(12).setFont('Helvetica', 'bold').text(`Descuento:`, 100, finalY+10);
+    // this.doc.setFontSize(12).setFont('Helvetica', 'normal').text(`0Bs`, 150, finalY+10);
+    // this.doc.setFontSize(14).setFont('Helvetica', 'normal').text(`${this.subTotal.toFixed(2)}Bs`, 140, finalY+15);
     this.doc.setFontSize(11).setFont('Helvetica', 'bold').text("El precio final se contempla el I.V.A. y la instalación de la lamina", this.border, finalY+20);
     this.doc.setFontSize(11).setFont('Helvetica', 'normal').text("con la firma el cliente acepta el precio y la lamina seleccionada", this.border, finalY+25);
     let lineX1 = this.pageWidth - this.border - 50;
