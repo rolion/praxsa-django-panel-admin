@@ -24,6 +24,8 @@ RUN apk update
 RUN apk upgrade --available
 RUN apk add netcat-openbsd gcc libc-dev gpgme-dev 
 RUN apk add postgresql-dev
+RUN apk add tzdata
+ENV TZ='America/La_Paz' 
 
 # update pip 
 RUN pip install --upgrade pip

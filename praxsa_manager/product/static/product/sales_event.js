@@ -113,20 +113,24 @@ jQuery(function($){
                             if (is_sale_instalation_type() == false && items.length > 0){
                                 let model_name = get_car_model_element().children("option").filter(":selected").text()
                                 let rows = '';
-                                items.forEach(function(item){
+                                resume = items.reduce((acc, curr)=>{
+                                    if (`${curr.width}` in acc){
+                                        acc[`${curr.width}`] = parseFloat(acc[`${curr.width}`]) + (parseFloat(curr.length) * curr.quantity)
+                                    }else{
+                                        acc[`${curr.width}`] = parseFloat(curr.length) * curr.quantity
+                                    }
+                                    return acc
+                                }, {})
+                                console.log('itmes', items)
+                                $.each(resume, function(key, value){
                                     rows+= `
                                             <tr class="form-row has_original dynamic-items" id="">
-                                                <td class="field-car_part">
-                                                    <p>${item.name}</p>
-                                                </td>
+                                                
                                                 <td class="field-width">
-                                                    <p>${item.width}</p>
+                                                    <p>${key}</p>
                                                 </td>
                                                 <td class="field-length">
-                                                    <p>${item.length}</p>
-                                                </td>
-                                                <td class="field-quantity">
-                                                    <p>${item.quantity}</p>
+                                                    <p>${value.toFixed(2)}</p>
                                                 </td>
                                             </tr>
                                     `
@@ -139,10 +143,8 @@ jQuery(function($){
                                         <table>
                                             <thead>
                                                 <tr>
-                                                    <th class="column-car_part">Item</th>
                                                     <th class="column-width">Ancho</th>
                                                     <th class="column-length">Largo</th>
-                                                    <th class="column-quantity">Cantidad</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
