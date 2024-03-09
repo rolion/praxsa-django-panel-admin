@@ -115,9 +115,9 @@ jQuery(function($){
                                 let rows = '';
                                 resume = items.reduce((acc, curr)=>{
                                     if (`${curr.width}` in acc){
-                                        acc[`${curr.width}`] =parseFloat(acc[`${curr.width}`]) + parseFloat(curr.length)
+                                        acc[`${curr.width}`] = parseFloat(acc[`${curr.width}`]) + (parseFloat(curr.length) * curr.quantity)
                                     }else{
-                                        acc[`${curr.width}`] = parseFloat(curr.length)
+                                        acc[`${curr.width}`] = parseFloat(curr.length) * curr.quantity
                                     }
                                     return acc
                                 }, {})
