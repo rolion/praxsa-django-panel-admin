@@ -219,12 +219,13 @@ export class FormularioComponent implements OnInit, OnDestroy {
       this.invoiceItem[indexReport].window_film_price = filmPrice;
       this.invoiceItem[indexReport].window_film = lamina.id;
       this.invoiceItem[indexReport].window_film_url = 'windows-film/'+lamina.id;
-      // this.invoiceItem[indexReport].width = filmWidth;
+      this.invoiceItem[indexReport].width = filmWidth;
       this.calculateTotal();
     }else{
       this.invoiceItem[indexReport].sub_total = 0;
       this.invoiceItem[indexReport].window_film_price = 0;
       this.invoiceItem[indexReport].window_film = 0
+      this.invoiceItem[indexReport].width = 0
     }
     this.calculateTotal();
   }
