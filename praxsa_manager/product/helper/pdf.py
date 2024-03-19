@@ -126,7 +126,8 @@ class PDFService:
       self.canvas.setFillColor(aColor=black)
       base_increment=-15
       row_increment =10
-      total = 0
+      subtotal = 0
+      descuento = body[0].proforma_header.discount
       for item in body:
         self.canvas.drawString(text= item.car_part.name, 
                              x = self.x_position +10, 
@@ -137,15 +138,15 @@ class PDFService:
         self.canvas.drawString(text=f'{str(item.sub_total)} Bs', 
                                 x = self.x_position +400, 
                                 y=initialY + (base_increment) * row_increment)
-        total += item.sub_total
+        subtotal += item.sub_total
         row_increment+=1
       self.canvas.setFont(psfontname='Helvetica-Bold', size=fontSizeNormal)
       self.canvas.drawString(text='Subtotal', 
                                 x = self.x_position +200, 
                                 y=initialY + (base_increment) * (row_increment + 1))
       self.canvas.setFont(psfontname='Helvetica', size=fontSizeNormal)
-      self.canvas.drawString(text=str(total), 
-                                x = self.x_position +400, 
+      self.canvas.drawRightString(text=f'{str(subtotal)} Bs', 
+                                x = self.x_position +450, 
                                 y=initialY + (base_increment) * (row_increment + 1))
       
       self.canvas.setFont(psfontname='Helvetica-Bold', size=fontSizeNormal)
@@ -153,24 +154,33 @@ class PDFService:
                                 x = self.x_position +200, 
                                 y=initialY + (base_increment) * (row_increment + 2))
       self.canvas.setFont(psfontname='Helvetica', size=fontSizeNormal)
-      self.canvas.drawString(text='0', 
-                                x = self.x_position +400, 
+      self.canvas.drawRightString(text=f'{str(descuento)} Bs', 
+                                x = self.x_position +450, 
                                 y=initialY + (base_increment) * (row_increment + 2))
+      self.canvas.setFont(psfontname='Helvetica-Bold', size=fontSizeNormal)
+      self.canvas.drawString(text='Total', 
+                                x = self.x_position +200, 
+                                y=initialY + (base_increment) * (row_increment + 3))
+      total = subtotal - descuento
+      self.canvas.setFont(psfontname='Helvetica', size=fontSizeNormal)
+      self.canvas.drawRightString(text=f'{str(total)} Bs', 
+                                x = self.x_position +450, 
+                                y=initialY + (base_increment) * (row_increment + 3))
       
       self.canvas.setFont(psfontname='Helvetica-Bold', size=fontSizeNormal)
       self.canvas.drawString(text="El precio final se contempla el I.V.A. y la instalación de la lamina", 
                                 x = self.x_position, 
-                                y=initialY + (base_increment) * (row_increment + 3))
+                                y=initialY + (base_increment) * (row_increment + 5))
       self.canvas.setFont(psfontname='Helvetica', size=fontSizeNormal)
       self.canvas.drawString(text="con la firma el cliente acepta el precio y la lamina seleccionada", 
                                 x = self.x_position, 
-                                y=initialY + (base_increment) * (row_increment + 4))
+                                y=initialY + (base_increment) * (row_increment + 6))
       X2 =  520 + 14 
       X1 = X2 - 150
-      y=initialY + (base_increment) * (row_increment + 6)
+      y=initialY + (base_increment) * (row_increment + 7)
       self.canvas.line(X1, y, X2, y)
       center = X1 + (X2-X1)/2
-      y=initialY + (base_increment) * (row_increment + 7)
+      y=initialY + (base_increment) * (row_increment + 8)
       self.canvas.drawCentredString(text='Cliente', x=center, y=y )
       
     def nota_trabajo_body(self, body: [Detalle_Nota_Trabajo]):

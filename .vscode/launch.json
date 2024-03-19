@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Django Runserver",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/praxsa_manager/manage.py",
+            "args": [
+                "Runserver"
+            ],
+            "django": true
+        }
+    ]
+}
