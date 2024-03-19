@@ -6,6 +6,7 @@ from ..utils.exception.proforma import ProformaException, NotaVentaException
 from django.db import IntegrityError, transaction
 from datetime import datetime
 from ..business.orden_trabajo import Orden_Trabajo_Business
+from decimal import *
 class Proforma_Business:
 
     def __init__(self) -> None:
@@ -37,7 +38,7 @@ class Proforma_Business:
                     if detalles.exists():
                         for detalle in list(detalles):
                             to_add = detalle.length
-                            to_add = to_add * detalle.quantity if detalle.quantity > 0 else to_add
+                            to_add = to_add * Decimal(detalle.quantity) if detalle.quantity > 0 else to_add
                             result = self.inv_bussiness.return_to_inventory(detail_inventory= detalle.inventario,
                                                                    length_to_add = to_add)
                             if result is not True:
@@ -59,7 +60,7 @@ class Proforma_Business:
                     if detalles.exists():
                         for detalle in list(detalles):
                             to_reduce = detalle.length
-                            to_reduce = to_reduce * detalle.quantity if detalle.quantity > 0 else to_reduce
+                            to_reduce = to_reduce * Decimal(detalle.quantity) if detalle.quantity > 0 else to_reduce
                             # update inventory
                             print(f'detalle width {detalle.width}')
                             inventario = self.inv_bussiness.reduce_inventory(sucursal = detalle.proforma_header.sucursal, 

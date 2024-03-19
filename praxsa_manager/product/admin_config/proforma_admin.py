@@ -95,6 +95,12 @@ class ProformaAdmin(admin.ModelAdmin):
                                           ]
                                 }
                 ),
+                ("Descuento",{
+                     'classes': [],
+                     'fields': [ 
+                               'discount',
+                               "discount_reason",  ]
+                }),
                 ("Cliente", {
                     'classes': [],
                     'fields': [ 

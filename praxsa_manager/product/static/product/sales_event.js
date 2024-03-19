@@ -212,7 +212,7 @@ jQuery(function($){
             let total_price = 0
             prices.each((index, selector) =>{
                 let item = $(selector);
-                let value = $.isNumeric(item.val().trim())? parseInt(item.val()):0
+                let value = $.isNumeric(item.val().trim())? parseFloat(item.val()):0
                 total_price += value
             }, 0)
             console.log(`total price ${total_price}`)
@@ -391,6 +391,6 @@ jQuery(function($){
             }
             
         });
-        //onLoad();
+        onLoad();
     })
 })

@@ -17,6 +17,10 @@ jQuery(function($){
             return $('#id_to_install')
         }
 
+        function get_original_length_element(){
+            return $('#id_original_length')
+        }
+
         function is_bobina_selected(){
             return get_bobina_element().val() !=''
         }
@@ -46,6 +50,7 @@ jQuery(function($){
             if(bobina && $.isNumeric(quantity)) {
                 let length = parseFloat(bobina.length)
                 get_to_install_element().val(length * quantity);
+                // get_original_length_element().val(length * quantity);
             }
         }
         if (is_bobina_selected()){

@@ -1,5 +1,5 @@
 from django.db import models
-from django.core.validators import RegexValidator, EmailValidator, MaxValueValidator
+from django.core.validators import RegexValidator, EmailValidator, MaxValueValidator, DecimalValidator, MinValueValidator
 from django.contrib.auth.models import User
 from tinymce.models import HTMLField
 from django.utils.translation import gettext_lazy as _
@@ -116,6 +116,7 @@ class inventario(models.Model):
     quantity = models.PositiveIntegerField(verbose_name="Cantidad")
     to_install = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, verbose_name="metros disponible para instalar")
     installed = models.DecimalField(max_digits=10, decimal_places=2, default=0.0,  verbose_name="metros instalados")
+    original_length = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Longitud Inicial")
     date = models.DateTimeField(verbose_name="Fecha", null=False)
     numero_referencia = models.PositiveIntegerField( verbose_name="Numero Referencia",default=0, validators=[MaxValueValidator(limit_value=9999999999, message='solo se aceptan valores con 10 digitos')])
     precio_compra_mtr_lineal = models.DecimalField( max_digits=10, decimal_places=2, default=0.0, verbose_name="Precio Compra Metro Lineal")
@@ -134,7 +135,9 @@ class Proforma_Header(models.Model):
     car_plate = models.CharField(max_length=10, default="", blank=True, null=True, verbose_name="Placa Auto")
     phone_number = models.CharField(validators=[RegexValidator('(\+)*\d{7,11}')], default="", verbose_name="Numero Telefónico")
     sucursal = models.ForeignKey(Sucursal, on_delete=models.DO_NOTHING,blank=True, null=True, verbose_name="Sucursal")
-
+    discount = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[DecimalValidator(max_digits=10, decimal_places=2), MinValueValidator(limit_value=0)],
+                                   verbose_name="Descuento")
+    discount_reason = models.TextField(verbose_name='Motivo Descuento', blank=True, null=True)
     car_model_id = models.ForeignKey(Car_Model, on_delete=models.DO_NOTHING, verbose_name="Modelo", blank=True, null=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Total Pagar")
     is_delete = models.BooleanField(default=False)
