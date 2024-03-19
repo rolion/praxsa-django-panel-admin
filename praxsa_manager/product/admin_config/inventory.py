@@ -74,6 +74,7 @@ class InventoryAdmin(admin.ModelAdmin):
                     'precio_compra_mtr_lineal',
                     'precio_venta_mtr_lineal',
                     'numero_referencia',
+                    # 'original_length',
                     'date']
             self.readonly_fields = []
         elif helper.is_request_user_supervisor(request.user):
@@ -94,6 +95,7 @@ class InventoryAdmin(admin.ModelAdmin):
                     'to_install',
                     'installed',
                     'numero_referencia',
+                    'original_length',
                     'date']
         else:
             self.list_display = [

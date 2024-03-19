@@ -7,3 +7,8 @@ class NotaVentaException(Exception):
     def __init__(self, message="Hay un problema con la nota venta"):
         self.message = message
         super().__init__(self.message)
+
+class OrdenTrabajo(Exception):
+    def __init__(self, message="Hay un problema con la orden de trabajo"):
+        self.message = message
+        super().__init__(self.message)

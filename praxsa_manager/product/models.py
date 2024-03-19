@@ -116,6 +116,7 @@ class inventario(models.Model):
     quantity = models.PositiveIntegerField(verbose_name="Cantidad")
     to_install = models.DecimalField(max_digits=10, decimal_places=2, default=0.0, verbose_name="metros disponible para instalar")
     installed = models.DecimalField(max_digits=10, decimal_places=2, default=0.0,  verbose_name="metros instalados")
+    original_length = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Longitud Inicial")
     date = models.DateTimeField(verbose_name="Fecha", null=False)
     numero_referencia = models.PositiveIntegerField( verbose_name="Numero Referencia",default=0, validators=[MaxValueValidator(limit_value=9999999999, message='solo se aceptan valores con 10 digitos')])
     precio_compra_mtr_lineal = models.DecimalField( max_digits=10, decimal_places=2, default=0.0, verbose_name="Precio Compra Metro Lineal")

@@ -1,5 +1,6 @@
-from ..models import Proforma_Header, Proforma_Detail, Sucursal, Nota_trabajo, Detalle_Nota_Trabajo
+from ..models import Proforma_Header, Proforma_Detail, Sucursal, Nota_trabajo, Detalle_Nota_Trabajo, Nota_Venta
 from .inventario import Inventario_Business
+from ..utils.exception.proforma import OrdenTrabajo
 from django.db import IntegrityError, transaction
 from django.core.exceptions import ObjectDoesNotExist
 from datetime import datetime
@@ -30,6 +31,35 @@ class Orden_Trabajo_Business:
                     summary.delete()
         except Exception as e:
             pass
+
+    def delete_work_note(self, work_note: Nota_trabajo ):
+        try:
+            with transaction.atomic():
+                nota_venta = Nota_Venta.objects.filter(nota_trabajo = work_note)
+                if(len(nota_venta) > 0):
+                    raise OrdenTrabajo(f'No se puede liminar la nota de trabajo, porque ya existe la nota de venta Nro. {nota_venta[0].id}')
+                summaries = Detalle_Nota_Trabajo.objects.filter(nota_trabajo = work_note)
+                for summary in summaries:
+                    summary.delete()
+                proforma = work_note.proforma
+                proforma.is_close = False
+
+                detalles_proforma= Proforma_Detail.objects.filter(proforma_header = proforma)
+                for detalle in detalles_proforma:
+                    inventario =detalle.inventario
+                    inventario.to_install = inventario.to_install + detalle.length*detalle.quantity
+                    inventario.installed = inventario.installed - detalle.length*detalle.quantity
+                    detalle.inventario = None
+                    detalle.save()
+                    inventario.save()
+                work_note.delete()
+                proforma.save()
+
+        except OrdenTrabajo as e:
+            raise e
+        except Exception as e:
+            print(e)
+            raise OrdenTrabajo('contactar administrado')
     @transaction.atomic 
     def create_work_note(self, proforma, sumary, responsable):
         try:

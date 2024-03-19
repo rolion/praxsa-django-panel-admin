@@ -97,6 +97,14 @@ class NotaTrabajoAdmin(admin.ModelAdmin):
         return []
     
     @transaction.atomic
+    def delete_queryset(self, request, queryset: QuerySet):
+        try:
+            [self.orden_trabajo_busi.delete_work_note(work_note=qs) for qs in list(queryset)]
+        except Exception as e:
+            self.message_user(request=request,  message=str(e), level= messages.ERROR)
+    
+    
+    @transaction.atomic
     @admin.action(description="crear nota venta")
     def create_sales_note(self, request: HttpRequest, queryset: QuerySet):
         try:
