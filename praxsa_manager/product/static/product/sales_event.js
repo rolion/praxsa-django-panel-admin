@@ -215,8 +215,8 @@ jQuery(function($){
                 let value = $.isNumeric(item.val().trim())? parseFloat(item.val()):0
                 total_price += value
             }, 0)
-            console.log(`total price ${total_price}`)
-            $('#id_total_price').val(total_price)
+            console.log(`total price ${total_price.toFixed(2)}`)
+            $('#id_total_price').val(total_price.toFixed(2))
         }
 
         function clean_film_selection(row){
@@ -267,7 +267,7 @@ jQuery(function($){
                     let quantity = parseInt(get_quantity_element_in_row(target).val())
                     let length = parseFloat(get_length_element_in_row(target).val())
                     let subtotal = ((length * quantity) * film_price) + (installation_price * quantity)
-                    get_sub_total_element_in_row(target).val(subtotal)
+                    get_sub_total_element_in_row(target).val(subtotal.toFixed(2))
                     sum_all_price()
                 }
                 
@@ -276,7 +276,7 @@ jQuery(function($){
                     let film_price = parseFloat(parseFloat(get_price_element_in_row(target).val()))
                     let length = parseFloat(get_length_element_in_row(target).val())
                     let subtotal = length * film_price
-                    get_sub_total_element_in_row(target).val(subtotal)
+                    get_sub_total_element_in_row(target).val(subtotal.toFixed(2))
                     sum_all_price()
                 }
             }
