@@ -5,8 +5,13 @@ from django.db import IntegrityError, transaction
 from django.core.exceptions import ObjectDoesNotExist
 # from datetime import datetime
 from django.utils import timezone
+import logging
+
 class Orden_Trabajo_Business:
 
+    def __init__(self) -> None:
+        self.log_errors = logging.getLogger('django_admin')
+        self.log_debug= logging.getLogger('debug')
 
     def get_nota_queryset_by_role(self, user, qs):
         try:
@@ -31,6 +36,7 @@ class Orden_Trabajo_Business:
                 for summary in summaries:
                     summary.delete()
         except Exception as e:
+            self.log_errors.error(f'no se pudo eliminar el resumen de la nota de trabajo {e}')
             pass
 
     def delete_work_note(self, work_note: Nota_trabajo ):
@@ -59,7 +65,7 @@ class Orden_Trabajo_Business:
         except OrdenTrabajo as e:
             raise e
         except Exception as e:
-            print(e)
+            self.log_errors.error(f'contactar administrado {e}')
             raise OrdenTrabajo('contactar administrado')
     @transaction.atomic 
     def create_work_note(self, proforma, sumary, responsable):
@@ -73,7 +79,7 @@ class Orden_Trabajo_Business:
             nota_trabajo = Nota_trabajo()
             nota_trabajo.entrada_vehiculo = timezone.now()
         except Exception as e:
-            print(e)
+            self.log_errors.error(f'no se pudo crear la nota de trabajo {e}')
             return None
         nota_trabajo.proforma = proforma
         nota_trabajo.name = proforma.name

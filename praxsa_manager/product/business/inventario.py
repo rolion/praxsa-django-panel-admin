@@ -3,11 +3,11 @@ from django.db.models import Sum, F
 from ..utils.exception.nohaylaminas import NoHayLaminasDisponibles
 import logging
 
-
 class Inventario_Business:
 
     def __init__(self) -> None:
-        self.logger = logging.getLogger(__name__)
+        self.log_errors = logging.getLogger('django_admin')
+        self.log_debug= logging.getLogger('debug')
     
     def get_inventory_by_sucursal(self, sucursal):
         q = inventario.objects.select_related("bobina","bobina__window_film", "sucursal")
@@ -29,12 +29,10 @@ class Inventario_Business:
                              bobina__width = width, 
                              to_install__gte = length_to_reduce)
         query = query.order_by('bobina__width','date')[:1]
-        # print(sucursal, windows_film, width, length_to_reduce)
-        # print('query', query[0].name, )
-        # self.logger.info('inventario existe ',query.exists())
-        # print('inventario existe ',query.exists())
-        # self.logger.info(f'width {width}, film {windows_film}')
-        # self.logger.info(query)
+        self.log_debug.info(f'{sucursal}, {windows_film}, {width}, {length_to_reduce}')
+        self.log_debug.info(f'inventario existe {query.exists()}')
+        self.log_debug.info(f'width {width}, film {windows_film}')
+        self.log_debug.info(query.query)
         
         if(query.exists()):
             bobina_inventario = query[0]
@@ -54,7 +52,7 @@ class Inventario_Business:
             inv.save()
             return True
         except Exception as e:
-            print('no se pudo actualizar el inventario --->>', str(e))
+            self.log_errors.error(f'no se pudo actualizar el inventario -> {e}')
             return False
         
     def is_window_film_available(self, sucursal_id, bobina, width, to_install):

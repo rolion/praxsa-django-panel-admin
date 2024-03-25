@@ -8,12 +8,16 @@ from django.db import IntegrityError, transaction
 from datetime import datetime
 from ..business.orden_trabajo import Orden_Trabajo_Business
 from decimal import *
+import logging
+
 class Proforma_Business:
 
     def __init__(self) -> None:
         self.helper = Proforma_Helper()
         self.inv_bussiness = Inventario_Business()
         self.orden_trabajo_bussiness = Orden_Trabajo_Business()
+        self.log_errors = logging.getLogger('django_admin')
+        self.log_debug= logging.getLogger('debug')
 
     def get_proforma_by_id(self, id):
         return Proforma_Header.objects.get(pk = id)
@@ -24,8 +28,9 @@ class Proforma_Business:
             try:
                 return proforma.save()
             except Exception as e:
-                print('algo salio mal ->>', str(e))
+                self.log_errors.error(f'algo sali mal, contactar administrador {e}')
                 raise Exception('algo sali mal, contactar administrador')
+        self.log_errors.error(f'no se puede eliminar una proforma aprobada o instalada {e}')
         raise Exception('no se puede eliminar una proforma aprobada o instalada')
     
     @transaction.atomic
@@ -43,10 +48,11 @@ class Proforma_Business:
                             result = self.inv_bussiness.return_to_inventory(detail_inventory= detalle.inventario,
                                                                    length_to_add = to_add)
                             if result is not True:
+                                self.log_errors.error(f'no se actualizo el inventario {e}')
                                 raise Exception('no se actualizo el inventario')
                     return proforma.save()
             except Exception as e:
-                print('algo salio mal ->>', e)
+                self.log_errors.error(f'algo salio mal, contactar administrador {e}')
                 raise Exception('algo salio mal, contactar administrador')
     
     def validate_proforma_detail(self, proforma_details:list[Proforma_Detail]):
@@ -99,8 +105,7 @@ class Proforma_Business:
             except ProformaException as e:
                 raise e
             except Exception as e:
-                print('algo salio mal ->>', str(e))
-                print('error type', type(e))
+                self.log_errors.error(f'algo salio mal, contactar administrador {e}')
                 raise Exception('algo salio mal, contactar administrador')
         
 
@@ -120,7 +125,7 @@ class Proforma_Business:
                 nota_trabajo.is_close = True
                 nota_trabajo.save()
             except Exception as e:
-                print('algo salio mal ->>', str(e))
+                self.log_errors.error(f'algo salio mal, contactar administrador {e}')
                 raise Exception('algo salio mal, contactar administrador')
         else:
             raise Exception('Debe agregar el código de Garantía')
@@ -134,7 +139,7 @@ class Proforma_Business:
             else:
                 print(f'user ${user.username} intento borrar una proforma ${proforma.id}')
         except Exception as e:
-            print('algo salio mal ->>', str(e))
+            self.log_errors.error(f'algo salio mal, contactar administrador {e}')
             raise Exception('algo sali mal, contactar administrador')
         raise Exception('no se puede eliminar una proforma aprobada o instalada')
     
@@ -149,14 +154,13 @@ class Proforma_Business:
                 qs_result = None
             return qs_result
         except Exception as e:
-            print('algo salio mal, Proforma_Business - get_proforma_queryset_by_role', str(e))
+            self.log_errors.error(f'algo salio mal, Proforma_Business - get_proforma_queryset_by_role {e}')
             return None
         
     def get_nota_venta_queryset_by_role(self, user, qs):
         try:
             sucursales = Sucursal.objects.prefetch_related('empleado').filter(empleado__id = user.id, enable_to_install_windows_film = True)
-            # if user.is_superuser:
-            #     return qs.filter(is_delete = False)
+            
             sucursales = Sucursal.objects.prefetch_related('empleado').filter(empleado__id = user.id, enable_to_install_windows_film = True)
             if len(sucursales) > 0:
                 qs_result = qs.select_related('nota_trabajo', 'nota_trabajo__proforma', 'nota_trabajo__proforma__sucursal')
@@ -165,7 +169,7 @@ class Proforma_Business:
                 qs_result = None
             return qs_result
         except Exception as e:
-            print('algo salio mal, Proforma_Business - get_proforma_queryset_by_role', str(e))
+            self.log_errors.error(f'algo salio mal, Proforma_Business - get_proforma_queryset_by_role {e}')
             return None
         
     def get_nota_trabajo_queryset_by_role(self, user, qs):
@@ -180,7 +184,7 @@ class Proforma_Business:
                 qs_result = None
             return qs_result
         except Exception as e:
-            print('algo salio mal, Proforma_Business - get_proforma_queryset_by_role', str(e))
+            self.log_errors.error(f'algo salio mal, Proforma_Business - get_proforma_queryset_by_role {e}')
             return None
         
     def create_nota_venta_pago(self, proforma, user):
