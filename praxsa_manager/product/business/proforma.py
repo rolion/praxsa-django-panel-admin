@@ -1,4 +1,5 @@
-from ..models import Proforma_Header, Sucursal, Proforma_Detail, Nota_trabajo, Detalle_Nota_Trabajo, pago, Nota_Venta
+from typing import Union
+from ..models import Car_Model_Part, Proforma_Header, Sucursal, Proforma_Detail, Nota_trabajo, Detalle_Nota_Trabajo, pago, Nota_Venta
 from ..helper.proforma import Proforma_Helper
 from .inventario import Inventario_Business
 from ..utils.exception.nohaylaminas import NoHayLaminasDisponibles
@@ -48,6 +49,18 @@ class Proforma_Business:
                 print('algo salio mal ->>', e)
                 raise Exception('algo salio mal, contactar administrador')
     
+    def validate_proforma_detail(self, proforma_details:list[Proforma_Detail]):
+        for detalle in proforma_details:
+            width= detalle.width
+            proforma_header= detalle.proforma_header
+            car_model = proforma_header.car_model_id
+            car_part = detalle.car_part
+            car_part_item = Car_Model_Part.objects.select_related('car_part_id').get(car_part_id = car_part, car_model_id = car_model)
+            if width < car_part_item.width:
+                raise ProformaException(f'En la proforma {proforma_header.id}, el item {car_part.name} tiene un ancho de {car_part_item.width}, seleccione un acho de lamina mayor a igual a {car_part_item.width}')
+
+        return True
+    
     @transaction.atomic
     def create_work_note(self, proforma, responsable):
         # if proforma.sales_status == self.helper.prof:
@@ -58,11 +71,11 @@ class Proforma_Business:
                     sumary = []
                     
                     if detalles.exists():
+                        self.validate_proforma_detail(detalles)
                         for detalle in list(detalles):
                             to_reduce = detalle.length
                             to_reduce = to_reduce * Decimal(detalle.quantity) if detalle.quantity > 0 else to_reduce
                             # update inventory
-                            print(f'detalle width {detalle.width}')
                             inventario = self.inv_bussiness.reduce_inventory(sucursal = detalle.proforma_header.sucursal, 
                                                                 windows_film =detalle.window_film, 
                                                                 width = detalle.width, 
@@ -83,6 +96,8 @@ class Proforma_Business:
                 raise Exception(f'ya existe una nota de trabajo asignada a la Proforma {proforma.id}')
             except NoHayLaminasDisponibles as e:
                  raise Exception(str(e))
+            except ProformaException as e:
+                raise e
             except Exception as e:
                 print('algo salio mal ->>', str(e))
                 print('error type', type(e))

@@ -8,6 +8,7 @@ services:
       dockerfile: Dockerfile.prod
     volumes:
       - static:/praxsa_manager/staticfiles
+      - ./praxsa_manager/logs:/praxsa_manager/logs
     restart: always
     expose:
       - "5000"

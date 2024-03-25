@@ -28,6 +28,8 @@ services:
 volumes:
   postgres:
     external: true
+  static:
+    external: true
 
 networks:
   web_nw:

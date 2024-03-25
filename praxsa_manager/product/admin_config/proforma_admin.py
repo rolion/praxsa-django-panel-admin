@@ -16,6 +16,7 @@ from django.db import transaction
 from ..helper.pdf import PDFService
 from django.http import FileResponse
 import io
+import logging
 
 
 class SalesDetailInLine(admin.TabularInline):
@@ -58,6 +59,8 @@ class SalesDetailInLine(admin.TabularInline):
         
     
 class ProformaAdmin(admin.ModelAdmin):
+    logger = logging.getLogger('django')
+    
     list_display = [
                     'id',
                     # 'sales_status',
