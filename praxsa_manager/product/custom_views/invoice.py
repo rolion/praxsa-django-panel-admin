@@ -2,29 +2,38 @@ from rest_framework.views import APIView
 from rest_framework import authentication, permissions
 from rest_framework.response import Response
 from rest_framework import status
+
+from ..utils.exception.proforma import ProformaException
 from ..models import Client, Proforma_Header, Proforma_Detail
 from ..serializer.invoice_serializer import SalesHeaderSerializer
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.core import serializers
 from ..models import Client
 from datetime import datetime
+from django.db import transaction
 
 class InvoiceView(APIView):
     
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
-    
+    @transaction.atomic 
     def post(self, request, *args, **kwargs):
-        user = request.user
-        # import pdb; pdb.set_trace()
-        request.data['created_by']= user.id
-        # print('data ', request.data)
-        serializer = SalesHeaderSerializer(data=request.data)
-        if serializer.is_valid():
-            invoice = serializer.save()
-            return Response(data={"id": invoice.id}, status= status.HTTP_201_CREATED)
-        return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            with transaction.atomic():
+                user = request.user
+                # import pdb; pdb.set_trace()
+                request.data['created_by']= user.id
+                # print('data ', request.data)
+                serializer = SalesHeaderSerializer(data=request.data)
+                if serializer.is_valid():
+                    invoice = serializer.save()
+                    return Response(data={"id": invoice.id}, status= status.HTTP_201_CREATED)
+                return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except ProformaException as e:
+            return Response(data=str(e),  status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            return Response(data=serializer.errors, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     def get(self, request, pk, format=None):
         try:

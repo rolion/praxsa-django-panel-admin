@@ -7,7 +7,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/praxsa_manager/manage.py",
             "args": [
-                "Runserver"
+                "runserver"
             ],
             "django": true
         }

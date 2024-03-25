@@ -1,7 +1,13 @@
 from ..models import Sucursal, Window_Film, inventario
 from django.db.models import Sum, F
 from ..utils.exception.nohaylaminas import NoHayLaminasDisponibles
+import logging
+
+
 class Inventario_Business:
+
+    def __init__(self) -> None:
+        self.logger = logging.getLogger(__name__)
     
     def get_inventory_by_sucursal(self, sucursal):
         q = inventario.objects.select_related("bobina","bobina__window_film", "sucursal")
@@ -25,9 +31,10 @@ class Inventario_Business:
         query = query.order_by('bobina__width','date')[:1]
         # print(sucursal, windows_film, width, length_to_reduce)
         # print('query', query[0].name, )
-        print('inventario existe ',query.exists())
-        print(f'width {width}, film {windows_film}')
-        print(query)
+        # self.logger.info('inventario existe ',query.exists())
+        # print('inventario existe ',query.exists())
+        # self.logger.info(f'width {width}, film {windows_film}')
+        # self.logger.info(query)
         
         if(query.exists()):
             bobina_inventario = query[0]

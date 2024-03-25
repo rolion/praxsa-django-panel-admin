@@ -3,7 +3,8 @@ from .inventario import Inventario_Business
 from ..utils.exception.proforma import OrdenTrabajo
 from django.db import IntegrityError, transaction
 from django.core.exceptions import ObjectDoesNotExist
-from datetime import datetime
+# from datetime import datetime
+from django.utils import timezone
 class Orden_Trabajo_Business:
 
 
@@ -70,7 +71,7 @@ class Orden_Trabajo_Business:
                     item.delete()
         except ObjectDoesNotExist  as e:
             nota_trabajo = Nota_trabajo()
-            nota_trabajo.entrada_vehiculo = datetime.now()
+            nota_trabajo.entrada_vehiculo = timezone.now()
         except Exception as e:
             print(e)
             return None
