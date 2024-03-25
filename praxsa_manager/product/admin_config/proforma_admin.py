@@ -59,7 +59,8 @@ class SalesDetailInLine(admin.TabularInline):
         
     
 class ProformaAdmin(admin.ModelAdmin):
-    logger = logging.getLogger('django')
+    log_errors = logging.getLogger('django_admin')
+    log_debug= logging.getLogger('debug')
     
     list_display = [
                     'id',
@@ -199,6 +200,7 @@ class ProformaAdmin(admin.ModelAdmin):
         try:
             [self.proforma_business.delete_proforma(user= request.user, proforma=qs) for qs in list(queryset)]
         except Exception as e:
+            self.log_debug.info(str(e))
             self.message_user(request=request,  message=str(e), level= messages.ERROR)
 
     @admin.action(description="abrir proforma")
@@ -206,6 +208,7 @@ class ProformaAdmin(admin.ModelAdmin):
         try:
             [self.proforma_business.abrir_proforma(proforma=qs) for qs in list(queryset)]
         except Exception as e:
+            self.log_debug.info(str(e))
             self.message_user(request=request,  message=str(e), level= messages.ERROR)
 
     @admin.action(description="crear/actualizar nota trabajo")

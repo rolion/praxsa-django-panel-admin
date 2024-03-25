@@ -183,7 +183,7 @@ TIME_ZONE = 'America/La_Paz'
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)
@@ -258,7 +258,7 @@ HANDLERS = {
     },
     "my_handler_detailed": {
         "class": "logging.handlers.RotatingFileHandler",
-        "filename": f"{BASE_DIR}/logs/blogthedata_detailed.log",
+        "filename": f"{BASE_DIR}/logs/admin_detailed.log",
         "mode": "a",
         "formatter": "verbose",
         "backupCount": 5,
@@ -268,9 +268,9 @@ HANDLERS = {
 
 LOGGERS = (
     {
-        "django.admin": {
-            "handlers": ["my_handler_detailed"],
-            "level": "INFO",
+        "django_admin": {
+            "handlers": ["console_handler", "my_handler_detailed"],
+            "level": "WARNING",
             "propagate": False,
         },
         "debug": {
