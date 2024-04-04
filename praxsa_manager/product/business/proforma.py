@@ -8,6 +8,7 @@ from django.db import IntegrityError, transaction
 from datetime import datetime
 from ..business.orden_trabajo import Orden_Trabajo_Business
 from decimal import *
+from ..helper.proforma import Proforma_Helper
 import logging
 
 class Proforma_Business:
@@ -18,6 +19,7 @@ class Proforma_Business:
         self.orden_trabajo_bussiness = Orden_Trabajo_Business()
         self.log_errors = logging.getLogger('django_admin')
         self.log_debug= logging.getLogger('debug')
+        self.helper = Proforma_Helper()
 
     def get_proforma_by_id(self, id):
         return Proforma_Header.objects.get(pk = id)
@@ -77,7 +79,8 @@ class Proforma_Business:
                     sumary = []
                     
                     if detalles.exists():
-                        self.validate_proforma_detail(detalles)
+                        if proforma.sales_type == self.helper.tipo_venta_instalacion:
+                            self.validate_proforma_detail(detalles)
                         for detalle in list(detalles):
                             to_reduce = detalle.length
                             to_reduce = to_reduce * Decimal(detalle.quantity) if detalle.quantity > 0 else to_reduce
