@@ -172,6 +172,13 @@ class Nota_trabajo(models.Model):
     class Meta:
         verbose_name = 'Nota Trabajo'
         ordering = ["-id","-nota_venta_created_on"]
+
+class Proxy_Nota_trabajo(Nota_trabajo):
+    class Meta:
+        proxy = True
+        verbose_name = 'Reporte Nota Trabajo'
+        ordering = ["-id","-nota_venta_created_on"]
+        
     
     
 class Proforma_Detail(models.Model):
@@ -226,6 +233,10 @@ class Nota_Venta(models.Model):
 
     def __str__(self) -> str:
         return f'Nota Venta {self.id}'
+    
+
+
+    
     
     
 class pago(models.Model):

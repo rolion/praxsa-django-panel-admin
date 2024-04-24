@@ -51,6 +51,8 @@ INSTALLED_APPS = [
     'bootstrap5',
     'rest_framework',
     'rest_framework.authtoken',
+    'django_admin_listfilter_dropdown',
+    'rangefilter',
 ]
 
 MIDDLEWARE = [

@@ -5,6 +5,7 @@ from django.http.request import HttpRequest
 from ..models import  Sucursal
 from ..helper.user import User_Helper
 from ..Forms.inventario import InventarioForm
+
     
 class InventoryAdmin(admin.ModelAdmin):
     list_display = ['sucursal', 
