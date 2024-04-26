@@ -24,6 +24,9 @@ python manage.py runserver
 ## run proforma
 npm run dev:ssr
 
+## stop postgre
+sudo systemctl stop postgresql
+
 
 # create admin user
 python manage.py createsuperuser --username=joe --email=joe@example.com
@@ -36,3 +39,6 @@ python manage.py collectstatic
 
 # chage static file owenership
 chown -R app:app /praxsa_manager
+
+# reset id auto increment
+ALTER SEQUENCE auth_permission_id_seq RESTART WITH 125

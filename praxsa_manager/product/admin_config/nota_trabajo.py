@@ -8,7 +8,7 @@ from django.db import transaction
 from ..Forms.nota_trabajo import NotaTrabajoForm
 from ..business.proforma import Proforma_Business
 from ..business.orden_trabajo import Orden_Trabajo_Business
-from ..models import Detalle_Nota_Trabajo, Nota_Venta
+from ..models import Detalle_Nota_Trabajo, Nota_Venta, Proforma_Detail
 from ..helper.pdf import PDFService
 from django.urls import reverse
 from django.utils.html import format_html
@@ -36,7 +36,7 @@ class ProformaDetailInLine(admin.TabularInline):
     
 class NotaTrabajoAdmin(admin.ModelAdmin):
     list_display = [ 
-              'get_proforma_id',
+              'get_nota_venta_id',
               'get_entrada_vehiculo_date_format',
               'car_model',
               'car_plate',
@@ -81,14 +81,14 @@ class NotaTrabajoAdmin(admin.ModelAdmin):
                 ]
     class Media:
         js=('product/nota_trabajo.js',)
-    def get_proforma_id(self, obj):
+    def get_nota_venta_id(self, obj):
         # link para ver la nota de trabajo
         link = reverse("admin:product_nota_trabajo_change", args=[ obj.id])
         # pero se visualiza el id de la proforma
         return format_html('<a href="{}">{}</a>', link, obj.proforma.id)
         # return obj.proforma.id
-    get_proforma_id.short_description = 'Proforma'
-    get_proforma_id.admin_order_field = 'proforma__id'
+    get_nota_venta_id.short_description = 'Nota Trabajo'
+    get_nota_venta_id.admin_order_field = 'proforma__id'
 
     def get_estado(self, obj):
         result= Nota_Venta.objects.filter(nota_trabajo=obj)
@@ -149,9 +149,10 @@ class NotaTrabajoAdmin(admin.ModelAdmin):
             pdf = PDFService(buffer= buffer)
             resumen_trabajo = Detalle_Nota_Trabajo.objects.select_related("window_film", 'nota_trabajo__proforma')
             proforma = queryset[0].proforma
+            detalle_proforma = Proforma_Detail.objects.filter(proforma_header=proforma)
             resumen_trabajo = resumen_trabajo.filter( nota_trabajo =  queryset[0])
-            pdf.create_nota_trabajo(detail=resumen_trabajo, nota_trabajo= queryset[0])
+            pdf.create_nota_trabajo(detail=resumen_trabajo, nota_trabajo= queryset[0], proforma_detail = detalle_proforma)
             buffer.seek(0)
-            filename = f'Nota Trabajo-{queryset[0].id}.pdf'
+            filename = f'Nota Trabajo-{queryset[0].proforma.id}.pdf'
             return FileResponse(buffer, as_attachment=True, filename=filename)
     

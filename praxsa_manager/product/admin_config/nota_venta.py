@@ -15,48 +15,16 @@ from ..helper.proforma import Proforma_Helper
 from django.http import HttpResponseRedirect
 from ..helper.pdf import PDFService
 from django.http import FileResponse
+from django.urls import reverse
+from django.utils.html import format_html
 import io
-
-# class SalesDetailInLine(admin.TabularInline):
-#     fields = ['car_part', 
-#               'window_film', 
-#               'width', 
-#               'length', 
-#               'disponibilidad',
-#               'window_film_price', 
-#               'installation_price', 
-#               'quantity',
-#               'sub_total']
-#     model = Proforma_Detail
-#     min_num = 0
-#     max = 1
-#     extra = 0
-#     form = CarModelPartForm
-#     user_business = User_Business()
-#     user_helper = User_Helper()
-#     inv_business = Inventario_Business()
-#     proforma_helper = Proforma_Helper()
-
-#     def get_formset(self, request, obj=None, **kwargs):
-#         formset = super(SalesDetailInLine, self).get_formset(request, obj, **kwargs)
-#         widths = self.inv_business.get_inventory_window_film_reel_widths(request.user)
-#         formset.form.base_fields['width'].widget = forms.Select(choices=widths.values_list('width', 'width'))
-#         return formset
-
-#     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-#             if db_field.name == "window_film":
-#                     result = self.inv_business.get_user_inventory_window_films(request.user)
-#                     kwargs["queryset"] = result
-#             return super().formfield_for_foreignkey(db_field, request, **kwargs)
-#     class Media:
-#         js=('product/sales_event.js',)
         
     
 class NotaVentaAdmin(admin.ModelAdmin):
     list_display = [
-                    'id',
-                    'nota_trabajo',
-                    'total_price',
+                    'get_nota_venta_id',
+                    'get_nota_trabajo_id',
+                    'get_total_pagar',
                     'view_notas_created_on'
                     ]
     search_fields = ['id','nota_trabajo__id','created_on', 'name',]
@@ -84,6 +52,29 @@ class NotaVentaAdmin(admin.ModelAdmin):
                                'total_price', ]
                 }),
                 ]
+    
+    def get_nota_venta_id(self, obj):
+        # link para ver la nota de trabajo
+        link = reverse("admin:product_nota_venta_change", args=[ obj.id])
+        # pero se visualiza el id de la proforma
+        return format_html('<a href="{}">{}</a>', link, obj.nota_trabajo.proforma.id)
+    get_nota_venta_id.short_description = 'Nota Venta'
+    get_nota_venta_id.admin_order_field = 'nota_trabajo__proforma__id'
+
+    def get_nota_trabajo_id(self, obj):
+        # link para ver la nota de trabajo
+        link = reverse("admin:product_nota_trabajo_change", args=[ obj.nota_trabajo.id])
+        # pero se visualiza el id de la proforma
+        return format_html('<a href="{}">{}</a>', link, obj.nota_trabajo.id)
+    get_nota_trabajo_id.short_description = 'Nota Trabajo'
+    get_nota_trabajo_id.admin_order_field = 'nota_trabajo__id'
+
+    def get_total_pagar(self, obj):
+        proforma = obj.nota_trabajo.proforma
+        total = proforma.total_price - proforma.discount
+        return f'{total}Bs'
+    get_total_pagar.short_description = 'Total Pagar'
+    get_total_pagar.admin_order_field = 'total_price'
     
     @admin.display(empty_value="-", description='Nota Trabajo' )
     def view_nota_trabajo(self, obj):
