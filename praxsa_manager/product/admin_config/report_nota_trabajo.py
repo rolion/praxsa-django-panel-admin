@@ -77,7 +77,7 @@ class ReportNotaTrabajoAdmin(admin.ModelAdmin):
 
     def get_nota_trabajo_id(self, obj):
         link = reverse("admin:product_nota_trabajo_change", args=[ obj.id])
-        return format_html('<a href="{}">{}</a>', link, obj.id)
+        return format_html('<a href="{}">{}</a>', link, obj.proforma.id)
     get_nota_trabajo_id.short_description = 'Nota Trabajo'
     get_nota_trabajo_id.admin_order_field = 'id'
     
