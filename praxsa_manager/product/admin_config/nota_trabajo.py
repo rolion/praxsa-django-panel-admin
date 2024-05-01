@@ -8,8 +8,10 @@ from django.db import transaction
 from ..Forms.nota_trabajo import NotaTrabajoForm
 from ..business.proforma import Proforma_Business
 from ..business.orden_trabajo import Orden_Trabajo_Business
-from ..models import Detalle_Nota_Trabajo, Proforma_Detail, Proforma_Header
+from ..models import Detalle_Nota_Trabajo, Nota_Venta, Proforma_Detail
 from ..helper.pdf import PDFService
+from django.urls import reverse
+from django.utils.html import format_html
 from django.http import FileResponse
 import io
 class ProformaDetailInLine(admin.TabularInline):
@@ -34,20 +36,23 @@ class ProformaDetailInLine(admin.TabularInline):
     
 class NotaTrabajoAdmin(admin.ModelAdmin):
     list_display = [ 
-              'id', 
-              'name', 
-              'proforma',
-              'codigo_garantia',
-              'car_plate', 
-              'car_model']
+              'get_nota_venta_id',
+              'get_entrada_vehiculo_date_format',
+              'car_model',
+              'car_plate',
+              'instaladar',
+              'get_estado'
+              ]
     inlines = [
         ProformaDetailInLine,
     ]
     search_fields = ['id',
+                     'instaladar__name',
                      'car_plate',
                      'car_model__name',
                      'proforma__id', 
-                     'proforma__name',]
+                     'proforma__name',
+                     ]
     form = NotaTrabajoForm
     orden_trabajo_busi =Orden_Trabajo_Business()
     proforma_business = Proforma_Business()
@@ -74,6 +79,30 @@ class NotaTrabajoAdmin(admin.ModelAdmin):
                 })
 
                 ]
+    class Media:
+        js=('product/nota_trabajo.js',)
+    def get_nota_venta_id(self, obj):
+        # link para ver la nota de trabajo
+        link = reverse("admin:product_nota_trabajo_change", args=[ obj.id])
+        # pero se visualiza el id de la proforma
+        return format_html('<a href="{}">{}</a>', link, obj.proforma.id)
+        # return obj.proforma.id
+    get_nota_venta_id.short_description = 'Nota Trabajo'
+    get_nota_venta_id.admin_order_field = 'proforma__id'
+
+    def get_estado(self, obj):
+        result= Nota_Venta.objects.filter(nota_trabajo=obj)
+        if len(result) > 0:
+           return 'Si'
+        else:
+            return 'No'
+    get_estado.short_description = 'Finalizado'
+    
+    def get_entrada_vehiculo_date_format(self, obj):
+        return obj.entrada_vehiculo.strftime("%d-%m-%Y %H:%M:%S")
+    get_entrada_vehiculo_date_format.short_description = 'Fecha Ingreso'
+    get_entrada_vehiculo_date_format.admin_order_field = 'entrada_vehiculo'
+    
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
         qs = super().get_queryset(request)
         result = self.orden_trabajo_busi.get_nota_queryset_by_role(user = request.user, qs=qs)
@@ -120,9 +149,10 @@ class NotaTrabajoAdmin(admin.ModelAdmin):
             pdf = PDFService(buffer= buffer)
             resumen_trabajo = Detalle_Nota_Trabajo.objects.select_related("window_film", 'nota_trabajo__proforma')
             proforma = queryset[0].proforma
+            detalle_proforma = Proforma_Detail.objects.filter(proforma_header=proforma)
             resumen_trabajo = resumen_trabajo.filter( nota_trabajo =  queryset[0])
-            pdf.create_nota_trabajo(detail=resumen_trabajo, nota_trabajo= queryset[0])
+            pdf.create_nota_trabajo(detail=resumen_trabajo, nota_trabajo= queryset[0], proforma_detail = detalle_proforma)
             buffer.seek(0)
-            filename = f'Nota Trabajo-{queryset[0].id}.pdf'
+            filename = f'Nota Trabajo-{queryset[0].proforma.id}.pdf'
             return FileResponse(buffer, as_attachment=True, filename=filename)
     

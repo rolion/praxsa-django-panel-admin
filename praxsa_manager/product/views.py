@@ -1,7 +1,9 @@
 from django.shortcuts import render
 from django.http.response import JsonResponse, HttpResponseBadRequest
 from django.template import loader
-from .models import Car_Model_Part, Window_Film_Reel, Car_Brand, Car_Model, Car_Part, Window_Film, Sucursal
+
+from .helper.proforma import Proforma_Helper
+from .models import Car_Model_Part, Window_Film_Reel, Car_Brand, Car_Model, Car_Part, Window_Film, Sucursal, Proforma_Header
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -70,6 +72,52 @@ def get_car_part_info(request, car_model_id, sucursal_id):
                                 'window_film': window_film,
                                 'inv_widths': inv_width
                                 }, safe=False)
+    except Exception as e:
+        print('algo salio mal -->', str(e))
+        return JsonResponse(data={'error':True, 'message': 'algo salio mal'}, status=500)
+    
+def get_proforma_car_part_info(request, proforma_id):
+    '''devuelve la informacion de item del auto seleccionado'''
+    try:
+        # car_model_id, sucursal_id
+        print(proforma_id)
+        proforma = Proforma_Header.objects.select_related('sucursal', 'car_model_id').get(pk= proforma_id)
+        print(proforma)
+        helper = Proforma_Helper()
+        sales_type = proforma.sales_type
+        if sales_type == helper.tipo_venta_instalacion:
+            inv_Business = Inventario_Business()
+            inventario = inv_Business.get_inventory_by_sucursal(sucursal=proforma.sucursal.id)
+            items = []
+            if(proforma.car_model_id.id >0):
+                car_part = Car_Model_Part.objects.select_related("car_part_id").filter(car_model_id = proforma.car_model_id.id)
+                items = list(map(lambda part: {'part_id': part.car_part_id.id, 
+                                            'name': part.car_part_id.name, 
+                                            'quantity': part.quantity, 
+                                            'width': part.width, 
+                                            'length': part.length, 
+                                            'installation_price': part.installation_price
+                                            }, car_part))
+            widths = inv_Business.get_inventory_window_film_reel_widths(request.user)
+            inv_width = list(map(lambda w: w, widths.values_list('width', flat=True)))
+            
+            window_film = list(map(lambda inv: {'name': inv.bobina.window_film.name, 
+                                                'reel_id':inv.bobina.id, 
+                                                'price': inv.precio_venta_mtr_lineal, 
+                                                'film_id': inv.bobina.window_film.id, 
+                                                'width': inv.bobina.width
+                                                }, inventario ))
+            return JsonResponse(data={'items': items, 
+                                    'window_film': window_film,
+                                    'inv_widths': inv_width,
+                                    'sales_type': proforma.sales_type
+                                    }, safe=False)
+        else:
+            return JsonResponse(data={'items': [], 
+                                    'window_film': [],
+                                    'inv_widths': [],
+                                    'sales_type': proforma.sales_type
+                                    }, safe=False)
     except Exception as e:
         print('algo salio mal -->', str(e))
         return JsonResponse(data={'error':True, 'message': 'algo salio mal'}, status=500)

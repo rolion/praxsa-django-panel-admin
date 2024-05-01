@@ -6,6 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from .helper.proforma import Proforma_Helper
 from .helper.pagos import Pagos_Helper
 import datetime
+alphanumeric = RegexValidator(r'^[0-9a-zA-Z]*$', 'Solo se permiten letras y numeros')
 
 
 class Car_Brand(models.Model):
@@ -121,12 +122,14 @@ class inventario(models.Model):
     numero_referencia = models.PositiveIntegerField( verbose_name="Numero Referencia",default=0, validators=[MaxValueValidator(limit_value=9999999999, message='solo se aceptan valores con 10 digitos')])
     precio_compra_mtr_lineal = models.DecimalField( max_digits=10, decimal_places=2, default=0.0, verbose_name="Precio Compra Metro Lineal")
     precio_venta_mtr_lineal = models.DecimalField( max_digits=10, decimal_places=2, default=0.0, verbose_name="Precio Venta Metro Lineal")
+    nro_lote = models.CharField(max_length=15,validators=[alphanumeric], null=True, verbose_name='Nro. Lote')
     def __str__(self):
         return f'{self.sucursal.name}-{self.bobina.window_film.name}'
 
 class Proforma_Header(models.Model):
     helper = Proforma_Helper()
     sales_type = models.CharField(choices=helper.tipo_venta, default=helper.tipo_venta_instalacion, verbose_name='Tipo Venta')
+    origen = models.CharField(choices=helper.origen, default=helper.origin_portal, verbose_name='Origen')
     proforma_created_on = models.DateTimeField(verbose_name="Fecha Proforma", auto_now=True)
 
     name = models.CharField(max_length=400, default=" ", null=False, verbose_name="Nombre Completo")
@@ -143,6 +146,7 @@ class Proforma_Header(models.Model):
     is_delete = models.BooleanField(default=False)
     created_by = models.ForeignKey(User, verbose_name='Creado Por',on_delete=models.DO_NOTHING, null=False,related_name='proforma_created_by')
     is_close = models.BooleanField(default=False)
+
     
     class Meta:
         verbose_name = 'Proforma'
@@ -151,6 +155,12 @@ class Proforma_Header(models.Model):
     def __str__(self) -> str:
         # prefijo = 'Proforma' if self.sales_status == self.helper.prof else 'Nota Venta'
         return f'Proforma {self.id}'
+    
+class Proxy_Proforma(Proforma_Header):
+    class Meta:
+        proxy = True
+        verbose_name = 'Reporte Proforma'
+        ordering = ["-id","-proforma_created_on"]
     
 class Nota_trabajo(models.Model):
     proforma = models.OneToOneField(Proforma_Header, on_delete=models.DO_NOTHING, blank=True, null=True, verbose_name="Proforma")
@@ -167,11 +177,18 @@ class Nota_trabajo(models.Model):
     is_close = models.BooleanField(default=False) 
 
     def __str__(self) -> str:
-        return f'Nota Trabajo {self.id}'
+        return f'Nota Trabajo {self.proforma.id}'
 
     class Meta:
         verbose_name = 'Nota Trabajo'
         ordering = ["-id","-nota_venta_created_on"]
+
+class Proxy_Nota_trabajo(Nota_trabajo):
+    class Meta:
+        proxy = True
+        verbose_name = 'Reporte Nota Trabajo'
+        ordering = ["-id","-nota_venta_created_on"]
+        
     
     
 class Proforma_Detail(models.Model):
@@ -225,8 +242,7 @@ class Nota_Venta(models.Model):
         verbose_name = 'Nota Venta'
 
     def __str__(self) -> str:
-        return f'Nota Venta {self.id}'
-    
+        return f'Nota Venta {self.nota_trabajo.proforma.id}'
     
 class pago(models.Model):
     helper = Pagos_Helper()

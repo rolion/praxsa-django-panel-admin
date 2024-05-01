@@ -18,13 +18,29 @@ class Orden_Trabajo_Business:
             sucursales = Sucursal.objects.prefetch_related('empleado')
             sucursales = sucursales.filter(empleado__id = user.id, enable_to_install_windows_film = True)
             if len(sucursales) > 0:
-                qs_result = qs.select_related('proforma','proforma__sucursal', 'proforma__car_model_id__car_brand_id')
+                qs_result = qs.select_related('proforma','proforma__sucursal','instaladar', 'proforma__car_model_id__car_brand_id')
                 qs_result = qs_result.filter(proforma__sucursal__id = sucursales[0].id, proforma__is_delete = False)
             else:
                 qs_result = None
             return qs_result
         except Exception as e:
             print('algo salio mal, Orden_Trabajo_Business - get_nota_queryset_by_role', str(e))
+            return None
+        
+    def get_finish_nota_queryset(self, qs):
+        try:
+            # sucursales = Sucursal.objects.prefetch_related('empleado')
+            # sucursales = sucursales.filter(empleado__id = user.id, enable_to_install_windows_film = True)
+            # if len(sucursales) > 0:
+                # qs_result = qs.select_related('proforma','proforma__sucursal','instaladar', 'proforma__car_model_id__car_brand_id')
+                # qs_result = qs_result.filter(proforma__sucursal__id = sucursales[0].id, proforma__is_delete = False)
+            qs_result = qs.select_related('proforma','proforma__sucursal','instaladar', 'proforma__car_model_id','proforma__car_model_id__car_brand_id')
+            qs_result = qs_result.filter(proforma__is_delete = False, nota_venta__isnull=False)
+            # else:
+            #     qs_result = None
+            return qs_result
+        except Exception as e:
+            print('algo salio mal, Orden_Trabajo_Business - get_finish_nota_queryset', str(e))
             return None
 
     @transaction.atomic   

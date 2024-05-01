@@ -15,6 +15,7 @@ from ..helper.proforma import Proforma_Helper
 from django.db import transaction
 from ..helper.pdf import PDFService
 from django.http import FileResponse
+from django_admin_listfilter_dropdown.filters import DropdownFilter, RelatedDropdownFilter, ChoiceDropdownFilter
 import io
 import logging
 
@@ -45,9 +46,6 @@ class SalesDetailInLine(admin.TabularInline):
         widths = self.inv_business.get_inventory_window_film_reel_widths(request.user)
         formset.form.base_fields['width'].widget = forms.Select(choices=widths.values_list('width', 'width'))
         return formset
-    
-    # def save_model(self, request, obj, form, change):
-    #     super().save_model(request, obj, form, change)
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
             if db_field.name == "window_film":
@@ -68,8 +66,9 @@ class ProformaAdmin(admin.ModelAdmin):
                     'sales_type',
                     'name', 
                     'car_model_id',
-                    'total_price',
-                    'get_proforma_date_format'
+                    'get_total_pagar',
+                    'get_proforma_date_format',
+                    'get_estado'
                     ]
     exclude =  ["is_delete", "is_paid", 'created_by', 'is_close']
     inlines = [
@@ -84,10 +83,35 @@ class ProformaAdmin(admin.ModelAdmin):
     user_business = User_Business()
     user_helper = User_Helper()
     proforma_helper = Proforma_Helper()
+    def get_total_pagar(self, obj):
+        total = obj.total_price - obj.discount
+        return f'{total} Bs'
+    get_total_pagar.short_description = 'Total Pagar'
+    get_total_pagar.admin_order_field = 'total_price'
     def get_proforma_date_format(self, obj):
         return obj.proforma_created_on.strftime("%d-%m-%Y %H:%M:%S")
     get_proforma_date_format.short_description = 'Fecha'
     get_proforma_date_format.admin_order_field = 'proforma_created_on'
+
+    def get_estado(self, obj):
+        estado = 'Proforma'
+        if(hasattr(obj, 'nota_trabajo')):
+           estado = 'Nota Trabajo'
+        else:
+            return estado
+        if(hasattr(obj.nota_trabajo, 'nota_venta')):
+             estado = 'Por Cobrar'
+        else:
+            return estado
+        if(hasattr(obj.nota_trabajo.nota_venta, 'pago')):
+             estado = 'finalizado'
+
+        return estado
+       
+    get_estado.short_description = 'Estado'
+    
+    
+
     
     fieldsets = [('Proforma', {
                                 'classes':[], 
@@ -137,6 +161,7 @@ class ProformaAdmin(admin.ModelAdmin):
                         to_reduce = to_reduce + deleted_data.sub_total
                     
             proforma.total_price = proforma.total_price - to_reduce
+            # proforma.origen = self.proforma_helper.origin_portal
             proforma.save()
         super(ProformaAdmin, self).save_related(request, form, formsets, change)
 
@@ -147,6 +172,25 @@ class ProformaAdmin(admin.ModelAdmin):
             return True
         return False
 
+    def changelist_view(self, request, extra_context=None):
+        user_groups = list(request.user.groups.values_list('name',flat = True))
+        is_admin = 'Admin' in user_groups
+        if is_admin == True:
+            self.list_display = [
+                    'id',
+                    'sales_type',
+                    'name', 
+                    'sucursal',
+                    'car_model_id',
+                    'get_total_pagar',
+                    'get_proforma_date_format',
+                    'get_estado'
+                    ]
+            self.list_filter = [
+                ('sales_type', ChoiceDropdownFilter),
+                ('sucursal', RelatedDropdownFilter),]
+        return super(ProformaAdmin, self).changelist_view(request, extra_context)
+    
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
         qs = super().get_queryset(request)
         result = self.proforma_business.get_proforma_queryset_by_role(user = request.user, qs=qs)

@@ -5,6 +5,7 @@ from django.http.request import HttpRequest
 from ..models import  Sucursal
 from ..helper.user import User_Helper
 from ..Forms.inventario import InventarioForm
+
     
 class InventoryAdmin(admin.ModelAdmin):
     list_display = ['sucursal', 
@@ -13,10 +14,11 @@ class InventoryAdmin(admin.ModelAdmin):
                     'quantity',
                     'to_install',
                     'installed',
+                    'nro_lote',
                     'numero_referencia',
                     'get_inventory_date_format']
     list_per_page = 10
-    search_fields = ['sucursal__name', 'bobina__window_film__name', 'numero_referencia']
+    search_fields = ['sucursal__name', 'bobina__window_film__name', 'numero_referencia','nro_lote']
     form = InventarioForm
     class Media:
         js=('product/inventario.js',)
@@ -63,6 +65,7 @@ class InventoryAdmin(admin.ModelAdmin):
                     'quantity',
                     'to_install',
                     'installed',
+                    'nro_lote',
                     'numero_referencia',
                     'get_inventory_date_format']
             self.fields = [
@@ -71,6 +74,7 @@ class InventoryAdmin(admin.ModelAdmin):
                     'quantity',
                     'to_install',
                     'installed',
+                    'nro_lote',
                     'precio_compra_mtr_lineal',
                     'precio_venta_mtr_lineal',
                     'numero_referencia',
@@ -84,6 +88,7 @@ class InventoryAdmin(admin.ModelAdmin):
                     'quantity',
                     'to_install',
                     'installed',
+                    'nro_lote',
                     'numero_referencia',
                     'get_inventory_date_format',
                     ]
@@ -104,6 +109,7 @@ class InventoryAdmin(admin.ModelAdmin):
                     'quantity',
                     'to_install',
                     'installed',
+                    'nro_lote',
                     'numero_referencia',
                     'get_inventory_date_format']
         return super(InventoryAdmin, self).changelist_view(request, extra_context)

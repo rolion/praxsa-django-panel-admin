@@ -45,7 +45,8 @@ class PDFService:
         self.canvas.setFont(psfontname='Helvetica', size=12)
         self.canvas.drawCentredString(text=f'Nro. {proforma_id}', x=center, y=self.top_border - 75, )
 
-    def set_proforma_header(self, fecha, nombre, ci, email, celular, marca, modelo, placa, codigo_proforma, sucursal ,codigo_garantia='Pendiente'):
+    def set_proforma_header(self, fecha, nombre, ci, email, celular, marca, modelo, placa, 
+                            codigo_proforma, sucursal, codigo_garantia='Pendiente'):
       columnSeparation = 250
       fontSizeTitles = 12
       fontSizeNormal = 11
@@ -88,20 +89,99 @@ class PDFService:
       self.canvas.setFont(psfontname='Helvetica-Bold', size=fontSizeNormal)
     
       self.canvas.setFont(psfontname='Helvetica', size=fontSizeNormal)
-      self.canvas.drawString(text=f'Nro. Garantia: {codigo_garantia}', 
-                             x = center, 
-                             y=initialY + base_increment * 4)
+      
       self.canvas.setFont(psfontname='Helvetica', size=fontSizeNormal)
       self.canvas.drawString(text=f'Marca: {marca}', 
                              x = center, 
-                             y=initialY + base_increment * 5)
+                             y=initialY + base_increment * 4)
       self.canvas.setFont(psfontname='Helvetica', size=fontSizeNormal)
       self.canvas.drawString(text=f'Modelo: {modelo}', 
                              x = center, 
-                             y=initialY + base_increment * 6)
+                             y=initialY + base_increment * 5)
       self.canvas.setFont(psfontname='Helvetica', size=fontSizeNormal)
       self.canvas.drawString(text=f'Placa: {placa}', 
                              x = center, 
+                             y=initialY + base_increment * 6)
+    
+    
+    def set_nota_trabajo_header(self, fecha, nombre, ci, email, celular, marca, modelo, placa, 
+                            codigo_proforma, sucursal, codigo_garantia='Pendiente',
+                            instalador = '', fecha_ingreso = '', responsable = ''):
+      columnSeparation = 250
+      fontSizeTitles = 12
+      fontSizeNormal = 11
+      fontSizeName = 14
+      initialY=-130
+      base_increment=-15
+      
+      xRightStart =  520 + 14 
+      self.canvas.setFillColor(aColor=black)
+      self.canvas.setFont(psfontname='Helvetica-Bold', size=fontSizeTitles)
+      self.canvas.drawRightString(text=f'Fecha: {fecha}', x = xRightStart,  y=initialY)
+      self.canvas.drawRightString(text=f'Sucursal: {sucursal.name}',
+                             x = xRightStart ,
+                             y=initialY - 10
+                             )
+      
+      self.canvas.drawString(text='Datos personales para la garantía', 
+                             x = self.x_position,
+                             y=initialY + base_increment * 2)
+      center = 250
+      print('center ', center)
+      print('page width ', self.canvas._pagesize[0] )
+      self.canvas.drawString(text='Datos vehículo', 
+                             x = center,
+                             y=initialY + base_increment * 2)
+      
+      self.canvas.setFont(psfontname='Helvetica-Bold', size=fontSizeName)
+      self.canvas.drawString(text=nombre, x = self.x_position, y=initialY + base_increment * 3)
+
+      self.canvas.setFont(psfontname='Helvetica', size=fontSizeNormal)
+      self.canvas.drawString(text=f'C.I.: {ci}', 
+                             x = self.x_position, 
+                             y=initialY + base_increment * 4)
+      self.canvas.setFont(psfontname='Helvetica', size=fontSizeNormal)
+      self.canvas.drawString(text=f'Nro. Celular: {celular}',
+                             x = self.x_position, 
+                             y=initialY + base_increment * 5)
+      self.canvas.setFont(psfontname='Helvetica', size=fontSizeNormal)
+      self.canvas.drawString(text=f'Correo: {email}', 
+                             x = self.x_position, 
+                             y=initialY + base_increment * 6)
+
+      self.canvas.setFont(psfontname='Helvetica-Bold', size=fontSizeNormal)
+    
+      self.canvas.setFont(psfontname='Helvetica', size=fontSizeNormal)
+      
+      self.canvas.setFont(psfontname='Helvetica', size=fontSizeNormal)
+      self.canvas.drawString(text=f'Marca: {marca}', 
+                             x = center, 
+                             y=initialY + base_increment * 4)
+      self.canvas.setFont(psfontname='Helvetica', size=fontSizeNormal)
+      self.canvas.drawString(text=f'Modelo: {modelo}', 
+                             x = center, 
+                             y=initialY + base_increment * 5)
+      self.canvas.setFont(psfontname='Helvetica', size=fontSizeNormal)
+      self.canvas.drawString(text=f'Placa: {placa}', 
+                             x = center, 
+                             y=initialY + base_increment * 6)
+      
+      self.canvas.setFont(psfontname='Helvetica-Bold', size=fontSizeTitles)
+      self.canvas.drawString(text='Datos Instalación', 
+                             x = center +120,
+                             y=initialY + base_increment * 2)
+      self.canvas.setFont(psfontname='Helvetica', size=fontSizeNormal)
+      self.canvas.drawString(text=f'Nro. Garantia: {codigo_garantia}', 
+                             x = center +120, 
+                             y=initialY + base_increment * 4)
+      self.canvas.drawString(text=f'Instalador: {instalador}', 
+                             x = center +120, 
+                             y=initialY + base_increment * 5)
+      self.canvas.drawString(text=f'Responsable: {responsable}', 
+                             x = center +120, 
+                             y=initialY + base_increment * 6)
+      self.canvas.drawString(text=f'Fecha Ingreso: {fecha_ingreso}', 
+                             x = center +120, 
                              y=initialY + base_increment * 7)
 
     def proforma_body(self, body: [Proforma_Detail]):
@@ -129,7 +209,7 @@ class PDFService:
       subtotal = 0
       descuento = body[0].proforma_header.discount
       for item in body:
-        self.canvas.drawString(text= item.car_part.name, 
+        self.canvas.drawString(text= item.car_part.name if item.car_part is not None else '', 
                              x = self.x_position +10, 
                              y=initialY + (base_increment) * row_increment)
         self.canvas.drawString(text=item.window_film.name, 
@@ -183,7 +263,7 @@ class PDFService:
       y=initialY + (base_increment) * (row_increment + 8)
       self.canvas.drawCentredString(text='Cliente', x=center, y=y )
       
-    def nota_trabajo_body(self, body: [Detalle_Nota_Trabajo]):
+    def nota_trabajo_body(self, body: [Detalle_Nota_Trabajo], proforma_detail: [Proforma_Detail]= []):
         fontSizeNormal = 11
         initialY=-130
         base_increment=-15
@@ -201,30 +281,83 @@ class PDFService:
                                 x = self.x_position +300, 
                                 y=initialY + (base_increment +0.7) * 9)
         
-        # self.canvas.drawString(text='Cantidad', 
-        #                         x = self.x_position +400, 
-        #                         y=initialY + (base_increment +0.7) * 9)
         row_increment =10
         self.canvas.setFont(psfontname='Helvetica', size=fontSizeNormal)
         self.canvas.setFillColor(aColor=black)
+        y = 0 
         for item in body:
-            # print('lamina', item.window_film.name)
+            y=initialY + (base_increment) * row_increment
             self.canvas.drawString(text= item.window_film.name, 
                                 x = self.x_position +10, 
-                                y=initialY + (base_increment) * row_increment)
-            # print('width ', item.width)
+                                y=y)
+            
             self.canvas.drawString(text=str(item.width), 
                                     x = self.x_position +150, 
-                                    y=initialY + (base_increment) * row_increment)
-            # print('length ', item.length)
+                                    y=y)
+            
             self.canvas.drawString(text=str(item.length), 
                                     x = self.x_position +300, 
-                                    y=initialY + (base_increment) * row_increment)
-            # print('quantity ', item.quantity)
-            # self.canvas.drawString(text=str(item.quantity), 
-            #                         x = self.x_position +400, 
-            #                         y=initialY + (base_increment) * row_increment)
+                                    y=y)
             row_increment+=1
+
+        base_increment = -8
+        if len(proforma_detail) > 0 and proforma_detail[0].car_part is not None:
+            self.canvas.setFillColor(aColor=self.main_color)
+            self.canvas.rect(x = self.x_position, y=y + base_increment * 9, width=520, height=20, stroke=0, fill=1) 
+            self.canvas.setFillColor(aColor=white)
+            self.canvas.setFont(psfontname='Helvetica-Bold', size=fontSizeNormal)
+            self.canvas.drawString(text='Item', 
+                                    x = self.x_position +10, 
+                                    y=y + (base_increment +0.7) * 9)
+            self.canvas.drawString(text='Ancho', 
+                                    x = self.x_position +150, 
+                                    y=y + (base_increment +0.7) * 9)
+            self.canvas.drawString(text='Largo', 
+                                    x = self.x_position +300, 
+                                    y=y + (base_increment +0.7) * 9)
+            self.canvas.drawString(text='Cantidad', 
+                                    x = self.x_position +430, 
+                                    y=y + (base_increment +0.7) * 9)
+            
+            self.canvas.setFont(psfontname='Helvetica', size=fontSizeNormal)
+            self.canvas.setFillColor(aColor=black)
+            row_increment = 10
+            y = y + (base_increment +0.7) * 9
+            y = y + (-20)
+            for item in proforma_detail:
+                # y=y + (base_increment) * row_increment
+                
+                self.canvas.drawString(text= item.car_part.name, 
+                                    x = self.x_position +10, 
+                                    y=y)
+                
+                self.canvas.drawString(text=str(item.width), 
+                                        x = self.x_position +155, 
+                                        y=y)
+                
+                self.canvas.drawString(text=str(item.length), 
+                                        x = self.x_position +305, 
+                                        y=y)
+                self.canvas.drawString(text=str(item.quantity), 
+                                        x = self.x_position +450, 
+                                        y=y)
+                y = y + (-15)
+        
+        X2 =  500
+        X1 = 300
+        line_y= y + (-55)
+        self.canvas.line(X1, line_y, X2, line_y)
+        center = 330
+        line_y= line_y + (-15)
+        self.canvas.drawString(text='Responsable de Almacén', x=center, y=line_y )
+
+        X2 =  250
+        X1 = 50
+        line_y= y + (-55)
+        self.canvas.line(X1, line_y, X2, line_y)
+        center = 100
+        line_y= line_y + (-15)
+        self.canvas.drawString(text='Técnico Instalador', x=center, y=line_y )
         
     def create_proforma(self, header: Proforma_Header, detail: [Proforma_Detail], title ='Proforma',codigo_garantia = 'Pendiente'):
         self.set_company_name()
@@ -245,12 +378,12 @@ class PDFService:
         self.canvas.showPage()
         self.canvas.save()
         
-    def create_nota_trabajo(self, nota_trabajo: Nota_trabajo, detail: [Detalle_Nota_Trabajo]):
+    def create_nota_trabajo(self, nota_trabajo: Nota_trabajo, detail: [Detalle_Nota_Trabajo], proforma_detail: [Proforma_Detail] = []):
         header = nota_trabajo.proforma
         self.set_company_name()
         self.set_company_addres(address='4to anillo, radial 26, calle #3', city='santa cruz', phoneNumber='3 352139')
-        self.set_title(title='Nota trabajo', proforma_id=nota_trabajo.id)
-        self.set_proforma_header(fecha=header.proforma_created_on.strftime("%d-%m-%Y %H:%M:%S"), 
+        self.set_title(title='Nota trabajo', proforma_id=header.id)
+        self.set_nota_trabajo_header(fecha=header.proforma_created_on.strftime("%d-%m-%Y %H:%M:%S"), 
                                  nombre= header.name, 
                                  ci=header.ci_nit, 
                                  email= header.email, 
@@ -260,7 +393,10 @@ class PDFService:
                                  celular= header.phone_number,
                                  codigo_proforma= header.id,
                                  codigo_garantia=nota_trabajo.codigo_garantia,
-                                 sucursal= header.sucursal)
-        self.nota_trabajo_body(body=detail)
+                                 sucursal= header.sucursal,
+                                 fecha_ingreso=nota_trabajo.entrada_vehiculo.strftime("%d/%m/%Y"),
+                                 responsable=nota_trabajo.responsable.username,
+                                 instalador=nota_trabajo.instaladar.name if nota_trabajo.instaladar is not None else '')
+        self.nota_trabajo_body(body=detail, proforma_detail = proforma_detail)
         self.canvas.showPage()
         self.canvas.save()

@@ -121,7 +121,7 @@ class Proforma_Business:
                 nota_venta.nota_trabajo = nota_trabajo
                 nota_venta.name = nota_trabajo.proforma.name
                 nota_venta.ci_nit = nota_trabajo.proforma.ci_nit
-                nota_venta.total_price = nota_trabajo.proforma.total_price
+                nota_venta.total_price = nota_trabajo.proforma.total_price - nota_trabajo.proforma.discount
                 nota_venta.created_by = user
                 nota_venta.created_on = datetime.now()
                 nota_venta.save()
@@ -148,13 +148,20 @@ class Proforma_Business:
     
     def get_proforma_queryset_by_role(self, user, qs):
         try:
-            sucursales = Sucursal.objects.prefetch_related('empleado')
-            sucursales = sucursales.filter(empleado__id = user.id, enable_to_install_windows_film = True)
-            if len(sucursales) > 0:
+            user_groups = list(user.groups.values_list('name',flat = True))
+            is_admin = 'Admin' in user_groups
+            if is_admin == True:
                 qs_result = qs.select_related('sucursal', 'car_model_id','car_model_id__car_brand_id')
-                qs_result = qs_result.filter(sucursal__id = sucursales[0].id, is_delete = False)
+                qs_result = qs_result.filter(is_delete = False)
             else:
-                qs_result = None
+                sucursales = Sucursal.objects.prefetch_related('empleado')
+                sucursales = sucursales.filter(empleado__id = user.id, enable_to_install_windows_film = True)
+                if len(sucursales) > 0:
+                    qs_result = qs.select_related('sucursal', 'car_model_id','car_model_id__car_brand_id')
+                    qs_result = qs_result.filter(sucursal__id = sucursales[0].id, is_delete = False)
+                else:
+                    qs_result = None
+            
             return qs_result
         except Exception as e:
             self.log_errors.error(f'algo salio mal, Proforma_Business - get_proforma_queryset_by_role {e}')

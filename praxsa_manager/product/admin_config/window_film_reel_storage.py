@@ -6,9 +6,9 @@ from django.http.request import HttpRequest
     
 class WindowFilmReelStorage(admin.ModelAdmin):
     list_display = ['window_film_reel_id', 
-                    'total_length']
+                    'total_length', 'nro_lote']
     search_fields = ['window_film_reel_id__window_film__name', 
-                    'total_length']
+                    'total_length', 'nro_lote']
     list_per_page = 10
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
