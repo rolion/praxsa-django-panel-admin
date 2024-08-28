@@ -8,7 +8,7 @@ class Pago_Business:
             with transaction.atomic():
                 paiment.cerrado = True
                 paiment.save()
-                proforma = paiment.proforma
+                proforma = paiment.nota_venta.nota_trabajo.proforma
                 proforma.is_paid = True
                 proforma.save()
                 nota_trabajo = proforma.nota_trabajo

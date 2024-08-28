@@ -98,10 +98,7 @@ class NotaVentaAdmin(admin.ModelAdmin):
             return True
         return False
     
-    def get_readonly_fields(self, request, obj=None):
-        if obj is None:
-            return []
-        return ['total_price', 'nota_trabajo']
+    
     
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
         qs = super().get_queryset(request)
