@@ -27,6 +27,14 @@ import functools
 
 import json
 from django.core.serializers.json import DjangoJSONEncoder
+
+from django_admin_listfilter_dropdown.filters import DropdownFilter, RelatedDropdownFilter, ChoiceDropdownFilter
+from rangefilter.filters import (
+    DateRangeFilterBuilder,
+    DateTimeRangeFilterBuilder,
+    NumericRangeFilterBuilder,
+    DateRangeQuickSelectListFilterBuilder,
+)
     
 class ReportDailySellAdmin(admin.ModelAdmin):
     list_display = [
@@ -39,7 +47,17 @@ class ReportDailySellAdmin(admin.ModelAdmin):
                     "get_dicount",
                     'get_total_pagar',
                     ]
-    search_fields = []
+    list_filter = [
+        ('nota_venta__nota_trabajo__proforma__sucursal', ChoiceDropdownFilter),
+        ('created_on', 
+         DateTimeRangeFilterBuilder(
+                title="Pagado en",
+                default_start=datetime.now(),
+                default_end=datetime.now(),
+            ),),
+        ('nota_venta__nota_trabajo__proforma__sucursal', RelatedDropdownFilter),]
+    
+    actions =[]
     form = PagosForm
     list_per_page = 10
     proforma_business = Proforma_Business()
@@ -61,21 +79,21 @@ class ReportDailySellAdmin(admin.ModelAdmin):
         # pero se visualiza el id de la proforma
         return format_html('<a href="{}">{}</a>', link, obj.nota_venta.nota_trabajo.id)
     get_nota_trabajo_id.short_description = 'Nota Trabajo'
-    get_nota_trabajo_id.admin_order_field = 'nota_trabajo__id'
+    get_nota_trabajo_id.admin_order_field = 'nota_venta__nota_trabajo__id'
 
     def get_sub_total(self, obj):
         proforma = obj.nota_venta.nota_trabajo.proforma
         total = proforma.total_price
         return f'{total}Bs'
     get_sub_total.short_description = 'Sub Total'
-    get_sub_total.admin_order_field = 'nota_venta__nota_trabajo__proform__price'
+    get_sub_total.admin_order_field = 'nota_venta__nota_trabajo__proform__total_price'
     
     def get_total_pagar(self, obj):
         proforma = obj.nota_venta.nota_trabajo.proforma
         total = proforma.total_price - proforma.discount
         return f'{total}Bs'
     get_total_pagar.short_description = 'Total Pagar'
-    get_total_pagar.admin_order_field = 'total_price'
+    get_total_pagar.admin_order_field = 'nota_venta__nota_trabajo__proforma__total_price'
     
     def get_costo_instalacion(self, obj):
         items = list(obj.nota_venta.nota_trabajo.proforma.items.all())
@@ -84,31 +102,42 @@ class ReportDailySellAdmin(admin.ModelAdmin):
         return f'{costo_instalacion}Bs'
     
     get_costo_instalacion.short_description = 'Costo Instalacion'
-    get_costo_instalacion.admin_order_field = 'costo_instalacion'
+    #get_costo_instalacion.admin_order_field = 'costo_instalacion'
     
     def get_dicount(self, obj):
         dicount = obj.nota_venta.nota_trabajo.proforma.discount
         return f'{dicount}Bs'
     
     get_dicount.short_description = 'Descuento'
-    get_dicount.admin_order_field = 'descuento'
+    get_dicount.admin_order_field = 'nota_venta__nota_trabajo__proforma__discount'
     
     def get_client_name(self, obj):
         name = obj.nota_venta.nota_trabajo.proforma.name
         return f'{name}'
     
     get_client_name.short_description = 'Cliente'
-    get_client_name.admin_order_field = 'client'
+    get_client_name.admin_order_field = 'nota_venta__nota_trabajo__proforma__name'
     
     def get_model(self, obj):
         name = obj.nota_venta.nota_trabajo.proforma.car_model_id.name
         return f'{name}'
     
     get_model.short_description = 'Vehiculo'
-    get_model.admin_order_field = 'vehiculo'
+    get_model.admin_order_field = 'nota_venta__nota_trabajo__proforma__car_model_id__name'
     
     
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
-        qs = super().get_queryset(request).prefetch_related("nota_venta__nota_trabajo","nota_venta__nota_trabajo__proforma", "nota_venta__nota_trabajo__proforma__items").select_related("nota_venta__nota_trabajo__proforma__car_model_id")
+        qs = super().get_queryset(request)
+        qs = qs.prefetch_related("nota_venta__nota_trabajo","nota_venta__nota_trabajo__proforma", "nota_venta__nota_trabajo__proforma__items")
+        qs = qs.select_related("nota_venta__nota_trabajo__proforma__car_model_id", "nota_venta__nota_trabajo__proforma__sucursal")
         # print("qs-->", list(qs))
         return  qs
+    
+    def has_add_permission(self, request, obj=None):
+        return False
+    
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        if 'delete_selected' in actions:
+            del actions['delete_selected']
+        return actions

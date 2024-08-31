@@ -146,7 +146,6 @@ class Proforma_Header(models.Model):
     is_delete = models.BooleanField(default=False)
     created_by = models.ForeignKey(User, verbose_name='Creado Por',on_delete=models.DO_NOTHING, null=False,related_name='proforma_created_by')
     is_close = models.BooleanField(default=False)
-    detalle = models.ManyToManyField(Window_Film, through='Proforma_Detail',  through_fields=("proforma_header", "window_film"))
     
     class Meta:
         verbose_name = 'Proforma'
@@ -175,7 +174,6 @@ class Nota_trabajo(models.Model):
     car_model = models.ForeignKey(Car_Model, on_delete=models.DO_NOTHING, verbose_name="Modelo", null=True, blank=True)
     nota_venta_created_on = models.DateTimeField(verbose_name="Fecha Orden Trabajo",  auto_now_add=True)
     is_close = models.BooleanField(default=False) 
-    detalle = models.ManyToManyField(Window_Film, through='Detalle_Nota_Trabajo',  through_fields=("nota_trabajo", "window_film"))
     def __str__(self) -> str:
         return f'Nota Trabajo {self.proforma.id}'
 
