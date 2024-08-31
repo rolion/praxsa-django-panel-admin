@@ -12,6 +12,10 @@ http {
         server proforma:4000;
     }
 
+    upstream praxsa_db_manager {
+        server adminer:8080;
+    }
+
     server {
 
         listen 80;
@@ -53,6 +57,23 @@ http {
             proxy_set_header Host $http_host;
             proxy_redirect off;
             proxy_pass http://praxsa_page;
+        }
+
+    }
+
+    server {
+
+        listen 80;
+
+        server_name honey.praxsasrl.store;
+
+        location / {
+
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Host $http_host;
+            proxy_redirect off;
+            proxy_pass http://praxsa_db_manager;
         }
 
     }

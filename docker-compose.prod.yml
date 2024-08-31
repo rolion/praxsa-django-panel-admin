@@ -37,8 +37,8 @@ services:
       - static:/praxsa_manager/staticfiles
       - laminas:/etc/nginx/html
     environment:
-      - VIRTUAL_HOST=panel.praxsasrl.store,www.panel.praxsasrl.store,praxsasrl.store,laminas.praxsasrl.store,www.laminas.praxsasrl.store
-      - LETSENCRYPT_HOST=panel.praxsasrl.store,www.panel.praxsasrl.store,praxsasrl.store,laminas.praxsasrl.store,www.laminas.praxsasrl.store
+      - VIRTUAL_HOST=panel.praxsasrl.store,www.panel.praxsasrl.store,praxsasrl.store,laminas.praxsasrl.store,www.laminas.praxsasrl.store,honey.praxsasrl.store
+      - LETSENCRYPT_HOST=panel.praxsasrl.store,www.panel.praxsasrl.store,praxsasrl.store,laminas.praxsasrl.store,www.laminas.praxsasrl.store,honey.praxsasrl.store
       - LETSENCRYPT_EMAIL=roleonm@gmail.com
     networks:
       - proxy
@@ -80,13 +80,13 @@ services:
         limits:
           memory: 100M
 
-  # adminer:
-  #   image: adminer
-  #   restart: always
-  #   ports:
-  #     - 8080:8080
-  #   networks:
-  #     - nginx_nw
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+    networks:
+      - nginx_nw
 
 volumes:
   postgres:
