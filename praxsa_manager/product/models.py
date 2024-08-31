@@ -146,7 +146,6 @@ class Proforma_Header(models.Model):
     is_delete = models.BooleanField(default=False)
     created_by = models.ForeignKey(User, verbose_name='Creado Por',on_delete=models.DO_NOTHING, null=False,related_name='proforma_created_by')
     is_close = models.BooleanField(default=False)
-
     
     class Meta:
         verbose_name = 'Proforma'
@@ -175,13 +174,29 @@ class Nota_trabajo(models.Model):
     car_model = models.ForeignKey(Car_Model, on_delete=models.DO_NOTHING, verbose_name="Modelo", null=True, blank=True)
     nota_venta_created_on = models.DateTimeField(verbose_name="Fecha Orden Trabajo",  auto_now_add=True)
     is_close = models.BooleanField(default=False) 
-
     def __str__(self) -> str:
         return f'Nota Trabajo {self.proforma.id}'
 
     class Meta:
         verbose_name = 'Nota Trabajo'
         ordering = ["-id","-nota_venta_created_on"]
+        
+class Detalle_Nota_Trabajo(models.Model):
+    
+    nota_trabajo = models.ForeignKey(Nota_trabajo, on_delete=models.DO_NOTHING, related_name='detalle_trabajo',verbose_name='Nota de trabajo')
+    window_film = models.ForeignKey(Window_Film, on_delete=models.DO_NOTHING, related_name='detalle_trabajo',verbose_name="Lámina", null=True)
+    # detalle_proforma = models.ForeignKey(Proforma_Detail, on_delete=models.DO_NOTHING, blank=True, null=True, verbose_name="Detalle")
+    width = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Ancho" )
+    length = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Largo")
+    # quantity = models.PositiveIntegerField(default=0, verbose_name="Cantidad")
+    
+    # car_part = models.ForeignKey(Car_Part, on_delete=models.DO_NOTHING, blank=True, null=True, verbose_name="Item")
+    
+    class Meta:
+        verbose_name = 'Resumen Trabajo'
+    
+    def __str__(self) -> str:
+        return f'Resumen'
 
 class Proxy_Nota_trabajo(Nota_trabajo):
     class Meta:
@@ -193,8 +208,9 @@ class Proxy_Nota_trabajo(Nota_trabajo):
     
 class Proforma_Detail(models.Model):
     helper = Proforma_Helper()
-    inventario = models.ForeignKey(inventario, null=True, on_delete=models.DO_NOTHING)
+    inventario = models.ForeignKey(inventario, related_name="lamina_inventario",null=True, on_delete=models.DO_NOTHING)
     proforma_header = models.ForeignKey(Proforma_Header, related_name='items', on_delete=models.DO_NOTHING, verbose_name="Proforma")
+    window_film = models.ForeignKey(Window_Film, on_delete=models.DO_NOTHING, verbose_name="Lámina", null=True)
     car_part = models.ForeignKey(Car_Part, on_delete=models.DO_NOTHING, blank=True, null=True, verbose_name="Item")
     width = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Ancho" )
     length = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Largo")
@@ -202,28 +218,12 @@ class Proforma_Detail(models.Model):
     installation_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Costo Instalación")
     window_film_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Costo Lámina")
     quantity = models.PositiveIntegerField(default=0, verbose_name="Cantidad")
-    window_film = models.ForeignKey(Window_Film, on_delete=models.DO_NOTHING, verbose_name="Lámina", null=True)
+    
     class Meta:
         verbose_name = 'Detalle Venta'
     
     def __str__(self) -> str:
         return f'Detalle'
-    
-class Detalle_Nota_Trabajo(models.Model):
-    
-    nota_trabajo = models.ForeignKey(Nota_trabajo, on_delete=models.DO_NOTHING, related_name='detalle_trabajo',verbose_name='Nota de trabajo')
-    # detalle_proforma = models.ForeignKey(Proforma_Detail, on_delete=models.DO_NOTHING, blank=True, null=True, verbose_name="Detalle")
-    width = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Ancho" )
-    length = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Largo")
-    # quantity = models.PositiveIntegerField(default=0, verbose_name="Cantidad")
-    window_film = models.ForeignKey(Window_Film, on_delete=models.DO_NOTHING, verbose_name="Lámina", null=True)
-    # car_part = models.ForeignKey(Car_Part, on_delete=models.DO_NOTHING, blank=True, null=True, verbose_name="Item")
-
-    class Meta:
-        verbose_name = 'Resumen Trabajo'
-    
-    def __str__(self) -> str:
-        return f'Resumen'
     
 
 class Nota_Venta(models.Model):
@@ -244,6 +244,8 @@ class Nota_Venta(models.Model):
     def __str__(self) -> str:
         return f'Nota Venta {self.nota_trabajo.proforma.id}'
     
+
+    
 class pago(models.Model):
     helper = Pagos_Helper()
     nota_venta = models.OneToOneField(Nota_Venta, 
@@ -261,4 +263,10 @@ class pago(models.Model):
                                    verbose_name='Creado por')
     def __str__(self) -> str:
         return f'Pago {self.id}'
+    
+class Proxy_Pagos(pago):
+    class Meta:
+        proxy = True
+        verbose_name = 'Reporte Ventas Diarias'
+        ordering = ["-id","-created_on"]
 

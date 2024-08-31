@@ -36,6 +36,7 @@ class PagosAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         obj.created_by = request.user
         obj.created_on = datetime.now()
+        obj.cerrado = True
         super().save_model(request, obj, form, change)
 
     @admin.display(empty_value="0", description='Monto' )
@@ -72,6 +73,7 @@ class PagosAdmin(admin.ModelAdmin):
     def concluir_transaccion(self, request: HttpRequest, queryset: QuerySet):
         try:
             pb = Pago_Business()
+
             [pb.cerrar_pago(qs) for qs in list(queryset)]
             
         except Exception as e:
