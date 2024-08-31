@@ -13,7 +13,7 @@ http {
     }
 
     upstream praxsa_db_manager {
-        server praxsa-adminer-1:8080;
+        server praxsa-adminer-1:8081;
     }
 
     server {
