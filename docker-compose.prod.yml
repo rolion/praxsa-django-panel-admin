@@ -83,7 +83,7 @@ services:
   adminer:
     image: adminer
     restart: always
-    ports:
+    expose:
       - "8080"
     networks:
       - proxy
