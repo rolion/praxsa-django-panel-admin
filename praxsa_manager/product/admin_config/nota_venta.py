@@ -22,7 +22,8 @@ import io
     
 class NotaVentaAdmin(admin.ModelAdmin):
     list_display = [
-                    'get_nota_venta_id',
+        "id",
+                    'get_proforma_id',
                     'get_nota_trabajo_id',
                     'get_total_pagar',
                     'view_notas_created_on'
@@ -53,13 +54,13 @@ class NotaVentaAdmin(admin.ModelAdmin):
                 }),
                 ]
     
-    def get_nota_venta_id(self, obj):
+    def get_proforma_id(self, obj):
         # link para ver la nota de trabajo
-        link = reverse("admin:product_nota_venta_change", args=[ obj.id])
+        link = reverse("admin:product_nota_venta_change", args=[ obj.nota_trabajo.proforma.id])
         # pero se visualiza el id de la proforma
         return format_html('<a href="{}">{}</a>', link, obj.nota_trabajo.proforma.id)
-    get_nota_venta_id.short_description = 'Nota Venta'
-    get_nota_venta_id.admin_order_field = 'nota_trabajo__proforma__id'
+    get_proforma_id.short_description = 'Proforma'
+    get_proforma_id.admin_order_field = 'nota_trabajo__proforma__id'
 
     def get_nota_trabajo_id(self, obj):
         # link para ver la nota de trabajo
