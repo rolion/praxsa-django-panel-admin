@@ -84,9 +84,9 @@ services:
     image: adminer
     restart: always
     ports:
-      - 8080:8080
+      - "8080"
     networks:
-      - nginx_nw
+      - proxy
 
 volumes:
   postgres:
