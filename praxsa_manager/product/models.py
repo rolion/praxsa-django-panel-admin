@@ -177,7 +177,7 @@ class Nota_trabajo(models.Model):
     is_close = models.BooleanField(default=False) 
 
     def __str__(self) -> str:
-        return f'Nota Trabajo {self.proforma.id}'
+        return f'Nota Trabajo {self.id }'
 
     class Meta:
         verbose_name = 'Nota Trabajo'
