@@ -5,6 +5,8 @@ from django.db.models.query import QuerySet
 from django.http.request import HttpRequest
 from django.contrib import messages
 from django.db import transaction
+
+from ..Forms.Sale_header import SaleHeaderForm
 from ..Forms.nota_trabajo import NotaTrabajoForm
 from ..business.proforma import Proforma_Business
 from ..business.orden_trabajo import Orden_Trabajo_Business
@@ -25,7 +27,7 @@ from rangefilter.filters import (
     
 class ReportProformaAdmin(admin.ModelAdmin):
     list_display = [
-                    'id',
+                    'get_proforma_id',
                     'get_created_on_date_format',
                     'name', 
                     'car_model_id',
@@ -47,11 +49,19 @@ class ReportProformaAdmin(admin.ModelAdmin):
                 default_end=datetime(2030, 1, 1),
             ),),]
     search_fields = ["id", 'sales_type', 'proforma_created_on', 'name', 'email', 'car_model_id__name', 'car_plate',]
-    form = NotaTrabajoForm
+    form = SaleHeaderForm
     orden_trabajo_busi =Orden_Trabajo_Business()
     proforma_business = Proforma_Business()
     list_per_page = 10
     # actions =["print_nota_trabajo", 'create_sales_note']
+    
+    def get_proforma_id(self, obj):
+        # link para ver la nota de trabajo
+        link = reverse("admin:product_proforma_header_change", args=[ obj.id])
+        # pero se visualiza el id de la proforma
+        return format_html('<a href="{}">{}</a>', link, obj.id)
+    get_proforma_id.short_description = 'Proforma'
+    get_proforma_id.admin_order_field = 'id'
 
     def get_sucursal(self, obj):
         return obj.proforma.sucursal.name
@@ -92,10 +102,11 @@ class ReportProformaAdmin(admin.ModelAdmin):
         return  result
 
     def has_change_permission(self, request: HttpRequest, obj=None):
-        if obj is None:
-            return True
-        if obj.is_close == False:
-            return True
+        # if obj is None:
+        #     return True
+        # if obj.is_close == False:
+        #     return True
+        return False
 
     def get_readonly_fields(self, request, obj=None):
         # print ('admin obj', obj.sales_status )
