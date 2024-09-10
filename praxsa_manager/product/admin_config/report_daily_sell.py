@@ -39,6 +39,7 @@ from rangefilter.filters import (
 class ReportDailySellAdmin(admin.ModelAdmin):
     list_display = [
                     'get_nota_venta_id',
+                    'get_sales_type',
                     'get_nota_trabajo_id',
                     "get_client_name",
                     "get_model",
@@ -65,9 +66,15 @@ class ReportDailySellAdmin(admin.ModelAdmin):
     user_helper = User_Helper()
     proforma_helper = Proforma_Helper()
     
+    def get_sales_type(self, obj):
+        # link para ver la nota de trabajo
+        # pero se visualiza el id de la proforma
+        return obj.nota_venta.nota_trabajo.proforma.sales_type
+    get_sales_type.short_description = 'Tipo Venta'
+    
     def get_nota_venta_id(self, obj):
         # link para ver la nota de trabajo
-        link = reverse("admin:product_nota_venta_change", args=[ obj.id])
+        link = reverse("admin:product_nota_venta_change", args=[ obj.nota_venta.id])
         # pero se visualiza el id de la proforma
         return format_html('<a href="{}">{}</a>', link, obj.nota_venta.nota_trabajo.proforma.id)
     get_nota_venta_id.short_description = 'Nota Venta'
@@ -119,7 +126,7 @@ class ReportDailySellAdmin(admin.ModelAdmin):
     get_client_name.admin_order_field = 'nota_venta__nota_trabajo__proforma__name'
     
     def get_model(self, obj):
-        name = obj.nota_venta.nota_trabajo.proforma.car_model_id.name
+        name = obj.nota_venta.nota_trabajo.proforma.car_model_id.name if obj.nota_venta.nota_trabajo.proforma.car_model_id else ""
         return f'{name}'
     
     get_model.short_description = 'Vehiculo'

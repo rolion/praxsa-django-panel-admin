@@ -232,7 +232,7 @@ class ProformaAdmin(admin.ModelAdmin):
                         entry.is_delete = True
                         entry.save()
             except Exception as e:
-                print(e)
+                self.log_debug.info(str(e))
                 messages.set_level(request, messages.ERROR) 
                 messages.error(
                     request=request,
