@@ -1,0 +1,84 @@
+from typing import Any
+from django.http.request import HttpRequest
+from django.contrib import admin
+from django.db.models.query import QuerySet
+from django.http.request import HttpRequest
+from django.contrib import messages
+from django.db import transaction
+from ..models import inventario
+
+from product.Forms.pagos import PagosForm
+from product.business.user import User_Business
+from product.helper.proforma import Proforma_Helper
+from product.helper.user import User_Helper
+from django.urls import reverse
+from django.utils.html import format_html
+from django.db.models import Count, Sum, Avg
+import functools
+
+from django_admin_listfilter_dropdown.filters import DropdownFilter, RelatedDropdownFilter, ChoiceDropdownFilter
+from rangefilter.filters import (
+    DateRangeFilterBuilder,
+    DateTimeRangeFilterBuilder,
+    NumericRangeFilterBuilder,
+    DateRangeQuickSelectListFilterBuilder,
+)
+    
+class ReportStorageAdmin(admin.ModelAdmin):
+    list_display = [
+        "sucursal",
+        "get_lamina_name",
+        "get_width",
+        "get_metros_disponibles"
+    ]
+    
+    search_fields = ["bobina__window_film__name",]
+    
+    list_filter = [
+        ('sucursal', RelatedDropdownFilter),]
+    
+    actions =[]
+    list_per_page = 10
+    
+    def get_lamina_name(self, obj):
+        # link para ver la nota de trabajo
+        # pero se visualiza el id de la proforma
+        return obj.bobina.window_film.name
+    get_lamina_name.short_description = 'Lamina'
+    
+    def get_width(self, obj):
+        # link para ver la nota de trabajo
+        # pero se visualiza el id de la proforma
+        return obj.bobina.width
+    get_width.short_description = 'Ancho'
+    
+    def get_metros_disponibles(self, obj):
+        # link para ver la nota de trabajo
+        # pero se visualiza el id de la proforma
+        metrod_disponibles =  next(inv["total_to_install"] for inv in self.aggregated_result if  inv["sucursal__id"]== obj.sucursal.id and inv["bobina__window_film__id"]== obj.bobina.window_film.id and inv["bobina__width"] == obj.bobina.width)
+        return metrod_disponibles
+    get_metros_disponibles.short_description = 'Metros disponibles'
+    
+    aggregated_result = []
+    
+    
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
+        qs = super().get_queryset(request)
+        result = inventario.objects.select_related("sucursal", "bobina", "bobina__window_film")
+        result = result.values("id","sucursal__id","sucursal__name", "bobina__window_film__id","bobina__window_film__name", "bobina__width")
+        result = result.annotate(total_to_install=Sum('to_install'))
+        result = result.annotate(total_installed = Sum('installed'))
+        result = result.annotate(avg_costo_compra = Sum('precio_compra_mtr_lineal'))
+        result = result.order_by("sucursal__name", "bobina__window_film__name", "bobina__width")
+        self.aggregated_result= result
+        print(result)
+        return  qs.filter(id__in = [store["id"] for store in result])
+    
+    def has_add_permission(self, request, obj=None):
+        return False
+    
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        if 'delete_selected' in actions:
+            del actions['delete_selected']
+        return actions

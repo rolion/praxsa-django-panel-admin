@@ -125,6 +125,10 @@ class inventario(models.Model):
     nro_lote = models.CharField(max_length=15,validators=[alphanumeric], null=True, verbose_name='Nro. Lote')
     def __str__(self):
         return f'{self.sucursal.name}-{self.bobina.window_film.name}'
+    
+class inventario_proxy(inventario):
+    class Meta:
+        proxy = True
 
 class Proforma_Header(models.Model):
     helper = Proforma_Helper()
