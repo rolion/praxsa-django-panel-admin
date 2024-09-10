@@ -129,6 +129,7 @@ class inventario(models.Model):
 class inventario_proxy(inventario):
     class Meta:
         proxy = True
+        verbose_name = 'Reporte Inventario'
 
 class Proforma_Header(models.Model):
     helper = Proforma_Helper()
@@ -271,6 +272,6 @@ class pago(models.Model):
 class Proxy_Pagos(pago):
     class Meta:
         proxy = True
-        verbose_name = 'Reporte Ventas Diarias'
+        verbose_name = 'Reporte Ventas Diaria'
         ordering = ["-id","-created_on"]
 

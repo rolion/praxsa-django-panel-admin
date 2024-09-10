@@ -65,14 +65,13 @@ class ReportStorageAdmin(admin.ModelAdmin):
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
         qs = super().get_queryset(request)
         result = inventario.objects.select_related("sucursal", "bobina", "bobina__window_film")
-        result = result.values("id","sucursal__id","sucursal__name", "bobina__window_film__id","bobina__window_film__name", "bobina__width")
+        result = result.values("sucursal__id","sucursal__name", "bobina__window_film__id","bobina__window_film__name", "bobina__width")
         result = result.annotate(total_to_install=Sum('to_install'))
         result = result.annotate(total_installed = Sum('installed'))
         result = result.annotate(avg_costo_compra = Sum('precio_compra_mtr_lineal'))
         result = result.order_by("sucursal__name", "bobina__window_film__name", "bobina__width")
         self.aggregated_result= result
-        print(result)
-        return  qs.filter(id__in = [store["id"] for store in result])
+        return qs.select_related("sucursal", "bobina", "bobina__window_film").distinct("sucursal__id","bobina__window_film__id", "bobina__width").order_by("sucursal__id","bobina__window_film__id", "bobina__width")
     
     def has_add_permission(self, request, obj=None):
         return False
