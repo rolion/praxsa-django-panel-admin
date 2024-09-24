@@ -196,8 +196,13 @@ class PDFService:
                              x = self.x_position +10, 
                              y=initialY + (base_increment +0.7) * 9)
       self.canvas.drawString(text='Lamnia', 
-                             x = self.x_position +200, 
+                             x = self.x_position +150, 
                              y=initialY + (base_increment +0.7) * 9)
+      
+      self.canvas.drawString(text='Ancho', 
+                             x = self.x_position +280, 
+                             y=initialY + (base_increment +0.7) * 9)
+      
       self.canvas.drawString(text='Precio Total', 
                              x = self.x_position +400, 
                              y=initialY + (base_increment +0.7) * 9)
@@ -213,7 +218,11 @@ class PDFService:
                              x = self.x_position +10, 
                              y=initialY + (base_increment) * row_increment)
         self.canvas.drawString(text=item.window_film.name, 
-                                x = self.x_position +200, 
+                                x = self.x_position +150, 
+                                y=initialY + (base_increment) * row_increment)
+        
+        self.canvas.drawString(text=f'{str(item.width)}', 
+                                x = self.x_position +280, 
                                 y=initialY + (base_increment) * row_increment)
         self.canvas.drawString(text=f'{str(item.sub_total)} Bs', 
                                 x = self.x_position +400, 
