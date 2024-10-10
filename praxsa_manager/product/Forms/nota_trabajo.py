@@ -7,6 +7,7 @@ from ..helper.proforma import Proforma_Helper
 
 class NotaTrabajoForm(ModelForm):
     # codigo_garantia = forms.CharField(max_length=12)
+    helper = Proforma_Helper()
 
     class Meta:
         model = Nota_trabajo

@@ -115,23 +115,27 @@ class Proforma_Business:
     def crear_nota_venta(self, nota_trabajo, user):
         if nota_trabajo.proforma.is_close == False:
                     raise Exception(f'la proforma {nota_trabajo.proforma.id}, debe estar cerrada antes de crear la nota de venta')
-        if nota_trabajo.codigo_garantia is not None:
-            try:
-                nota_venta = Nota_Venta()
-                nota_venta.nota_trabajo = nota_trabajo
-                nota_venta.name = nota_trabajo.proforma.name
-                nota_venta.ci_nit = nota_trabajo.proforma.ci_nit
-                nota_venta.total_price = nota_trabajo.proforma.total_price - nota_trabajo.proforma.discount
-                nota_venta.created_by = user
-                nota_venta.created_on = datetime.now()
-                nota_venta.save()
-                nota_trabajo.is_close = True
-                nota_trabajo.save()
-            except Exception as e:
-                self.log_errors.error(f'algo salio mal, contactar administrador {e}')
-                raise Exception('algo salio mal, contactar administrador')
-        else:
+        if nota_trabajo.codigo_garantia is  None:
             raise Exception('Debe agregar el código de Garantía')
+        
+        if nota_trabajo.proforma.sales_type == self.helper.tipo_venta_instalacion and nota_trabajo.instaladar is  None:
+            raise Exception('Debe agregar un Instalador')
+        try:
+            nota_venta = Nota_Venta()
+            nota_venta.nota_trabajo = nota_trabajo
+            nota_venta.name = nota_trabajo.proforma.name
+            nota_venta.ci_nit = nota_trabajo.proforma.ci_nit
+            nota_venta.total_price = nota_trabajo.proforma.total_price - nota_trabajo.proforma.discount
+            nota_venta.created_by = user
+            nota_venta.created_on = datetime.now()
+            nota_venta.save()
+            nota_trabajo.is_close = True
+            nota_trabajo.save()
+        except Exception as e:
+            self.log_errors.error(f'algo salio mal, contactar administrador {e}')
+            raise Exception('algo salio mal, contactar administrador')
+
+            
 
     
     def delete_fisica(self, user, proforma):
