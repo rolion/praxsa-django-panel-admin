@@ -32,6 +32,11 @@ class ReportUtilidadAdmin(admin.ModelAdmin):
         "get_utilidad"
     ]
     
+    list_filter = [
+        ('sucursal', ChoiceDropdownFilter),
+        ('sucursal', RelatedDropdownFilter),
+        ('bobina', RelatedDropdownFilter)]
+    
     def get_utilidad(self, obj):
         return str( round(obj.sum_film_utilidad,2))+" Bs"
     get_utilidad.short_description = 'Utilidad Lamina'
