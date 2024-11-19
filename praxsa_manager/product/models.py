@@ -130,6 +130,11 @@ class inventario_proxy(inventario):
     class Meta:
         proxy = True
         verbose_name = 'Reporte Inventario'
+        
+class utilidades(inventario):
+    class Meta:
+        proxy = True
+        verbose_name = 'Reporte Utilidades'
 
 class Proforma_Header(models.Model):
     helper = Proforma_Helper()
@@ -223,6 +228,7 @@ class Proforma_Detail(models.Model):
     installation_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Costo Instalación")
     window_film_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Costo Lámina")
     quantity = models.PositiveIntegerField(default=0, verbose_name="Cantidad")
+    
     
     class Meta:
         verbose_name = 'Detalle Venta'
