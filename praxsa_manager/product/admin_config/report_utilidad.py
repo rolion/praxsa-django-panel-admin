@@ -4,13 +4,15 @@ from django.contrib import admin
 from django.db.models.query import QuerySet
 from django.http.request import HttpRequest
 
+from product.helper.proforma import Proforma_Helper
+
 
 # from ..Forms.daily_sales_form import NotaVentaForm
 from ..models import inventario
 
 import io
 from datetime import datetime
-from django.db.models import Count, Sum, Q, F
+from django.db.models import Count, Sum, Q, F, Case, When
 import functools
 
 
@@ -42,11 +44,19 @@ class ReportUtilidadAdmin(admin.ModelAdmin):
     get_utilidad.short_description = 'Utilidad Lamina'
     get_utilidad.admin_order_field = 'sum_film_utilidad'
     
+    helper = Proforma_Helper()
+    
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
+        
         qs = super().get_queryset(request)
         qs = inventario.objects.all().select_related(
             "sucursal","bobina", "bobina__window_film").filter(lamina_inventario__proforma_header__nota_trabajo__nota_venta__isnull=False).annotate(
-                sum_film_utilidad=Sum(F("lamina_inventario__window_film_price") * F("lamina_inventario__length")))
+                sum_film_utilidad=Sum(Case(
+                    When(lamina_inventario__proforma_header__sales_type=self.helper.tipo_venta_metro_lineal, 
+                         then=F("lamina_inventario__window_film_price") * F("lamina_inventario__length")),
+                    When(lamina_inventario__proforma_header__sales_type=self.helper.tipo_venta_instalacion, 
+                         then=F("lamina_inventario__window_film_price") * (F("lamina_inventario__length") * F("lamina_inventario__quantity")))   
+                         )))
         return  qs
     
     def has_add_permission(self, request, obj=None):
