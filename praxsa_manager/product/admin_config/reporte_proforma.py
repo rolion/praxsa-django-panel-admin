@@ -46,8 +46,8 @@ class ReportProformaAdmin(admin.ModelAdmin):
         ('proforma_created_on', 
          DateTimeRangeFilterBuilder(
                 title="Creado en",
-                default_start=datetime.now() - timedelta(days = 1),
-                default_end=datetime.now() ,
+                default_start=datetime.now().replace(hour=0, minute=0, second=0),
+                default_end=datetime.now().replace(hour=23, minute=59, second=59) ,
             ),),]
     search_fields = ["id", 'sales_type', 'proforma_created_on', 'name', 'email', 'car_model_id__name', 'car_plate',]
     form = SaleHeaderForm
