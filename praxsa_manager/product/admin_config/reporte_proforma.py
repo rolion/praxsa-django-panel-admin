@@ -17,6 +17,7 @@ from django.utils.html import format_html
 from django.http import FileResponse
 import io
 from datetime import datetime
+from datetime import timedelta
 from django_admin_listfilter_dropdown.filters import DropdownFilter, RelatedDropdownFilter, ChoiceDropdownFilter
 from rangefilter.filters import (
     DateRangeFilterBuilder,
@@ -45,8 +46,8 @@ class ReportProformaAdmin(admin.ModelAdmin):
         ('proforma_created_on', 
          DateTimeRangeFilterBuilder(
                 title="Creado en",
-                default_start=datetime(2020, 1, 1),
-                default_end=datetime(2030, 1, 1),
+                default_start=datetime.now() - timedelta(days = 1),
+                default_end=datetime.now() ,
             ),),]
     search_fields = ["id", 'sales_type', 'proforma_created_on', 'name', 'email', 'car_model_id__name', 'car_plate',]
     form = SaleHeaderForm
