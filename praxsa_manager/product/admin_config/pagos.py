@@ -12,49 +12,12 @@ class PagosAdmin(admin.ModelAdmin):
                     'view_proforma_monto',
                     'view_created_on',
                     'tipo_pago']
-    # readonly_fields = ('nota_venta',)
+    # readonly_fields = ('nota_venta','monto')
     exclude =  ['cerrado','created_by']
     actions = ['concluir_transaccion']
     list_per_page = 10
     form = PagosForm
 
-    # def get_form(self, request, obj=None, **kwargs):
-    #     form = super(PagosAdmin, self).get_form(request, obj, **kwargs)
-    #     # if (request.GET):
-    #         # pago_form = PagosForm(request.GET)
-    #         # pago_form.is_valid()
-    #         # venta = Nota_Venta.objects.select_related('nota_trabajo').get(id = pago_form.cleaned_data['nota_venta'].id)
-    #         # form.base_fields['monto'].initial = venta.total_price
-    #         # form.base_fields['monto'].disabled = True
-    #         # print('base fieds-->>', form.base_fields)
-    #     nota_venta_init = request.GET.get("nota_venta", None)
-    #     kwargs['form'] = self.form  # Asegurar que se use el ModelForm
-    #     form = super().get_form(request, obj, **kwargs)
-    #     form.base_fields['nota_venta'].initial = nota_venta_init  # Asignar el valor inicial
-    #     pago_form = PagosForm(request.GET)
-    #     pago_form.is_valid()
-    #     venta = Nota_Venta.objects.select_related('nota_trabajo').get(id = pago_form.cleaned_data['nota_venta'].id)
-    #     form.base_fields['monto'].initial = venta.total_price
-    #     form.base_fields['monto'].disabled = True
-    #     return form
-        # return form
-    
-    # def get_readonly_fields(self, request, obj=None):
-    #     print('obj', obj)
-    #     if obj is None:
-    #         return []
-    #     return ['nota_venta', ]
-    # def get_changeform_initial_data(self, request):
-    #     """
-    #     Sobreescribe la función para obtener valores iniciales desde GET.
-    #     """
-    #     initial = super().get_changeform_initial_data(request)
-    #     nota_venta_id = request.GET.get("nota_venta")  # Obtener el parámetro GET
-    #     if nota_venta_id:
-    #         nota_venta = Nota_Venta.objects.select_related('nota_trabajo').get(id = nota_venta_id)
-    #         initial["nota_venta"] = nota_venta
-    #         initial["monto"] = nota_venta.total_price
-    #     return initial
     def get_form(self, request, obj=None, **kwargs):
         """
         Personaliza el formulario para recibir el valor de GET y pasarlo al ModelForm.
@@ -70,6 +33,11 @@ class PagosAdmin(admin.ModelAdmin):
             form.base_fields['monto'].initial = venta.total_price
             form.base_fields['monto'].disabled = True
         return form
+    
+    def get_readonly_fields(self, request, obj=None):
+        if not obj:
+            return []
+        return ('nota_venta','monto')
 
     def get_form_kwargs(self, request, obj=None):
         """
@@ -77,7 +45,6 @@ class PagosAdmin(admin.ModelAdmin):
         """
         kwargs = super().get_form_kwargs(request, obj)
         if not obj:  # Solo en la creación
-            print("---->>")
             kwargs.update({'nota_venta_init': request.GET.get("nota_venta", None)})
         return kwargs
 
@@ -89,7 +56,7 @@ class PagosAdmin(admin.ModelAdmin):
             obj.nota_venta =  Nota_Venta.objects.select_related('nota_trabajo').get(id = nota_venta)
             obj.created_by = request.user
             obj.created_on = datetime.now()
-            obj.cerrado = True
+            obj.cerrado = False
         super().save_model(request, obj, form, change)
 
     @admin.display(empty_value="0", description='Monto' )
@@ -109,12 +76,13 @@ class PagosAdmin(admin.ModelAdmin):
     def has_change_permission(self, request: HttpRequest, obj=None):
         if obj is None:
             return True
-        user = request.user
+        # user = request.user
+        # if user.is_superuser:
+        #     return True
         if obj.cerrado == True:
             return False
-        if user.is_superuser:
-            return True
-        return False
+        
+        return True
 
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:

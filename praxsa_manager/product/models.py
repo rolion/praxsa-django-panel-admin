@@ -99,6 +99,7 @@ class Sucursal(models.Model):
     address = models.CharField(max_length=400, default=" ", null=False, verbose_name="Dirección")
     enable_to_install_windows_film = models.BooleanField(default=True, verbose_name="Habilitado")
     empleado = models.ManyToManyField(User, verbose_name='Empleados')
+    phone_number = models.CharField(validators=[RegexValidator('(\+)*\d{7,11}')], null=True, verbose_name="Numero Telefónico")
     # administrador = models.ManyToManyField(User, verbose_name='Admin Sucursal')
     def __str__(self):
         return f'{self.name}'
