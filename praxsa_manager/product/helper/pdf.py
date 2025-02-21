@@ -299,7 +299,7 @@ class PDFService:
         y = 0 
         for item in body:
             lotes = [detail.inventario.nro_lote for detail in proforma_detail if detail.window_film.id == item.window_film.id and detail.width == item.width and detail.length == item.length  ]
-            lote = lotes[0] if len(lotes) > 0 else ""
+            lote = lotes[0] if len(lotes) > 0 and lotes[0] is not None  else ""
             y=initialY + (base_increment) * row_increment
             self.canvas.drawString(text= item.window_film.name, 
                                 x = self.x_position +10, 
