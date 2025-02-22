@@ -1,8 +1,10 @@
 from django.contrib import admin
 
+from product.admin_config.report_utilidad import ReportUtilidadAdmin
+
 admin.site.site_header = 'Praxsa Panel Admin'
 
-from .models import Car_Brand, Car_Model, Car_Part, Car_Model_Part, Window_Film, Window_Film_Reel, Client, pago, Proxy_Nota_trabajo, Proforma_Detail
+from .models import Car_Brand, Car_Model, Car_Part, Car_Model_Part, Window_Film, Window_Film_Reel, Client, pago, Proxy_Nota_trabajo, Proforma_Detail, utilidades
 
 from .models import Proforma_Header, Sucursal, inventario, Nota_trabajo, Nota_Venta , Proxy_Proforma, Proxy_Pagos
 from .models import inventario_proxy
@@ -45,7 +47,7 @@ admin.site.register(Proxy_Proforma, ReportProformaAdmin)
 admin.site.register(pago, PagosAdmin)
 admin.site.register(Proxy_Pagos, ReportDailySellAdmin)
 admin.site.register(inventario_proxy, ReportStorageAdmin)
-
+admin.site.register(utilidades, ReportUtilidadAdmin)
         
 
 admin.site.register(Nota_Venta, NotaVentaAdmin)

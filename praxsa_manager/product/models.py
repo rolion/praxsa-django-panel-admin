@@ -99,6 +99,7 @@ class Sucursal(models.Model):
     address = models.CharField(max_length=400, default=" ", null=False, verbose_name="Dirección")
     enable_to_install_windows_film = models.BooleanField(default=True, verbose_name="Habilitado")
     empleado = models.ManyToManyField(User, verbose_name='Empleados')
+    phone_number = models.CharField(validators=[RegexValidator('(\+)*\d{7,11}')], null=True, verbose_name="Numero Telefónico")
     # administrador = models.ManyToManyField(User, verbose_name='Admin Sucursal')
     def __str__(self):
         return f'{self.name}'
@@ -130,6 +131,11 @@ class inventario_proxy(inventario):
     class Meta:
         proxy = True
         verbose_name = 'Reporte Inventario'
+        
+class utilidades(inventario):
+    class Meta:
+        proxy = True
+        verbose_name = 'Reporte Utilidades'
 
 class Proforma_Header(models.Model):
     helper = Proforma_Helper()
@@ -172,7 +178,7 @@ class Nota_trabajo(models.Model):
     entrada_vehiculo = models.DateTimeField(verbose_name="Entrada Vehiculo", null=True, blank=True)
     salida_vehiculo = models.DateTimeField(verbose_name="Salida Vehiculo", null=True, blank=True)
     observaciones = models.TextField(verbose_name='Observaciones', blank=True, null=True)
-    instaladar = models.ForeignKey(instalador, verbose_name='Instalador',on_delete=models.DO_NOTHING, null=True, related_name='instalador_laminas_nota_trabajo')
+    instaladar = models.ForeignKey(instalador, verbose_name='Instalador',on_delete=models.DO_NOTHING, null=True, related_name='instalador_laminas_nota_trabajo', blank=True)
     responsable = models.ForeignKey(User, verbose_name='Responsable',on_delete=models.DO_NOTHING, blank=True, null=True, related_name='responsable_proforma_nota_trabajo')
     name = models.CharField(max_length=400, default=" ", null=False, verbose_name="Nombre Completo")
     car_plate = models.CharField(max_length=10, default="", null=True, verbose_name="Placa Auto")
@@ -223,6 +229,7 @@ class Proforma_Detail(models.Model):
     installation_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Costo Instalación")
     window_film_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Costo Lámina")
     quantity = models.PositiveIntegerField(default=0, verbose_name="Cantidad")
+    
     
     class Meta:
         verbose_name = 'Detalle Venta'

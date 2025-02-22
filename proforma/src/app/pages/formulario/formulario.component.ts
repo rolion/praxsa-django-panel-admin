@@ -118,12 +118,7 @@ export class FormularioComponent implements OnInit, OnDestroy {
     }
   }
   ngOnInit(): void {
-    if(this.transferState.hasKey(makeStateKey('data'))){
-      let data = this.transferState.get<icalculatorInfo>(makeStateKey('data'), this.defaultData);
-      this.setData(data);
-    }else{
-      this.getCalculatorInfo();
-    }
+    this.getCalculatorInfo();
     this.httpSubcription=this.http.get('/assets/img/praxsa-form-logo.jpeg', { responseType: 'blob' })
       .subscribe(res => {
         const reader = new FileReader();

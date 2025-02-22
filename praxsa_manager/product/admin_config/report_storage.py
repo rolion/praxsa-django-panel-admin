@@ -76,6 +76,9 @@ class ReportStorageAdmin(admin.ModelAdmin):
     def has_add_permission(self, request, obj=None):
         return False
     
+    def has_change_permission(self, request: HttpRequest, obj: Any | None = ...) -> bool:
+        return False
+    
     def get_actions(self, request):
         actions = super().get_actions(request)
         if 'delete_selected' in actions:

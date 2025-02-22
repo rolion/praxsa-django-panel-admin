@@ -104,7 +104,7 @@ class ProformaAdmin(admin.ModelAdmin):
         else:
             return estado
         if(hasattr(obj.nota_trabajo.nota_venta, 'pago')):
-             estado = 'finalizado'
+             estado = 'Finalizado'
 
         return estado
        

@@ -15,7 +15,10 @@ from .models import Window_Film_Reel, inventario
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from .business.inventario import Inventario_Business
 
+from django.db.models import Sum, F
+
 from django.http import HttpResponse
+import traceback
 
 
 def index(request):
@@ -201,6 +204,42 @@ def get_calculator_info(request):
         print('algo salio mal -->', str(e))
         return JsonResponse(data={'error':True, 'message': 'algo salio mal'}, status=500)
 
+def get_item_film_inventory(request, sucursal_id, car_model_id, item_id):
+    """Retur all film available for the item in the selected sucursal"""
+    try:
+        print("car_model_id ", car_model_id)
+        print("item_id ", item_id)
+        car_parts = Car_Model_Part.objects.filter(car_model_id = car_model_id).filter(car_part_id=item_id)
+        print("len(car_parts) ", len(car_parts))
+        if len(car_parts) == 0:
+            return JsonResponse(data={'error':True, 'message': 'item not found'}, status=404)
+        car_part = car_parts[0]
+        
+        query = inventario.objects.select_related("bobina","bobina__window_film", "sucursal")
+        query = query.filter(sucursal__id = sucursal_id, 
+                             sucursal__enable_to_install_windows_film = True, 
+                             to_install__gte=car_part.length, 
+                             bobina__width__gte = car_part.width)
+        query = query.order_by('bobina__window_film__id',
+                               'bobina__width',
+                               'bobina__window_film__id',
+                               'bobina__window_film__name',
+                               'precio_venta_mtr_lineal',
+                               'date')
+        query = query.distinct('bobina__window_film__id')
+        query = query.values('bobina__window_film__id','bobina__window_film__name', "precio_venta_mtr_lineal", "bobina__id", 'bobina__width')
+        result =list(map(lambda result: {'price': result["precio_venta_mtr_lineal"], 
+                                         'bobina_id': result["bobina__id"], 
+                                         'width': result["bobina__width"], 
+                                         'film_id': result["bobina__window_film__id"], 
+                                         'film_name':result["bobina__window_film__name"]}, query))
+        print(query)
+        return JsonResponse(data={'films': result}, safe=False)
+    except Exception as e:
+        print('algo salio mal -->', str(e))
+        print(traceback.format_exc())
+        return JsonResponse(data={'error':True, 'message': 'algo salio mal'}, status=500)
+    return True
 
 def get_model_parts(request, model_id):
     """Returns model parts"""

@@ -25,7 +25,8 @@ class NotaVentaAdmin(admin.ModelAdmin):
                     'get_nota_venta_id',
                     'get_nota_trabajo_id',
                     'get_total_pagar',
-                    'view_notas_created_on'
+                    'view_notas_created_on',
+                    'get_estado'
                     ]
     search_fields = ['id','nota_trabajo__id','created_on', 'name',]
     form = NotaVentaForm
@@ -76,6 +77,14 @@ class NotaVentaAdmin(admin.ModelAdmin):
     get_total_pagar.short_description = 'Total Pagar'
     get_total_pagar.admin_order_field = 'total_price'
     
+    def get_estado(self, obj):
+        estado = 'No Pagado'
+        if(hasattr(obj, 'pago') and obj.pago.cerrado):
+             estado = 'Pagado'
+        return estado
+    get_estado.short_description = 'Estado'
+    get_estado.admin_order_field = 'estado'
+    
     @admin.display(empty_value="-", description='Nota Trabajo' )
     def view_nota_trabajo(self, obj):
         if obj is None:
@@ -94,6 +103,8 @@ class NotaVentaAdmin(admin.ModelAdmin):
     def has_change_permission(self, request: HttpRequest, obj=None):
         if obj is None:
             return True
+        if(hasattr(obj, 'pago') and obj.pago.cerrado):
+            return False
         if obj.is_close == False: 
             return True
         return False

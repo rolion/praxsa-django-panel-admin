@@ -8,11 +8,14 @@ class Pago_Business:
             with transaction.atomic():
                 paiment.cerrado = True
                 paiment.save()
+                nota_venta = proforma = paiment.nota_venta
+                nota_venta.is_close = True
+                nota_venta.save()
                 proforma = paiment.nota_venta.nota_trabajo.proforma
-                proforma.is_paid = True
+                proforma.is_close = True
                 proforma.save()
                 nota_trabajo = proforma.nota_trabajo
-                nota_trabajo.cerrada = True
+                nota_trabajo.is_close = True
                 nota_trabajo.save()
         except Exception as e:
             print(str(e))
