@@ -280,5 +280,13 @@ class Proxy_Pagos(pago):
     class Meta:
         proxy = True
         verbose_name = 'Reporte Ventas Diaria'
-        ordering = ["-id","-created_on"]
+        ordering = ["-id","-created_on"]\
+            
+class precio_venta_sucursal(models.Model):
+    lamina = models.ForeignKey(Window_Film, on_delete=models.DO_NOTHING)
+    width = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Ancho" )
+    sucursal = models.ForeignKey(Sucursal, on_delete=models.DO_NOTHING)
+    precio_venta= models.DecimalField(max_digits=10, decimal_places=2, default= 0)
+    class Meta:
+        verbose_name = 'Precio por Sucursal'
 

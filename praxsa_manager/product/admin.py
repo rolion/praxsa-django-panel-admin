@@ -9,6 +9,7 @@ from .models import Car_Brand, Car_Model, Car_Part, Car_Model_Part, Window_Film,
 from .models import Proforma_Header, Sucursal, inventario, Nota_trabajo, Nota_Venta , Proxy_Proforma, Proxy_Pagos
 from .models import inventario_proxy
 from .models import instalador
+from .models import precio_venta_sucursal
 
 from .admin_config.car_brand import CarBrand
 from .admin_config.car_model import CarModel
@@ -26,6 +27,7 @@ from .admin_config.report_nota_trabajo import ReportNotaTrabajoAdmin
 from .admin_config.reporte_proforma import ReportProformaAdmin
 from .admin_config.report_daily_sell import ReportDailySellAdmin
 from .admin_config.report_storage import ReportStorageAdmin
+from .admin_config.precio_venta_sucursal import PrecioVentaSucursalAdmin
 # from .admin_config.proforma_garantia import ProformaGarantia
 
 admin.site.register( instalador, Installer)
@@ -48,6 +50,7 @@ admin.site.register(pago, PagosAdmin)
 admin.site.register(Proxy_Pagos, ReportDailySellAdmin)
 admin.site.register(inventario_proxy, ReportStorageAdmin)
 admin.site.register(utilidades, ReportUtilidadAdmin)
+admin.site.register(precio_venta_sucursal, PrecioVentaSucursalAdmin)
         
 
 admin.site.register(Nota_Venta, NotaVentaAdmin)
