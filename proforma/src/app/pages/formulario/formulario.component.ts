@@ -11,7 +11,7 @@ import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import {NgModalContentComponent} from '../../components/ng-modal-content/ng-modal-content.component';
 import {ProformaCollection, CarPartFilmItem, Invoice} from '../../model/proformaCollection';
 import { formatDate, isPlatformServer } from "@angular/common";
-import {Subscription} from "rxjs";
+import {firstValueFrom, lastValueFrom, Subscription} from "rxjs";
 import {HttpClient} from "@angular/common/http";
 import { Car_Part_Film_Price, Film } from 'src/app/model/lamina';
 import { iDB } from './data'
@@ -198,7 +198,7 @@ export class FormularioComponent implements OnInit, OnDestroy {
     }
   }
 
-  addLamina($event: any, indexReport: number): void {
+  async addLamina($event: any, indexReport: number) {
     const laminaIndex = $event.target.options.selectedIndex;
     if ( laminaIndex > 0 ){
       const lamina = this.dao.films[laminaIndex - 1];
@@ -209,7 +209,10 @@ export class FormularioComponent implements OnInit, OnDestroy {
       // console.log('car part film item ', carPartFilmItem);
       let {
         filmPrice, totalPrice, filmWidth
-      } = this.getLaminaItemPrice(lamina, width, length, quantity, installation_price);
+      } = await this.getLaminaItemPrice(lamina, width, length, quantity, installation_price);
+      if (filmWidth ==  0){
+        alert('no ha disponibilidad del la lamina ' + lamina.name +' por favor consulta mas tarde')
+      }
       this.invoiceItem[indexReport].sub_total = +totalPrice.toFixed(2);
       this.invoiceItem[indexReport].window_film_price = filmPrice;
       this.invoiceItem[indexReport].window_film = lamina.id;
@@ -225,11 +228,17 @@ export class FormularioComponent implements OnInit, OnDestroy {
     this.calculateTotal();
   }
 
-  getLaminaItemPrice(lamina: Film, carPartWidth: number, carPartLength: number, itemQuantity: number, carPartInstallationPrice: number){
+  async getLaminaItemPrice(lamina: Film, carPartWidth: number, carPartLength: number, itemQuantity: number, carPartInstallationPrice: number){
     try{
-      let filmPrice = this.dao.getLamninaPriceByWidth(lamina.id, carPartWidth);
-      let totalPrice = (carPartLength * itemQuantity * filmPrice.bobina_price) + (carPartInstallationPrice *itemQuantity) ;
-      return {'filmPrice': filmPrice.bobina_price, totalPrice, filmWidth: filmPrice.bobina_width}
+      //let filmPrice = null //= this.dao.getLamninaPriceByWidth(lamina.id, carPartWidth);
+      let filmPrices = await lastValueFrom(this.dataService.getInventario(this.selectedSucursalId, lamina.id, carPartWidth))//.subscribe(data => filmPrice = data)
+      console.log('film price ', filmPrices)
+      if (filmPrices != null && filmPrices.length > 0) {
+        let filmPrice = filmPrices[0]
+        let totalPrice = (carPartLength * itemQuantity * filmPrice!.bobina_price) + (carPartInstallationPrice *itemQuantity) ;
+        return {'filmPrice': filmPrice.bobina_price, totalPrice, filmWidth: filmPrice.bobina_width}
+      } 
+      return {'filmPrice': 0, 'totalPrice': 0, 'filmWidth':0}
     }catch {
       return {'filmPrice': 0, 'totalPrice': 0, 'filmWidth':0}
     }

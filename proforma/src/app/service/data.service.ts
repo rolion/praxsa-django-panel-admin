@@ -66,9 +66,9 @@ export class DataService {
         })
       )
   }
-  getInventario(sucursalId: Number):Observable<iInventory[]>{
+  getInventario(sucursalId: Number, laminaId: Number = 0, width: number = 0):Observable<iInventory[]>{
     return this.http
-    .get<iInventory[]>(`${this.base_url}/product/get_inventory/${sucursalId}`)
+    .get<iInventory[]>(`${this.base_url}/product/get_inventory/${sucursalId}/${laminaId}/${width}`)
       .pipe(
         map((res: any)  => {
           let inventario: iInventory[]=[];

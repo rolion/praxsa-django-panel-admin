@@ -154,13 +154,13 @@ def get_layer_info(request, layer_id):
         print('algo salio mal -->', str(e))
         return JsonResponse(data={'error':True, 'message': 'algo salio mal'}, status=500)
 
-def get_inventory(request, sucursal_id):
+def get_inventory(request, sucursal_id, lamina_id, width):
     """"
      return sucursal inventory
     """
     try:
         inv_buss = Inventario_Business()
-        query = inv_buss.get_total_meters_window_film_in_inventory(sucursal_id=sucursal_id)
+        query = inv_buss.get_total_meters_window_film_in_inventory(sucursal_id=sucursal_id, lamina_id=lamina_id, width=float(width))
         inv = list(map(lambda i:{
             'bobina_film_name': i['bobina__window_film__name'],
             'bobina_film_id': i['bobina__window_film__id'],
@@ -173,6 +173,7 @@ def get_inventory(request, sucursal_id):
     except Exception as e:
         print('algo salio mal -->', str(e))
         return JsonResponse(data={'error':True, 'message': 'algo salio mal'}, status=500)
+    
 
 def get_calculator_info(request):
     """

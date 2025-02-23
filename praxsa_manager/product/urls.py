@@ -14,7 +14,7 @@ urlpatterns = [
     path('calculator_info', views.get_calculator_info, name='get_calculator_info'),
     # path('get_item_film_inventory/<int:sucursal_id>/<int:car_model_id>/<int:item_id>', views.get_item_film_inventory, name="get_item_film_inventory"),
     path('model_parts/<int:model_id>', views.get_model_parts,name = 'get_model_parts'),
-    path('get_inventory/<int:sucursal_id>', views.get_inventory, name='get_inventory'),
+    path('get_inventory/<int:sucursal_id>/<int:lamina_id>/<str:width>', views.get_inventory, name='get_inventory'),
     path('create_client', views.create_client, name='create_client'),
     path('api-token-auth/', CustomAuthToken.as_view()),
     path('invoice', InvoiceView.as_view()),
