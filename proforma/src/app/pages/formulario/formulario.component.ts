@@ -83,7 +83,7 @@ export class FormularioComponent implements OnInit, OnDestroy {
   }
   getInventory(){
     if (this.selectedSucursalId > 0){
-      this.dataService.getInventario(this.selectedSucursalId).subscribe(inventory => {
+      this.dataService.getInventario(this.selectedSucursalId,0,0).subscribe(inventory => {
         console.log('inventario', inventory)
         this.dao.prices = inventory;
         let initialValue: Car_Part_Film_Price[] = []
