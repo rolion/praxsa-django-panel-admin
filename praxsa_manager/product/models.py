@@ -7,6 +7,10 @@ from .helper.proforma import Proforma_Helper
 from .helper.pagos import Pagos_Helper
 import datetime
 alphanumeric = RegexValidator(r'^[0-9a-zA-Z]*$', 'Solo se permiten letras y numeros')
+registro_contable_regex = RegexValidator(regex=r'\d{1,4}\/\d{2}', 
+                                         message="El formato debe ser '1234/12' (hasta 4 dígitos seguidos de '/' y 2 dígitos más).",
+                                         code='invalid_registro_contable')
+
 
 
 class Car_Brand(models.Model):
@@ -268,11 +272,26 @@ class pago(models.Model):
     tipo_pago =models.CharField(choices=helper.types, 
                                 default=helper.default_type, 
                                 verbose_name='Tipo Pago')
+    registro_contable = models.CharField(max_length=7, 
+                                         verbose_name='Registro Contable', 
+                                         unique=True, 
+                                         blank=True,
+                                         null=True,
+                                         validators=[registro_contable_regex])
     cerrado = models.BooleanField(default=False)
     created_on = models.DateTimeField(verbose_name="Fecha", auto_now_add=True)
     created_by = models.ForeignKey(User, 
                                    on_delete=models.DO_NOTHING, 
                                    verbose_name='Creado por')
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['registro_contable'],
+                name='unique_registro_contable',
+                condition=models.Q(registro_contable__isnull=False)  # Solo aplica la unicidad a valores NO NULOS
+            )
+        ]
+    
     def __str__(self) -> str:
         return f'Pago {self.id}'
     

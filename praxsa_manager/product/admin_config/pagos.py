@@ -1,3 +1,6 @@
+from urllib.parse import urlencode
+
+from django.shortcuts import redirect
 from ..Forms.pagos import PagosForm
 from typing import Any
 from django.contrib import admin
@@ -11,6 +14,7 @@ class PagosAdmin(admin.ModelAdmin):
     list_display = ['nota_venta', 
                     'view_proforma_monto',
                     'view_created_on',
+                    'registro_contable',
                     'tipo_pago']
     # readonly_fields = ('nota_venta','monto')
     exclude =  ['cerrado','created_by']
@@ -32,7 +36,20 @@ class PagosAdmin(admin.ModelAdmin):
             form.base_fields['nota_venta'].disabled = True
             form.base_fields['monto'].initial = venta.total_price
             form.base_fields['monto'].disabled = True
+        if request.method == 'POST':
+            nota_venta_init = request.GET.get("nota_venta", None)
+            nota_venta_init = request.POST.get('nota_venta', nota_venta_init)
+            if nota_venta_init is not None:
+                form.base_fields['nota_venta'].initial = nota_venta_init
         return form
+    
+    def add_view(self, request, form_url='', extra_context=None):
+        """
+        Agrega el parámetro al contexto en la vista de creación.
+        """
+        extra_context = extra_context or {}
+        extra_context['nota_venta'] = request.GET.get('nota_venta', '') or request.POST.get('nota_venta', '')
+        return super().add_view(request, form_url, extra_context)
     
     def get_readonly_fields(self, request, obj=None):
         if not obj:
@@ -44,8 +61,9 @@ class PagosAdmin(admin.ModelAdmin):
         Pasar el parámetro GET al ModelForm al crearlo.
         """
         kwargs = super().get_form_kwargs(request, obj)
+        print('get_form_kwargs, is obj Null? ', obj)
         if not obj:  # Solo en la creación
-            kwargs.update({'nota_venta_init': request.GET.get("nota_venta", None)})
+            kwargs.update({'nota_venta_init': request.GET.get("nota_venta", None) or request.POST.get('nota_venta', None)})
         return kwargs
 
 
