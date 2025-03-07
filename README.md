@@ -27,7 +27,8 @@ npm run dev:ssr
 ## stop postgre
 sudo systemctl stop postgresql
 
-
+# execute command in container
+docker exec -it web sh
 # create admin user
 python manage.py createsuperuser --username=joe --email=joe@example.com
 
