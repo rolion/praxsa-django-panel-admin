@@ -115,7 +115,7 @@ class Proforma_Business:
     def crear_nota_venta(self, nota_trabajo, user):
         if nota_trabajo.proforma.is_close == False:
                     raise Exception(f'la proforma {nota_trabajo.proforma.id}, debe estar cerrada antes de crear la nota de venta')
-        if nota_trabajo.codigo_garantia is  None:
+        if nota_trabajo.proforma.sales_type == self.helper.tipo_venta_instalacion and nota_trabajo.codigo_garantia is  None:
             raise Exception('Debe agregar el código de Garantía')
         
         if nota_trabajo.proforma.sales_type == self.helper.tipo_venta_instalacion and nota_trabajo.instaladar is  None:
