@@ -78,7 +78,7 @@ class ProformaAdmin(admin.ModelAdmin):
     # readonly_fields = ['sales_status']
     form = SaleHeaderForm
     list_per_page = 10
-    actions =["open_proforma", "create_sales_note", "create_work_note", "print_proforma"]
+    actions =["open_proforma", "create_sales_note", "create_work_note", "print_proforma", "convertir_proforma_metro_lineal"]
     proforma_business = Proforma_Business()
     user_business = User_Business()
     user_helper = User_Helper()
@@ -109,9 +109,6 @@ class ProformaAdmin(admin.ModelAdmin):
         return estado
        
     get_estado.short_description = 'Estado'
-    
-    
-
     
     fieldsets = [('Proforma', {
                                 'classes':[], 
@@ -205,7 +202,7 @@ class ProformaAdmin(admin.ModelAdmin):
         if obj.is_close == True:
             return '__all__'
                     
-        return ['sucursal', ]
+        return ['sucursal', 'sales_type' ]
     
     def save_model(self, request, obj, form, change):
         obj.created_by = request.user
@@ -251,6 +248,14 @@ class ProformaAdmin(admin.ModelAdmin):
     def open_proforma(self, request: HttpRequest, queryset: QuerySet):
         try:
             [self.proforma_business.abrir_proforma(proforma=qs) for qs in list(queryset)]
+        except Exception as e:
+            self.log_debug.info(str(e))
+            self.message_user(request=request,  message=str(e), level= messages.ERROR)
+            
+    @admin.action(description="Convertir a Venta Metro Lineal")
+    def convertir_proforma_metro_lineal(self, request: HttpRequest, queryset: QuerySet):
+        try:
+            [self.proforma_business.convertir_venta_metro_lineal(proforma=qs) for qs in list(queryset)]
         except Exception as e:
             self.log_debug.info(str(e))
             self.message_user(request=request,  message=str(e), level= messages.ERROR)

@@ -111,7 +111,54 @@ class Proforma_Business:
                 self.log_errors.error(f'algo salio mal, contactar administrador {e}')
                 raise Exception('algo salio mal, contactar administrador')
         
-
+    
+    @transaction.atomic
+    def convertir_venta_metro_lineal(self, proforma: Proforma_Header):
+        if proforma.is_close == True:
+            raise Exception(f'la proforma {proforma.id}, ya esta cerrada!')
+        if proforma.sales_type == self.helper.tipo_venta_metro_lineal:
+            raise Exception(f'la proforma {proforma.id} ya es de tipo venta por metro lineal')
+        
+        detalles = Proforma_Detail.objects.filter(proforma_header = proforma)
+        if len(detalles) == 0:
+            raise Exception(f'la proforma {proforma.id} no tiene detalle')
+        
+        sumary = []
+        total = Decimal('0.0')
+        try: 
+            with transaction.atomic():
+                for detalle in list(detalles):
+                    item_index = next((i for i, item in enumerate(sumary) 
+                                                        if item.window_film == detalle.window_film and item.width == detalle.width ), 
+                                                        None)
+                    if item_index is not None:
+                        item =sumary[item_index]
+                        item.length = item.length + detalle.length
+                        item.sub_total = item.length * item.window_film_price * item.quantity
+                        
+                    else:
+                        new_detalle = Proforma_Detail()
+                        new_detalle.proforma_header = proforma
+                        new_detalle.width = detalle.width
+                        new_detalle.sub_total = 0
+                        new_detalle.window_film = detalle.window_film
+                        new_detalle.length = detalle.length
+                        new_detalle.quantity = detalle.quantity
+                        new_detalle.window_film_price = detalle.window_film_price
+                        new_detalle.sub_total = new_detalle.length * new_detalle.window_film_price * new_detalle.quantity
+                        
+                        sumary.append(new_detalle)
+                    detalle.delete()
+                for new_item in list(sumary):
+                    total = total + new_item.sub_total
+                    new_item.save()
+                proforma.sales_type = self.helper.tipo_venta_metro_lineal
+                proforma.total_price = total
+                proforma.save()
+        except Exception as e:
+            self.log_errors.error(f'algo salio mal, contactar administrador {e}')
+            raise Exception('algo salio mal, contactar administrador')
+        
     def crear_nota_venta(self, nota_trabajo, user):
         if nota_trabajo.proforma.is_close == False:
                     raise Exception(f'la proforma {nota_trabajo.proforma.id}, debe estar cerrada antes de crear la nota de venta')
@@ -135,9 +182,6 @@ class Proforma_Business:
             self.log_errors.error(f'algo salio mal, contactar administrador {e}')
             raise Exception('algo salio mal, contactar administrador')
 
-            
-
-    
     def delete_fisica(self, user, proforma):
         try:
             if user.is_superuser:
