@@ -127,8 +127,6 @@ class PDFService:
                              x = self.x_position,
                              y=initialY + base_increment * 2)
       center = 250
-      print('center ', center)
-      print('page width ', self.canvas._pagesize[0] )
       self.canvas.drawString(text='Datos vehículo', 
                              x = center,
                              y=initialY + base_increment * 2)

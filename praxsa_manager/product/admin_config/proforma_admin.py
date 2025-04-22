@@ -221,9 +221,6 @@ class ProformaAdmin(admin.ModelAdmin):
             )
         else:
             try:
-                # entries = qs.select_for_update()
-                # print(qs)
-                # print(entries)
                 with transaction.atomic():
                     for entry in list(qs):
                         entry.is_delete = True

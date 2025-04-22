@@ -134,7 +134,6 @@ class NotaVentaAdmin(admin.ModelAdmin):
         # try:
             buffer = io.BytesIO()
             pdf = PDFService(buffer= buffer)
-            print('qs ', queryset[0])
             proforma = queryset[0].nota_trabajo.proforma
             codigo_garantia = queryset[0].nota_trabajo.codigo_garantia
             prodorma_detail = Proforma_Detail.objects.select_related("car_part", "window_film")

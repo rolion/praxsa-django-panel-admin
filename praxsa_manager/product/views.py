@@ -82,10 +82,7 @@ def get_car_part_info(request, car_model_id, sucursal_id):
 def get_proforma_car_part_info(request, proforma_id):
     '''devuelve la informacion de item del auto seleccionado'''
     try:
-        # car_model_id, sucursal_id
-        print(proforma_id)
         proforma = Proforma_Header.objects.select_related('sucursal', 'car_model_id').get(pk= proforma_id)
-        print(proforma)
         helper = Proforma_Helper()
         sales_type = proforma.sales_type
         if sales_type == helper.tipo_venta_instalacion:
@@ -124,27 +121,7 @@ def get_proforma_car_part_info(request, proforma_id):
     except Exception as e:
         print('algo salio mal -->', str(e))
         return JsonResponse(data={'error':True, 'message': 'algo salio mal'}, status=500)
-    
-# def get_inventory_film_info(request, sucursal_id):
-#     '''return the available films in inventory and the widths'''
-#     try:
-#         inv_Business = Inventario_Business()
-#         widths = inv_Business.get_inventory_window_film_reel_widths(request.user)
-#         inv_width = list(map(lambda w: w, widths.values_list('width', flat=True)))
-#         inventario = inv_Business.get_inventory_by_sucursal(sucursal=sucursal_id)
-#         window_film = list(map(lambda inv: {'name': inv.bobina.window_film.name, 
-#                                             'reel_id':inv.bobina.id, 
-#                                             'price': inv.precio_venta_mtr_lineal, 
-#                                             'film_id': inv.bobina.window_film.id, 
-#                                             'width': inv.bobina.width
-#                                             }, inventario ))
-#         return JsonResponse(data={
-#                                 'window_film': window_film,
-#                                 'inv_widths': inv_width
-#                                 }, safe=False)
-#     except Exception as e:
-#         print('algo salio mal -->', str(e))
-#         return JsonResponse(data={'error':True, 'message': 'algo salio mal'}, status=500)
+
 
 def get_layer_info(request, layer_id):
     try:
@@ -208,10 +185,7 @@ def get_calculator_info(request):
 def get_item_film_inventory(request, sucursal_id, car_model_id, item_id):
     """Retur all film available for the item in the selected sucursal"""
     try:
-        print("car_model_id ", car_model_id)
-        print("item_id ", item_id)
         car_parts = Car_Model_Part.objects.filter(car_model_id = car_model_id).filter(car_part_id=item_id)
-        print("len(car_parts) ", len(car_parts))
         if len(car_parts) == 0:
             return JsonResponse(data={'error':True, 'message': 'item not found'}, status=404)
         car_part = car_parts[0]
@@ -234,11 +208,8 @@ def get_item_film_inventory(request, sucursal_id, car_model_id, item_id):
                                          'width': result["bobina__width"], 
                                          'film_id': result["bobina__window_film__id"], 
                                          'film_name':result["bobina__window_film__name"]}, query))
-        print(query)
         return JsonResponse(data={'films': result}, safe=False)
     except Exception as e:
-        print('algo salio mal -->', str(e))
-        print(traceback.format_exc())
         return JsonResponse(data={'error':True, 'message': 'algo salio mal'}, status=500)
     return True
 

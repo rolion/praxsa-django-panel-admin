@@ -61,7 +61,6 @@ class PagosAdmin(admin.ModelAdmin):
         Pasar el parámetro GET al ModelForm al crearlo.
         """
         kwargs = super().get_form_kwargs(request, obj)
-        print('get_form_kwargs, is obj Null? ', obj)
         if not obj:  # Solo en la creación
             kwargs.update({'nota_venta_init': request.GET.get("nota_venta", None) or request.POST.get('nota_venta', None)})
         return kwargs
