@@ -36,7 +36,6 @@ class SaleHeaderForm(ModelForm):
         cleaned_data = super().clean()
         cc_sales_type = cleaned_data.get("sales_type")
         cc_car_model_id = cleaned_data.get("car_model_id")
-        print(cc_car_model_id, cc_sales_type)
         if cc_sales_type == 'venta_instalacion' and cc_car_model_id  is None:
             raise ValidationError("Tiene que seleccionar un modelo!")
         return cc_car_model_id

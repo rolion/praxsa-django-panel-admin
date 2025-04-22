@@ -1,5 +1,5 @@
-from ..models import Sucursal, Window_Film, inventario
-from django.db.models import Sum, F
+from ..models import Sucursal, Window_Film, inventario, precio_venta_sucursal
+from django.db.models import Sum, F, OuterRef, Subquery
 from ..utils.exception.nohaylaminas import NoHayLaminasDisponibles
 import logging
 
@@ -62,10 +62,25 @@ class Inventario_Business:
             return True
         return False
     
-    def get_total_meters_window_film_in_inventory(self, sucursal_id):
-        query = inventario.objects.select_related('sucursal','bobina', 'bobina__window_film')
-        query = query.order_by('bobina__window_film__name').values("bobina__window_film__id", "bobina__window_film__name", "bobina__width", "precio_venta_mtr_lineal", "bobina__window_film__id")
-        return query.annotate(total=Sum("to_install")).filter(sucursal__id = sucursal_id)
+    def get_total_meters_window_film_in_inventory(self, sucursal_id, lamina_id, width):
+        query = inventario.objects.select_related('sucursal', 'bobina__window_film',)
+        query = query.filter(to_install__gt = 0)
+        if lamina_id > 0:
+            query = query.filter(bobina__window_film__id=lamina_id)
+        if width > 0:
+            query = query.filter(bobina__width__gte=width)
+        query = query.order_by('bobina__window_film__name')
+        query = query.values("bobina__window_film__id", "bobina__window_film__name", "bobina__width", "precio_venta_mtr_lineal", "bobina__window_film__id")
+        query = query.annotate(
+                    precio_venta_sucursal=Subquery(
+                        precio_venta_sucursal.objects.filter(
+                            sucursal=OuterRef("sucursal"),
+                            lamina=OuterRef('bobina__window_film'),
+                            width = OuterRef('bobina__width')
+                        ).values("precio_venta")[:1]  # Trae solo un valor de precio si hay múltiples coincidencias
+                    )
+                )
+        return query.annotate(total=Sum("to_install")).filter(sucursal__id = sucursal_id).order_by('bobina__window_film__name','bobina__width' )
     
     def available_window_film_reel_in_inventory_to_sell(self, sucursal, windows_film, width, total_length_to_sell):
         query = inventario.objects.select_related('sucursal','bobina', 'bobina__window_film')

@@ -165,7 +165,7 @@ jQuery(function($){
         function loadInventory(sucursalId){
             if(!isNaN(sucursalId)){
                 $.ajax({
-                    url: '/product/get_inventory/'+sucursalId,
+                    url: '/product/get_inventory/'+sucursalId+'/0/0',
                     type:"GET",
                     success: function(result) {
                         inventario = result.inventario;

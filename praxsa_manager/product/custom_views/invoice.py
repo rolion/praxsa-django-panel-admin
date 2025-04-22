@@ -22,9 +22,7 @@ class InvoiceView(APIView):
         try:
             with transaction.atomic():
                 user = request.user
-                # import pdb; pdb.set_trace()
                 request.data['created_by']= user.id
-                # print('data ', request.data)
                 serializer = SalesHeaderSerializer(data=request.data)
                 if serializer.is_valid():
                     invoice = serializer.save()
@@ -85,8 +83,6 @@ class ListUserInvoice(APIView):
     
     def get(self, request):
         print(request.user.id)
-        # client = Client.objects.get(user_id = request.user)
-        # print(client)
         list_invoice = list(map( lambda invoice: {
                     'name': invoice.name,
                     'email': invoice.email,
@@ -100,7 +96,6 @@ class ListUserInvoice(APIView):
                     'id': invoice.id
                     
             },Proforma_Header.objects.filter(created_by= request.user.id) ))
-        print(list_invoice)
         count = Proforma_Header.objects.filter(created_by= request.user.id).count()
         data = {
             "recordsTotal": count,
