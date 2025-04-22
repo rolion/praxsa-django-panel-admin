@@ -299,7 +299,7 @@ class Proxy_Pagos(pago):
     class Meta:
         proxy = True
         verbose_name = 'Reporte Ventas Diaria'
-        ordering = ["-id","-created_on"]\
+        ordering = ["-id","-created_on"]
             
 class precio_venta_sucursal(models.Model):
     lamina = models.ForeignKey(Window_Film, on_delete=models.DO_NOTHING)
