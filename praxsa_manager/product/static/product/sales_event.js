@@ -306,7 +306,7 @@ jQuery(function($){
          }
 
          filterFilmById = (filmId) => window_films.filter(film => film.film_id == filmId)
-         getFilmByIdWidth = (filmId, width) => window_films.find(film => film.film_id == filmId && film.width == width)
+         getFilmByIdWidth = (filmId, width, length) => window_films.find(film => film.film_id == filmId && film.width == width && film.disponibilidad >= length)
          getItemById = (itemID)=> items.find(item => item.part_id == itemID)
          filterItemById = (id) => items.filter(item => item.part_id == id)
          
@@ -326,8 +326,8 @@ jQuery(function($){
             get_wdisponibilidad_element_in_row(target).val(dispo)
         }
 
-        updateFilmPrice = (filmId, width, target) => {
-            let selected_film = getFilmByIdWidth(filmId, width);
+        updateFilmPrice = (filmId, width, length, target) => {
+            let selected_film = getFilmByIdWidth(filmId, width, length);
             if(selected_film !=undefined){
                 get_price_element_in_row(target).val(selected_film.price)
             }
@@ -343,16 +343,17 @@ jQuery(function($){
                 
                 let selected_width = get_width_element_in_row(e.target).val();
                 let selected_lenght = get_length_element_in_row(e.target).val();
-                updateFilmPrice(selected_film_id, selected_width, e.target)
+                updateFilmPrice(selected_film_id, selected_width, selected_lenght, e.target)
                 calculate_subtotal(e.target)
             }
             if(e.target && e.target.matches('table tbody td.field-width select')){
                 console.log('cambio el ancho');
                 let selected_width = parseFloat($(e.target).val())
                 let selected_film_id =get_window_film_element_in_row(e.target).val();
+                let selected_lenght = get_length_element_in_row(e.target).val();
                 if(selected_film_id){
                     console.log('se eligio una lamina')
-                    updateFilmPrice(selected_film_id, selected_width, e.target)
+                    updateFilmPrice(selected_film_id, selected_width, selected_lenght, e.target)
                     calculate_subtotal(e.target)
                 }
             }
