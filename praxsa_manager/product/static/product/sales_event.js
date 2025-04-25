@@ -313,7 +313,7 @@ jQuery(function($){
 
 
         get_disponibilidad_lamina = (film_id, film_width, length) =>{
-            let dispo = inventario.find(inv => inv.bobina_film_id == film_id && inv.bobina_width == film_width && inv.bobina_metros_disponibles >= parseFloat(length))
+            let dispo = inventario.find(inv => inv.bobina_film_id == film_id && inv.bobina_width == film_width)
             if(dispo){
                 return dispo.bobina_metros_disponibles
             }
