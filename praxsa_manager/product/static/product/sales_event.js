@@ -342,6 +342,7 @@ jQuery(function($){
                 let selected_film_id = parseInt($(e.target).val())
                 
                 let selected_width = get_width_element_in_row(e.target).val();
+                let selected_lenght = get_length_element_in_row(e.target).val();
                 updateFilmPrice(selected_film_id, selected_width, e.target)
                 calculate_subtotal(e.target)
             }

@@ -69,7 +69,8 @@ def get_car_part_info(request, car_model_id, sucursal_id):
                                             'reel_id':inv.bobina.id, 
                                             'price': inv.precio_venta_mtr_lineal, 
                                             'film_id': inv.bobina.window_film.id, 
-                                            'width': inv.bobina.width
+                                            'width': inv.bobina.width,
+                                            'disponibilidad': inv.to_install
                                             }, inventario ))
         return JsonResponse(data={'items': items, 
                                 'window_film': window_film,

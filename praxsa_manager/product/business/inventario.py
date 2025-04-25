@@ -11,9 +11,9 @@ class Inventario_Business:
     
     def get_inventory_by_sucursal(self, sucursal):
         q = inventario.objects.select_related("bobina","bobina__window_film", "sucursal")
-        q = q.order_by('bobina__window_film__id', 'date')
+        q = q.order_by('bobina__window_film__id', '-date')
         # q = q.distinct("bobina__window_film_id__id")
-        q = q.filter(sucursal = sucursal, sucursal__enable_to_install_windows_film = True)
+        q = q.filter(sucursal = sucursal, sucursal__enable_to_install_windows_film = True, to_install__gt = 0)
         return q
     
     def get_inventory_film_available_film_by_sucursal(self, sucursal):
