@@ -137,7 +137,6 @@ class ReportDailySellAdmin(admin.ModelAdmin):
         qs = super().get_queryset(request)
         qs = qs.prefetch_related("nota_venta__nota_trabajo","nota_venta__nota_trabajo__proforma", "nota_venta__nota_trabajo__proforma__items")
         qs = qs.select_related("nota_venta__nota_trabajo__proforma__car_model_id", "nota_venta__nota_trabajo__proforma__sucursal")
-        # print("qs-->", list(qs))
         return  qs
     
     def has_add_permission(self, request, obj=None):

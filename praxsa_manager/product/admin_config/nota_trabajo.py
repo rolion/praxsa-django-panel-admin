@@ -151,8 +151,6 @@ class NotaTrabajoAdmin(admin.ModelAdmin):
             proforma = queryset[0].proforma
             detalle_proforma = Proforma_Detail.objects.filter(proforma_header=proforma).select_related('inventario')
             resumen_trabajo = resumen_trabajo.filter( nota_trabajo =  queryset[0])
-            print('-----------------------------------------------')
-            print(detalle_proforma)
             pdf.create_nota_trabajo(detail=resumen_trabajo, nota_trabajo= queryset[0], proforma_detail = detalle_proforma)
             buffer.seek(0)
             filename = f'Nota Trabajo-{queryset[0].proforma.id}.pdf'

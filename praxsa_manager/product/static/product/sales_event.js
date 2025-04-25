@@ -90,6 +90,9 @@ jQuery(function($){
                     if(!isNaN(val) && !is_part_id_in_model_items(val, items)){
                         $(option).hide()
                     }
+                    else{
+                        $(option).show();
+                    }
                 })
             });
         }
@@ -109,7 +112,7 @@ jQuery(function($){
                         if (items){
                             add_car_part_event()
                             add_window_film_event()
-                            //show_only_model_items()
+                            show_only_model_items()
                             if (is_sale_instalation_type() == false && items.length > 0){
                                 let model_name = get_car_model_element().children("option").filter(":selected").text()
                                 let rows = '';
@@ -188,7 +191,7 @@ jQuery(function($){
                 $('td.field-length input').prop('readonly', true)
             }else {
                 $('td.field-length input').prop('readonly', false)
-                $('td.field-car_part select').prop('disabled', true)
+                // $('td.field-car_part select').prop('disabled', true)
             }
         }
 
@@ -203,6 +206,7 @@ jQuery(function($){
                 model_id = isNaN(selectedModel.val()) || selectedModel.val()==''? 0 : selectedModel.val()
                 loadCarInfo(model_id, user_sucursal)
                 loadInventory(user_sucursal)
+                //show_only_model_items()
 
             }
         }
