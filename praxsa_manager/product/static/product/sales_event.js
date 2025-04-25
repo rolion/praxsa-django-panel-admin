@@ -306,7 +306,7 @@ jQuery(function($){
          }
 
          filterFilmById = (filmId) => window_films.filter(film => film.film_id == filmId)
-         getFilmByIdWidth = (filmId, width, length) => window_films.find(film => film.film_id == filmId && film.width == width && film.disponibilidad >= length)
+         getFilmByIdWidth = (filmId, width, length) => window_films.find(film => film.film_id == filmId && film.width == width && parseFloat(film.disponibilidad) >= parseFloat(length))
          getItemById = (itemID)=> items.find(item => item.part_id == itemID)
          filterItemById = (id) => items.filter(item => item.part_id == id)
          
