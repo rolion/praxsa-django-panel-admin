@@ -312,8 +312,8 @@ jQuery(function($){
          
 
 
-        get_disponibilidad_lamina = (film_id, film_width) =>{
-            let dispo = inventario.find(inv => inv.bobina_film_id == film_id && inv.bobina_width == film_width)
+        get_disponibilidad_lamina = (film_id, film_width, length) =>{
+            let dispo = inventario.find(inv => inv.bobina_film_id == film_id && inv.bobina_width == film_width && inv.bobina_metros_disponibles >= parseFloat(length))
             if(dispo){
                 return dispo.bobina_metros_disponibles
             }
@@ -331,7 +331,7 @@ jQuery(function($){
             if(selected_film !=undefined){
                 get_price_element_in_row(target).val(selected_film.price)
             }
-            let dispo = get_disponibilidad_lamina(filmId, width)
+            let dispo = get_disponibilidad_lamina(filmId, width, length)
             update_diponibilidad_value(dispo, target)
          }
         
