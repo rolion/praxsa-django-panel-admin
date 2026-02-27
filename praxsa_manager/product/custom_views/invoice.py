@@ -56,6 +56,8 @@ class InvoiceView(APIView):
                     'ci_nit': invoice.ci_nit,
                     'sucursal_name': invoice.sucursal.name,
                     'sucursal': invoice.sucursal.id,
+                    'sucursal_address':invoice.sucursal.address,
+                    'sucursal_phone': invoice.sucursal.phone_number,
                     'car_plate': invoice.car_plate,
                     'phone_number': invoice.phone_number,
                     'car_model_id': invoice.car_model_id.id,
