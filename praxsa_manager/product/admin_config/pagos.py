@@ -8,16 +8,34 @@ from django.db.models.query import QuerySet
 from django.http.request import HttpRequest
 from ..business.pago import Pago_Business
 from django.contrib import messages
+from django_admin_listfilter_dropdown.filters import DropdownFilter, RelatedDropdownFilter, ChoiceDropdownFilter
+from rangefilter.filters import (
+    DateRangeFilterBuilder,
+    DateTimeRangeFilterBuilder,
+    NumericRangeFilterBuilder,
+    DateRangeQuickSelectListFilterBuilder,
+)
 from datetime import datetime
 from ..models import Nota_Venta
 class PagosAdmin(admin.ModelAdmin):
     list_display = ['nota_venta', 
+                    'view_proforma_sucursal',
                     'view_proforma_monto',
                     'view_created_on',
                     'registro_contable',
                     'tipo_pago']
     # readonly_fields = ('nota_venta','monto')
     exclude =  ['cerrado','created_by']
+    list_filter = [
+      ('created_on', 
+        DateTimeRangeFilterBuilder(
+            title="Fecha Pago",
+            default_start=datetime(2020, 1, 1),
+            default_end=datetime(2030, 1, 1),
+      ),),
+    # ('instaladar', RelatedDropdownFilter),
+    ('nota_venta__nota_trabajo__proforma__sucursal', RelatedDropdownFilter),
+    ]
     actions = ['concluir_transaccion']
     list_per_page = 10
     form = PagosForm
@@ -75,6 +93,14 @@ class PagosAdmin(admin.ModelAdmin):
             obj.created_on = datetime.now()
             obj.cerrado = False
         super().save_model(request, obj, form, change)
+        
+    @admin.display(empty_value="", description='Sucursal' )
+    def view_proforma_sucursal(self, obj):
+        if obj is None:
+             return ''
+        if obj.nota_venta.nota_trabajo.proforma.sucursal is None:
+             return ''
+        return obj.nota_venta.nota_trabajo.proforma.sucursal.name
 
     @admin.display(empty_value="0", description='Monto' )
     def view_proforma_monto(self, obj):
@@ -106,7 +132,9 @@ class PagosAdmin(admin.ModelAdmin):
         qs = super().get_queryset(request)
         result = qs.select_related('nota_venta',
                                    'nota_venta__nota_trabajo',
-                                   'nota_venta__nota_trabajo__proforma')
+                                   'nota_venta__nota_trabajo__proforma',
+                                   'nota_venta__nota_trabajo__proforma__sucursal'
+                                   )
         return  result
     
     @admin.action(description="concluir transaccion")

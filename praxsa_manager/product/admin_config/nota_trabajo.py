@@ -13,6 +13,14 @@ from ..helper.pdf import PDFService
 from django.urls import reverse
 from django.utils.html import format_html
 from django.http import FileResponse
+from django_admin_listfilter_dropdown.filters import DropdownFilter, RelatedDropdownFilter, ChoiceDropdownFilter
+from rangefilter.filters import (
+    DateRangeFilterBuilder,
+    DateTimeRangeFilterBuilder,
+    NumericRangeFilterBuilder,
+    DateRangeQuickSelectListFilterBuilder,
+)
+from datetime import datetime
 import io
 class ProformaDetailInLine(admin.TabularInline):
     fields = [
@@ -29,6 +37,7 @@ class ProformaDetailInLine(admin.TabularInline):
               'length',  
             #   'quantity',
               ]
+
     model = Detalle_Nota_Trabajo
     min_num = 0
     max = 1
@@ -41,11 +50,22 @@ class NotaTrabajoAdmin(admin.ModelAdmin):
               'car_model',
               'car_plate',
               'instaladar',
-              'get_estado'
+              'get_estado',
+              'get_sucursal'
               ]
     inlines = [
         ProformaDetailInLine,
     ]
+    list_filter = [
+      ('entrada_vehiculo', 
+        DateTimeRangeFilterBuilder(
+            title="Fecha Entrada Vehiculo",
+            default_start=datetime(2020, 1, 1),
+            default_end=datetime(2030, 1, 1),
+      ),),
+    ('instaladar', RelatedDropdownFilter),
+    ('proforma__sucursal', RelatedDropdownFilter),]
+    
     search_fields = ['id',
                      'instaladar__name',
                      'car_plate',
@@ -97,6 +117,10 @@ class NotaTrabajoAdmin(admin.ModelAdmin):
         else:
             return 'No'
     get_estado.short_description = 'Finalizado'
+    
+    def get_sucursal(self, obj):
+        return obj.proforma.sucursal.name
+    get_sucursal.short_description = 'Sucursal'
     
     def get_entrada_vehiculo_date_format(self, obj):
         return obj.entrada_vehiculo.strftime("%d-%m-%Y %H:%M:%S")
