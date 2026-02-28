@@ -15,7 +15,11 @@ from .models import Window_Film_Reel, inventario
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from .business.inventario import Inventario_Business
 
-from django.db.models import Sum, F
+from django.db.models import OuterRef, Subquery
+from django.db.models.functions import Coalesce
+from django.db.models import F
+from .models import precio_venta_sucursal
+
 
 from django.http import HttpResponse
 import traceback
@@ -49,35 +53,92 @@ def get_bobina(request, pk):
 
 def get_car_part_info(request, car_model_id, sucursal_id):
     '''devuelve la informacion de item del auto seleccionado'''
+    
     try:
-        inv_Business = Inventario_Business()
-        inventario = inv_Business.get_inventory_by_sucursal(sucursal=sucursal_id)
+        inv_business = Inventario_Business()
+
+        # -------------------------
+        # INVENTARIO CON PRECIO SUCURSAL
+        # -------------------------
+
+        inventario = (
+            inv_business.get_inventory_by_sucursal(sucursal=sucursal_id)
+            .select_related("bobina__window_film")
+            .annotate(
+                precio_sucursal=Subquery(
+                    precio_venta_sucursal.objects.filter(
+                        sucursal_id=sucursal_id,
+                        lamina_id=OuterRef("bobina__window_film_id"),
+                        width=OuterRef("bobina__width"),
+                    ).values("precio_venta")[:1]
+                ),
+                precio_final=Coalesce(
+                    F("precio_sucursal"),
+                    F("precio_venta_mtr_lineal"),
+                ),
+            )
+        )
+
+        # -------------------------
+        # PARTES DEL AUTO
+        # -------------------------
+
         items = []
-        if(car_model_id >0):
-            car_part = Car_Model_Part.objects.select_related("car_part_id").filter(car_model_id = car_model_id)
-            items = list(map(lambda part: {'part_id': part.car_part_id.id, 
-                                        'name': part.car_part_id.name, 
-                                        'quantity': part.quantity, 
-                                        'width': part.width, 
-                                        'length': part.length, 
-                                        'installation_price': part.installation_price
-                                        }, car_part))
-        widths = inv_Business.get_inventory_window_film_reel_widths(request.user)
-        inv_width = list(map(lambda w: w, widths.values_list('width', flat=True)))
-        
-        window_film = list(map(lambda inv: {'name': inv.bobina.window_film.name, 
-                                            'reel_id':inv.bobina.id, 
-                                            'price': inv.precio_venta_mtr_lineal, 
-                                            'film_id': inv.bobina.window_film.id, 
-                                            'width': inv.bobina.width
-                                            }, inventario ))
-        return JsonResponse(data={'items': items, 
-                                'window_film': window_film,
-                                'inv_widths': inv_width
-                                }, safe=False)
+
+        if car_model_id > 0:
+            car_parts = (
+                Car_Model_Part.objects.select_related("car_part_id")
+                .filter(car_model_id=car_model_id)
+            )
+
+            for part in car_parts:
+                items.append({
+                    "part_id": part.car_part_id.id,
+                    "name": part.car_part_id.name,
+                    "quantity": part.quantity,
+                    "width": part.width,
+                    "length": part.length,
+                    "installation_price": part.installation_price,
+                })
+
+        # -------------------------
+        # WIDTHS DISPONIBLES
+        # -------------------------
+
+        widths = inv_business.get_inventory_window_film_reel_widths(request.user)
+        inv_width = list(widths.values_list("width", flat=True))
+
+        # -------------------------
+        # INVENTARIO SERIALIZADO
+        # -------------------------
+
+        window_film = []
+
+        for inv in inventario:
+            window_film.append({
+                "name": inv.bobina.window_film.name,
+                "reel_id": inv.bobina.id,
+                "price": float(inv.precio_final or 0),
+                "film_id": inv.bobina.window_film.id,
+                "width": inv.bobina.width,
+                "disponibilidad": inv.to_install,
+            })
+
+        return JsonResponse(
+            data={
+                "items": items,
+                "window_film": window_film,
+                "inv_widths": inv_width,
+            },
+            safe=False,
+        )
+
     except Exception as e:
-        print('algo salio mal -->', str(e))
-        return JsonResponse(data={'error':True, 'message': 'algo salio mal'}, status=500)
+        print("algo salio mal -->", str(e))
+        return JsonResponse(
+            data={"error": True, "message": "algo salio mal"},
+            status=500
+        )
     
 def get_proforma_car_part_info(request, proforma_id):
     '''devuelve la informacion de item del auto seleccionado'''
@@ -138,14 +199,24 @@ def get_inventory(request, sucursal_id, lamina_id, width):
     try:
         inv_buss = Inventario_Business()
         query = inv_buss.get_total_meters_window_film_in_inventory(sucursal_id=sucursal_id, lamina_id=lamina_id, width=float(width))
-        inv = list(map(lambda i:{
-            'bobina_film_name': i['bobina__window_film__name'],
-            'bobina_film_id': i['bobina__window_film__id'],
-            'bobina_width': i['bobina__width'],
-            'bobina_metros_disponibles': float(i['total']),
-            'bobina_price': float(i['precio_venta_mtr_lineal']) if i['precio_venta_sucursal'] is None else i['precio_venta_sucursal'],
-            'bobina_id': i['bobina__window_film__id'],
-        }, query))
+        inv = []
+        for i in query:
+
+            precio = (
+                i['precio_sucursal']
+                if i['precio_sucursal'] is not None
+                else i['precio_venta_mtr_lineal']
+            )
+
+            inv.append({
+                'bobina_film_name': i['bobina__window_film__name'],
+                'bobina_film_id': i['bobina__window_film__id'],
+                'bobina_width': i['bobina__width'],
+                'bobina_metros_disponibles': float(i['total_metros']),
+                'bobina_price': float(precio),
+                'bobina_id': i['bobina__window_film__id'],
+            })
+        print('inventario',inv)
         return JsonResponse(data={'inventario': inv}, safe=False)
     except Exception as e:
         print('algo salio mal -->', str(e))

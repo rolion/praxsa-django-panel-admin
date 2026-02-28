@@ -81,6 +81,8 @@ export class Invoice{
   car_plate: string;
   sucursal: number;
   sucursal_name: string;
+  sucursal_address: string;
+  sucursal_phone: string;
   car_model_id: number;
   car_model_name: string;
   car_brand_id: number;
@@ -99,7 +101,9 @@ export class Invoice{
     car_model_name: string,
     car_brand_id: number, 
     car_brand_name: string,
-    total_price: number){
+    total_price: number,
+    sucursal_addres: string = '',
+    sucursal_phone: string = ''){
     this.id = 0;
     this.carPartItems = carPartItems;
     this.name = "";
@@ -116,5 +120,7 @@ export class Invoice{
     this.status = '';
     this.sucursal = 0;
     this.sucursal_name = ''
+    this.sucursal_address = sucursal_addres,
+    this.sucursal_phone = sucursal_phone
   }
 }

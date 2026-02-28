@@ -51,6 +51,7 @@ export class ProformaComponent implements OnInit, OnDestroy {
       this.proformaService.getProforma(parseInt(id)).subscribe({
         next: (res) => {
           this.proforma = res;
+          console.log(this.proforma)
         },
         error: (error) => { console.log('error, ', error)}
       });
@@ -77,7 +78,7 @@ export class ProformaComponent implements OnInit, OnDestroy {
         this.pdf.setBody(pdfBody);
         this.pdf.setFoot(pdfFoot);
         this.pdf.setCompanyName('Praxsa');
-        this.pdf.setCompanyAddress('4to anillo, radial 26, calle #3', 'Santa Cruz de la Sierra', '3 352139');
+        this.pdf.setCompanyAddress(this.proforma.sucursal_address, this.proforma.sucursal_name, this.proforma.sucursal_phone);
         this.pdf.setTitle('Proforma', this.proforma.id);
         this.pdf.setProformaDetail(
           // '',
