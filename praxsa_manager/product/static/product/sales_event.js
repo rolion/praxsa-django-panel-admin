@@ -14,7 +14,12 @@ jQuery(function($){
         }
 
         function get_sale_type_element(){
-            return $('select[name="sales_type"]')
+            //return $('select[name="sales_type"]')
+            if ($('select[name="sales_type"]').length) {
+                return $('#id_sales_type').val();
+            } else {
+                return $('.field-sales_type .readonly').text().trim();
+            }
         }
 
         function get_sucursal_id(){
@@ -178,7 +183,7 @@ jQuery(function($){
             }
         }
         function is_sale_instalation_type(){
-            return get_sale_type_element().val() === 'venta_instalacion'
+            return get_sale_type_element() === 'venta_instalacion'
         }
         function disable_sale_detail_elements(){
             $('td.field-width input').prop('readonly', true)
@@ -263,8 +268,8 @@ jQuery(function($){
             return false;
         }
         calculate_subtotal = (target) => {
-            let sales_type = get_sale_type_element().val()
-            if(sales_type == 'venta_instalacion'){
+            let sales_type = get_sale_type_element()
+            if(sales_type == 'venta_instalacion' || sales_type == 'Venta con Instalación'){
                 if(can_update_sub_total_venta_instalacion(target)){
                     let film_price = parseFloat(get_price_element_in_row(target).val())
                     let installation_price = parseFloat(get_installation_price_element_in_row(target).val())
