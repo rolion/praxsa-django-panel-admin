@@ -11,16 +11,17 @@ import { LoginPageComponent } from './pages/login-page/login-page.component';
 import { NewUserComponent } from './pages/new-user/new-user.component';
 import { ListaComponent } from './pages/lista/lista.component';
 import { WindowsFilmComponent } from './pages/windows-film/windows-film.component';
+import { AuthGuard } from './guards/auth.guard';
 // import { HomeV2Component } from './components/home-v2/home-v2.component';
 
 const routes: Routes = [
   { path: '', component: FormularioComponent },
-  { path: 'proforma/:id', component: ProformaComponent},
+  { path: 'proforma/:id', component: ProformaComponent, canActivate: [AuthGuard]},
   { path: 'politica', component: PoliticaComponent},
   { path: 'eliminacion-datos', component: EliminacionDatosComponent},
   { path: 'create-user', component: NewUserComponent},
   { path: 'login', component: LoginPageComponent},
-  { path: 'my-invoice', component: ListaComponent},
+  { path: 'my-invoice', component: ListaComponent, canActivate: [AuthGuard]},
   { path: 'windows-film/:id', component: WindowsFilmComponent},
   { path: '**', component: NotfoundComponent },
 ];
