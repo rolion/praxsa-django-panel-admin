@@ -1,6 +1,6 @@
 # TASK-003: Corregir logout() para que también limpie el email (backlog #6, paso 1)
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** TRIVIAL_FIX
 **Rama:** `task/TASK-003-logout-clear-email`
 **Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/31
@@ -10,6 +10,7 @@
 |---|---|---|---|
 | 2026-09-21 | (nuevo) → INVESTIGATION | Task creado a partir del paso 1 del ítem #6 de docs/integration-and-backlog.md, separado del paso 2 (evaluar reducir PII persistido, TASK-004) por tener naturaleza y complejidad distintas | delivery-investigate |
 | 2026-09-21 | INVESTIGATION → ENGINEERING → REVIEW | Camino TRIVIAL_FIX: PR #31 abierto desde `task/TASK-003-logout-clear-email` (creada desde `origin/master`, independiente de la rama compartida de TASK-002/TASK-004); implementado el fix de una línea + test | delivery-engineer |
+| 2026-09-21 | REVIEW → PUBLISH | Veredicto PASS (sin issues) — `npm install` + `ng test --code-coverage` (30/30 SUCCESS) + `ng build` corridos con evidencia real; `npm audit` reporta solo vulnerabilidades preexistentes de devDependencies, fuera de alcance. Revisión corrida en la misma sesión que implementó el cambio (limitación de aislamiento procedimental, señalada explícitamente) | delivery-review |
 
 ## Investigación
 
@@ -68,7 +69,18 @@ _Pendiente_
 - **No se corrió `ng test` en este entorno** — `node_modules` no está instalado en el worktree y instalarlo solo para este cambio de una línea no se justificaba; queda para la corrida independiente de `delivery-review`.
 
 ## Review
-_Pendiente_
+
+**Veredicto: PASS** — sin issues abiertos, sin `docs/reviews/REV-...md` generado (no hubo hallazgos).
+
+Verificación real ejecutada (evidencia completa en el PR #31, sección `## Testing`):
+- `npm install` (limpio, 1109 paquetes) + `npx ng test --watch=false --browsers=ChromeHeadless --code-coverage` → `TOTAL: 30 SUCCESS` (incluye el test nuevo + 29 preexistentes, sin regresiones).
+- Cobertura de `authetication.service.ts` tras el cambio: statements 62.5%, branches 75%, functions 42.85%, lines 61.29%.
+- `npx ng build` → OK, sin errores (sirve como type-check).
+- Lint: no configurado en el proyecto (`proforma/` no tiene `eslint`/`tslint` ni script `lint`) — no ejecutado porque no existe, no se omitió silenciosamente.
+- `npm audit`: 109 vulnerabilidades preexistentes en devDependencies (tooling), no relacionadas a este cambio — deuda técnica preexistente, no bloqueante para este PR.
+- Diff revisado contra `## Investigación` (no hay Plan formal, `TRIVIAL_FIX`): el cambio implementado coincide exactamente con lo descrito, sin scope creep (solo `authetication.service.ts` + su spec).
+
+**Nota de aislamiento de contexto**: esta revisión corrió en la misma sesión que implementó el cambio (`delivery-engineer`), no en una sesión nueva — limitación procedimental de esta ejecución concreta. Se compensó reconstruyendo la verificación desde comandos reales (no desde memoria de la implementación).
 
 ## Publicación
 _Pendiente_
