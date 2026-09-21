@@ -14,6 +14,7 @@ from product.helper.user import User_Helper
 # from ..Forms.daily_sales_form import NotaVentaForm
 from ..business.proforma import Proforma_Business
 from ..business.orden_trabajo import Orden_Trabajo_Business
+from ..business.pago import Pago_Business
 from ..models import Detalle_Nota_Trabajo, Nota_Venta, Proforma_Detail
 from ..helper.pdf import PDFService
 from django.urls import reverse
@@ -65,7 +66,8 @@ class ReportDailySellAdmin(admin.ModelAdmin):
     user_business = User_Business()
     user_helper = User_Helper()
     proforma_helper = Proforma_Helper()
-    
+    pago_business = Pago_Business()
+
     def get_sales_type(self, obj):
         # link para ver la nota de trabajo
         # pero se visualiza el id de la proforma
@@ -137,7 +139,11 @@ class ReportDailySellAdmin(admin.ModelAdmin):
         qs = super().get_queryset(request)
         qs = qs.prefetch_related("nota_venta__nota_trabajo","nota_venta__nota_trabajo__proforma", "nota_venta__nota_trabajo__proforma__items")
         qs = qs.select_related("nota_venta__nota_trabajo__proforma__car_model_id", "nota_venta__nota_trabajo__proforma__sucursal")
-        return  qs
+        result = self.pago_business.get_pago_queryset_by_role(user = request.user, qs=qs)
+        if result is None:
+            self.message_user(request=request,  message=str('Asigne una sucursal al usuario'), level= messages.ERROR)
+            return qs.filter(nota_venta__nota_trabajo__proforma__sucursal = -1)
+        return  result
     
     def has_add_permission(self, request, obj=None):
         return False
