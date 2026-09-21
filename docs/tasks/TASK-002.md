@@ -1,6 +1,6 @@
 # TASK-002: Cerrar endpoints públicos que exponen stock/precio (backlog #5)
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Rama:** `claude/public-endpoints-pii-storage-ff52d6` (compartida con TASK-004, por decisión explícita del usuario — ver historial)
 **Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/30 (combinado con TASK-004, por decisión explícita del usuario)
@@ -11,6 +11,7 @@
 | 2026-09-21 | (nuevo) → INVESTIGATION | Task creado a partir del ítem #5 de docs/integration-and-backlog.md, con decisión de negocio ya tomada por el usuario: mantener `calculator_info`/`model_parts` públicos, cerrar `get_inventory`, y decidir `get_bobina`/`get_layer_info` | delivery-investigate |
 | 2026-09-21 | INVESTIGATION → PLANNING | Decisión arquitectónica tomada (ADR-002): `get_inventory`/`get_layer_info` siguen públicos, se agregan `AllowAny` explícito + `ScopedRateThrottle` (`60/min`); `get_bobina` se cierra con chequeo manual de `is_staff` (no se consume desde `proforma`) | delivery-architect |
 | 2026-09-21 | PLANNING → ENGINEERING | Plan v1 escrito (PLAN-2026-09-21-public-endpoints-protection.md). Usuario decidió explícitamente reusar la rama existente del worktree en vez de crear `task/TASK-002-...`, y combinar TASK-002+TASK-004 en un único PR (se aparta de la regla de "un PR por task" del skill, por decisión explícita) | delivery-plan |
+| 2026-09-21 | ENGINEERING → REVIEW | Implementación completa según el plan v1, commit e4bdf62 empujado al PR #30. Un desvío menor documentado (AnonRateThrottle con scope fijo en vez de ScopedRateThrottle, porque `@api_view` no reenvía `throttle_scope`) — no cambia alcance ni riesgo, resuelto directamente sin escalar | delivery-engineer |
 
 ## Investigación
 
@@ -100,7 +101,20 @@ Decisión registrada en [ADR-002](../adr/ADR-002-public-catalog-endpoints-protec
 [PLAN-2026-09-21-public-endpoints-protection.md](../plans/PLAN-2026-09-21-public-endpoints-protection.md) (v1)
 
 ## Implementación
-_Pendiente_
+
+Resumen (detalle completo en PR #30, sección `## Changes`):
+
+- `get_inventory`/`get_layer_info` convertidas a `@api_view(['GET'])` + `AllowAny` explícito + `PublicCatalogThrottle` (subclase de `AnonRateThrottle`, `scope='public_catalog'`, `60/min` vía `DEFAULT_THROTTLE_RATES`). Siguen públicas, mismo shape de respuesta.
+- `get_bobina`: chequeo manual `is_authenticated and is_staff` al inicio (403 JSON si falla), sin convertir a DRF.
+- Tests nuevos: `praxsa_manager/product/tests/test_public_catalog_endpoints.py` (7 casos) + helper `create_staff_user()` en `helpers.py`.
+- **Desvío del plan, resuelto directamente (no cambia alcance/riesgo)**: `ScopedRateThrottle` no funciona con `@api_view` porque el decorador no reenvía `throttle_scope` de la función a la vista generada (solo copia `renderer_classes`/`parser_classes`/`authentication_classes`/`throttle_classes`/`permission_classes`). Se usó una subclase de `AnonRateThrottle` con `scope` fijo, leyendo el mismo `DEFAULT_THROTTLE_RATES['public_catalog']`.
+- **Hallazgo de runtime no anticipado en el plan**: no hay `CACHES` compartido (Redis/Memcached) — el throttle usa cache in-memory por proceso. Hoy `Dockerfile.prod` corre `gunicorn` con 1 worker (sin `--workers` explícito), así que el límite es efectivamente global en el despliegue actual; si se agregan workers en el futuro, cada uno tendría su propio contador. Señalado como deuda/consideración, no bloqueante.
+
+**Verificación propia ejecutada** (no es el Quality Gate formal — eso es `delivery-review`):
+- `python manage.py test product` → 13/13 OK (6 preexistentes + 7 nuevos), sin regresiones. Usé credenciales del `.env` local del checkout principal (fuera del worktree) con permiso explícito del usuario en el chat — Postgres real en `localhost:5432`, DB de test creada y destruida por el test runner (`test_praxsa_backup`), sin tocar la DB real `praxsa_backup`.
+- `manage.py check` y `makemigrations --check --dry-run` → sin issues nuevos, sin migraciones pendientes.
+- Verificación en vivo contra `runserver` con datos reales: `get_calculator_info` sigue 200 (sin cambios); `get_layer_info`/`get_inventory` devuelven el mismo shape con datos reales; `get_bobina` sin sesión → 403; 65 peticiones seguidas a `get_inventory` → 200 hasta la #61, luego 429 (confirma el throttle con la tasa real de producción, `60/min`, no solo con la tasa sobreescrita del test).
+- **No verificado**: navegador real contra la calculadora de `proforma` ni `/windows-film/:id` ni el panel `InventoryAdmin` (este PR no toca `proforma/`; el mecanismo de `get_bobina` — sesión de staff — está cubierto por el test automatizado, que ejercita exactamente esa condición). Queda como verificación opcional para `delivery-review` si quiere confirmarlo end-to-end.
 
 ## Review
 _Pendiente_
