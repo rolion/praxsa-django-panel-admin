@@ -1,6 +1,6 @@
 # TASK-002: Filtrado por sucursal inconsistente en reportes/pagos del admin (backlog #10)
 
-**Etapa actual:** REVIEW
+**Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Rama:** `claude/pagosadmin-filtrado-sucursal-34d0c8`
 **Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/32
@@ -12,6 +12,7 @@
 | 2026-09-21 | INVESTIGATION → PLANNING | Decisión arquitectónica tomada tras confirmar con el usuario: grupo "Caja" ya existe, Admin+Caja ven todas las sucursales, se incluye ReportNotaTrabajoAdmin, se excluye el bug de "Admin sin sucursal" | delivery-architect |
 | 2026-09-21 | PLANNING → ENGINEERING | Plan v1 escrito y PR #32 abierto sobre la rama existente del worktree (mismo criterio que TASK-001: worktree nombrado para este task, sin necesidad de crear `task/TASK-002-...`) | delivery-plan |
 | 2026-09-21 | ENGINEERING → REVIEW | Implementación completa según el plan v1, commit `1399594` empujado al PR #32; 20/21 tests nuevos verificados por el propio engineer en un entorno local improvisado (ver Implementación) | delivery-engineer |
+| 2026-09-21 | REVIEW → ENGINEERING | Veredicto FAIL — REV-2026-09-21-002 (IMPLEMENTATION, Severity Low): 1 test de wiring (`ReportStorageAdmin`) no ejecutable de punta a punta en este sandbox por falta de Postgres real (`DISTINCT ON` no soportado por SQLite); causa confirmada preexistente en `origin/master`, no un defecto introducido por este cambio | delivery-review |
 
 ## Investigación
 
@@ -117,7 +118,19 @@ Implementado según el plan v1, commit `1399594` (rama `claude/pagosadmin-filtra
 Sin migraciones (no se tocó `product/models.py`) — confirmado indirectamente: no se corrió `makemigrations --check --dry-run` en este entorno porque no aplica (no hay cambios de modelo).
 
 ## Review
-_Pendiente_
+
+**Nota de aislamiento**: esta revisión corrió en la misma sesión que investigó, diseñó, planificó e implementó TASK-002 — no hay aislamiento real de contexto entre roles en esta ejecución concreta (limitación procedimental, señalada explícitamente por `delivery-review/SKILL.md`). Se reconstruyó el contexto solo desde los artefactos (TASK, plan, ADR, diff real vía `git diff origin/master...HEAD`) y se corrieron las verificaciones de forma independiente en un entorno nuevo, en vez de confiar en lo que reportó `delivery-engineer`.
+
+**Veredicto: FAIL** — [REV-2026-09-21-002](../reviews/REV-2026-09-21-002-report-storage-distinct-on-sqlite.md) (Severity: Low, Category: IMPLEMENTATION, Status: Open).
+
+Verificado de forma independiente (venv efímero propio, SQLite en memoria, sin tocar `.env` ni credenciales reales — mismo entorno limitado que TASK-001):
+- `python manage.py test product` (suite completa): **26/27 pasan** — los 6 smoke tests preexistentes sin regresión, 20/21 de los tests nuevos de este PR.
+- El único test rojo (`ReportStorageAdmin`, wiring) falla por `DISTINCT ON` (Postgres-only) — confirmado con `git show origin/master:...` que esa línea ya existía antes de este PR; no la toqué, solo le pasé la queryset ya filtrada. Verificación adicional ad hoc (fuera del test formal) confirma que `aggregated_result` sí queda correctamente filtrado por sucursal.
+- `python manage.py makemigrations product --check --dry-run` (con el historial real de migraciones, no el `MIGRATION_MODULES=None` que usó el engineer): `No changes detected in app 'product'` — confirma el criterio de aceptación "sin migraciones".
+- `flake8` (sin config propia del proyecto): sin hallazgos en el código nuevo más allá del estilo de espaciado ya usado en todo el repo; un `F821` preexistente y no relacionado en `business/inventario.py:50` (código muerto de antes de este PR, no tocado).
+- Plan compliance: los 8 acceptance criteria del plan se verificaron uno por uno contra el diff real y quedaron confirmados (ver evidencia en el PR). Sin scope creep: `git diff --stat` confirma que solo se tocaron los archivos listados en el plan más las correcciones de implementación ya documentadas por el engineer (fallback de `ReportNotaTrabajoAdmin`).
+
+No hay issues `Critical`/`High`. El único hallazgo (`REV-2026-09-21-002`) es una verificación no ejecutable en este sandbox, no un defecto de código — mismo patrón que `REV-2026-09-21-001` de TASK-001. Por regla del Quality Gate ("nunca declarar PASS con un test en rojo sin autorización explícita"), el veredicto es `FAIL` hasta que el usuario decida entre correr la suite con Postgres real o autorizar el waiver.
 
 ## Publicación
 _Pendiente_
