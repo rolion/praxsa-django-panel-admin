@@ -1,6 +1,6 @@
 # TASK-001: Dejar de exponer secretos de producción (backlog #1) y asegurar el despliegue a prod
 
-**Etapa actual:** REVIEW
+**Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Rama:** `claude/delivery-env-config-67c844`
 **Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/29
@@ -12,6 +12,7 @@
 | 2026-09-21 | INVESTIGATION → PLANNING | Decisión arquitectónica tomada: inyección de secretos en runtime vía `env_file`, sin hornear en la imagen ni commitear en git | delivery-architect |
 | 2026-09-21 | PLANNING → ENGINEERING | Plan v1 escrito y PR #29 abierto sobre la rama existente del worktree (por decisión explícita del usuario, en vez de crear `task/TASK-001-...`) | delivery-plan |
 | 2026-09-21 | ENGINEERING → REVIEW | Implementación completa según el plan v1, commit 081d22a empujado al PR #29 | delivery-engineer |
+| 2026-09-21 | REVIEW → ENGINEERING | Veredicto FAIL — REV-2026-09-21-001 (IMPLEMENTATION): verificación funcional/técnica no ejecutable en este entorno de review (sin Docker daemon, Django ni node_modules); no es un defecto de código encontrado | delivery-review |
 
 ## Investigación
 
@@ -112,7 +113,14 @@ Implementado según el plan v1, commit `081d22a` (rama `claude/delivery-env-conf
 Sin tests unitarios/integración/E2E agregados — el plan ya justificó explícitamente que no correspondían (cambio de infraestructura, sin lógica de negocio involucrada).
 
 ## Review
-_Pendiente_
+
+**Veredicto: FAIL** — [REV-2026-09-21-001](../reviews/REV-2026-09-21-001-unexecuted-verification.md) (Severity: Medium, Category: IMPLEMENTATION).
+
+Verificado por inspección directa del diff y del filesystem (sin ejecutar herramientas): `.gitignore`, `git rm --cached`, plantillas `.example`, remoción del `COPY` en `Dockerfile.prod`, `env_file` en `docker-compose.prod.yml`, y ausencia de cambios en `praxsa_manager/product/`/`proforma/src/` — todo correcto. `docker compose -f docker-compose.prod.yml config` se ejecutó realmente y pasó.
+
+No se pudo ejecutar en este entorno de review (no es un defecto de código, es una limitación del entorno): `python manage.py test` (Django no instalado), `ng test`/`ng build` (sin `node_modules`), y el build+run real de la imagen `Dockerfile.prod` (Docker daemon no alcanzable). Por regla del Quality Gate, no corresponde declarar `PASS` mientras esas verificaciones queden sin ejecutar — de ahí el `FAIL`, aunque no hay evidencia de que el código esté mal.
+
+Pendiente de decisión del usuario: correr esas verificaciones en un entorno con Docker Desktop/Python/Node disponibles y reportar el resultado, o autorizar explícitamente proceder sin ellas dado el perfil de riesgo bajo (diff de una sola línea por archivo, cambio puramente de infraestructura).
 
 ## Publicación
 _Pendiente_
