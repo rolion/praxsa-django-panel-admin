@@ -1,96 +1,185 @@
 ---
 name: delivery-plan
-description: Genera un plan de implementación por escrito para una tarea de este monorepo (praxsa_manager en Django/DRF + proforma en Angular) antes de tocar código. Analiza la tarea con criterio de arquitecto de software senior en Django y Angular, pregunta si algo queda ambiguo en vez de asumir, investiga el código relevante, evalúa riesgos y complicaciones de arquitectura (contratos de API, migraciones, rendimiento, seguridad), incluye las pruebas concretas que validan la solución, respeta las reglas de docs/CLAUDE.md (cambios pequeños, un objetivo por cambio, Decimal para dinero, no editar migraciones aplicadas, avisar antes de nuevas dependencias) y guarda el resultado como archivo en docs/plans/. Se invoca explícitamente con /delivery-plan <descripción de la tarea>; no debe activarse solo porque el usuario mencione "plan" o "implementar" en una frase suelta.
+description: Convierte la investigación y (si existen) las decisiones arquitectónicas de un task en un plan de implementación concreto y ejecutable para este monorepo (praxsa_manager en Django/DRF + proforma en Angular). Lee docs/tasks/TASK-<id>.md, incorpora los ADR relevantes de docs/adr/, define cambios backend/frontend/base de datos, estrategia de testing (incluyendo el criterio explícito de si corresponde E2E con Playwright), acceptance criteria, edge cases, riesgos y fuera de alcance. Guarda el plan versionado en docs/plans/PLAN-<fecha>-<slug>.md y abre el único Pull Request del task (con el plan como primer contenido, sin código todavía), dejando el enlace registrado en el TASK. Si se le pide una actualización del plan (PLAN_UPDATE_REQUIRED), no sobrescribe en silencio: versiona e incluye un changelog. Respeta las reglas de docs/CLAUDE.md. Se invoca explícitamente con /delivery-plan TASK-<id>; no debe activarse solo porque el usuario mencione "plan" o "implementar" en una frase suelta.
 ---
 
 # Delivery Plan
 
 ## Por qué existe este skill
 
-`docs/CLAUDE.md` ya pide: "Antes de cambios que afecten varios archivos, proponer un plan y esperar confirmación." Este skill es esa práctica hecha repetible: en vez de improvisar un plan distinto cada vez, sigue siempre la misma investigación y el mismo formato, para que cualquiera del equipo (o Claude en otra sesión) pueda leer `docs/plans/` y entender qué se decidió y por qué.
-
-Un plan bueno aquí vale más que uno exhaustivo: el objetivo es que la persona que lo lea pueda aprobarlo o corregirlo en un vistazo, no que cubra cada caso imaginable.
+`docs/CLAUDE.md` pide: "Antes de cambios que afecten varios archivos, proponer un plan y esperar confirmación." Este skill es esa práctica hecha repetible, y además el punto donde nace el único Pull Request de un task: abre el PR con el plan como contenido inicial, para que un humano pueda revisarlo y aprobarlo antes de que exista una sola línea de código de implementación. `delivery-engineer` seguirá empujando commits a esa misma rama/PR — este skill nunca abre un segundo PR para el mismo task.
 
 ## Cuándo usarlo
 
-Solo cuando el usuario invoque `/delivery-plan <tarea>` explícitamente. No lo dispares por tu cuenta al detectar palabras como "plan" o "implementar" en una conversación normal — el usuario prefiere pedirlo a propósito.
+Solo cuando el usuario invoque `/delivery-plan TASK-<id>` explícitamente. No lo dispares por tu cuenta al detectar "plan" o "implementar" en una conversación normal.
+
+## Inputs
+
+- `TASK-<id>` con `## Investigación` completa (y `## Arquitectura` completa si el veredicto fue `NEEDS_ARCHITECTURE`).
+
+## Outputs
+
+- `docs/plans/PLAN-<fecha>-<slug>.md`, versionado (`v1`, `v2`, ...).
+- El Pull Request único del task, abierto (primera vez) o actualizado con un nuevo commit (actualizaciones posteriores).
+- `docs/tasks/TASK-<id>.md` actualizado: sección `## Plan`, rama, enlace al PR, historial.
 
 ## Flujo
 
-### 1. Entender la tarea antes de investigar
+### 1. Leer el TASK y verificar que está listo para planificar
 
-Lee la descripción de la tarea con la mirada de un arquitecto de software senior con experiencia real en Django/DRF y Angular: qué problema de negocio resuelve, qué comportamiento nuevo se espera, y qué capas del sistema probablemente intervienen (¿es puramente backend, puramente frontend, o requiere cambios coordinados en ambos porque cambia el contrato de la API?).
+Lee `docs/tasks/TASK-<id>.md`. Reglas de entrada:
+- Si `## Investigación` está vacía o dice "Pendiente": detente, pide correr `/delivery-investigate TASK-<id>` primero.
+- Si el veredicto de complejidad es `TRIVIAL_FIX`: este skill no aplica — ese camino va directo a `delivery-engineer`. Dilo y detente.
+- Si el veredicto es `NEEDS_ARCHITECTURE` y `## Arquitectura` sigue "Pendiente": detente, pide correr `/delivery-architect TASK-<id>` primero.
 
-Si algo queda ambiguo, pregunta antes de seguir — no asumas y sigas adelante. Ejemplos de cuándo preguntar:
-- La tarea admite más de una interpretación razonable (p. ej. "agregar descuento" — ¿por sucursal, por cliente, por volumen?).
-- No queda claro si debe tocar backend, frontend o ambos.
-- Hay un caso borde que cambiaría la solución según la respuesta (p. ej. qué pasa con proformas ya creadas si cambia una regla de precio).
-- Falta un dato necesario para dimensionar el trabajo (rango de valores, quién lo usa, con qué frecuencia).
+### 2. Analizar la tarea con criterio de arquitecto/planner senior
 
-Si la tarea ya es clara y acotada, no preguntes por preguntar — sigue directo a investigar. El objetivo es evitar construir un plan entero sobre un supuesto equivocado, no interrogar al usuario por rutina.
+Parte de la investigación y los ADR ya existentes — no repitas la exploración de código desde cero. Sí verifica que lo citado siga vigente: el código pudo cambiar entre la investigación y ahora (¿el archivo sigue en esa ruta? ¿la función sigue con esa firma?). Si algo no cuadra, dilo en el plan como una nota, no lo ignores en silencio.
 
-### 2. Investigar el código como arquitecto
+Si algo queda genuinamente ambiguo para poder planificar (más de una interpretación razonable, un caso borde que cambiaría la solución, falta un dato de negocio que no está ni en la investigación ni en los ADR), pregunta antes de seguir.
 
-No redactes el plan de memoria. Este proyecto tiene, según sus propias palabras, deuda técnica ("El proyecto NO se construyó con buenas prácticas"), así que lo que parece obvio por el nombre de un archivo puede no serlo. Investiga no solo dónde insertar código nuevo, sino cómo encajan las piezas: qué contrato expone el backend hacia el frontend (endpoints DRF, forma de los serializers), qué asume cada lado del otro, y qué tan frágil es esa relación en este código concreto.
+### 3. Evaluar consideraciones de arquitectura propias del plan
 
-- Ubica el código relevante a la tarea. El backend (`praxsa_manager/product/`) separa por capas: `business/` (lógica de dominio), `admin_config/` (registro en el admin de Django), `custom_views/` (endpoints DRF), `serializer/`, `Forms/`, `helper/`. Una tarea sobre, por ejemplo, precios de láminas probablemente toca `business/precio_venta.py`, su `admin_config`, y quizás `custom_views/`.
-- Revisa `praxsa_manager/product/migrations/` para saber cuál es la última migración, si la tarea implica cambios de modelo.
-- Revisa `praxsa_manager/product/tests/` para ver qué patrón de test ya existe (`helpers.py` trae fixtures/utilidades compartidas) y no reinventar convenciones.
-- Si la tarea toca el frontend, ubica los componentes/servicios relevantes en `proforma/src/`.
-- Si existen, revisa `docs/backend-audit.md`, `docs/frontend-audit.md` y `docs/integration-and-backlog.md` por si ya hay contexto conocido sobre esa área (deuda técnica identificada, TODOs, bugs conocidos).
+Aunque el veredicto haya sido `NEEDS_PLAN` (sin `delivery-architect` de por medio), todo plan incluye una sección de arquitectura — a este nivel, más liviana. Revisa activamente:
+- **Contrato API**: ¿rompe algo que Angular ya consume? ¿hay que coordinar despliegue backend/frontend?
+- **Datos existentes**: ¿una migración puede fallar o dejar datos inconsistentes?
+- **Dinero y precisión**: todo cálculo de precios/pagos en `Decimal`, nunca `float`.
+- **Rendimiento**: consultas N+1, cálculos en loop sobre inventario/proformas.
+- **Seguridad y permisos**: vistas de admin o endpoints que deberían estar restringidos.
+- **Acoplamiento**: dada la deuda técnica conocida, ¿tocar este archivo tiene efectos secundarios en otra parte?
 
-Usa Grep/Glob para esto en vez de asumir; cita rutas y líneas reales (`archivo.py:42`) en el plan, no ubicaciones inventadas.
+Si el task sí pasó por `delivery-architect`, esta sección resume las decisiones de los ADR relevantes en vez de re-derivarlas.
 
-### 3. Evaluar riesgos y complicaciones de arquitectura
+### 4. Definir la estrategia de testing con criterio explícito de E2E
 
-Antes de proponer los pasos, piensa como arquitecto qué puede salir mal más allá del camino feliz. No hace falta que todos apliquen a cada tarea, pero revísalos activamente:
+No agregues E2E con Playwright por reflejo. Justifica explícitamente sí o no:
+- **Sí corresponde E2E** cuando el cambio afecta un flujo crítico de usuario de punta a punta (ej. login → elegir sucursal → generar proforma → pago), cambia navegación o un formulario multi-paso, o depende de la integración real entre frontend y backend de una forma que un test de integración aislado no puede validar.
+- **No corresponde E2E** en el resto de los casos — dilo explícitamente con el motivo, no lo omitas.
+- Este proyecto no tiene Playwright instalado en `proforma/package.json` todavía. Si el plan concluye que sí hace falta E2E, marca la instalación de Playwright en "Dependencias nuevas" — es una dependencia nueva que requiere confirmación antes de que `delivery-engineer` la instale.
+- Para el resto de los casos, define si corresponde nivel unitario, de integración, o ambos, siguiendo los patrones ya usados (`praxsa_manager/product/tests/` con `helpers.py`; Angular con `TestBed` + `HttpTestingController`).
 
-- **Contrato API**: ¿el cambio rompe algo que el frontend Angular ya consume (forma de la respuesta, nombre o tipo de un campo)? ¿hay que coordinar el despliegue de backend y frontend?
-- **Datos existentes**: ¿una migración de modelo puede fallar o dejar en un estado inconsistente registros ya guardados? ¿hay filas que no cumplirían una regla nueva?
-- **Dinero y precisión**: cualquier cálculo nuevo de precios/pagos debe seguir usando `Decimal`; señala si el cambio introduce alguna conversión riesgosa (`float`, redondeos).
-- **Rendimiento**: ¿el cambio agrega consultas N+1, reportes pesados, o cálculos en loop sobre inventario/proformas que puedan crecer mucho?
-- **Seguridad y permisos**: ¿el cambio toca vistas del admin o endpoints que deberían quedar restringidos por rol o sucursal?
-- **Acoplamiento**: dado que hay deuda técnica conocida (ver `docs/*-audit.md`), ¿tocar este archivo puede tener efectos secundarios en otra parte que lo importa o hereda de él?
+### 5. Escribir el plan
 
-Documenta lo que encuentres aunque no tenga solución todavía — esa es justamente la información que necesita quien apruebe el plan para decidir con criterio.
-
-### 4. Escribir el plan
-
-Crea (o asegúrate de que exista) la carpeta `docs/plans/`. Guarda el plan como `docs/plans/<YYYY-MM-DD>-<slug-de-la-tarea>.md`, usando la fecha de hoy y un slug corto en minúsculas con guiones derivado de la tarea.
-
-Usa esta plantilla. Omite una sección solo si genuinamente no aplica (por ejemplo, "Migraciones" en una tarea que no toca modelos) — no la dejes vacía, bórrala.
+Calcula el slug de la tarea (kebab-case corto) y la fecha de hoy. Guarda como `docs/plans/PLAN-<YYYY-MM-DD>-<slug>.md`, versión `v1`. Si `## Plan` en el TASK ya apunta a un plan existente para este mismo task, ver paso 7 (actualización) en vez de crear uno nuevo.
 
 ```markdown
-# <Título corto de la tarea>
+# PLAN-<fecha>-<slug> (v1)
 
-## Objetivo
-Qué se quiere lograr y por qué, en 1-3 frases. Si la tarea vino con una motivación de negocio (un bug reportado, un pedido de sucursal, etc.), inclúyela.
+**Task:** TASK-<id>
+**ADRs relacionados:** <lista, o "Ninguno">
 
-## Alcance
-Qué partes del monorepo toca: backend (`praxsa_manager`), frontend (`proforma`), o ambos. Lista las apps/módulos específicos identificados en la investigación.
+## Objective
+Qué se quiere lograr y por qué, en 1-3 frases.
 
-## Contexto relevante encontrado
-Lo que se encontró al revisar el código actual: archivos y líneas relevantes (`archivo.py:42`), comportamiento actual, y cualquier deuda técnica o riesgo ya documentado en `docs/*-audit.md` que aplique aquí.
+## Context
+Resumen de la investigación relevante (referencia TASK-<id> en vez de copiar todo).
 
-## Pasos de implementación
-Lista ordenada y pequeña. Cada paso debe ser algo verificable (un archivo que cambia, una función que se agrega). Si la tarea es grande, divídela en fases, cada una pensada para un PR separado — no la comprimas en un solo paso gigante.
+## Current behavior
+Cómo funciona hoy, con `archivo:línea`.
 
-## Migraciones
-Si el paso anterior requiere cambios de modelo: qué migración nueva se crea (nunca editar una ya aplicada) y qué comando la genera.
+## Expected behavior
+Qué debería pasar después del cambio.
 
-## Pruebas para validar la solución
-Esto no es opcional ni un recordatorio genérico de "agregar tests": describe los casos de prueba concretos que van a confirmar que la solución funciona, uno por cada comportamiento nuevo o modificado. Para cada caso indica el escenario (dado/cuando/entonces, o input → output esperado) y dónde vive (`product/tests/` en backend, specs de Angular en frontend). Si un paso de implementación cambia lógica de negocio y no tiene un caso de prueba correspondiente aquí, el plan está incompleto.
+## Architecture considerations
+Ver paso 3 — o resumen de los ADR aplicables.
 
-## Riesgos y complicaciones de arquitectura
-Lo que salió de evaluar la tarea como arquitecto: contrato API entre backend y frontend, impacto en datos existentes o migraciones, precisión de `Decimal` en dinero, rendimiento (consultas N+1, reportes pesados), permisos/seguridad, y acoplamiento con otras partes del código dada la deuda técnica conocida. Si algún riesgo no tiene mitigación clara, dilo explícitamente en vez de omitirlo.
+## Proposed solution
+La solución concreta elegida (y, si hubo alternativas evaluadas por `delivery-architect`, por qué esta).
+
+## Files/components affected
+Lista de archivos/módulos identificados, backend y frontend por separado.
+
+## Implementation steps
+Lista ordenada y pequeña, cada paso verificable. Tareas grandes se dividen en fases.
+
+## Test strategy
+Casos concretos por nivel (unit/integración/E2E), con la justificación explícita de E2E sí/no del paso 4. Si un paso de implementación cambia lógica de negocio sin un caso de prueba correspondiente aquí, el plan está incompleto.
+
+## Acceptance criteria
+Lista verificable de condiciones que deben cumplirse para considerar la tarea terminada.
+
+## Risks
+Riesgos identificados y su mitigación si la tiene. Si no la tiene, decirlo explícitamente.
+
+## Out of scope
+Qué queda deliberadamente fuera, y preguntas abiertas para el usuario.
 
 ## Dependencias nuevas
-Si el plan requiere instalar algo que no está ya en el proyecto, decirlo aquí explícitamente — el proyecto exige avisar antes de agregar dependencias, así que esto es una señal para pedir confirmación, no algo para resolver solo.
-
-## Fuera de alcance / preguntas abiertas
-Cosas que no se pudieron verificar en el código, decisiones que le corresponden al usuario, o partes de la tarea que quedan deliberadamente para otro PR.
+Si aplica, qué se necesita instalar — requiere confirmación antes de que `delivery-engineer` lo instale. Omitir la sección si no aplica.
 ```
 
-### 5. Presentar y esperar confirmación
+### 6. Abrir el PR único del task
 
-Después de guardar el archivo, resume el plan en el chat en pocas líneas (no repitas el archivo completo) y pregunta si se puede proceder con la implementación o si hay que ajustar algo. No empieces a programar en la misma respuesta salvo que el usuario ya lo haya pedido explícitamente junto con el plan.
+Si `**Pull Request:**` en el TASK ya tiene un enlace, salta al paso 7 — no abras un segundo PR.
+
+1. Revisa el estado del repo (`git status`) y no descartes trabajo sin comitear ajeno.
+2. Trae `origin/master` actualizado y crea la rama `task/TASK-<id>-<slug>` desde ahí.
+3. Comitea únicamente el archivo del plan (y el TASK actualizado si vive en la misma rama de trabajo — normalmente el TASK se mantiene en la rama por defecto del repo si así lo prefiere el equipo; si no es obvio, pregunta). Mensaje de commit corto referenciando el plan.
+4. `git push` y abre el PR contra la rama base (normalmente `master`) con este cuerpo inicial:
+
+```markdown
+## Summary
+<resumen de una línea de la tarea>
+
+## Task
+TASK-<id> (docs/tasks/TASK-<id>.md)
+
+## Plan
+docs/plans/PLAN-<fecha>-<slug>.md (v1)
+
+## ADRs relacionados
+- <enlace a cada ADR, o "Ninguno">
+
+## Changes
+_Pendiente de implementación (delivery-engineer)_
+
+## Testing
+_Pendiente (delivery-review)_
+
+## Review
+_Pendiente (delivery-review)_
+
+## Known limitations
+_Ninguna conocida todavía_
+```
+
+El título del PR debe referenciar el task: `TASK-<id>: <título corto>`. Este cuerpo es un contrato entre skills: cada una edita solo su propia sección (`delivery-engineer` → `## Changes`, `delivery-review` → `## Testing` y `## Review`, `delivery-publish` → `## Summary` y `## Known limitations` al cerrar). No pises secciones que no te correspondan.
+
+### 7. Si es una actualización (PLAN_UPDATE_REQUIRED): versionar, no sobrescribir
+
+Cuando te invoquen porque `delivery-engineer` o `delivery-review` reportaron un problema de plan:
+1. Incrementa la versión en el encabezado del documento (`v1` → `v2`, etc.).
+2. Aplica los cambios necesarios al cuerpo del plan.
+3. Agrega al final una sección `## Changelog` (o una entrada más si ya existe):
+
+```markdown
+## Changelog
+- **v2** (<fecha>): <motivo del cambio>. Solicitado por <delivery-engineer | delivery-review, referenciando REV-<id> si aplica>.
+```
+
+4. Comitea y **empuja a la misma rama** del PR ya abierto — nunca crees un PR nuevo. Actualiza el número de versión en `## Plan` del PR (`gh pr edit`) si el enlace de versión aparece ahí.
+
+### 8. Actualizar el TASK
+
+Actualiza `## Plan` (enlace + versión vigente), `**Rama:**`, `**Pull Request:**` (si es la primera vez), agrega la fila al historial (`PLANNING → PLANNING` con motivo si es una actualización, o `ARCHITECTURE/INVESTIGATION → PLANNING` si es la primera vez seguida de `PLANNING → ENGINEERING` cuando corresponda entregarlo), y ajusta `**Etapa actual:**` a `ENGINEERING` una vez el plan está listo para implementarse.
+
+### 9. Presentar y detener
+
+Resume el plan en el chat (no repitas el archivo completo), incluye el enlace del PR, y pregunta si se puede proceder o si hay que ajustar algo. **No asumas la aprobación del plan como automática ni invoques `delivery-engineer` tú mismo.**
+
+## Reglas
+
+- Nunca abre un segundo PR para el mismo task — siempre reutiliza el registrado en `**Pull Request:**` del TASK.
+- Nunca sobrescribe un plan existente sin versionar y sin changelog.
+- No implementa código.
+- Toda decisión de testing declara explícitamente si corresponde E2E y por qué.
+
+## Cuándo detenerse
+
+- Investigación o arquitectura del task están incompletas para el veredicto emitido.
+- Ambigüedad real de negocio que no se resuelve con lo ya documentado.
+- No queda claro si el TASK y el código de trabajo (rama) deben vivir juntos o el usuario tiene una convención distinta.
+
+## Cuándo delega a otra skill
+
+Siempre termina delegando a `delivery-engineer` (nunca implementa). Si durante el análisis descubre que en realidad la tarea necesita una decisión arquitectónica que `delivery-investigate` no detectó, debe detenerse y sugerir `/delivery-architect TASK-<id>` en su lugar, dejando constancia en el TASK de por qué.
