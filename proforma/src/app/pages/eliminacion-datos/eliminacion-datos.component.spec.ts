@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 
 import { EliminacionDatosComponent } from './eliminacion-datos.component';
 
@@ -8,7 +9,8 @@ describe('EliminacionDatosComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ EliminacionDatosComponent ]
+      declarations: [ EliminacionDatosComponent ],
+      schemas: [NO_ERRORS_SCHEMA]
     })
     .compileComponents();
   });
