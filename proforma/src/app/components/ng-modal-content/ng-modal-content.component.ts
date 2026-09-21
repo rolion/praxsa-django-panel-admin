@@ -59,7 +59,7 @@ export class NgModalContentComponent implements OnInit {
     if (this.currentUser)
     {
       this.estado = this.STATUS_OBTENER_DATOS_USUARIO;
-      this.person.name = `${this.currentUser.name} ${this.currentUser.lastname}`;
+      this.person.name = `${this.currentUser.name} ${this.currentUser.lastname}`.trim();
         this.person.email = this.currentUser.email;
         this.person.phonenumber = this.currentUser.phone_number;
         this.person.placa = '';
@@ -74,7 +74,7 @@ export class NgModalContentComponent implements OnInit {
       this.estado = this.STATUS_OBTENER_DATOS_USUARIO
       this.currentUser = this.auth.getUser()
       if (this.currentUser){
-        this.person.name = `${this.currentUser.name} ${this.currentUser.lastname}`;
+        this.person.name = `${this.currentUser.name} ${this.currentUser.lastname}`.trim();
         this.person.email = this.currentUser.email;
         this.person.phonenumber = this.currentUser.phone_number;
         this.person.placa = '';
