@@ -1,6 +1,6 @@
 # TASK-002: Cerrar endpoints públicos que exponen stock/precio (backlog #5)
 
-**Etapa actual:** REVIEW
+**Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Rama:** `claude/public-endpoints-pii-storage-ff52d6` (compartida con TASK-004, por decisión explícita del usuario — ver historial)
 **Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/30 (combinado con TASK-004, por decisión explícita del usuario)
@@ -12,6 +12,7 @@
 | 2026-09-21 | INVESTIGATION → PLANNING | Decisión arquitectónica tomada (ADR-002): `get_inventory`/`get_layer_info` siguen públicos, se agregan `AllowAny` explícito + `ScopedRateThrottle` (`60/min`); `get_bobina` se cierra con chequeo manual de `is_staff` (no se consume desde `proforma`) | delivery-architect |
 | 2026-09-21 | PLANNING → ENGINEERING | Plan v1 escrito (PLAN-2026-09-21-public-endpoints-protection.md). Usuario decidió explícitamente reusar la rama existente del worktree en vez de crear `task/TASK-002-...`, y combinar TASK-002+TASK-004 en un único PR (se aparta de la regla de "un PR por task" del skill, por decisión explícita) | delivery-plan |
 | 2026-09-21 | ENGINEERING → REVIEW | Implementación completa según el plan v1, commit e4bdf62 empujado al PR #30. Un desvío menor documentado (AnonRateThrottle con scope fijo en vez de ScopedRateThrottle, porque `@api_view` no reenvía `throttle_scope`) — no cambia alcance ni riesgo, resuelto directamente sin escalar | delivery-engineer |
+| 2026-09-21 | REVIEW → ENGINEERING | Veredicto FAIL — REV-2026-09-21-002 (IMPLEMENTATION, High): el monkeypatch de `SimpleRateThrottle.THROTTLE_RATES` en `PublicCatalogThrottleTest` no restaura la tasa real al terminar la clase, contamina el resto del proceso de test. Confirmado empíricamente por `delivery-review` con un test temporal (3 de 5 peticiones normales recibieron 429). Se investigó también una hipótesis de bypass del throttle para usuarios autenticados — descartada, no es un problema real | delivery-review |
 
 ## Investigación
 
@@ -117,7 +118,20 @@ Resumen (detalle completo en PR #30, sección `## Changes`):
 - **No verificado**: navegador real contra la calculadora de `proforma` ni `/windows-film/:id` ni el panel `InventoryAdmin` (este PR no toca `proforma/`; el mecanismo de `get_bobina` — sesión de staff — está cubierto por el test automatizado, que ejercita exactamente esa condición). Queda como verificación opcional para `delivery-review` si quiere confirmarlo end-to-end.
 
 ## Review
-_Pendiente_
+
+**Veredicto: FAIL** — 1 issue abierto: [REV-2026-09-21-002](../reviews/REV-2026-09-21-002-throttle-rate-test-leak.md) (**High / IMPLEMENTATION**, corresponde a `delivery-engineer`).
+
+Resumen del issue: `PublicCatalogThrottleTest` sobreescribe `DEFAULT_THROTTLE_RATES['public_catalog']` a `2/min` y fuerza a `SimpleRateThrottle.THROTTLE_RATES` (atributo de clase global, compartido por todas las subclases de throttle del proceso) a releer ese valor en `setUp`/`tearDown` — pero `tearDown` corre **dentro** del `@override_settings` de nivel de clase, así que su intento de "restaurar" el valor real en realidad vuelve a leer el valor sobreescrito. Al terminar la clase, `SimpleRateThrottle.THROTTLE_RATES` queda contaminado con `2/min` para el resto del proceso de test — confirmado agregando un test temporal después de esa clase: 3 de 5 peticiones normales a `get_inventory` recibieron `429` en vez de `200`. No rompe la suite actual (por el orden en que están definidas las clases en el archivo), pero es un riesgo real de tests intermitentes a futuro.
+
+Verificación adicional hecha en esta revisión, sin hallazgos:
+- Se investigó una hipótesis de bypass del throttle para usuarios autenticados (dado que crear cuenta es público vía `create_client`) — **descartada con evidencia**: `get_inventory`/`get_layer_info` no declaran `authentication_classes`, por lo que `TokenAuthentication` nunca reconoce el token del cliente para estas vistas y `request.user` siempre es `AnonymousUser` a efectos del throttle. El mecanismo protege a todos los llamadores por igual, sin excepción.
+- `python manage.py test product` (13/13), `manage.py check`, `makemigrations --check --dry-run`: todo OK, corrida independiente.
+- Sin scope creep: diff acotado a los archivos que el plan declaraba.
+- Sin lint/security tooling configurado en el proyecto (no ejecutado porque no existe, disclosure explícito).
+
+Detalle completo de evidencia en [REV-2026-09-21-002](../reviews/REV-2026-09-21-002-throttle-rate-test-leak.md) y en el PR #30 (`## Testing`/`## Review`).
+
+**Nota de aislamiento de contexto**: esta revisión corrió en la misma sesión que implementó el cambio (`delivery-engineer`) — limitación procedimental señalada explícitamente. Se compensó re-ejecutando todos los comandos de forma independiente y buscando activamente fallas en vez de confirmar lo ya reportado.
 
 ## Publicación
 _Pendiente_

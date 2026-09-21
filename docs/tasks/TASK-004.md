@@ -1,6 +1,6 @@
 # TASK-004: Evaluar reducir el PII persistido en localStorage (backlog #6, paso 2)
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Rama:** `claude/public-endpoints-pii-storage-ff52d6` (compartida con TASK-002, por decisión explícita del usuario — ver historial)
 **Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/30 (combinado con TASK-002, por decisión explícita del usuario)
@@ -12,6 +12,7 @@
 | 2026-09-21 | INVESTIGATION → PLANNING | Decisión arquitectónica tomada (ADR-003), tras verificar a pedido del usuario que `name`/`email`/`phone_number` se envían con la proforma pero vía un formulario editable/obligatorio (no un envío silencioso): persistir solo `token`+`name` en localStorage; el resto vive en memoria vía el `BehaviorSubject` ya existente, sin agregar endpoint de perfil nuevo | delivery-architect |
 | 2026-09-21 | PLANNING → ENGINEERING | Plan v1 escrito (PLAN-2026-09-21-reduce-localstorage-pii.md). Usuario decidió explícitamente reusar la rama existente del worktree en vez de crear `task/TASK-004-...`, y combinar TASK-002+TASK-004 en un único PR (se aparta de la regla de "un PR por task" del skill, por decisión explícita) | delivery-plan |
 | 2026-09-21 | ENGINEERING → REVIEW | Implementación completa según el plan v1, commit 963afae empujado al PR #30. Verificado end-to-end en navegador contra un backend real (login → localStorage solo con token+name → refresh → saludo/guard sobreviven, resto del formulario vacío pero editable) | delivery-engineer |
+| 2026-09-21 | REVIEW → PUBLISH | Veredicto PASS (sin issues) — `ng test` (34/34, corrida independiente) + `ng build` + confirmación independiente por grep de que ningún otro componente lee los campos removidos. Acceptance criteria del plan verificados con evidencia concreta, sin scope creep | delivery-review |
 
 ## Investigación
 
@@ -106,7 +107,17 @@ Resumen (detalle completo en PR #30, sección `## Changes`):
 - **Incidente de proceso durante la verificación, resuelto**: la primera ronda se hizo sin querer contra un `ng serve` que ya estaba corriendo en el puerto 4200, que resultó ser del checkout principal del repo (fuera de este worktree), no de esta rama — mostraba las 6 claves viejas en `localStorage`, lo cual parecía un bug. Se detectó comparando el archivo fuente en ambos checkouts, y se repitió la verificación con una instancia de `ng serve` propia apuntando a este worktree (puerto `4201`, whitelisteado en `CORS_ORIGIN_WHITELIST`), confirmando el comportamiento correcto.
 
 ## Review
-_Pendiente_
+
+**Veredicto: PASS** — sin issues abiertos, sin `docs/reviews/REV-...md` generado para este task (el único hallazgo de esta ronda de revisión, REV-2026-09-21-002, es específico de TASK-002).
+
+Verificación independiente ejecutada (evidencia completa en el PR #30, sección `## Testing`):
+- `npx ng test --watch=false --browsers=ChromeHeadless --code-coverage` → `34/34 OK`, corrida de nuevo desde cero, sin regresiones. Cobertura de `authetication.service.ts`: statements 92.85%, branches 75%, functions 75%, lines 92.59%.
+- `npx ng build` → OK, sin errores (type-check limpio).
+- `npm audit`: solo vulnerabilidades preexistentes de devDependencies, no relacionadas a este cambio.
+- Confirmado por grep, de forma independiente (no reusando el resultado del engineer), que `ng-modal-content.component.ts` sigue siendo el único lugar que lee `currentUser.email`/`.lastname`/`.phone_number` — sin scope creep, sin componentes rotos por el cambio.
+- Acceptance criteria del plan verificados contra la evidencia ya reunida por `delivery-engineer` (login → localStorage solo token+name → refresh real → saludo/guard sobreviven → formulario vacío pero editable, sin errores de consola) — no se repitió la sesión de navegador en esta revisión al no encontrarse motivo para dudar de esa evidencia (tests unitarios cubren exactamente la misma lógica de forma aislada, con cobertura alta).
+
+**Nota de aislamiento de contexto**: esta revisión corrió en la misma sesión que implementó el cambio (`delivery-engineer`) — limitación procedimental señalada explícitamente. Se compensó re-ejecutando los comandos de forma independiente en vez de confiar en lo ya reportado.
 
 ## Publicación
 _Pendiente_
