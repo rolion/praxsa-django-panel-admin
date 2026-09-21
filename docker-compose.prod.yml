@@ -6,6 +6,7 @@ services:
     build:
       context: praxsa_manager/
       dockerfile: Dockerfile.prod
+    env_file: praxsa_manager/.env
     volumes:
       - static:/praxsa_manager/staticfiles
       - ./praxsa_manager/logs:/praxsa_manager/logs

@@ -1,0 +1,5 @@
+# Real secrets — never commit these. See praxsa_manager/.env-*.example for the expected keys.
+praxsa_manager/.env
+praxsa_manager/.env-dev
+praxsa_manager/.env-prod
+praxsa_manager/.env-stg
