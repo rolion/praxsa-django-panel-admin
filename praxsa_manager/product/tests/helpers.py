@@ -33,6 +33,14 @@ def create_user_with_token(username=None, password='testpass123'):
     return user, token
 
 
+def create_staff_user(username=None, password='testpass123'):
+    """Usuario staff logueable por sesión (self.client.login), para endpoints
+    protegidos por request.user.is_staff en vez de token DRF."""
+    username = username or f'{_unique("staff")}@test.com'
+    user = User.objects.create_user(username=username, email=username, password=password, is_staff=True)
+    return user, password
+
+
 def create_sucursal(user, name=None, address='Calle Test 123'):
     sucursal = Sucursal.objects.create(
         name=name or _unique('Sucursal'),

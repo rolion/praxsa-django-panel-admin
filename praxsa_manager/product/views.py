@@ -5,9 +5,10 @@ from django.template import loader
 from .helper.proforma import Proforma_Helper
 from .models import Car_Model_Part, Window_Film_Reel, Car_Brand, Car_Model, Car_Part, Window_Film, Sucursal, Proforma_Header
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.response import Response
 from rest_framework import permissions
+from rest_framework.throttling import AnonRateThrottle
 from .serializer.client_serializer import ClientSerializer
 from django.db import transaction
 from rest_framework import status
@@ -25,6 +26,13 @@ from django.http import HttpResponse
 import traceback
 
 
+class PublicCatalogThrottle(AnonRateThrottle):
+    """Throttle para endpoints públicos de catálogo/inventario (get_inventory,
+    get_layer_info). Usa un `scope` propio en vez del genérico 'anon' para poder
+    ajustar la tasa de este grupo sin afectar otros throttles futuros."""
+    scope = 'public_catalog'
+
+
 def index(request):
     latest_brand_list = Car_Brand.objects.order_by("id")
     # template = loader.get_template("product/index.html")
@@ -35,6 +43,8 @@ def index(request):
     return render(request, "product/index.html", context)
 
 def get_bobina(request, pk):
+    if not (request.user.is_authenticated and request.user.is_staff):
+        return JsonResponse(data={'error': True, 'message': 'not allowed'}, status=403)
     try:
             bobina = Window_Film_Reel.objects.select_related('window_film').get(id = pk)
             # return Response(data = {'bobina': bobina}  , status=status.HTTP_200_OK)
@@ -184,14 +194,20 @@ def get_proforma_car_part_info(request, proforma_id):
         return JsonResponse(data={'error':True, 'message': 'algo salio mal'}, status=500)
 
 
+@api_view(['GET'])
+@permission_classes((permissions.AllowAny,))
+@throttle_classes((PublicCatalogThrottle,))
 def get_layer_info(request, layer_id):
     try:
         film = Window_Film.objects.get(pk = layer_id)
-        return JsonResponse(data={'layer': {'name': film.name, 'content': film.content} }, safe=False)
+        return Response(data={'layer': {'name': film.name, 'content': film.content} })
     except Exception as e:
         print('algo salio mal -->', str(e))
-        return JsonResponse(data={'error':True, 'message': 'algo salio mal'}, status=500)
+        return Response(data={'error':True, 'message': 'algo salio mal'}, status=500)
 
+@api_view(['GET'])
+@permission_classes((permissions.AllowAny,))
+@throttle_classes((PublicCatalogThrottle,))
 def get_inventory(request, sucursal_id, lamina_id, width):
     """"
      return sucursal inventory
@@ -217,10 +233,10 @@ def get_inventory(request, sucursal_id, lamina_id, width):
                 'bobina_id': i['bobina__window_film__id'],
             })
         print('inventario',inv)
-        return JsonResponse(data={'inventario': inv}, safe=False)
+        return Response(data={'inventario': inv})
     except Exception as e:
         print('algo salio mal -->', str(e))
-        return JsonResponse(data={'error':True, 'message': 'algo salio mal'}, status=500)
+        return Response(data={'error':True, 'message': 'algo salio mal'}, status=500)
     
 
 def get_calculator_info(request):
