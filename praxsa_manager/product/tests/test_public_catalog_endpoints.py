@@ -2,8 +2,16 @@
 siguen públicos con throttling; get_bobina se cierra a staff."""
 from django.core.cache import cache
 from django.test import TestCase, override_settings
+from rest_framework.throttling import SimpleRateThrottle
 
 from . import helpers
+
+# Capturado al importar este módulo, antes de que cualquier override_settings
+# se aplique, para que PublicCatalogThrottleTest pueda restaurar la tasa real
+# en tearDown. Releer api_settings.DEFAULT_THROTTLE_RATES ahí no sirve: tearDown
+# corre dentro del override_settings de nivel de clase, así que seguiría viendo
+# el valor sobreescrito, no el real (ver REV-2026-09-21-002).
+_ORIGINAL_THROTTLE_RATES = SimpleRateThrottle.THROTTLE_RATES
 
 
 class GetInventoryEndpointTest(TestCase):
@@ -61,17 +69,16 @@ class PublicCatalogThrottleTest(TestCase):
         # SimpleRateThrottle.THROTTLE_RATES se resuelve una sola vez al importar
         # el módulo (no reacciona a la señal setting_changed de override_settings),
         # así que se fuerza la relectura para que la tasa baja de este test aplique.
-        from rest_framework.throttling import SimpleRateThrottle
         from rest_framework.settings import api_settings
         api_settings.reload()
         SimpleRateThrottle.THROTTLE_RATES = api_settings.DEFAULT_THROTTLE_RATES
 
     def tearDown(self):
         cache.clear()
-        from rest_framework.throttling import SimpleRateThrottle
-        from rest_framework.settings import api_settings
-        api_settings.reload()
-        SimpleRateThrottle.THROTTLE_RATES = api_settings.DEFAULT_THROTTLE_RATES
+        # Restaura la tasa real capturada al importar el módulo — no se puede
+        # releer de api_settings acá porque el override_settings de la clase
+        # todavía está activo durante tearDown (ver REV-2026-09-21-002).
+        SimpleRateThrottle.THROTTLE_RATES = _ORIGINAL_THROTTLE_RATES
 
     def test_get_inventory_returns_429_after_exceeding_rate(self):
         scenario = helpers.build_full_scenario()
