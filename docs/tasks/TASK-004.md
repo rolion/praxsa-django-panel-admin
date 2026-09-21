@@ -1,6 +1,6 @@
 # TASK-004: Evaluar reducir el PII persistido en localStorage (backlog #6, paso 2)
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Rama:** `claude/public-endpoints-pii-storage-ff52d6` (compartida con TASK-002, por decisión explícita del usuario — ver historial)
 **Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/30 (combinado con TASK-002, por decisión explícita del usuario)
@@ -11,6 +11,7 @@
 | 2026-09-21 | (nuevo) → INVESTIGATION | Task creado a partir del paso 2 del ítem #6 de docs/integration-and-backlog.md, separado del paso 1 (fix de logout(), TASK-003) por tener naturaleza y complejidad distintas | delivery-investigate |
 | 2026-09-21 | INVESTIGATION → PLANNING | Decisión arquitectónica tomada (ADR-003), tras verificar a pedido del usuario que `name`/`email`/`phone_number` se envían con la proforma pero vía un formulario editable/obligatorio (no un envío silencioso): persistir solo `token`+`name` en localStorage; el resto vive en memoria vía el `BehaviorSubject` ya existente, sin agregar endpoint de perfil nuevo | delivery-architect |
 | 2026-09-21 | PLANNING → ENGINEERING | Plan v1 escrito (PLAN-2026-09-21-reduce-localstorage-pii.md). Usuario decidió explícitamente reusar la rama existente del worktree en vez de crear `task/TASK-004-...`, y combinar TASK-002+TASK-004 en un único PR (se aparta de la regla de "un PR por task" del skill, por decisión explícita) | delivery-plan |
+| 2026-09-21 | ENGINEERING → REVIEW | Implementación completa según el plan v1, commit 963afae empujado al PR #30. Verificado end-to-end en navegador contra un backend real (login → localStorage solo con token+name → refresh → saludo/guard sobreviven, resto del formulario vacío pero editable) | delivery-engineer |
 
 ## Investigación
 
@@ -90,7 +91,19 @@ Decisión registrada en [ADR-003](../adr/ADR-003-reduce-localstorage-pii.md):
 [PLAN-2026-09-21-reduce-localstorage-pii.md](../plans/PLAN-2026-09-21-reduce-localstorage-pii.md) (v1)
 
 ## Implementación
-_Pendiente_
+
+Resumen (detalle completo en PR #30, sección `## Changes`):
+
+- `login()` solo persiste `token`+`name` en `localStorage`. `getUser()` pasa a devolver `userLoginSource.value` (en memoria) en vez de reconstruir desde `localStorage`. Nuevo método privado `restoreMinimalSession()` siembra el estado mínimo al arrancar la app.
+- `logout()` sigue limpiando las 6 claves legacy (incluida `email`) para cubrir PII de sesiones anteriores a este cambio.
+- `ng-modal-content.component.ts`: `.trim()` en la concatenación de nombre/apellido para evitar un espacio final cuando `lastname` está vacío.
+- Tests nuevos en `authetication.service.spec.ts` (6 casos, reemplazando el boilerplate).
+- Confirmado por grep que ningún otro componente lee `currentUser.email`/`.lastname`/`.phone_number` — no hizo falta tocar nada más.
+
+**Verificación propia ejecutada** (no es el Quality Gate formal — eso es `delivery-review`):
+- `ng test` → 34/34 OK (28 preexistentes + 6 nuevos), sin regresiones. `ng build` → OK.
+- **Verificación end-to-end real en navegador**, con el backend real corriendo y un usuario de prueba creado vía `create_client` (eliminado al terminar): login → modal de datos del cliente se prellena sin recargar (nombre, teléfono, email correctos) → `localStorage` inspeccionado en vivo confirma solo `token`+`name` → refresh de página real → saludo y guard de rutas siguen funcionando (solo necesitan `token`+`name`) → modal reaparece con nombre prellenado pero teléfono/email/C.I. vacíos y editables, formulario enviable, sin errores de consola.
+- **Incidente de proceso durante la verificación, resuelto**: la primera ronda se hizo sin querer contra un `ng serve` que ya estaba corriendo en el puerto 4200, que resultó ser del checkout principal del repo (fuera de este worktree), no de esta rama — mostraba las 6 claves viejas en `localStorage`, lo cual parecía un bug. Se detectó comparando el archivo fuente en ambos checkouts, y se repitió la verificación con una instancia de `ng serve` propia apuntando a este worktree (puerto `4201`, whitelisteado en `CORS_ORIGIN_WHITELIST`), confirmando el comportamiento correcto.
 
 ## Review
 _Pendiente_
