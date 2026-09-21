@@ -1,6 +1,6 @@
 # TASK-001: Dejar de exponer secretos de producción (backlog #1) y asegurar el despliegue a prod
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Rama:** `claude/delivery-env-config-67c844`
 **Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/29
@@ -11,6 +11,7 @@
 | 2026-09-21 | (nuevo) → INVESTIGATION | Task creado a partir del ítem #1 de docs/integration-and-backlog.md | delivery-investigate |
 | 2026-09-21 | INVESTIGATION → PLANNING | Decisión arquitectónica tomada: inyección de secretos en runtime vía `env_file`, sin hornear en la imagen ni commitear en git | delivery-architect |
 | 2026-09-21 | PLANNING → ENGINEERING | Plan v1 escrito y PR #29 abierto sobre la rama existente del worktree (por decisión explícita del usuario, en vez de crear `task/TASK-001-...`) | delivery-plan |
+| 2026-09-21 | ENGINEERING → REVIEW | Implementación completa según el plan v1, commit 081d22a empujado al PR #29 | delivery-engineer |
 
 ## Investigación
 
@@ -94,7 +95,21 @@ Decisión: quitar el `COPY .env-prod ./.env` de `praxsa_manager/Dockerfile.prod`
 Alcance: `.gitignore` para los `.env*` reales, `git rm --cached` de `praxsa_manager/.env-dev`/`.env-prod`/`.env-stg`, plantillas `.env-prod.example`/`.env-dev.example`, quitar el `COPY .env-prod` de `praxsa_manager/Dockerfile.prod`, agregar `env_file: praxsa_manager/.env` al servicio `web` en `docker-compose.prod.yml`, y documentar el mecanismo en el README. Sin tests unitarios/integración/E2E (no toca lógica de negocio) — verificación por `docker compose config` + build/run local con `.env` de placeholder. Fuera de alcance: rotación de credenciales, limpieza de historial de git, y los artefactos ya inactivos de stg/dev-docker.
 
 ## Implementación
-_Pendiente_
+
+Implementado según el plan v1, commit `081d22a` (rama `claude/delivery-env-config-67c844`, PR #29):
+
+- `.gitignore` nuevo (`praxsa_manager/.env`, `.env-dev`, `.env-prod`, `.env-stg`).
+- `git rm --cached` de `praxsa_manager/.env-dev`, `.env-prod`, `.env-stg` — sin cambios de contenido más allá del `DEBUG=0` ya aplicado en `.env-stg` (commit `530b526`); siguen en el filesystem local.
+- `praxsa_manager/.env-dev.example` y `.env-prod.example` nuevos, con placeholders.
+- `praxsa_manager/Dockerfile.prod`: se quitó la línea `COPY .env-prod ./.env` (línea 18 original) — la imagen ya no contiene ningún secreto.
+- `docker-compose.prod.yml`: se agregó `env_file: praxsa_manager/.env` al servicio `web`, mismo patrón que ya usaba `db`.
+- `README.md`: nueva sección "Variables de entorno" documentando el mecanismo real de inyección por ambiente y el prerrequisito operativo en el servidor.
+
+**Verificación realizada**: `docker compose -f docker-compose.prod.yml config` con un `praxsa_manager/.env` de placeholder (copiado de `.env-prod.example`) — sintaxis válida, variables de entorno resueltas correctamente para `web` y `db`.
+
+**Deuda/limitación señalada, no resuelta en esta implementación** (fuera de alcance del plan): no se pudo hacer un build+run real de la imagen `web` en este entorno — el CLI de Docker está instalado pero el daemon no es alcanzable desde el sandbox de esta sesión (`docker info`/`docker build` fallan con error de conexión al pipe de Docker Desktop). Falta esa verificación en un entorno con Docker Desktop/daemon corriendo, antes de considerar el cambio probado de punta a punta.
+
+Sin tests unitarios/integración/E2E agregados — el plan ya justificó explícitamente que no correspondían (cambio de infraestructura, sin lógica de negocio involucrada).
 
 ## Review
 _Pendiente_
