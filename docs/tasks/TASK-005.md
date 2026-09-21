@@ -1,15 +1,17 @@
 # TASK-005: Tests de caracterización del precio actual + recálculo server-side en `SalesHeaderSerializer.create()` (backlog #2, pasos 1-2)
 
-**Etapa actual:** PLANNING
+**Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
-**Rama:** _sin asignar todavía_
-**Pull Request:** _sin abrir todavía_
+**Rama:** `claude/delivery-price-characterization-tests-42c1d8`
+**Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/33
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
 |---|---|---|---|
 | 2026-09-21 | (nuevo) → INVESTIGATION | Task creado a partir de `docs/integration-and-backlog.md`, ítem #2, "pasos 1-2" según la sección 5 (Orden de ataque, línea 229) | delivery-investigate |
 | 2026-09-21 | INVESTIGATION → PLANNING | Decisión arquitectónica tomada: recalcular y sobrescribir siempre el precio server-side en `SalesHeaderSerializer.create()` (nunca rechazar por discrepancia, decisión confirmada explícitamente por el usuario); rechazar (400) solo cuando el precio real no se puede resolver; centralizar la resolución de precio unitario en `business/pricing.py::Pricing_Business`, sin retro-adaptar `get_inventory`/`get_car_part_info` en este task | delivery-architect |
+| 2026-09-21 | PLANNING (renumeración) | Renombrado de `TASK-002`/`ADR-002` a `TASK-005`/`ADR-004`: colisión de IDs detectada contra trabajo en curso en otras ramas (`claude/pagosadmin-filtrado-sucursal-34d0c8` ya usa TASK-002/ADR-002 para el backlog #10; `claude/public-endpoints-pii-storage-ff52d6` ya usa TASK-002/ADR-002/ADR-003 para otros backlog). Sin cambio de contenido, solo de numeración | delivery-plan |
+| 2026-09-21 | PLANNING → ENGINEERING | Plan v1 escrito y PR #33 abierto sobre la rama existente del worktree (mismo criterio que TASK-001 y TASK-002/pagosadmin: worktree nombrado para este task, sin necesidad de crear `task/TASK-005-...`) | delivery-plan |
 
 ## Investigación
 
@@ -121,7 +123,10 @@ Hoy, `POST /product/invoice` con un `sub_total`/`total_price`/`installation_pric
 Decisión: `SalesHeaderSerializer.create()` deja de confiar en `total_price`/`sub_total`/`installation_price`/`window_film_price` enviados por el cliente. En `validate()`, por cada ítem, resuelve el precio unitario real de la lámina (`(sucursal, lámina, ancho)`) y el `installation_price` real (`Car_Model_Part`), y calcula `sub_total`/`total_price` con la fórmula única de `venta_instalacion` (el único `sales_type` alcanzable desde este endpoint). El servidor **siempre sobrescribe** con el valor recalculado — nunca rechaza por discrepancia con lo enviado por el cliente (decisión de negocio confirmada explícitamente por el usuario en esta sesión). Solo rechaza (`400`, vía `ValidationError` en `validate()`) cuando el precio real no se puede resolver (datos faltantes genuinos, no manipulación). La resolución de precio unitario se centraliza en una función nueva (`business/pricing.py::Pricing_Business.resolve_unit_price`), reusando `Inventario_Business.get_total_meters_window_film_in_inventory` ya existente — sin retro-adaptar `get_inventory`/`get_car_part_info` en este task (queda para el paso 3 del backlog #2, ya planificado por separado). `length`/`width`/`quantity` del ítem siguen confiándose del cliente (fuera de alcance, ver ADR). Ver el ADR para las alternativas descartadas y la estrategia de rollback/mitigación.
 
 ## Plan
-_Pendiente_
+
+[PLAN-2026-09-21-price-recalculation-serializer.md (v1)](../plans/PLAN-2026-09-21-price-recalculation-serializer.md)
+
+Alcance: nuevo `business/pricing.py::Pricing_Business` (`resolve_unit_price`, `calculate_subtotal_venta_instalacion`), `SalesHeaderSerializer.validate()` nuevo que resuelve y sobrescribe el precio real por ítem y de cabecera (sin tocar `create()`), `400` cuando el precio no se puede resolver. Tests: caracterización del comportamiento actual (luego reescrita para probar el comportamiento nuevo), unit tests de `Pricing_Business`, casos de `400`, override por sucursal vs. fallback a inventario, `quantity > 1`, y confirmación de que `length`/`width`/`quantity` siguen sin validarse (fuera de alcance). Sin E2E (justificado: no toca frontend ni contrato de wire format). Fuera de alcance: retro-adaptar `get_inventory`/`get_car_part_info`, validar dimensiones, `ProformaAdmin`/`sales_event.js`/`convertir_venta_metro_lineal`, y el manejo de excepciones de `InvoiceView.post`.
 
 ## Implementación
 _Pendiente_
