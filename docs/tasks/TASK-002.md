@@ -1,6 +1,6 @@
 # TASK-002: Cerrar endpoints públicos que exponen stock/precio (backlog #5)
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Rama:** `claude/public-endpoints-pii-storage-ff52d6` (compartida con TASK-004, por decisión explícita del usuario — ver historial)
 **Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/30 (combinado con TASK-004, por decisión explícita del usuario)
@@ -13,6 +13,7 @@
 | 2026-09-21 | PLANNING → ENGINEERING | Plan v1 escrito (PLAN-2026-09-21-public-endpoints-protection.md). Usuario decidió explícitamente reusar la rama existente del worktree en vez de crear `task/TASK-002-...`, y combinar TASK-002+TASK-004 en un único PR (se aparta de la regla de "un PR por task" del skill, por decisión explícita) | delivery-plan |
 | 2026-09-21 | ENGINEERING → REVIEW | Implementación completa según el plan v1, commit e4bdf62 empujado al PR #30. Un desvío menor documentado (AnonRateThrottle con scope fijo en vez de ScopedRateThrottle, porque `@api_view` no reenvía `throttle_scope`) — no cambia alcance ni riesgo, resuelto directamente sin escalar | delivery-engineer |
 | 2026-09-21 | REVIEW → ENGINEERING | Veredicto FAIL — REV-2026-09-21-002 (IMPLEMENTATION, High): el monkeypatch de `SimpleRateThrottle.THROTTLE_RATES` en `PublicCatalogThrottleTest` no restaura la tasa real al terminar la clase, contamina el resto del proceso de test. Confirmado empíricamente por `delivery-review` con un test temporal (3 de 5 peticiones normales recibieron 429). Se investigó también una hipótesis de bypass del throttle para usuarios autenticados — descartada, no es un problema real | delivery-review |
+| 2026-09-21 | ENGINEERING → REVIEW | Fix de REV-2026-09-21-002 aplicado (commit 78c6ebc): la tasa real se captura como constante de módulo al importar el archivo (antes de cualquier `override_settings`) y se restaura desde ahí en `tearDown`, en vez de releerla de `api_settings` mientras el override sigue activo. Verificado con un test temporal (no comiteado): ya no hay fuga, la tasa real (`60/min`) se restaura correctamente. `python manage.py test product` → 13/13 OK | delivery-engineer |
 
 ## Investigación
 
@@ -116,6 +117,13 @@ Resumen (detalle completo en PR #30, sección `## Changes`):
 - `manage.py check` y `makemigrations --check --dry-run` → sin issues nuevos, sin migraciones pendientes.
 - Verificación en vivo contra `runserver` con datos reales: `get_calculator_info` sigue 200 (sin cambios); `get_layer_info`/`get_inventory` devuelven el mismo shape con datos reales; `get_bobina` sin sesión → 403; 65 peticiones seguidas a `get_inventory` → 200 hasta la #61, luego 429 (confirma el throttle con la tasa real de producción, `60/min`, no solo con la tasa sobreescrita del test).
 - **No verificado**: navegador real contra la calculadora de `proforma` ni `/windows-film/:id` ni el panel `InventoryAdmin` (este PR no toca `proforma/`; el mecanismo de `get_bobina` — sesión de staff — está cubierto por el test automatizado, que ejercita exactamente esa condición). Queda como verificación opcional para `delivery-review` si quiere confirmarlo end-to-end.
+
+### Fix de REV-2026-09-21-002 (segunda ronda de ENGINEERING)
+
+- **Causa raíz**: `PublicCatalogThrottleTest.tearDown` intentaba restaurar `SimpleRateThrottle.THROTTLE_RATES` (atributo de clase global) a su valor real releyendo `api_settings.DEFAULT_THROTTLE_RATES` — pero `tearDown` corre **dentro** del `@override_settings` de nivel de clase, así que en ese momento `api_settings` todavía reflejaba la tasa sobreescrita del test (`2/min`), no la real (`60/min`). El "restore" terminaba re-aplicando el mismo valor de test, dejándolo filtrado para el resto del proceso.
+- **Fix**: se captura `_ORIGINAL_THROTTLE_RATES = SimpleRateThrottle.THROTTLE_RATES` como constante de módulo, evaluada al importar el archivo (antes de que cualquier `override_settings` se aplique), y `tearDown` restaura ese valor capturado directamente en vez de releerlo de `api_settings`.
+- **Verificación**: se agregó temporalmente (no comiteado) un test después de `PublicCatalogThrottleTest` que hace 5 peticiones normales a `get_inventory` e imprime `SimpleRateThrottle.THROTTLE_RATES`. Antes del fix: mostraba `{'public_catalog': '2/min'}` y 3 de 5 peticiones devolvían 429. Después del fix: mostraba `{'public_catalog': '60/min'}` y las 5 peticiones devolvieron 200. `python manage.py test product` → 13/13 OK; `makemigrations --check --dry-run` → sin cambios.
+- Commit: `78c6ebc`.
 
 ## Review
 
