@@ -3,7 +3,7 @@
 **Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Rama:** `claude/public-endpoints-pii-storage-ff52d6` (compartida con TASK-004, por decisión explícita del usuario — ver historial)
-**Pull Request:** _PR único combinado TASK-002+TASK-004, ver enlace en la fila PLANNING → ENGINEERING_
+**Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/30 (combinado con TASK-004, por decisión explícita del usuario)
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
