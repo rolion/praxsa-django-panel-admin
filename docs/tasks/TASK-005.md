@@ -1,6 +1,6 @@
 # TASK-005: Tests de caracterización del precio actual + recálculo server-side en `SalesHeaderSerializer.create()` (backlog #2, pasos 1-2)
 
-**Etapa actual:** REVIEW
+**Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Rama:** `claude/delivery-price-characterization-tests-42c1d8`
 **Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/33
@@ -13,6 +13,7 @@
 | 2026-09-21 | PLANNING (renumeración) | Renombrado de `TASK-002`/`ADR-002` a `TASK-005`/`ADR-004`: colisión de IDs detectada contra trabajo en curso en otras ramas (`claude/pagosadmin-filtrado-sucursal-34d0c8` ya usa TASK-002/ADR-002 para el backlog #10; `claude/public-endpoints-pii-storage-ff52d6` ya usa TASK-002/ADR-002/ADR-003 para otros backlog). Sin cambio de contenido, solo de numeración | delivery-plan |
 | 2026-09-21 | PLANNING → ENGINEERING | Plan v1 escrito y PR #33 abierto sobre la rama existente del worktree (mismo criterio que TASK-001 y TASK-002/pagosadmin: worktree nombrado para este task, sin necesidad de crear `task/TASK-005-...`) | delivery-plan |
 | 2026-09-21 | ENGINEERING → REVIEW | Implementación completa según el plan v1, commit `7f1052b` empujado al PR #33. `manage.py check` limpio; `manage.py test` no se pudo correr completo en este entorno (sin credenciales para el Postgres local del sandbox) — mismo tipo de limitación ya aceptada en TASK-001 | delivery-engineer |
+| 2026-09-21 | REVIEW → ENGINEERING | Veredicto FAIL — REV-2026-09-21-002 (IMPLEMENTATION): verificación funcional no ejecutable en este entorno de review, acceptance criterion #1 del plan sin confirmar con evidencia real; REV-2026-09-21-003 (IMPLEMENTATION): sin test para la suma de `total_price` con más de un ítem en `carPartItems` | delivery-review |
 
 ## Investigación
 
@@ -145,7 +146,17 @@ Implementado según el plan v1, commit `7f1052b` (rama `claude/delivery-price-ch
 Sin nuevas dependencias del proyecto, sin migraciones (no se tocó ningún modelo), sin cambios en `views.py`/`admin_config/`/`sales_event.js`/`proforma/src/` — consistente con "Files/components affected" del plan.
 
 ## Review
-_Pendiente_
+
+**Veredicto: FAIL** — [REV-2026-09-21-002](../reviews/REV-2026-09-21-002-unexecuted-test-suite.md) (Severity: Medium, Category: IMPLEMENTATION, Status: Open) y [REV-2026-09-21-003](../reviews/REV-2026-09-21-003-missing-multi-item-coverage.md) (Severity: Medium, Category: IMPLEMENTATION, Status: Open).
+
+- **REV-002**: `python manage.py test` no se pudo ejecutar completo en este entorno de review (mismo tipo de limitación que TASK-001/REV-001 — sin credenciales para el Postgres local del sandbox). Se avanzó más que en TASK-001: `manage.py check` limpio, y `manage.py test` llega hasta el intento real de conexión a la base de datos sin ningún error de código, fallando solo en autenticación. No se leyó el `.env` real que existe en el checkout principal del repo, por la regla de `docs/CLAUDE.md` de no tocar `.env`/credenciales.
+- **REV-003**: ningún test de `test_invoice_pricing.py` cubre una proforma con **más de un ítem** en `carPartItems` — el caso de uso real de este dominio. La suma de `total_price` a través de varios ítems recalculados (`total_price += item['sub_total']` dentro del loop de `validate()`) queda sin cobertura, violando "todo cambio de lógica de negocio lleva su test" de `docs/CLAUDE.md`.
+
+Confirmado por inspección directa del diff (`git diff origin/master...HEAD`) y revisión manual línea por línea de `validate()`/`Pricing_Business` contra cada test existente (aritmética recalculada a mano, coincide en todos los casos): `create()` de `SalesHeaderSerializer` sin modificar; ningún archivo fuera de lo previsto en el plan cambia; sin migraciones; sin dependencias nuevas; cumple ADR-004 (sobrescribe siempre, nunca rechaza por discrepancia; `length`/`width`/`quantity` deliberadamente fuera de validación, con test explícito). `flake8`/`bandit` corridos ad hoc (el proyecto no configura ninguno): sin hallazgos de seguridad, solo nits de estilo no bloqueantes en el código nuevo.
+
+Ambos issues son categoría `IMPLEMENTATION` — ninguno requiere replanificar ni revisar la arquitectura, corresponden a `delivery-engineer`: (a) decidir con el usuario cómo resolver la verificación de ejecución real (waiver como TASK-001, o correr con credenciales de un Postgres de test), y (b) agregar el test de múltiples ítems.
+
+**Nota de aislamiento de contexto**: esta revisión corrió en la misma sesión donde se investigó/planificó/implementó TASK-005 — aislamiento solo procedimental (reconstruido desde TASK-005.md, el plan, el ADR y el diff real), no memoria real separada.
 
 ## Publicación
 _Pendiente_
