@@ -1,6 +1,6 @@
 # TASK-002: Filtrado por sucursal inconsistente en reportes/pagos del admin (backlog #10)
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Rama:** `claude/pagosadmin-filtrado-sucursal-34d0c8`
 **Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/32
@@ -11,6 +11,7 @@
 | 2026-09-21 | (nuevo) → INVESTIGATION | Task creado a partir del ítem #10 de docs/integration-and-backlog.md (backend SEC-06) | delivery-investigate |
 | 2026-09-21 | INVESTIGATION → PLANNING | Decisión arquitectónica tomada tras confirmar con el usuario: grupo "Caja" ya existe, Admin+Caja ven todas las sucursales, se incluye ReportNotaTrabajoAdmin, se excluye el bug de "Admin sin sucursal" | delivery-architect |
 | 2026-09-21 | PLANNING → ENGINEERING | Plan v1 escrito y PR #32 abierto sobre la rama existente del worktree (mismo criterio que TASK-001: worktree nombrado para este task, sin necesidad de crear `task/TASK-002-...`) | delivery-plan |
+| 2026-09-21 | ENGINEERING → REVIEW | Implementación completa según el plan v1, commit `1399594` empujado al PR #32; 20/21 tests nuevos verificados por el propio engineer en un entorno local improvisado (ver Implementación) | delivery-engineer |
 
 ## Investigación
 
@@ -99,7 +100,21 @@ Decisión: agregar `is_request_user_caja` y `can_view_all_sucursales` (Admin o C
 Alcance: `User_Helper.is_request_user_caja`/`can_view_all_sucursales`; `Pago_Business.get_pago_queryset_by_role` (usado por `PagosAdmin` y `ReportDailySellAdmin`); `Inventario_Business.get_inventario_queryset_by_role` (usado por `ReportStorageAdmin`, incluyendo su `aggregated_result`, y `ReportUtilidadAdmin`); `Orden_Trabajo_Business.get_finish_nota_queryset` corregido (usado por `ReportNotaTrabajoAdmin`). Tests unitarios de cada método `business/`/`helper/` nuevo o modificado, más un test de wiring por cada `ModelAdmin.get_queryset` tocado (5 admins). Sin E2E (cambio vive solo en el admin de Django, sin flujo de usuario en Angular). Sin migraciones ni dependencias nuevas. Fuera de alcance: `Proforma_Business`, `NotaVentaAdmin`/`NotaTrabajoAdmin`, SEC-07.
 
 ## Implementación
-_Pendiente_
+
+Implementado según el plan v1, commit `1399594` (rama `claude/pagosadmin-filtrado-sucursal-34d0c8`, PR #32):
+
+- `helper/user.py`: `is_request_user_caja` y `can_view_all_sucursales` (Admin o Caja).
+- `business/pago.py`: `Pago_Business.get_pago_queryset_by_role`, usado por `PagosAdmin` y `ReportDailySellAdmin`.
+- `business/inventario.py`: `Inventario_Business.get_inventario_queryset_by_role`, usado por `ReportStorageAdmin` (incluye su `aggregated_result`, que ahora recibe el mismo filtro que el `qs` principal) y `ReportUtilidadAdmin`.
+- `business/orden_trabajo.py`: `get_finish_nota_queryset` ya no tiene el filtro comentado, recibe `user`; usado por `ReportNotaTrabajoAdmin`. Se corrigió además el *fallback* de `ReportNotaTrabajoAdmin.get_queryset` (`qs.filter(sucursal=-1)` → `qs.filter(proforma__sucursal=-1)`): `Nota_trabajo` no tiene un campo `sucursal` directo, así que la rama `None` (antes inalcanzable porque el filtro estaba comentado) habría lanzado `FieldError` en cuanto se activara. Detalle de implementación, no requirió escalar a `delivery-plan`.
+- `tests/helpers.py`: nuevas fábricas `add_user_to_group`, `create_nota_trabajo`, `create_nota_venta`, `create_pago`, `create_full_pago_chain`; `create_full_proforma` acepta ahora un `inventario` opcional para enlazar el detalle (lo necesita `ReportUtilidadAdmin`, que solo computa utilidad sobre inventario con un detalle de proforma ya vendido).
+- `tests/test_sucursal_scope_admin.py` (nuevo): unitarios de `can_view_all_sucursales` y de cada `get_*_queryset_by_role` nuevo/corregido (Admin ve todo, Caja ve todo, usuario con sucursal ve solo la suya, sin sucursal y sin rol → `None`), más un test de wiring por cada uno de los 5 `ModelAdmin.get_queryset` tocados.
+
+**Verificación realizada por el propio engineer** (no es el Quality Gate formal — eso es `delivery-review`): este entorno no tiene Django instalado ni acceso a Postgres/credenciales reales (mismo entorno de TASK-001). Se armó un venv efímero fuera del repo con las dependencias de `requirements-3.8.10.txt` y un `DATABASES` apuntando a SQLite en memoria (nunca se tocó ningún archivo `.env` ni credencial real) para poder ejecutar `product/tests/test_sucursal_scope_admin.py`. Resultado: **20/21 tests pasan**. El único que falla (`test_report_storage_admin_filtra_qs_y_aggregated_result`) lo hace por `django.db.utils.NotSupportedError: DISTINCT ON fields is not supported by this database backend` — `ReportStorageAdmin.get_queryset` ya usaba `.distinct("sucursal__id", ...)` (sintaxis `DISTINCT ON`, exclusiva de PostgreSQL) **antes de este cambio**; no se tocó esa línea, solo se le pasó el `base_qs` ya filtrado. Es un límite del SQLite improvisado de este sandbox, no un defecto del código — se espera que pase en Postgres real (el backend configurado en `settings.py`).
+
+**Hallazgo no relacionado, detectado durante la verificación** (no se tocó, fuera de alcance de este task): al intentar correr `manage.py check`/`test`, Django 4.2.1 reporta `fields.E120` (`CharField` sin `max_length`) en 11 campos de `product/models.py` (`Client.ci_nit`/`phone_number`, `Nota_Venta.ci_nit`, `Proforma_Header.ci_nit`/`email`/`origen`/`phone_number`/`sales_type`, `Sucursal.phone_number`, `instalador.phonenumber`, `pago.tipo_pago`) — ninguno de estos campos fue tocado por TASK-002. En Postgres esto no rompe nada porque las columnas ya existen desde migraciones históricas, pero indica que el estado de `models.py` divergió de esas migraciones en algún momento (deuda técnica preexistente, no reportada antes en `docs/backend-audit.md`). Se deja registrado aquí para que quede trazable; no se investigó más a fondo por estar fuera del alcance de este cambio.
+
+Sin migraciones (no se tocó `product/models.py`) — confirmado indirectamente: no se corrió `makemigrations --check --dry-run` en este entorno porque no aplica (no hay cambios de modelo).
 
 ## Review
 _Pendiente_
