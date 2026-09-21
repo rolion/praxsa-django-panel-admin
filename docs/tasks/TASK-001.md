@@ -1,15 +1,16 @@
 # TASK-001: Dejar de exponer secretos de producción (backlog #1) y asegurar el despliegue a prod
 
-**Etapa actual:** PLANNING
+**Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
-**Rama:** _sin asignar todavía_
-**Pull Request:** _sin abrir todavía_
+**Rama:** `claude/delivery-env-config-67c844`
+**Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/29
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
 |---|---|---|---|
 | 2026-09-21 | (nuevo) → INVESTIGATION | Task creado a partir del ítem #1 de docs/integration-and-backlog.md | delivery-investigate |
 | 2026-09-21 | INVESTIGATION → PLANNING | Decisión arquitectónica tomada: inyección de secretos en runtime vía `env_file`, sin hornear en la imagen ni commitear en git | delivery-architect |
+| 2026-09-21 | PLANNING → ENGINEERING | Plan v1 escrito y PR #29 abierto sobre la rama existente del worktree (por decisión explícita del usuario, en vez de crear `task/TASK-001-...`) | delivery-plan |
 
 ## Investigación
 
@@ -87,7 +88,10 @@ Para levantar producción hoy: `docker compose -f docker-compose.prod.yml up -d 
 Decisión: quitar el `COPY .env-prod ./.env` de `praxsa_manager/Dockerfile.prod`, inyectar el servicio `web` de `docker-compose.prod.yml` con `env_file: praxsa_manager/.env` (mismo patrón que ya usa `db`), dejar de trackear los `.env*` en git (`.gitignore` + `git rm --cached`), publicar `praxsa_manager/.env-prod.example` como plantilla, y documentar el mecanismo real en el README. No incluye rotación de credenciales ni limpieza de historial de git (pospuestas, fuera de alcance). Ver el ADR para las alternativas descartadas (Docker secrets, gestor de secretos externo, `docker build --secret`) y la estrategia de rollback.
 
 ## Plan
-_Pendiente_
+
+[PLAN-2026-09-21-secure-prod-env-injection.md (v1)](../plans/PLAN-2026-09-21-secure-prod-env-injection.md)
+
+Alcance: `.gitignore` para los `.env*` reales, `git rm --cached` de `praxsa_manager/.env-dev`/`.env-prod`/`.env-stg`, plantillas `.env-prod.example`/`.env-dev.example`, quitar el `COPY .env-prod` de `praxsa_manager/Dockerfile.prod`, agregar `env_file: praxsa_manager/.env` al servicio `web` en `docker-compose.prod.yml`, y documentar el mecanismo en el README. Sin tests unitarios/integración/E2E (no toca lógica de negocio) — verificación por `docker compose config` + build/run local con `.env` de placeholder. Fuera de alcance: rotación de credenciales, limpieza de historial de git, y los artefactos ya inactivos de stg/dev-docker.
 
 ## Implementación
 _Pendiente_
