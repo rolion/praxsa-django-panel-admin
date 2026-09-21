@@ -1,5 +1,5 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
-import {ActivatedRoute, Router} from '@angular/router';
+import {ActivatedRoute} from '@angular/router';
 import { Invoice} from "../../model/proformaCollection";
 import {PdfBuilderService} from "../../service/pdf/pdf-builder.service";
 import {Subscription} from "rxjs";
@@ -24,7 +24,6 @@ export class ProformaComponent implements OnInit, OnDestroy {
   userStateSubscription: Subscription | null = null;
   pdfLogoImg: any;
   constructor( private route: ActivatedRoute,
-               private navigate: Router,
                private pdf: PdfBuilderService,
                private proformaService: ProformaService,
                private auth: AutheticationService
@@ -37,9 +36,6 @@ export class ProformaComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.currentUser = this.auth.getUser();
-    if(!this.currentUser){
-      this.navigate.navigateByUrl('/login')
-    }
     let id = this.route.snapshot.paramMap.get('id');
     if(this.currentUser && id){
       this.getProforma(id);
