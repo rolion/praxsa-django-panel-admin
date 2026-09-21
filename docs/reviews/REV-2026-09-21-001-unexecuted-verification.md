@@ -1,6 +1,6 @@
 # REV-2026-09-21-001: Verificación funcional/técnica no ejecutable en este entorno de review
 
-**Status:** Open
+**Status:** Waived — autorizado por el usuario en el chat de la sesión (2026-09-21) para proceder a publicación sin ejecutar estas verificaciones, dado el perfil de riesgo bajo del cambio (diff de una línea por archivo, puramente de infraestructura, sin lógica de negocio tocada). Queda como pendiente informativo para quien despliegue en el servidor real (ver nota abajo).
 **Severity:** Medium
 **Category:** IMPLEMENTATION
 **Related plan:** docs/plans/PLAN-2026-09-21-secure-prod-env-injection.md (v1)
@@ -75,3 +75,7 @@ Como complemento, sí verifiqué por lectura directa del diff (`git diff origin/
 - No hay cambios que roten `SECRET_KEY`/password ni que toquen el historial de git.
 
 Estos puntos de la lista de acceptance criteria del plan están confirmados por inspección directa. Los dos que exigían ejecución real (build+run de la imagen, y la ausencia de regresión en las suites de test existentes) quedan sin verificar.
+
+## Resolución
+
+El usuario autorizó explícitamente, en el chat de esta sesión, proceder a publicación sin ejecutar estas verificaciones — no las considera bloqueantes dado que el cambio es de una línea por archivo, puramente de infraestructura, y `docker compose config` ya validó la sintaxis. Queda como recomendación operativa (no bloqueante) correr `docker compose -f docker-compose.prod.yml up -d --build` una primera vez en un entorno controlado, con el `.env` real ya creado en el servidor, antes de confiar en que el despliegue funciona de punta a punta.
