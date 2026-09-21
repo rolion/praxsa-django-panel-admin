@@ -1,15 +1,16 @@
 # TASK-002: Filtrado por sucursal inconsistente en reportes/pagos del admin (backlog #10)
 
-**Etapa actual:** PLANNING
+**Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
-**Rama:** _sin asignar todavía_
-**Pull Request:** _sin abrir todavía_
+**Rama:** `claude/pagosadmin-filtrado-sucursal-34d0c8`
+**Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/32
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
 |---|---|---|---|
 | 2026-09-21 | (nuevo) → INVESTIGATION | Task creado a partir del ítem #10 de docs/integration-and-backlog.md (backend SEC-06) | delivery-investigate |
 | 2026-09-21 | INVESTIGATION → PLANNING | Decisión arquitectónica tomada tras confirmar con el usuario: grupo "Caja" ya existe, Admin+Caja ven todas las sucursales, se incluye ReportNotaTrabajoAdmin, se excluye el bug de "Admin sin sucursal" | delivery-architect |
+| 2026-09-21 | PLANNING → ENGINEERING | Plan v1 escrito y PR #32 abierto sobre la rama existente del worktree (mismo criterio que TASK-001: worktree nombrado para este task, sin necesidad de crear `task/TASK-002-...`) | delivery-plan |
 
 ## Investigación
 
@@ -92,7 +93,10 @@ Hoy, cualquier usuario staff de Django con permiso de modelo sobre `pago`, `Prox
 Decisión: agregar `is_request_user_caja` y `can_view_all_sucursales` (Admin o Caja) a `User_Helper`; agregar `Pago_Business.get_pago_queryset_by_role` (usado por `PagosAdmin` y `ReportDailySellAdmin`), `Inventario_Business.get_inventario_queryset_by_role` (usado por `ReportStorageAdmin` y `ReportUtilidadAdmin`), y corregir `Orden_Trabajo_Business.get_finish_nota_queryset` (acepta `user`, filtro descomentado, usado por `ReportNotaTrabajoAdmin`) — todos siguiendo la convención `get_*_queryset_by_role(user, qs)` ya usada por `Proforma_Business`. Fuera de alcance (decisión explícita del usuario): unificar `Proforma_Business.get_proforma_queryset_by_role` a `User_Helper`, corregir el bug de "Admin sin sucursal ve vacío" en `NotaVentaAdmin`/`NotaTrabajoAdmin`, y resolver SEC-07 (mutación de estado compartido en `changelist_view`). Sin migraciones; rollback por `git revert` simple. Ver el ADR para las alternativas descartadas y el detalle de `ReportStorageAdmin.aggregated_result`.
 
 ## Plan
-_Pendiente_
+
+[PLAN-2026-09-21-filtrado-sucursal-pagos-reportes-admin.md (v1)](../plans/PLAN-2026-09-21-filtrado-sucursal-pagos-reportes-admin.md)
+
+Alcance: `User_Helper.is_request_user_caja`/`can_view_all_sucursales`; `Pago_Business.get_pago_queryset_by_role` (usado por `PagosAdmin` y `ReportDailySellAdmin`); `Inventario_Business.get_inventario_queryset_by_role` (usado por `ReportStorageAdmin`, incluyendo su `aggregated_result`, y `ReportUtilidadAdmin`); `Orden_Trabajo_Business.get_finish_nota_queryset` corregido (usado por `ReportNotaTrabajoAdmin`). Tests unitarios de cada método `business/`/`helper/` nuevo o modificado, más un test de wiring por cada `ModelAdmin.get_queryset` tocado (5 admins). Sin E2E (cambio vive solo en el admin de Django, sin flujo de usuario en Angular). Sin migraciones ni dependencias nuevas. Fuera de alcance: `Proforma_Business`, `NotaVentaAdmin`/`NotaTrabajoAdmin`, SEC-07.
 
 ## Implementación
 _Pendiente_
