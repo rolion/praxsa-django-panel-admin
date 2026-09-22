@@ -1,4 +1,4 @@
-# TASK-002: Cerrar endpoints públicos que exponen stock/precio (backlog #5)
+# TASK-006: Cerrar endpoints públicos que exponen stock/precio (backlog #5)
 
 **Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
@@ -9,8 +9,8 @@
 | Fecha (UTC) | Transición | Motivo | Origen |
 |---|---|---|---|
 | 2026-09-21 | (nuevo) → INVESTIGATION | Task creado a partir del ítem #5 de docs/integration-and-backlog.md, con decisión de negocio ya tomada por el usuario: mantener `calculator_info`/`model_parts` públicos, cerrar `get_inventory`, y decidir `get_bobina`/`get_layer_info` | delivery-investigate |
-| 2026-09-21 | INVESTIGATION → PLANNING | Decisión arquitectónica tomada (ADR-002): `get_inventory`/`get_layer_info` siguen públicos, se agregan `AllowAny` explícito + `ScopedRateThrottle` (`60/min`); `get_bobina` se cierra con chequeo manual de `is_staff` (no se consume desde `proforma`) | delivery-architect |
-| 2026-09-21 | PLANNING → ENGINEERING | Plan v1 escrito (PLAN-2026-09-21-public-endpoints-protection.md). Usuario decidió explícitamente reusar la rama existente del worktree en vez de crear `task/TASK-002-...`, y combinar TASK-002+TASK-004 en un único PR (se aparta de la regla de "un PR por task" del skill, por decisión explícita) | delivery-plan |
+| 2026-09-21 | INVESTIGATION → PLANNING | Decisión arquitectónica tomada (ADR-005): `get_inventory`/`get_layer_info` siguen públicos, se agregan `AllowAny` explícito + `ScopedRateThrottle` (`60/min`); `get_bobina` se cierra con chequeo manual de `is_staff` (no se consume desde `proforma`) | delivery-architect |
+| 2026-09-21 | PLANNING → ENGINEERING | Plan v1 escrito (PLAN-2026-09-21-public-endpoints-protection.md). Usuario decidió explícitamente reusar la rama existente del worktree en vez de crear `task/TASK-006-...`, y combinar TASK-006+TASK-004 en un único PR (se aparta de la regla de "un PR por task" del skill, por decisión explícita) | delivery-plan |
 | 2026-09-21 | ENGINEERING → REVIEW | Implementación completa según el plan v1, commit e4bdf62 empujado al PR #30. Un desvío menor documentado (AnonRateThrottle con scope fijo en vez de ScopedRateThrottle, porque `@api_view` no reenvía `throttle_scope`) — no cambia alcance ni riesgo, resuelto directamente sin escalar | delivery-engineer |
 | 2026-09-21 | REVIEW → ENGINEERING | Veredicto FAIL — REV-2026-09-21-002 (IMPLEMENTATION, High): el monkeypatch de `SimpleRateThrottle.THROTTLE_RATES` en `PublicCatalogThrottleTest` no restaura la tasa real al terminar la clase, contamina el resto del proceso de test. Confirmado empíricamente por `delivery-review` con un test temporal (3 de 5 peticiones normales recibieron 429). Se investigó también una hipótesis de bypass del throttle para usuarios autenticados — descartada, no es un problema real | delivery-review |
 | 2026-09-21 | ENGINEERING → REVIEW | Fix de REV-2026-09-21-002 aplicado (commit 78c6ebc): la tasa real se captura como constante de módulo al importar el archivo (antes de cualquier `override_settings`) y se restaura desde ahí en `tearDown`, en vez de releerla de `api_settings` mientras el override sigue activo. Verificado con un test temporal (no comiteado): ya no hay fuga, la tasa real (`60/min`) se restaura correctamente. `python manage.py test product` → 13/13 OK | delivery-engineer |
@@ -93,7 +93,7 @@ Hoy, cualquiera con la URL (autenticado o no) puede:
 
 ## Arquitectura
 
-Decisión registrada en [ADR-002](../adr/ADR-002-public-catalog-endpoints-protection.md):
+Decisión registrada en [ADR-005](../adr/ADR-005-public-catalog-endpoints-protection.md):
 
 - `get_inventory` y `get_layer_info`: **siguen públicos** (sin login) — se convierten a `@api_view(['GET'])` con `permission_classes=(AllowAny,)` explícito y `ScopedRateThrottle` (`throttle_scope='public_catalog'`, `60/min` inicial vía `DEFAULT_THROTTLE_RATES`).
 - `get_bobina`: se cierra con un chequeo manual `is_authenticated and is_staff` al inicio de la vista (403 JSON si falla) — no se convierte a DRF, dado que su único consumidor es el JS del admin de Django, no `proforma`.
@@ -159,7 +159,7 @@ Verificación adicional hecha en esta ronda:
 
 Detalle completo de evidencia en [REV-2026-09-22-001](../reviews/REV-2026-09-22-001-manual-browser-verification-pending.md), [REV-2026-09-22-002](../reviews/REV-2026-09-22-002-throttle-bypass-for-session-authenticated-staff.md) y en el PR #30 (`## Testing`/`## Review`).
 
-**Nota de aislamiento de contexto**: esta ronda sí corrió en una sesión nueva, sin contexto previo de la implementación ni de la revisión anterior — reconstruida enteramente desde TASK-002.md, el plan, ADR-002, el REV anterior y el diff real (`git diff origin/master...HEAD`), como pide el skill.
+**Nota de aislamiento de contexto**: esta ronda sí corrió en una sesión nueva, sin contexto previo de la implementación ni de la revisión anterior — reconstruida enteramente desde TASK-006.md, el plan, ADR-005, el REV anterior y el diff real (`git diff origin/master...HEAD`), como pide el skill.
 
 ### Ronda 1 (2026-09-21, misma sesión que implementó el cambio)
 

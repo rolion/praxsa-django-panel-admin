@@ -1,12 +1,12 @@
-# ADR-002: Proteger get_inventory/get_layer_info con throttling (siguen públicos) y get_bobina con chequeo de staff
+# ADR-005: Proteger get_inventory/get_layer_info con throttling (siguen públicos) y get_bobina con chequeo de staff
 
 **Estado:** Propuesto
-**Task relacionado:** TASK-002
+**Task relacionado:** TASK-006
 **Fecha:** 2026-09-21
 
 ## Contexto
 
-`docs/tasks/TASK-002.md` (investigación) confirmó que 7 vistas de función plana en `praxsa_manager/product/views.py` no tienen `@api_view`, por lo que nunca pasan por `REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES']` ([settings.py:119-125](praxsa_manager/praxsa_manager/settings.py:119)). De ese grupo, este ADR cubre las tres que el usuario pidió resolver explícitamente:
+`docs/tasks/TASK-006.md` (investigación) confirmó que 7 vistas de función plana en `praxsa_manager/product/views.py` no tienen `@api_view`, por lo que nunca pasan por `REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES']` ([settings.py:119-125](praxsa_manager/praxsa_manager/settings.py:119)). De ese grupo, este ADR cubre las tres que el usuario pidió resolver explícitamente:
 
 - **`get_calculator_info`/`get_model_parts`** quedan fuera de este ADR — el usuario ya confirmó que se mantienen públicos sin cambios.
 - **`get_inventory`** ([views.py:195-223](praxsa_manager/product/views.py:195)) expone stock real (`bobina_metros_disponibles`) y precio real (`bobina_price`) por sucursal. Lo consume hoy la calculadora pública de `proforma` (`data.service.ts:69-71`, invocada desde `formulario.component.ts`, ruta raíz `''`, **sin** `AuthGuard`). El usuario confirmó en el chat: este endpoint debe **seguir siendo público**, no requerir login — "necesitamos que estos endpoint sean públicos pero solo de lectura". Se descartó explícitamente un esquema de "guest token" por no aportar control de acceso real (cualquiera lo obtendría igual, sin credenciales).

@@ -1,4 +1,4 @@
-"""Tests para el ítem #5 del backlog (TASK-002): get_inventory/get_layer_info
+"""Tests para el ítem #5 del backlog (TASK-006): get_inventory/get_layer_info
 siguen públicos con throttling; get_bobina se cierra a staff."""
 from django.core.cache import cache
 from django.test import TestCase, override_settings

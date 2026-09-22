@@ -1,15 +1,15 @@
 # PLAN-2026-09-21-public-endpoints-protection (v1)
 
-**Task:** TASK-002
-**ADRs relacionados:** [ADR-002](../adr/ADR-002-public-catalog-endpoints-protection.md)
+**Task:** TASK-006
+**ADRs relacionados:** [ADR-005](../adr/ADR-005-public-catalog-endpoints-protection.md)
 
 ## Objective
 
-Cerrar la exposición de datos reales de stock/precio a través de `get_inventory` y de bobina puntual a través de `get_bobina` (backlog #5, backend SEC-03), sin romper la calculadora pública de `proforma` ni el panel de administración, aplicando el mecanismo que decidió `delivery-architect` en ADR-002: `get_inventory`/`get_layer_info` siguen públicos con throttling; `get_bobina` se cierra a staff.
+Cerrar la exposición de datos reales de stock/precio a través de `get_inventory` y de bobina puntual a través de `get_bobina` (backlog #5, backend SEC-03), sin romper la calculadora pública de `proforma` ni el panel de administración, aplicando el mecanismo que decidió `delivery-architect` en ADR-005: `get_inventory`/`get_layer_info` siguen públicos con throttling; `get_bobina` se cierra a staff.
 
 ## Context
 
-`docs/tasks/TASK-002.md` (investigación + arquitectura) y [ADR-002](../adr/ADR-002-public-catalog-endpoints-protection.md) documentan el problema y la decisión completos. Resumen relevante para este plan:
+`docs/tasks/TASK-006.md` (investigación + arquitectura) y [ADR-005](../adr/ADR-005-public-catalog-endpoints-protection.md) documentan el problema y la decisión completos. Resumen relevante para este plan:
 
 - 7 vistas de función plana en `praxsa_manager/product/views.py` no tienen `@api_view`, así que nunca pasan por `REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES']`.
 - De esas 7, este task cubre solo 3: `get_inventory`, `get_layer_info`, `get_bobina`. `get_calculator_info`/`get_model_parts` quedan sin cambios (confirmado público). `get_car_part_info`/`get_proforma_car_part_info` quedan fuera (la segunda es backlog #4, IDOR, no investigado aquí).
@@ -32,7 +32,7 @@ Cerrar la exposición de datos reales de stock/precio a través de `get_inventor
 
 ## Architecture considerations
 
-Resumen de ADR-002 (ver documento completo para alternativas descartadas y rollback):
+Resumen de ADR-005 (ver documento completo para alternativas descartadas y rollback):
 - **Contrato API**: `get_inventory`/`get_layer_info` deben preservar el shape de respuesta exacto al migrar de `JsonResponse` a `Response` de DRF — es el riesgo principal de este plan.
 - **Auth/permisos**: 3 mecanismos distintos coexistiendo a propósito (token+IsAuthenticated para `InvoiceView`, AllowAny+throttle para catálogo público, chequeo manual de staff para `get_bobina`) — reflejan 3 tipos de consumidor reales, no fragmentación arbitraria.
 - **Infraestructura**: ninguna — no se agrega dependencia (DRF 3.14.0 ya trae `ScopedRateThrottle`), no se toca Docker/despliegue.
@@ -93,13 +93,13 @@ Casos concretos:
 ## Risks
 
 - **Cambiar `JsonResponse` por `Response` de DRF puede alterar sutilmente el shape/headers de la respuesta** si no se replica con cuidado — mitigado por el test de caracterización del paso 2 (correr antes y después del cambio) y la verificación manual del paso 7.
-- **La tasa de throttling (`60/min`) es una estimación sin datos de tráfico real** — puede resultar muy laxa (no frena scraping real) o, menos probable, molestar a un usuario legítimo con una sesión de calculadora inusualmente larga. Mitigación: es un único valor en `settings.py`, ajustable sin tocar código de vistas; revisar logs de 429 en la primera semana post-despliegue (ya documentado en ADR-002).
+- **La tasa de throttling (`60/min`) es una estimación sin datos de tráfico real** — puede resultar muy laxa (no frena scraping real) o, menos probable, molestar a un usuario legítimo con una sesión de calculadora inusualmente larga. Mitigación: es un único valor en `settings.py`, ajustable sin tocar código de vistas; revisar logs de 429 en la primera semana post-despliegue (ya documentado en ADR-005).
 - **El chequeo manual de `is_staff` en `get_bobina` podría tener un caso borde no cubierto** (p. ej. un superusuario sin `is_staff=True` explícito, aunque en Django `is_superuser` no implica `is_staff` automáticamente salvo que se setee) — mitigado por los tests explícitos de los 3 casos (anónimo, autenticado no-staff, staff).
 
 ## Out of scope
 
-- `get_car_part_info` y `get_proforma_car_part_info` (las otras 2 de las 7 vistas del hallazgo SEC-03 original) — la segunda es backlog #4 (IDOR), no cubierta por TASK-002.
-- Unificar `get_calculator_info`/`get_model_parts` bajo el mismo `throttle_scope` — mencionado como posible mejora futura en ADR-002, no parte de este plan.
+- `get_car_part_info` y `get_proforma_car_part_info` (las otras 2 de las 7 vistas del hallazgo SEC-03 original) — la segunda es backlog #4 (IDOR), no cubierta por TASK-006.
+- Unificar `get_calculator_info`/`get_model_parts` bajo el mismo `throttle_scope` — mencionado como posible mejora futura en ADR-005, no parte de este plan.
 - Ajustar la tasa de throttling con datos reales de producción — se revisa después del despliegue, no antes.
 
 ## Dependencias nuevas

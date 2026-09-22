@@ -3,7 +3,7 @@
 **Status:** Open
 **Severity:** Low
 **Category:** IMPLEMENTATION
-**Related plan:** docs/plans/PLAN-2026-09-21-public-endpoints-protection.md (v1) / docs/adr/ADR-002-public-catalog-endpoints-protection.md
+**Related plan:** docs/plans/PLAN-2026-09-21-public-endpoints-protection.md (v1) / docs/adr/ADR-005-public-catalog-endpoints-protection.md
 **Suggested owner:** delivery-engineer (opcional, ver "Sugerencia" abajo)
 
 ## Description
@@ -14,7 +14,7 @@
 
 ## Expected behavior
 
-Según ADR-002 y el hallazgo de la ronda anterior, el mecanismo de throttling debería "proteger a todos los llamadores por igual, sin excepción" dentro del público objetivo (visitantes anónimos que podrían scrapear el catálogo).
+Según ADR-005 y el hallazgo de la ronda anterior, el mecanismo de throttling debería "proteger a todos los llamadores por igual, sin excepción" dentro del público objetivo (visitantes anónimos que podrían scrapear el catálogo).
 
 ## Actual behavior
 
@@ -34,4 +34,4 @@ Lectura de código (no requiere ejecución):
 
 ## Sugerencia (no vinculante, no bloquea PASS)
 
-Si se quiere cerrar esta brecha explícitamente: agregar `authentication_classes = ()` (o `(SessionAuthentication,)` combinado con throttle adicional) a `get_inventory`/`get_layer_info`, o documentar en ADR-002 que el throttle está pensado solo para el público anónimo y que las sesiones de staff quedan exentas por diseño (dado que ya tienen acceso privilegiado). Queda a criterio del usuario si amerita una tercera ronda de `delivery-engineer` o se acepta como está.
+Si se quiere cerrar esta brecha explícitamente: agregar `authentication_classes = ()` (o `(SessionAuthentication,)` combinado con throttle adicional) a `get_inventory`/`get_layer_info`, o documentar en ADR-005 que el throttle está pensado solo para el público anónimo y que las sesiones de staff quedan exentas por diseño (dado que ya tienen acceso privilegiado). Queda a criterio del usuario si amerita una tercera ronda de `delivery-engineer` o se acepta como está.

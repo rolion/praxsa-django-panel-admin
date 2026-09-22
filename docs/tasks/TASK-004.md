@@ -2,15 +2,15 @@
 
 **Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
-**Rama:** `claude/public-endpoints-pii-storage-ff52d6` (compartida con TASK-002, por decisión explícita del usuario — ver historial)
-**Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/30 (combinado con TASK-002, por decisión explícita del usuario)
+**Rama:** `claude/public-endpoints-pii-storage-ff52d6` (compartida con TASK-006, por decisión explícita del usuario — ver historial)
+**Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/30 (combinado con TASK-006, por decisión explícita del usuario)
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
 |---|---|---|---|
 | 2026-09-21 | (nuevo) → INVESTIGATION | Task creado a partir del paso 2 del ítem #6 de docs/integration-and-backlog.md, separado del paso 1 (fix de logout(), TASK-003) por tener naturaleza y complejidad distintas | delivery-investigate |
 | 2026-09-21 | INVESTIGATION → PLANNING | Decisión arquitectónica tomada (ADR-003), tras verificar a pedido del usuario que `name`/`email`/`phone_number` se envían con la proforma pero vía un formulario editable/obligatorio (no un envío silencioso): persistir solo `token`+`name` en localStorage; el resto vive en memoria vía el `BehaviorSubject` ya existente, sin agregar endpoint de perfil nuevo | delivery-architect |
-| 2026-09-21 | PLANNING → ENGINEERING | Plan v1 escrito (PLAN-2026-09-21-reduce-localstorage-pii.md). Usuario decidió explícitamente reusar la rama existente del worktree en vez de crear `task/TASK-004-...`, y combinar TASK-002+TASK-004 en un único PR (se aparta de la regla de "un PR por task" del skill, por decisión explícita) | delivery-plan |
+| 2026-09-21 | PLANNING → ENGINEERING | Plan v1 escrito (PLAN-2026-09-21-reduce-localstorage-pii.md). Usuario decidió explícitamente reusar la rama existente del worktree en vez de crear `task/TASK-004-...`, y combinar TASK-006+TASK-004 en un único PR (se aparta de la regla de "un PR por task" del skill, por decisión explícita) | delivery-plan |
 | 2026-09-21 | ENGINEERING → REVIEW | Implementación completa según el plan v1, commit 963afae empujado al PR #30. Verificado end-to-end en navegador contra un backend real (login → localStorage solo con token+name → refresh → saludo/guard sobreviven, resto del formulario vacío pero editable) | delivery-engineer |
 | 2026-09-21 | REVIEW → PUBLISH | Veredicto PASS (sin issues) — `ng test` (34/34, corrida independiente) + `ng build` + confirmación independiente por grep de que ningún otro componente lee los campos removidos. Acceptance criteria del plan verificados con evidencia concreta, sin scope creep | delivery-review |
 
@@ -108,7 +108,7 @@ Resumen (detalle completo en PR #30, sección `## Changes`):
 
 ## Review
 
-**Veredicto: PASS** — sin issues abiertos, sin `docs/reviews/REV-...md` generado para este task (el único hallazgo de esta ronda de revisión, REV-2026-09-21-002, es específico de TASK-002).
+**Veredicto: PASS** — sin issues abiertos, sin `docs/reviews/REV-...md` generado para este task (el único hallazgo de esta ronda de revisión, REV-2026-09-21-002, es específico de TASK-006).
 
 Verificación independiente ejecutada (evidencia completa en el PR #30, sección `## Testing`):
 - `npx ng test --watch=false --browsers=ChromeHeadless --code-coverage` → `34/34 OK`, corrida de nuevo desde cero, sin regresiones. Cobertura de `authetication.service.ts`: statements 92.85%, branches 75%, functions 75%, lines 92.59%.
