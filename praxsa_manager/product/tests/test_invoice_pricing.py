@@ -115,6 +115,78 @@ class InvoicePriceRecalculationTest(TestCase):
         self.assertEqual(detail.sub_total, Decimal('870.00'))
         self.assertEqual(detail.quantity, 3)
 
+    def test_recalculates_total_price_as_the_sum_of_multiple_items(self):
+        """Caso real de uso del dominio: una proforma cotiza varias partes del
+        auto a la vez (docs/CLAUDE.md). total_price debe ser la suma de los
+        sub_total recalculados de cada ítem, cada uno con su propio precio real."""
+        scenario = helpers.build_full_scenario()
+        # ítem 2: otra parte del auto, con su propia lámina/inventario en la misma sucursal
+        second_car_part = helpers.create_car_part()
+        second_car_model_part = helpers.create_car_model_part(
+            car_model=scenario['car_model'], car_part=second_car_part,
+            installation_price=Decimal('30.00'),
+        )
+        second_window_film = helpers.create_window_film()
+        second_reel = helpers.create_window_film_reel(window_film=second_window_film, width=Decimal('1.00'))
+        helpers.create_inventario(
+            sucursal=scenario['sucursal'], bobina=second_reel,
+            precio_venta_mtr_lineal=Decimal('90.00'),
+        )
+
+        payload = {
+            'name': 'Cliente Pricing Multi',
+            'email': 'pricing-multi@test.com',
+            'car_plate': 'PRC002',
+            'car_model_id': scenario['car_model'].id,
+            'total_price': '1.00',  # manipulado, debe ignorarse igual que en el caso de un solo ítem
+            'phone_number': '70000004',
+            'ci_nit': '2223334',
+            'sucursal': scenario['sucursal'].id,
+            'carPartItems': [
+                {
+                    'car_part': scenario['car_part'].id,
+                    'width': str(scenario['car_model_part'].width),
+                    'length': '1.00',
+                    'quantity': 1,
+                    'window_film': scenario['window_film'].id,
+                    'installation_price': '0',
+                    'window_film_price': '0',
+                    'sub_total': '1.00',
+                },
+                {
+                    'car_part': second_car_part.id,
+                    'width': str(second_reel.width),
+                    'length': '2.00',
+                    'quantity': 2,
+                    'window_film': second_window_film.id,
+                    'installation_price': '0',
+                    'window_film_price': '0',
+                    'sub_total': '1.00',
+                },
+            ],
+        }
+
+        response = self.client.post(
+            '/product/invoice',
+            data=json.dumps(payload),
+            content_type='application/json',
+            HTTP_AUTHORIZATION=f'Token {scenario["token"].key}',
+        )
+
+        self.assertEqual(response.status_code, 201)
+        header = Proforma_Header.objects.get(id=response.json()['id'])
+        details = Proforma_Detail.objects.filter(proforma_header=header)
+        self.assertEqual(details.count(), 2)
+
+        detail_1 = details.get(car_part=scenario['car_part'])
+        detail_2 = details.get(car_part=second_car_part)
+        # ítem 1: 1.00 * 1 * 120.00 + 50.00 * 1 = 170.00
+        self.assertEqual(detail_1.sub_total, Decimal('170.00'))
+        # ítem 2: 2.00 * 2 * 90.00 + 30.00 * 2 = 360.00 + 60.00 = 420.00
+        self.assertEqual(detail_2.sub_total, Decimal('420.00'))
+        # total = suma de ambos ítems recalculados, no el "1.00" manipulado que mandó el cliente
+        self.assertEqual(header.total_price, Decimal('590.00'))
+
     def test_length_width_quantity_are_still_trusted_from_the_client(self):
         """Fuera de alcance de TASK-005 (ver ADR-004): solo se valida precio, no
         dimensiones. El cliente puede pedir un ancho/largo/cantidad distinto del
