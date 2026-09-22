@@ -1,6 +1,6 @@
 # TASK-002: Filtrado por sucursal inconsistente en reportes/pagos del admin (backlog #10)
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Rama:** `claude/pagosadmin-filtrado-sucursal-34d0c8`
 **Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/32
@@ -13,6 +13,7 @@
 | 2026-09-21 | PLANNING → ENGINEERING | Plan v1 escrito y PR #32 abierto sobre la rama existente del worktree (mismo criterio que TASK-001: worktree nombrado para este task, sin necesidad de crear `task/TASK-002-...`) | delivery-plan |
 | 2026-09-21 | ENGINEERING → REVIEW | Implementación completa según el plan v1, commit `1399594` empujado al PR #32; 20/21 tests nuevos verificados por el propio engineer en un entorno local improvisado (ver Implementación) | delivery-engineer |
 | 2026-09-21 | REVIEW → ENGINEERING | Veredicto FAIL — REV-2026-09-21-002 (IMPLEMENTATION, Severity Low): 1 test de wiring (`ReportStorageAdmin`) no ejecutable de punta a punta en este sandbox por falta de Postgres real (`DISTINCT ON` no soportado por SQLite); causa confirmada preexistente en `origin/master`, no un defecto introducido por este cambio | delivery-review |
+| 2026-09-22 | ENGINEERING → PUBLISH | A pedido del usuario, se re-ejecutó la suite completa con el venv local (`praxsa_manager/.venv`) contra Postgres real: 27/27 tests pasan, incluido el que fallaba en el sandbox. REV-2026-09-21-002 resuelto con evidencia real, sin cambios de código. Veredicto final: PASS | delivery-review |
 
 ## Investigación
 
@@ -121,7 +122,9 @@ Sin migraciones (no se tocó `product/models.py`) — confirmado indirectamente:
 
 **Nota de aislamiento**: esta revisión corrió en la misma sesión que investigó, diseñó, planificó e implementó TASK-002 — no hay aislamiento real de contexto entre roles en esta ejecución concreta (limitación procedimental, señalada explícitamente por `delivery-review/SKILL.md`). Se reconstruyó el contexto solo desde los artefactos (TASK, plan, ADR, diff real vía `git diff origin/master...HEAD`) y se corrieron las verificaciones de forma independiente en un entorno nuevo, en vez de confiar en lo que reportó `delivery-engineer`.
 
-**Veredicto: FAIL** — [REV-2026-09-21-002](../reviews/REV-2026-09-21-002-report-storage-distinct-on-sqlite.md) (Severity: Low, Category: IMPLEMENTATION, Status: Open).
+**Veredicto inicial: FAIL** — [REV-2026-09-21-002](../reviews/REV-2026-09-21-002-report-storage-distinct-on-sqlite.md) (Severity: Low, Category: IMPLEMENTATION).
+
+**Actualización 2026-09-22 — Veredicto final: PASS.** A pedido del usuario, se re-ejecutó `python manage.py test product` usando el Python de `E:\praxsa\praxsa-django-panel-admin\praxsa_manager\.venv` (entorno local ya configurado contra Postgres real, `localhost:5432`), corriendo el código de este worktree/PR contra esa base de datos real. Django creó y destruyó su base de test temporal (`test_praxsa_backup`) de la forma habitual; no se tocaron datos reales, ni se copió/modificó ningún `.env`, ni se imprimieron credenciales en el chat. **Resultado: 27/27 tests pasan**, incluido `test_report_storage_admin_filtra_qs_y_aggregated_result`. `makemigrations product --check --dry-run` contra el mismo Postgres real: `No changes detected`. REV-2026-09-21-002 queda marcado como Resolved — confirma que la causa era exclusivamente la sustitución por SQLite del sandbox de review, no un defecto de código; no hizo falta ningún cambio.
 
 Verificado de forma independiente (venv efímero propio, SQLite en memoria, sin tocar `.env` ni credenciales reales — mismo entorno limitado que TASK-001):
 - `python manage.py test product` (suite completa): **26/27 pasan** — los 6 smoke tests preexistentes sin regresión, 20/21 de los tests nuevos de este PR.

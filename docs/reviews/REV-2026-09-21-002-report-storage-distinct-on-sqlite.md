@@ -1,10 +1,10 @@
 # REV-2026-09-21-002: Test de wiring de ReportStorageAdmin falla en el entorno de review por una limitación de SQLite, no por un defecto de código
 
-**Status:** Open
+**Status:** Resolved — re-ejecutado el 2026-09-22 contra Postgres real (`localhost:5432`, DB de desarrollo del usuario, vía el venv en `praxsa_manager/.venv`), a pedido del usuario. `python manage.py test product`: **27/27 pasan**, incluido `test_report_storage_admin_filtra_qs_y_aggregated_result`. Confirma la hipótesis de este REV: la causa era exclusivamente la sustitución por SQLite en el sandbox de review, no un defecto de código.
 **Severity:** Low
 **Category:** IMPLEMENTATION
 **Related plan:** docs/plans/PLAN-2026-09-21-filtrado-sucursal-pagos-reportes-admin.md (v1)
-**Suggested owner:** delivery-engineer (o el usuario, corriendo la suite en un entorno con Postgres real) — no hay cambio de código a hacer, solo falta ejecutar contra el backend correcto
+**Suggested owner:** _(resuelto, sin acción pendiente)_
 
 ## Description
 
@@ -72,8 +72,8 @@ No changes detected in app 'product'
 
 ## Resolución
 
-Sin resolver todavía — queda abierto para que el usuario decida entre:
-1. **Waive** (igual que `REV-2026-09-21-001`): aceptar la evidencia indirecta (código idéntico al patrón ya probado en los otros 4 admins, más la verificación ad hoc de `aggregated_result`) como suficiente, dado que la causa está confirmada como preexistente y no relacionada con este cambio.
-2. Ejecutar la suite completa en un entorno con Postgres real (o Postgres local vía Docker, si el daemon está disponible fuera de este sandbox) antes de publicar, para tener el `PASS` verde de punta a punta.
+El usuario pidió correr la suite con el Python de `E:\praxsa\praxsa-django-panel-admin\praxsa_manager\.venv` (su entorno local, ya configurado contra Postgres real). Se ejecutó `python manage.py test product -v 2` desde el worktree (`praxsa_manager/manage.py`, código de este PR) con las variables de conexión leídas de `praxsa_manager/.env` del checkout principal (nunca copiado, modificado ni impreso en el chat) exportadas solo para el proceso de este comando.
 
-No se sugiere ninguna acción de `delivery-engineer` sobre el código — no hay nada que arreglar en el diff de este PR.
+**Resultado: 27/27 tests pasan**, incluido el que fallaba en el sandbox de review. Django creó y destruyó su base de test temporal (`test_praxsa_backup`) como de costumbre; no se tocaron datos reales. También se confirmó `makemigrations product --check --dry-run` → `No changes detected` contra el mismo Postgres real.
+
+No hizo falta ningún cambio de código — la hipótesis del REV (limitación exclusiva de SQLite en el sandbox, no del código) quedó confirmada.
