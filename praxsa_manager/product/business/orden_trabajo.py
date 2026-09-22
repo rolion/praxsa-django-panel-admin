@@ -1,5 +1,6 @@
 from ..models import Proforma_Header, Proforma_Detail, Sucursal, Nota_trabajo, Detalle_Nota_Trabajo, Nota_Venta
 from .inventario import Inventario_Business
+from ..helper.user import User_Helper
 from ..utils.exception.proforma import OrdenTrabajo
 from django.db import IntegrityError, transaction
 from django.core.exceptions import ObjectDoesNotExist
@@ -12,6 +13,7 @@ class Orden_Trabajo_Business:
     def __init__(self) -> None:
         self.log_errors = logging.getLogger('django_admin')
         self.log_debug= logging.getLogger('debug')
+        self.user_helper = User_Helper()
 
     def get_nota_queryset_by_role(self, user, qs):
         try:
@@ -27,17 +29,18 @@ class Orden_Trabajo_Business:
             print('algo salio mal, Orden_Trabajo_Business - get_nota_queryset_by_role', str(e))
             return None
         
-    def get_finish_nota_queryset(self, qs):
+    def get_finish_nota_queryset(self, user, qs):
         try:
-            # sucursales = Sucursal.objects.prefetch_related('empleado')
-            # sucursales = sucursales.filter(empleado__id = user.id, enable_to_install_windows_film = True)
-            # if len(sucursales) > 0:
-                # qs_result = qs.select_related('proforma','proforma__sucursal','instaladar', 'proforma__car_model_id__car_brand_id')
-                # qs_result = qs_result.filter(proforma__sucursal__id = sucursales[0].id, proforma__is_delete = False)
             qs_result = qs.select_related('proforma','proforma__sucursal','instaladar', 'proforma__car_model_id','proforma__car_model_id__car_brand_id')
             qs_result = qs_result.filter(proforma__is_delete = False, nota_venta__isnull=False)
-            # else:
-            #     qs_result = None
+            if self.user_helper.can_view_all_sucursales(user):
+                return qs_result
+            sucursales = Sucursal.objects.prefetch_related('empleado')
+            sucursales = sucursales.filter(empleado__id = user.id, enable_to_install_windows_film = True)
+            if len(sucursales) > 0:
+                qs_result = qs_result.filter(proforma__sucursal__id = sucursales[0].id)
+            else:
+                qs_result = None
             return qs_result
         except Exception as e:
             print('algo salio mal, Orden_Trabajo_Business - get_finish_nota_queryset', str(e))

@@ -104,10 +104,10 @@ class ReportNotaTrabajoAdmin(admin.ModelAdmin):
     
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
         qs = super().get_queryset(request)
-        result = self.orden_trabajo_busi.get_finish_nota_queryset(qs=qs)
+        result = self.orden_trabajo_busi.get_finish_nota_queryset(user = request.user, qs=qs)
         if result is None:
             self.message_user(request=request,  message=str('Asigne una sucursal al usuario'), level= messages.ERROR)
-            return qs.filter(sucursal = -1)
+            return qs.filter(proforma__sucursal = -1)
         return  result
 
     def has_change_permission(self, request: HttpRequest, obj=None):

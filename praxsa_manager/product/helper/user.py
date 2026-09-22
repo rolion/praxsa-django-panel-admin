@@ -16,3 +16,10 @@ class User_Helper():
     def is_request_user_supervisor(self, user):
         user_groups = self.to_lowercase(list(user.groups.values_list('name',flat = True)))
         return 'supervisor' in list(user_groups)
+
+    def is_request_user_caja(self, user):
+        user_groups = self.to_lowercase(list(user.groups.values_list('name',flat = True)))
+        return 'caja' in list(user_groups)
+
+    def can_view_all_sucursales(self, user):
+        return self.is_request_user_admin(user)

@@ -1,6 +1,7 @@
 from ..models import Sucursal, Window_Film, inventario, precio_venta_sucursal
 from django.db.models import Sum, F, OuterRef, Subquery
 from ..utils.exception.nohaylaminas import NoHayLaminasDisponibles
+from ..helper.user import User_Helper
 import logging
 
 class Inventario_Business:
@@ -8,7 +9,23 @@ class Inventario_Business:
     def __init__(self) -> None:
         self.log_errors = logging.getLogger('django_admin')
         self.log_debug= logging.getLogger('debug')
-    
+        self.user_helper = User_Helper()
+
+    def get_inventario_queryset_by_role(self, user, qs):
+        try:
+            if self.user_helper.can_view_all_sucursales(user):
+                return qs
+            sucursales = Sucursal.objects.prefetch_related('empleado')
+            sucursales = sucursales.filter(empleado__id = user.id, enable_to_install_windows_film = True)
+            if len(sucursales) > 0:
+                qs_result = qs.filter(sucursal__id = sucursales[0].id)
+            else:
+                qs_result = None
+            return qs_result
+        except Exception as e:
+            self.log_errors.error(f'algo salio mal, Inventario_Business - get_inventario_queryset_by_role {e}')
+            return None
+
     def get_inventory_by_sucursal(self, sucursal):
         q = inventario.objects.select_related("bobina","bobina__window_film", "sucursal")
         q = q.order_by('bobina__window_film__id', '-date')

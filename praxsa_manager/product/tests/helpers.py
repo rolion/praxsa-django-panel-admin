@@ -1,7 +1,7 @@
 """Fábricas mínimas con el ORM para armar datos de prueba del app product."""
 from decimal import Decimal
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Group, User
 from django.utils import timezone
 from rest_framework.authtoken.models import Token
 
@@ -10,12 +10,15 @@ from ..models import (
     Car_Model,
     Car_Model_Part,
     Car_Part,
+    Nota_Venta,
+    Nota_trabajo,
     Proforma_Detail,
     Proforma_Header,
     Sucursal,
     Window_Film,
     Window_Film_Reel,
     inventario,
+    pago,
     precio_venta_sucursal,
 )
 
@@ -32,6 +35,12 @@ def create_user_with_token(username=None, password='testpass123'):
     user = User.objects.create_user(username=username, email=username, password=password)
     token = Token.objects.create(user=user)
     return user, token
+
+
+def add_user_to_group(user, group_name):
+    group, _ = Group.objects.get_or_create(name=group_name)
+    user.groups.add(group)
+    return group
 
 
 def create_sucursal(user, name=None, address='Calle Test 123'):
@@ -142,8 +151,12 @@ def create_full_proforma(
     window_film=None,
     installation_price=Decimal('50.00'),
     window_film_price=Decimal('120.00'),
+    inventario=None,
 ):
-    """Crea una proforma completa (header + un detalle) directo con el ORM."""
+    """Crea una proforma completa (header + un detalle) directo con el ORM.
+    Si se pasa `inventario`, el detalle queda enlazado a esa fila (necesario
+    para admins como ReportUtilidadAdmin, que solo computan utilidad sobre
+    inventario con un detalle de proforma asociado)."""
     sucursal = sucursal or create_sucursal(user)
     car_model = car_model or create_model()
     car_part = car_part or create_car_part()
@@ -165,6 +178,7 @@ def create_full_proforma(
     )
     detail = Proforma_Detail.objects.create(
         proforma_header=header,
+        inventario=inventario,
         window_film=window_film,
         car_part=car_part,
         width=width,
@@ -175,6 +189,44 @@ def create_full_proforma(
         quantity=1,
     )
     return header, detail
+
+
+def create_nota_trabajo(proforma, **kwargs):
+    defaults = dict(entrada_vehiculo=timezone.now(), name=proforma.name, car_plate=proforma.car_plate)
+    defaults.update(kwargs)
+    return Nota_trabajo.objects.create(proforma=proforma, **defaults)
+
+
+def create_nota_venta(nota_trabajo, created_by, **kwargs):
+    defaults = dict(
+        name='Cliente Test',
+        ci_nit='1234567',
+        total_price=Decimal('170.00'),
+        created_on=timezone.now(),
+    )
+    defaults.update(kwargs)
+    return Nota_Venta.objects.create(nota_trabajo=nota_trabajo, created_by=created_by, **defaults)
+
+
+def create_pago(nota_venta, created_by, **kwargs):
+    defaults = dict(monto=nota_venta.total_price)
+    defaults.update(kwargs)
+    return pago.objects.create(nota_venta=nota_venta, created_by=created_by, **defaults)
+
+
+def create_full_pago_chain(user, sucursal=None, inventario=None):
+    """Arma proforma -> nota_trabajo -> nota_venta -> pago completos para una sucursal,
+    listos para probar el filtrado por sucursal en Pagos/Reportes del admin."""
+    header, _ = create_full_proforma(user=user, sucursal=sucursal, inventario=inventario)
+    nota_trabajo = create_nota_trabajo(proforma=header)
+    nota_venta = create_nota_venta(nota_trabajo=nota_trabajo, created_by=user, total_price=header.total_price)
+    paiment = create_pago(nota_venta=nota_venta, created_by=user)
+    return {
+        'proforma': header,
+        'nota_trabajo': nota_trabajo,
+        'nota_venta': nota_venta,
+        'pago': paiment,
+    }
 
 
 def build_full_scenario():
