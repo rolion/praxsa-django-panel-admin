@@ -14,6 +14,7 @@
 | 2026-09-21 | ENGINEERING → REVIEW | Implementación completa según el plan v1, commit `1399594` empujado al PR #32; 20/21 tests nuevos verificados por el propio engineer en un entorno local improvisado (ver Implementación) | delivery-engineer |
 | 2026-09-21 | REVIEW → ENGINEERING | Veredicto FAIL — REV-2026-09-21-002 (IMPLEMENTATION, Severity Low): 1 test de wiring (`ReportStorageAdmin`) no ejecutable de punta a punta en este sandbox por falta de Postgres real (`DISTINCT ON` no soportado por SQLite); causa confirmada preexistente en `origin/master`, no un defecto introducido por este cambio | delivery-review |
 | 2026-09-22 | ENGINEERING → PUBLISH | A pedido del usuario, se re-ejecutó la suite completa con el venv local (`praxsa_manager/.venv`) contra Postgres real: 27/27 tests pasan, incluido el que fallaba en el sandbox. REV-2026-09-21-002 resuelto con evidencia real, sin cambios de código. Veredicto final: PASS | delivery-review |
+| 2026-09-22 | PUBLISH → PUBLISH | PR #32 verificado (diff sin scope creep, sin secretos, sin commits posteriores al PASS de review) y descripción completada con trazabilidad total; queda pendiente de aprobación humana explícita por ser un cambio de autorización con ADR asociado | delivery-publish |
 
 ## Investigación
 
@@ -136,4 +137,14 @@ Verificado de forma independiente (venv efímero propio, SQLite en memoria, sin 
 No hay issues `Critical`/`High`. El único hallazgo (`REV-2026-09-21-002`) es una verificación no ejecutable en este sandbox, no un defecto de código — mismo patrón que `REV-2026-09-21-001` de TASK-001. Por regla del Quality Gate ("nunca declarar PASS con un test en rojo sin autorización explícita"), el veredicto es `FAIL` hasta que el usuario decida entre correr la suite con Postgres real o autorizar el waiver.
 
 ## Publicación
-_Pendiente_
+
+**Estado: Listo para aprobación humana** — [PR #32](https://github.com/rolion/praxsa-django-panel-admin/pull/32).
+
+Verificaciones de `delivery-publish` antes de completar la descripción:
+- `git status` limpio en la rama, sin nada pendiente de comitear.
+- `git diff origin/master...HEAD` coincide exactamente con el alcance del plan v1: los 9 archivos de código listados en "Files/components affected" más los 4 archivos de documentación (`TASK-002.md`, `ADR-002...md`, `PLAN-2026-09-21...md`, `REV-2026-09-21-002...md`) — sin scope creep.
+- Sin secretos en el diff (no se tocó ningún `.env`; las credenciales usadas para la verificación contra Postgres real se leyeron del `.env` local del checkout principal del usuario, solo como variables de entorno del proceso, nunca comiteadas ni impresas).
+- Sin commits posteriores al veredicto `PASS` de `delivery-review` que no hayan sido evaluados.
+- Descripción del PR completada con la plantilla estándar (Summary, Task, Changes, Testing, Architecture decisions, Related plan, Related ADRs, Review, Known limitations).
+
+**Cambio sensible — requiere aprobación humana explícita antes de mergear**: este task tiene un ADR asociado ([ADR-002](../adr/ADR-002-filtrado-sucursal-pagos-reportes-admin.md)) y modifica lógica de autorización (quién ve qué sucursal en el admin de Django). Por regla de `delivery-publish`, no se marca como listo para merge automático ni se mergea en esta invocación — queda a la espera de que el usuario lo apruebe explícitamente en el chat.
