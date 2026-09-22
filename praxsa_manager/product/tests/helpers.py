@@ -19,6 +19,7 @@ from ..models import (
     Window_Film_Reel,
     inventario,
     pago,
+    precio_venta_sucursal,
 )
 
 _counter = [0]
@@ -128,6 +129,17 @@ def create_inventario(
         date=timezone.now(),
         precio_compra_mtr_lineal=Decimal('80.00'),
         precio_venta_mtr_lineal=precio_venta_mtr_lineal,
+    )
+
+
+def create_precio_venta_sucursal(sucursal, lamina, width=Decimal('1.50'), precio_venta=Decimal('150.00')):
+    """Override de precio por sucursal para una lámina/ancho (rama 'precio_sucursal'
+    del fallback precio_venta_sucursal -> inventario.precio_venta_mtr_lineal)."""
+    return precio_venta_sucursal.objects.create(
+        sucursal=sucursal,
+        lamina=lamina,
+        width=width,
+        precio_venta=precio_venta,
     )
 
 
