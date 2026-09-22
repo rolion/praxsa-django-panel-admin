@@ -4,6 +4,7 @@
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Rama:** `claude/public-endpoints-pii-storage-ff52d6` (compartida con TASK-004, por decisión explícita del usuario — ver historial)
 **Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/30 (combinado con TASK-004, por decisión explícita del usuario)
+**Renombrado de:** TASK-002/ADR-002 → TASK-006/ADR-005 el 2026-09-22, por colisión de IDs contra `master` (ver historial e informe de `delivery-publish` en el PR)
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
@@ -16,6 +17,7 @@
 | 2026-09-21 | ENGINEERING → REVIEW | Fix de REV-2026-09-21-002 aplicado (commit 78c6ebc): la tasa real se captura como constante de módulo al importar el archivo (antes de cualquier `override_settings`) y se restaura desde ahí en `tearDown`, en vez de releerla de `api_settings` mientras el override sigue activo. Verificado con un test temporal (no comiteado): ya no hay fuga, la tasa real (`60/min`) se restaura correctamente. `python manage.py test product` → 13/13 OK | delivery-engineer |
 | 2026-09-22 | REVIEW → ENGINEERING | Veredicto FAIL (segunda ronda de review, sesión nueva sin contexto previo) — REV-2026-09-22-001 (Medium, IMPLEMENTATION): verificación manual en navegador de calculadora/windows-film/InventoryAdmin (acceptance criteria del plan) sigue sin ejecutarse, bloqueada en este entorno por la política de acceso a credenciales al intentar levantar runserver+ng serve con datos reales. REV-2026-09-22-002 (Low, IMPLEMENTATION, no bloqueante por sí solo): PublicCatalogThrottle no aplica a sesiones de Django autenticadas (solo afecta a staff vía /admin/, sin vía de bypass para el público anónimo). Confirmado y resuelto de forma independiente: REV-2026-09-21-002 (throttle-rate-test-leak) — re-verificado con test temporal propio, la tasa se restaura correctamente a 60/min sin fuga | delivery-review |
 | 2026-09-22 | ENGINEERING → PUBLISH | Veredicto PASS (tercera ronda, misma sesión) — el usuario copió el .env real y asignó el grupo admin a un staff existente; con eso se completó en vivo la verificación manual en navegador que dejaba abierto REV-2026-09-22-001 (ahora Resuelto, evidencia completa en el archivo): calculadora pública, /windows-film/:id y get_bobina (403 anónimo / 200 staff en InventoryAdmin) confirmados con datos reales. REV-2026-09-22-002 (Low) queda abierto pero no bloqueante | delivery-review |
+| 2026-09-22 | PUBLISH (renumeración) | delivery-publish detectó PR #30 en mergeable=CONFLICTING: master ya tenia TASK-002/ADR-002 propios (PR #32, tarea no relacionada). Renombrado TASK-002→TASK-006, ADR-002→ADR-005, referencias cruzadas actualizadas (commit 7ac1e56), master mergeado resolviendo el unico conflicto real en tests/helpers.py (commit 57a95b7). Suite completa re-corrida: 46/46 OK. PR ahora mergeable=MERGEABLE | delivery-publish |
 
 ## Investigación
 
@@ -176,4 +178,10 @@ Verificación adicional hecha en esta revisión, sin hallazgos:
 **Nota de aislamiento de contexto**: esta revisión corrió en la misma sesión que implementó el cambio (`delivery-engineer`) — limitación procedimental señalada explícitamente. Se compensó re-ejecutando todos los comandos de forma independiente y buscando activamente fallas en vez de confirmar lo ya reportado.
 
 ## Publicación
-_Pendiente_
+
+**Listo para aprobación humana final.** PR #30 actualizado con trazabilidad completa (Summary, Task, Architecture decisions, Changes, Testing, Review, Known limitations) y verificado como `MERGEABLE` en GitHub tras resolver la colisión de IDs.
+
+- **Renumeración de IDs (2026-09-22)**: este task y su ADR se renombraron de `TASK-002`/`ADR-002` a `TASK-006`/`ADR-005` — `master` ya tenía su propio `TASK-002`/`ADR-002` (PR #32, filtrado por sucursal en admin, tarea no relacionada) mergeado mientras este PR seguía abierto. Se actualizaron todas las referencias cruzadas (plan, los 3 REV, TASK-004, docstring del test) y se commiteó el rename (`7ac1e56`) antes de mergear `master`.
+- **Merge de `master` (commit `57a95b7`)**: único conflicto textual real fue `praxsa_manager/product/tests/helpers.py` (`create_staff_user` de esta rama vs. `add_user_to_group` de `master`, ambas agregadas en el mismo punto del archivo) — resuelto conservando ambas funciones, sin pérdida de cobertura de ningún lado.
+- **Verificación post-merge**: `python manage.py test` (proyecto completo) → **46/46 OK** (13 de este task + 33 de los otros tasks ya mergeados en `master`), sin regresiones cruzadas. `makemigrations --check --dry-run` → sin migraciones pendientes.
+- **Cambio sensible — requiere aprobación humana explícita antes de mergear**: este task modifica autenticación/autorización de 3 endpoints de producción (ver ADR-005) y tiene un issue Low abierto y no bloqueante ([REV-2026-09-22-002](../reviews/REV-2026-09-22-002-throttle-bypass-for-session-authenticated-staff.md)). No se mergea automáticamente — queda a la espera de que el usuario apruebe el merge en GitHub.
