@@ -1,6 +1,6 @@
 # REV-2026-09-21-002: `python manage.py test` no se pudo ejecutar en este entorno de review
 
-**Status:** Open — pendiente de decisión del usuario (waiver como en TASK-001, o correr en un entorno con acceso real a Postgres).
+**Status:** Resolved (2026-09-22) — Docker Desktop se levantó en el host; se corrió la suite completa de punta a punta contra un Postgres real. Ver `## Resolución` para la evidencia.
 **Severity:** Medium
 **Category:** IMPLEMENTATION
 **Related plan:** docs/plans/PLAN-2026-09-21-price-recalculation-serializer.md (v1)
@@ -51,4 +51,45 @@ Running postgresql-x64-16 postgresql-x64-16 - PostgreSQL Server 16
 
 ## Resolución
 
-Pendiente. Ver mensaje de esta revisión en el chat — se le pregunta al usuario si quiere: (a) autorizar un waiver igual que en TASK-001 dado que la revisión estática y el análisis manual no encontraron ningún indicio de que los tests fallarían, o (b) dar acceso a credenciales reales de un Postgres de test/dev para correr la suite de punta a punta en esta sesión.
+Resuelto el 2026-09-22: el usuario indicó que Docker Desktop no estaba levantado y pidió reintentar. Con el daemon arriba, se evitó el conflicto de puerto con el Postgres nativo del host (`postgresql-x64-16`, que ya ocupa el 5432) levantando un contenedor Postgres descartable en un puerto alternativo — sin tocar ningún archivo del proyecto ni `.env` real:
+
+```
+$ docker run -d --name task005-test-db \
+    -e POSTGRES_USER=testuser -e POSTGRES_PASSWORD=testpass -e POSTGRES_DB=praxsa \
+    -p 5433:5432 postgres:16
+$ docker exec task005-test-db pg_isready -U testuser
+/var/run/postgresql:5432 - accepting connections
+
+$ cd praxsa_manager
+$ ENV=dev POSTGRES_DB=praxsa POSTGRES_USER=testuser POSTGRES_PASSWORD=testpass \
+  DB_HOST=localhost DB_PORT=5433 SECRET_KEY=dummy DEBUG=1 \
+  python manage.py test product -v 2
+Found 17 test(s).
+Creating test database for alias 'default'...
+  Applying contenttypes.0001_initial... OK
+  ... (105 migraciones de product/ aplicadas sin error) ...
+test_length_width_quantity_are_still_trusted_from_the_client ... ok
+test_manipulated_price_is_overwritten_with_the_real_one ... ok
+test_recalculates_correctly_with_quantity_greater_than_one ... ok
+test_uses_sucursal_price_override_when_it_exists ... ok
+test_400_when_car_model_part_does_not_exist_for_the_item ... ok
+test_400_when_no_inventory_covers_the_requested_film_and_width ... ok
+test_resolve_unit_price_falls_back_to_inventario_default ... ok
+test_resolve_unit_price_returns_none_when_nothing_matches ... ok
+test_resolve_unit_price_uses_sucursal_override_when_present ... ok
+test_calculator_info_returns_200_and_expected_shape ... ok
+test_create_client_returns_201_and_client_shape ... ok
+test_invoice_post_returns_201_and_created_id ... ok
+test_invoice_post_without_token_returns_401 ... ok
+test_invoice_get_returns_200_and_expected_shape ... ok
+test_invoice_all_returns_200_and_expected_shape ... ok
+test_multiplies_by_quantity_and_adds_installation ... ok
+test_quantity_one ... ok
+
+Ran 17 tests in 3.853s
+
+OK
+Destroying test database for alias 'default'...
+```
+
+17/17 en verde: los 11 tests nuevos de `test_invoice_pricing.py` (incluido el que documenta el fix del bug original — precio manipulado queda sobrescrito) y los 6 preexistentes de `test_smoke.py` (sin regresión, `InvoiceCreateEndpointTest` sigue en `201`). El acceptance criterion #1 del plan queda verificado con evidencia real de ejecución. Contenedor descartable eliminado después (`docker rm -f task005-test-db`).
