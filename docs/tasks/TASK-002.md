@@ -1,6 +1,6 @@
 # TASK-002: Filtrado por sucursal inconsistente en reportes/pagos del admin (backlog #10)
 
-**Etapa actual:** PUBLISH
+**Etapa actual:** PUBLISHED
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Rama:** `claude/pagosadmin-filtrado-sucursal-34d0c8`
 **Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/32
@@ -18,6 +18,7 @@
 | 2026-09-22 | PUBLISH → ENGINEERING | Probando la rama manualmente contra Postgres real, el usuario detectó que la decisión de ADR-002 estaba mal: solo `Admin` debe ver todas las sucursales, `Caja` debe comportarse como un usuario normal (filtrado por su propia sucursal). Corrección de una línea en `User_Helper.can_view_all_sucursales`; ningún admin ni método de `business/` requirió cambios, porque todos ya delegaban en ese único punto de decisión | usuario (en chat) |
 | 2026-09-22 | ENGINEERING → REVIEW | Tests de "Caja ve todo" reescritos a "Caja ve solo su sucursal"; suite completa re-ejecutada contra el mismo Postgres real: 27/27 pasan | usuario + asistente (mismo hilo de chat, sin invocar delivery-engineer formalmente) |
 | 2026-09-22 | REVIEW → PUBLISH | ADR-002, plan (v2, con changelog) y este TASK actualizados para reflejar la decisión corregida; sin nuevos hallazgos, evidencia de test más fuerte que la del review original (contra Postgres real, no SQLite) | asistente |
+| 2026-09-22 | PUBLISH → PUBLISHED | Usuario confirmó el merge explícitamente en el chat tras validar el comportamiento corregido probando manualmente. PR #32 mergeado a `master` con merge commit (mismo método que PR #29/TASK-001), rama conservada | delivery-publish |
 
 ## Investigación
 
@@ -160,4 +161,6 @@ Verificaciones de `delivery-publish` antes de completar la descripción:
 
 **Cambio sensible — requiere aprobación humana explícita antes de mergear**: este task tiene un ADR asociado ([ADR-002](../adr/ADR-002-filtrado-sucursal-pagos-reportes-admin.md)) y modifica lógica de autorización (quién ve qué sucursal en el admin de Django). Por regla de `delivery-publish`, no se marca como listo para merge automático ni se mergea en esta invocación — queda a la espera de que el usuario lo apruebe explícitamente en el chat.
 
-**Actualización 2026-09-22**: después de que este PR quedara listo para aprobación, el usuario probó la rama manualmente y corrigió un error en la decisión de ADR-002 (ver "Corrección post-publicación" en `## Implementación`). El PR se actualizó con el fix, tests re-verificados contra Postgres real (27/27), y la descripción del PR se volvió a completar reflejando la decisión corregida. Sigue pendiente la misma aprobación humana explícita de antes — nada cambia en ese requisito.
+**Actualización 2026-09-22**: después de que este PR quedara listo para aprobación, el usuario probó la rama manualmente y corrigió un error en la decisión de ADR-002 (ver "Corrección post-publicación" en `## Implementación`). El PR se actualizó con el fix, tests re-verificados contra Postgres real (27/27), y la descripción del PR se volvió a completar reflejando la decisión corregida.
+
+**Mergeado.** El usuario confirmó explícitamente el merge en el chat tras validar el comportamiento corregido probando en su propio entorno. [PR #32](https://github.com/rolion/praxsa-django-panel-admin/pull/32) mergeado a `master` (merge commit, mismo método usado en PR #29/TASK-001). Rama `claude/pagosadmin-filtrado-sucursal-34d0c8` conservada (no se borró).
