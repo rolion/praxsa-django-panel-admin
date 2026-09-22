@@ -1,14 +1,12 @@
 from typing import Any
 from django.http.request import HttpRequest
 from django.contrib import admin
+from django.contrib import messages
 from django.db.models.query import QuerySet
 from django.http.request import HttpRequest
 
 from product.helper.proforma import Proforma_Helper
-
-
-# from ..Forms.daily_sales_form import NotaVentaForm
-from ..models import inventario
+from ..business.inventario import Inventario_Business
 
 import io
 from datetime import datetime
@@ -45,17 +43,23 @@ class ReportUtilidadAdmin(admin.ModelAdmin):
     get_utilidad.admin_order_field = 'sum_film_utilidad'
     
     helper = Proforma_Helper()
-    
+    inventario_business = Inventario_Business()
+
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
-        
-        qs = super().get_queryset(request)
-        qs = inventario.objects.all().select_related(
+
+        base_qs = super().get_queryset(request)
+        base_qs = self.inventario_business.get_inventario_queryset_by_role(user = request.user, qs=base_qs)
+        if base_qs is None:
+            self.message_user(request=request,  message=str('Asigne una sucursal al usuario'), level= messages.ERROR)
+            base_qs = super().get_queryset(request).filter(sucursal = -1)
+
+        qs = base_qs.select_related(
             "sucursal","bobina", "bobina__window_film").filter(lamina_inventario__proforma_header__nota_trabajo__nota_venta__isnull=False).annotate(
                 sum_film_utilidad=Sum(Case(
-                    When(lamina_inventario__proforma_header__sales_type=self.helper.tipo_venta_metro_lineal, 
+                    When(lamina_inventario__proforma_header__sales_type=self.helper.tipo_venta_metro_lineal,
                          then=F("lamina_inventario__window_film_price") * F("lamina_inventario__length")),
-                    When(lamina_inventario__proforma_header__sales_type=self.helper.tipo_venta_instalacion, 
-                         then=F("lamina_inventario__window_film_price") * (F("lamina_inventario__length") * F("lamina_inventario__quantity")))   
+                    When(lamina_inventario__proforma_header__sales_type=self.helper.tipo_venta_instalacion,
+                         then=F("lamina_inventario__window_film_price") * (F("lamina_inventario__length") * F("lamina_inventario__quantity")))
                          )))
         return  qs
     
