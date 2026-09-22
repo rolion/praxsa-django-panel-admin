@@ -1,6 +1,6 @@
 # REV-2026-09-21-003: Sin test para la suma de `total_price` con más de un ítem en `carPartItems`
 
-**Status:** Open
+**Status:** Resolved (2026-09-22) — se agregó `test_recalculates_total_price_as_the_sum_of_multiple_items` (commit `cee126f`). Ver `## Resolución` para la evidencia de esta segunda pasada de review.
 **Severity:** Medium
 **Category:** IMPLEMENTATION
 **Related plan:** docs/plans/PLAN-2026-09-21-price-recalculation-serializer.md (v1)
@@ -34,4 +34,24 @@ $ grep -n "carPartItems" praxsa_manager/product/tests/test_invoice_pricing.py
 
 ## Resolución
 
-Pendiente — corresponde a `delivery-engineer`: agregar un segundo `Car_Part`/`Car_Model_Part` al escenario (o extender `helpers.build_full_scenario()`/una nueva factory) y un test que envíe `carPartItems` con 2 ítems, verificando el `total_price` del header y el `sub_total` de cada `Proforma_Detail` por separado.
+Resuelto el 2026-09-22 (commit `cee126f`): se agregó `test_recalculates_total_price_as_the_sum_of_multiple_items` a `test_invoice_pricing.py` — arma una proforma con 2 ítems, cada uno con su propio `Car_Part`/`Car_Model_Part`/lámina/bobina/inventario en la misma sucursal (`installation_price` 50.00 y 30.00; `precio_venta_mtr_lineal` 120.00 y 90.00), con `sub_total`/`total_price` manipulados en el payload. Verifica que cada `Proforma_Detail` tiene su propio `sub_total` recalculado por separado (170.00 y 420.00, sin mezclarse entre ítems) y que `Proforma_Header.total_price` es la suma de ambos (590.00), no el valor manipulado.
+
+Re-ejecutado en esta segunda pasada de review (entorno independiente, contenedor Postgres descartable en el puerto 5433, evitando el conflicto con el Postgres nativo del host en 5432 — mismo mecanismo que la resolución de REV-002):
+
+```
+$ cd praxsa_manager
+$ POSTGRES_USER=admin POSTGRES_PASSWORD=example POSTGRES_DB=praxsa \
+  DB_HOST=127.0.0.1 DB_PORT=5433 ENV=dev DEBUG=1 SECRET_KEY=test-secret-key \
+  py manage.py test product
+Found 18 test(s).
+Creating test database for alias 'default'...
+...............15
+...
+----------------------------------------------------------------------
+Ran 18 tests in 4.068s
+
+OK
+Destroying test database for alias 'default'...
+```
+
+18/18 en verde (subió de 17 a 18, el nuevo test de multi-ítem incluido), sin regresión en el resto de la suite. Confirmado además por inspección directa del diff que la implementación (`total_price += item['sub_total']` dentro del loop de `validate()`, [invoice_serializer.py:44-69](../../praxsa_manager/product/serializer/invoice_serializer.py)) coincide con la aserición del test nuevo.
