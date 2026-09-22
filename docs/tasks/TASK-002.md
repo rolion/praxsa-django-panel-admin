@@ -1,6 +1,6 @@
 # TASK-002: Cerrar endpoints públicos que exponen stock/precio (backlog #5)
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Rama:** `claude/public-endpoints-pii-storage-ff52d6` (compartida con TASK-004, por decisión explícita del usuario — ver historial)
 **Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/30 (combinado con TASK-004, por decisión explícita del usuario)
@@ -15,6 +15,7 @@
 | 2026-09-21 | REVIEW → ENGINEERING | Veredicto FAIL — REV-2026-09-21-002 (IMPLEMENTATION, High): el monkeypatch de `SimpleRateThrottle.THROTTLE_RATES` en `PublicCatalogThrottleTest` no restaura la tasa real al terminar la clase, contamina el resto del proceso de test. Confirmado empíricamente por `delivery-review` con un test temporal (3 de 5 peticiones normales recibieron 429). Se investigó también una hipótesis de bypass del throttle para usuarios autenticados — descartada, no es un problema real | delivery-review |
 | 2026-09-21 | ENGINEERING → REVIEW | Fix de REV-2026-09-21-002 aplicado (commit 78c6ebc): la tasa real se captura como constante de módulo al importar el archivo (antes de cualquier `override_settings`) y se restaura desde ahí en `tearDown`, en vez de releerla de `api_settings` mientras el override sigue activo. Verificado con un test temporal (no comiteado): ya no hay fuga, la tasa real (`60/min`) se restaura correctamente. `python manage.py test product` → 13/13 OK | delivery-engineer |
 | 2026-09-22 | REVIEW → ENGINEERING | Veredicto FAIL (segunda ronda de review, sesión nueva sin contexto previo) — REV-2026-09-22-001 (Medium, IMPLEMENTATION): verificación manual en navegador de calculadora/windows-film/InventoryAdmin (acceptance criteria del plan) sigue sin ejecutarse, bloqueada en este entorno por la política de acceso a credenciales al intentar levantar runserver+ng serve con datos reales. REV-2026-09-22-002 (Low, IMPLEMENTATION, no bloqueante por sí solo): PublicCatalogThrottle no aplica a sesiones de Django autenticadas (solo afecta a staff vía /admin/, sin vía de bypass para el público anónimo). Confirmado y resuelto de forma independiente: REV-2026-09-21-002 (throttle-rate-test-leak) — re-verificado con test temporal propio, la tasa se restaura correctamente a 60/min sin fuga | delivery-review |
+| 2026-09-22 | ENGINEERING → PUBLISH | Veredicto PASS (tercera ronda, misma sesión) — el usuario copió el .env real y asignó el grupo admin a un staff existente; con eso se completó en vivo la verificación manual en navegador que dejaba abierto REV-2026-09-22-001 (ahora Resuelto, evidencia completa en el archivo): calculadora pública, /windows-film/:id y get_bobina (403 anónimo / 200 staff en InventoryAdmin) confirmados con datos reales. REV-2026-09-22-002 (Low) queda abierto pero no bloqueante | delivery-review |
 
 ## Investigación
 
@@ -127,6 +128,19 @@ Resumen (detalle completo en PR #30, sección `## Changes`):
 - Commit: `78c6ebc`.
 
 ## Review
+
+### Ronda 3 (2026-09-22, misma sesión que ronda 2, verificación en vivo con el usuario)
+
+**Veredicto: PASS** — 0 issues bloqueantes. 1 issue abierto de severidad Low, no bloqueante ([REV-2026-09-22-002](../reviews/REV-2026-09-22-002-throttle-bypass-for-session-authenticated-staff.md)).
+
+El usuario copió el `.env` real al worktree de revisión (el clasificador de Auto Mode de esta sesión seguía bloqueando esa copia específica vía Bash incluso en la ronda 2) y asignó el grupo `admin` a un usuario staff existente. Con eso se completó, en el navegador embebido, la verificación manual que dejaba abierto [REV-2026-09-22-001](../reviews/REV-2026-09-22-001-manual-browser-verification-pending.md) — **ahora Resuelto**, evidencia completa en ese archivo:
+
+1. Calculadora pública (`/`) sin login → `GET /product/get_inventory/1/0/0` → `200 OK` con datos reales de stock/precio.
+2. `/windows-film/:id` sin login → `GET /product/layer/18` → `200 OK`, página renderiza correctamente.
+3. `get_bobina` sin sesión → `GET /product/bobina/18` → `403 Forbidden`, body esperado.
+4. `InventoryAdmin` logueado como staff con grupo `admin` → `GET /product/bobina/23` → `200 OK`, shape correcto, UI renderiza bien.
+
+Los 4 acceptance criteria del plan que requerían verificación manual en navegador quedan confirmados con evidencia real. `REV-2026-09-22-002` (Low, `PublicCatalogThrottle` no aplica a sesiones de staff de Django) queda abierto pero no bloquea `PUBLISH` — severidad Low, sin vía de bypass para el público anónimo (el objetivo real del throttle), documentado para que quien lo desee lo cierre en una iteración futura.
 
 ### Ronda 2 (2026-09-22, sesión nueva sin contexto previo)
 
