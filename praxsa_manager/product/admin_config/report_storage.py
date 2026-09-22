@@ -5,10 +5,10 @@ from django.db.models.query import QuerySet
 from django.http.request import HttpRequest
 from django.contrib import messages
 from django.db import transaction
-from ..models import inventario
 
 from product.Forms.pagos import PagosForm
 from product.business.user import User_Business
+from product.business.inventario import Inventario_Business
 from product.helper.proforma import Proforma_Helper
 from product.helper.user import User_Helper
 from django.urls import reverse
@@ -39,7 +39,8 @@ class ReportStorageAdmin(admin.ModelAdmin):
     
     actions =[]
     list_per_page = 10
-    
+    inventario_business = Inventario_Business()
+
     def get_lamina_name(self, obj):
         # link para ver la nota de trabajo
         # pero se visualiza el id de la proforma
@@ -64,14 +65,19 @@ class ReportStorageAdmin(admin.ModelAdmin):
     
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
         qs = super().get_queryset(request)
-        result = inventario.objects.select_related("sucursal", "bobina", "bobina__window_film")
+        base_qs = self.inventario_business.get_inventario_queryset_by_role(user = request.user, qs=qs)
+        if base_qs is None:
+            self.message_user(request=request,  message=str('Asigne una sucursal al usuario'), level= messages.ERROR)
+            base_qs = qs.filter(sucursal = -1)
+
+        result = base_qs.select_related("sucursal", "bobina", "bobina__window_film")
         result = result.values("sucursal__id","sucursal__name", "bobina__window_film__id","bobina__window_film__name", "bobina__width")
         result = result.annotate(total_to_install=Sum('to_install'))
         result = result.annotate(total_installed = Sum('installed'))
         result = result.annotate(avg_costo_compra = Sum('precio_compra_mtr_lineal'))
         result = result.order_by("sucursal__name", "bobina__window_film__name", "bobina__width")
         self.aggregated_result= result
-        return qs.select_related("sucursal", "bobina", "bobina__window_film").distinct("sucursal__id","bobina__window_film__id", "bobina__width").order_by("sucursal__id","bobina__window_film__id", "bobina__width")
+        return base_qs.select_related("sucursal", "bobina", "bobina__window_film").distinct("sucursal__id","bobina__window_film__id", "bobina__width").order_by("sucursal__id","bobina__window_film__id", "bobina__width")
     
     def has_add_permission(self, request, obj=None):
         return False

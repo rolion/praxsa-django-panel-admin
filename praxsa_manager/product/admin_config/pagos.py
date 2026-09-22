@@ -39,6 +39,7 @@ class PagosAdmin(admin.ModelAdmin):
     actions = ['concluir_transaccion']
     list_per_page = 10
     form = PagosForm
+    pago_business = Pago_Business()
 
     def get_form(self, request, obj=None, **kwargs):
         """
@@ -130,11 +131,15 @@ class PagosAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
         qs = super().get_queryset(request)
-        result = qs.select_related('nota_venta',
+        qs = qs.select_related('nota_venta',
                                    'nota_venta__nota_trabajo',
                                    'nota_venta__nota_trabajo__proforma',
                                    'nota_venta__nota_trabajo__proforma__sucursal'
                                    )
+        result = self.pago_business.get_pago_queryset_by_role(user = request.user, qs=qs)
+        if result is None:
+            self.message_user(request=request,  message=str('Asigne una sucursal al usuario'), level= messages.ERROR)
+            return qs.filter(nota_venta__nota_trabajo__proforma__sucursal = -1)
         return  result
     
     @admin.action(description="concluir transaccion")
