@@ -1,6 +1,6 @@
 # TASK-005: Tests de caracterización del precio actual + recálculo server-side en `SalesHeaderSerializer.create()` (backlog #2, pasos 1-2)
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Rama:** `claude/delivery-price-characterization-tests-42c1d8`
 **Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/33
@@ -15,6 +15,7 @@
 | 2026-09-21 | ENGINEERING → REVIEW | Implementación completa según el plan v1, commit `7f1052b` empujado al PR #33. `manage.py check` limpio; `manage.py test` no se pudo correr completo en este entorno (sin credenciales para el Postgres local del sandbox) — mismo tipo de limitación ya aceptada en TASK-001 | delivery-engineer |
 | 2026-09-21 | REVIEW → ENGINEERING | Veredicto FAIL — REV-2026-09-21-002 (IMPLEMENTATION): verificación funcional no ejecutable en este entorno de review, acceptance criterion #1 del plan sin confirmar con evidencia real; REV-2026-09-21-003 (IMPLEMENTATION): sin test para la suma de `total_price` con más de un ítem en `carPartItems` | delivery-review |
 | 2026-09-22 | ENGINEERING (sin cambio de etapa) | Docker Desktop levantado en el host; se reintentó la verificación de REV-2026-09-21-002 con un Postgres real en Docker — 17/17 tests en verde, REV-002 pasa a Resolved. REV-2026-09-21-003 sigue abierto, el veredicto FAIL se mantiene solo por ese issue | delivery-review |
+| 2026-09-22 | ENGINEERING → REVIEW | Agregado `test_recalculates_total_price_as_the_sum_of_multiple_items` para cerrar REV-2026-09-21-003 (proforma con 2 ítems, cada uno con su propio `Car_Model_Part`/lámina/inventario). Commit `cee126f` empujado al PR #33. Verificado con `python manage.py test product` contra un Postgres real (contenedor descartable): 18/18 tests en verde | delivery-engineer |
 
 ## Investigación
 
@@ -145,6 +146,8 @@ Implementado según el plan v1, commit `7f1052b` (rama `claude/delivery-price-ch
 **Limitación de entorno, no verificación pendiente formal (ver Quality Gate en `delivery-review`)**: este sandbox no tiene Django instalado de base ni una base de datos Postgres con credenciales conocidas (hay una instancia Postgres nativa corriendo en el host, pero sin credenciales accesibles para este entorno — no se intentó adivinarlas más allá de 2-3 valores obvios de desarrollo). Se instaló Django + el resto de `requirements-3.8.10.txt` localmente (no es una dependencia nueva del proyecto, son las ya pinneadas) para poder verificar: `python manage.py check` pasa limpio (solo un warning irrelevante de `STATICFILES_DIRS`), y `python manage.py test` llega hasta el intento de conexión a la base de datos sin ningún error de import/sintaxis/configuración de mi código — falla únicamente en `FATAL: password authentication failed`. Es la misma clase de limitación ya documentada y aceptada en TASK-001 (REV-2026-09-21-001, Waived). La ejecución real de `python manage.py test` queda para `delivery-review`, que corre en un entorno independiente y es quien formalmente verifica esto.
 
 Sin nuevas dependencias del proyecto, sin migraciones (no se tocó ningún modelo), sin cambios en `views.py`/`admin_config/`/`sales_event.js`/`proforma/src/` — consistente con "Files/components affected" del plan.
+
+**Corrección de REV-2026-09-21-003 (2026-09-22), commit `cee126f`**: se agregó `test_recalculates_total_price_as_the_sum_of_multiple_items` a `praxsa_manager/product/tests/test_invoice_pricing.py` — arma una proforma con 2 ítems (cada uno con su propio `Car_Part`/`Car_Model_Part`/lámina/bobina/inventario en la misma sucursal, precios manipulados en el payload), y verifica que cada `Proforma_Detail` tiene su propio `sub_total` recalculado correcto (170.00 y 420.00) y que `Proforma_Header.total_price` es la suma de ambos (590.00), no el valor manipulado que mandó el cliente. No se tocó ningún otro archivo. Verificado con `python manage.py test product` contra un Postgres real en Docker (contenedor descartable, puerto 5433): **18/18 tests en verde** (subió de 17 a 18).
 
 ## Review
 
