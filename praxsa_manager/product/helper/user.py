@@ -22,4 +22,4 @@ class User_Helper():
         return 'caja' in list(user_groups)
 
     def can_view_all_sucursales(self, user):
-        return self.is_request_user_admin(user) or self.is_request_user_caja(user)
+        return self.is_request_user_admin(user)

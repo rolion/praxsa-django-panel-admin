@@ -1,15 +1,15 @@
-# PLAN-2026-09-21-filtrado-sucursal-pagos-reportes-admin (v1)
+# PLAN-2026-09-21-filtrado-sucursal-pagos-reportes-admin (v2)
 
 **Task:** TASK-002
 **ADRs relacionados:** [ADR-002](../adr/ADR-002-filtrado-sucursal-pagos-reportes-admin.md)
 
 ## Objective
 
-Que `PagosAdmin`, `ReportDailySellAdmin`, `ReportStorageAdmin`, `ReportUtilidadAdmin` y `ReportNotaTrabajoAdmin` dejen de mostrar datos financieros de todas las sucursales a cualquier staff, y en su lugar respeten la sucursal del usuario — salvo los grupos `Admin` y `Caja`, que siguen viendo todo. Cierra el ítem #10 del backlog (`SEC-06`).
+Que `PagosAdmin`, `ReportDailySellAdmin`, `ReportStorageAdmin`, `ReportUtilidadAdmin` y `ReportNotaTrabajoAdmin` dejen de mostrar datos financieros de todas las sucursales a cualquier staff, y en su lugar respeten la sucursal del usuario — salvo el grupo `Admin`, que sigue viendo todo. Cierra el ítem #10 del backlog (`SEC-06`).
 
 ## Context
 
-Investigación completa en [TASK-002](../tasks/TASK-002.md#investigación). Decisión arquitectónica en [ADR-002](../adr/ADR-002-filtrado-sucursal-pagos-reportes-admin.md): centralizar en `User_Helper` qué roles ven todas las sucursales (`Admin` y `Caja`, ambos confirmados por el usuario — el grupo `Caja` ya existe, no hace falta crearlo), y agregar un método `get_*_queryset_by_role(user, qs)` por cada `business/*.py` relevante, siguiendo la convención ya usada por `Proforma_Business`.
+Investigación completa en [TASK-002](../tasks/TASK-002.md#investigación). Decisión arquitectónica en [ADR-002](../adr/ADR-002-filtrado-sucursal-pagos-reportes-admin.md): centralizar en `User_Helper` qué roles ven todas las sucursales (solo `Admin`, corregido el 2026-09-22 — ver Changelog), y agregar un método `get_*_queryset_by_role(user, qs)` por cada `business/*.py` relevante, siguiendo la convención ya usada por `Proforma_Business`.
 
 Confirmado explícitamente fuera de alcance (no tocar en este plan): el chequeo inline de `'Admin'` en `Proforma_Business.get_proforma_queryset_by_role`, el bug preexistente de "Admin sin sucursal ve listas vacías" en `NotaVentaAdmin`/`NotaTrabajoAdmin`, y SEC-07 (mutación de estado compartido en `changelist_view`).
 
@@ -24,9 +24,9 @@ Confirmado explícitamente fuera de alcance (no tocar en este plan): el chequeo 
 
 ## Expected behavior
 
-- Un usuario del grupo `Admin` o `Caja` ve, en los 5 admins listados arriba, los registros de **todas** las sucursales (igual que hoy).
-- Un usuario de cualquier otro grupo (o sin grupo) ve solo los registros de la sucursal a la que pertenece vía `Sucursal.empleado`.
-- Un usuario sin `Admin`/`Caja` y sin sucursal asignada ve una lista vacía, con el mismo mensaje "Asigne una sucursal al usuario" ya usado por `ProformaAdmin`/`NotaVentaAdmin` — mismo contrato, nada nuevo.
+- Un usuario del grupo `Admin` ve, en los 5 admins listados arriba, los registros de **todas** las sucursales (igual que hoy).
+- Un usuario de cualquier otro grupo (`Caja` incluido) o sin grupo ve solo los registros de la sucursal a la que pertenece vía `Sucursal.empleado`.
+- Un usuario sin `Admin` y sin sucursal asignada ve una lista vacía, con el mismo mensaje "Asigne una sucursal al usuario" ya usado por `ProformaAdmin`/`NotaVentaAdmin` — mismo contrato, nada nuevo.
 - En `ReportStorageAdmin`, los "metros disponibles" mostrados (`aggregated_result`) corresponden a la misma sucursal(es) visible(s) en el listado — hoy pueden estar calculados sobre datos de otra sucursal que ni siquiera aparece en la tabla.
 
 ## Architecture considerations
@@ -39,7 +39,7 @@ Resumen de ADR-002 (ver documento para alternativas descartadas):
 
 ## Proposed solution
 
-1. `User_Helper.is_request_user_caja` (mismo patrón que los tres `is_request_user_*` existentes) y `User_Helper.can_view_all_sucursales` (`is_request_user_admin(user) or is_request_user_caja(user)`).
+1. `User_Helper.is_request_user_caja` (mismo patrón que los tres `is_request_user_*` existentes, primitivo reutilizable aunque no lo use `can_view_all_sucursales`) y `User_Helper.can_view_all_sucursales` (`is_request_user_admin(user)` — solo Admin ve todas las sucursales; corregido en v2, ver Changelog).
 2. `Pago_Business.get_pago_queryset_by_role(user, qs)` — usado por `PagosAdmin` y `ReportDailySellAdmin` (ambos sobre el modelo `pago`/`Proxy_Pagos`, ruta `nota_venta__nota_trabajo__proforma__sucursal`).
 3. `Inventario_Business.get_inventario_queryset_by_role(user, qs)` — usado por `ReportStorageAdmin` y `ReportUtilidadAdmin` (ambos sobre `inventario`/`inventario_proxy`/`utilidades`, FK directa `sucursal`). `ReportStorageAdmin` además filtra su query de agregación (`aggregated_result`) por la(s) misma(s) sucursal(es) resueltas para el usuario.
 4. `Orden_Trabajo_Business.get_finish_nota_queryset(user, qs)` — se descomenta el filtro, se reemplaza por `can_view_all_sucursales`, usado por `ReportNotaTrabajoAdmin`.
@@ -81,8 +81,8 @@ Resumen de ADR-002 (ver documento para alternativas descartadas):
 **¿E2E?** No corresponde. El cambio vive enteramente en el panel de administración de Django (`ModelAdmin.get_queryset`), no es un flujo de usuario del frontend Angular, y Playwright no está instalado en `proforma/package.json` (agregarlo sería una dependencia nueva injustificada para probar una vista de admin de Django). Se valida con tests de Django.
 
 **Unitarios** (capa `business/` y `helper/`), en `praxsa_manager/product/tests/test_sucursal_scope_admin.py`, usando `django.test.TestCase` + las fábricas de `helpers.py`:
-- `User_Helper.can_view_all_sucursales`: `True` para grupo `Admin`, `True` para grupo `Caja`, `False` para `Supervisor`/`Instalador`/sin grupo.
-- `Pago_Business.get_pago_queryset_by_role`, `Inventario_Business.get_inventario_queryset_by_role`, `Orden_Trabajo_Business.get_finish_nota_queryset`: para cada uno — (a) Admin ve pagos/inventario/notas de 2 sucursales distintas, (b) Caja ve las mismas 2, (c) usuario con sucursal propia solo ve los de su sucursal (creando datos en una segunda sucursal como control negativo), (d) usuario sin `Admin`/`Caja` y sin sucursal asignada recibe `None`.
+- `User_Helper.can_view_all_sucursales`: `True` para grupo `Admin`, `False` para `Caja`/`Supervisor`/`Instalador`/sin grupo.
+- `Pago_Business.get_pago_queryset_by_role`, `Inventario_Business.get_inventario_queryset_by_role`, `Orden_Trabajo_Business.get_finish_nota_queryset`: para cada uno — (a) Admin ve pagos/inventario/notas de 2 sucursales distintas, (b) un usuario del grupo `Caja` con sucursal propia solo ve los de su sucursal (no ve las de otra sucursal), (c) usuario con sucursal propia sin rol especial solo ve los de su sucursal (creando datos en una segunda sucursal como control negativo), (d) usuario sin `Admin` y sin sucursal asignada recibe `None`.
 
 **Integración/wiring** (uno por cada `ModelAdmin.get_queryset` tocado — `PagosAdmin`, `ReportDailySellAdmin`, `ReportStorageAdmin`, `ReportUtilidadAdmin`, `ReportNotaTrabajoAdmin`): instanciar el `ModelAdmin` real con `django.test.RequestFactory`, asignar `request.user` a un usuario de sucursal A, y verificar que `get_queryset(request)` no incluye registros de una sucursal B creada como control. Esto existe porque un test que solo cubre `business/*.py` no detectaría el error de olvidar conectar el admin al método nuevo (la clase de bug más probable en este cambio).
 
@@ -91,7 +91,7 @@ Si algún paso de implementación cambiara lógica de negocio sin su caso de pru
 ## Acceptance criteria
 
 - [ ] `User_Helper.can_view_all_sucursales` existe y está cubierto por test.
-- [ ] `PagosAdmin`, `ReportDailySellAdmin`, `ReportStorageAdmin`, `ReportUtilidadAdmin` filtran por sucursal salvo para `Admin`/`Caja`, cada uno con test de wiring.
+- [ ] `PagosAdmin`, `ReportDailySellAdmin`, `ReportStorageAdmin`, `ReportUtilidadAdmin` filtran por sucursal salvo para `Admin`, cada uno con test de wiring.
 - [ ] `Orden_Trabajo_Business.get_finish_nota_queryset` ya no tiene el filtro comentado, recibe `user`, y `ReportNotaTrabajoAdmin` lo usa correctamente, con test de wiring.
 - [ ] `ReportStorageAdmin.aggregated_result` respeta el mismo filtro de sucursal que el queryset principal.
 - [ ] `python manage.py test` pasa completo (incluye smoke tests existentes, sin regresiones).
@@ -101,9 +101,8 @@ Si algún paso de implementación cambiara lógica de negocio sin su caso de pru
 
 ## Risks
 
-- **Usuario sin `Admin`/`Caja` y sin sucursal asignada verá listas vacías** en los 5 admins de este cambio — mismo comportamiento que ya tienen `ProformaAdmin`/`NotaVentaAdmin` hoy, no es un riesgo nuevo, pero conviene que quien despliegue lo sepa antes de recibir un reporte de "no veo nada" de un usuario mal configurado. Mitigación: ya cubierto por ADR-002 (verificación manual pre/post-despliegue).
+- **Usuario sin `Admin` y sin sucursal asignada verá listas vacías** en los 5 admins de este cambio (esto incluye a un eventual usuario `Caja` sin sucursal) — mismo comportamiento que ya tienen `ProformaAdmin`/`NotaVentaAdmin` hoy, no es un riesgo nuevo, pero conviene que quien despliegue lo sepa antes de recibir un reporte de "no veo nada" de un usuario mal configurado. Mitigación: ya cubierto por ADR-002 (verificación manual pre/post-despliegue).
 - **`ReportStorageAdmin.aggregated_result` desincronizado del `qs` filtrado** si el paso 7 se implementa filtrando solo uno de los dos. Mitigación: test de wiring del paso 7 verifica ambos explícitamente.
-- **Nombre de grupo `Caja` con mayúsculas/espacios distintos** en el ambiente real (p. ej. "caja " con espacio, o "Cajera") rompería silenciosamente el chequeo (`is_request_user_caja` compara case-insensitive pero exacto). Mitigación: no verificable desde este entorno; queda como nota para quien verifique manualmente en producción antes/después del despliegue (ya contemplado en ADR-002).
 - **Sin migraciones de por medio**, el riesgo de romper datos existentes es nulo; el riesgo real es puramente de autorización (ver arriba), no de integridad de datos.
 
 ## Out of scope
@@ -116,3 +115,6 @@ Si algún paso de implementación cambiara lógica de negocio sin su caso de pru
 ## Dependencias nuevas
 
 Ninguna.
+
+## Changelog
+- **v2** (2026-09-22): corrección de alcance — solo el grupo `Admin` ve todas las sucursales; `Caja` pasa a comportarse como cualquier usuario sin rol especial (filtrado por su propia sucursal). El usuario detectó el error probando la rama manualmente contra su Postgres real y lo corrigió en el chat. Cambio de código mínimo: una línea en `User_Helper.can_view_all_sucursales` (deja de incluir `is_request_user_caja`); no hizo falta tocar ningún admin ni método de `business/`, porque todos ya delegaban en ese único punto de decisión — confirma que la abstracción elegida en ADR-002 cumplió su propósito. Se actualizaron los tests que asumían "Caja ve todo" para en cambio verificar "Caja ve solo su sucursal", y se re-verificó la suite completa (27/27) contra Postgres real.

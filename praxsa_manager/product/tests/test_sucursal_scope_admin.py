@@ -31,10 +31,10 @@ class CanViewAllSucursalesTest(TestCase):
         helpers.add_user_to_group(user, 'Admin')
         self.assertTrue(self.helper.can_view_all_sucursales(user))
 
-    def test_caja_ve_todo(self):
+    def test_caja_no_ve_todo(self):
         user, _ = helpers.create_user_with_token()
         helpers.add_user_to_group(user, 'Caja')
-        self.assertTrue(self.helper.can_view_all_sucursales(user))
+        self.assertFalse(self.helper.can_view_all_sucursales(user))
 
     def test_supervisor_no_ve_todo(self):
         user, _ = helpers.create_user_with_token()
@@ -64,20 +64,19 @@ class PagoBusinessQuerysetByRoleTest(TestCase):
         ids = set(result.values_list('id', flat=True))
         self.assertEqual(ids, {chain_a['pago'].id, chain_b['pago'].id})
 
-    def test_caja_ve_pagos_de_todas_las_sucursales(self):
+    def test_caja_solo_ve_su_propia_sucursal(self):
         caja_user, _ = helpers.create_user_with_token()
         helpers.add_user_to_group(caja_user, 'Caja')
-        owner_a, _ = helpers.create_user_with_token()
-        sucursal_a = helpers.create_sucursal(owner_a)
+        sucursal_caja = helpers.create_sucursal(caja_user)
         owner_b, _ = helpers.create_user_with_token()
         sucursal_b = helpers.create_sucursal(owner_b)
-        chain_a = helpers.create_full_pago_chain(owner_a, sucursal=sucursal_a)
-        chain_b = helpers.create_full_pago_chain(owner_b, sucursal=sucursal_b)
+        chain_caja = helpers.create_full_pago_chain(caja_user, sucursal=sucursal_caja)
+        helpers.create_full_pago_chain(owner_b, sucursal=sucursal_b)
 
         result = self.business.get_pago_queryset_by_role(user=caja_user, qs=pago.objects.all())
 
         ids = set(result.values_list('id', flat=True))
-        self.assertEqual(ids, {chain_a['pago'].id, chain_b['pago'].id})
+        self.assertEqual(ids, {chain_caja['pago'].id})
 
     def test_usuario_con_sucursal_solo_ve_la_propia(self):
         owner_a, _ = helpers.create_user_with_token()
@@ -118,20 +117,19 @@ class InventarioBusinessQuerysetByRoleTest(TestCase):
         ids = set(result.values_list('id', flat=True))
         self.assertEqual(ids, {inv_a.id, inv_b.id})
 
-    def test_caja_ve_inventario_de_todas_las_sucursales(self):
+    def test_caja_solo_ve_su_propia_sucursal(self):
         caja_user, _ = helpers.create_user_with_token()
         helpers.add_user_to_group(caja_user, 'Caja')
-        owner_a, _ = helpers.create_user_with_token()
-        sucursal_a = helpers.create_sucursal(owner_a)
+        sucursal_caja = helpers.create_sucursal(caja_user)
         owner_b, _ = helpers.create_user_with_token()
         sucursal_b = helpers.create_sucursal(owner_b)
-        inv_a = helpers.create_inventario(sucursal=sucursal_a)
-        inv_b = helpers.create_inventario(sucursal=sucursal_b)
+        inv_caja = helpers.create_inventario(sucursal=sucursal_caja)
+        helpers.create_inventario(sucursal=sucursal_b)
 
         result = self.business.get_inventario_queryset_by_role(user=caja_user, qs=utilidades.objects.all())
 
         ids = set(result.values_list('id', flat=True))
-        self.assertEqual(ids, {inv_a.id, inv_b.id})
+        self.assertEqual(ids, {inv_caja.id})
 
     def test_usuario_con_sucursal_solo_ve_la_propia(self):
         owner_a, _ = helpers.create_user_with_token()
@@ -172,20 +170,19 @@ class OrdenTrabajoBusinessFinishNotaQuerysetTest(TestCase):
         ids = set(result.values_list('id', flat=True))
         self.assertEqual(ids, {chain_a['nota_trabajo'].id, chain_b['nota_trabajo'].id})
 
-    def test_caja_ve_notas_de_todas_las_sucursales(self):
+    def test_caja_solo_ve_su_propia_sucursal(self):
         caja_user, _ = helpers.create_user_with_token()
         helpers.add_user_to_group(caja_user, 'Caja')
-        owner_a, _ = helpers.create_user_with_token()
-        sucursal_a = helpers.create_sucursal(owner_a)
+        sucursal_caja = helpers.create_sucursal(caja_user)
         owner_b, _ = helpers.create_user_with_token()
         sucursal_b = helpers.create_sucursal(owner_b)
-        chain_a = helpers.create_full_pago_chain(owner_a, sucursal=sucursal_a)
-        chain_b = helpers.create_full_pago_chain(owner_b, sucursal=sucursal_b)
+        chain_caja = helpers.create_full_pago_chain(caja_user, sucursal=sucursal_caja)
+        helpers.create_full_pago_chain(owner_b, sucursal=sucursal_b)
 
         result = self.business.get_finish_nota_queryset(user=caja_user, qs=Proxy_Nota_trabajo.objects.all())
 
         ids = set(result.values_list('id', flat=True))
-        self.assertEqual(ids, {chain_a['nota_trabajo'].id, chain_b['nota_trabajo'].id})
+        self.assertEqual(ids, {chain_caja['nota_trabajo'].id})
 
     def test_usuario_con_sucursal_solo_ve_la_propia(self):
         owner_a, _ = helpers.create_user_with_token()
