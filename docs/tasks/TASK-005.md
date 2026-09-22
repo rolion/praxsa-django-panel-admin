@@ -17,6 +17,7 @@
 | 2026-09-22 | ENGINEERING (sin cambio de etapa) | Docker Desktop levantado en el host; se reintentó la verificación de REV-2026-09-21-002 con un Postgres real en Docker — 17/17 tests en verde, REV-002 pasa a Resolved. REV-2026-09-21-003 sigue abierto, el veredicto FAIL se mantiene solo por ese issue | delivery-review |
 | 2026-09-22 | ENGINEERING → REVIEW | Agregado `test_recalculates_total_price_as_the_sum_of_multiple_items` para cerrar REV-2026-09-21-003 (proforma con 2 ítems, cada uno con su propio `Car_Model_Part`/lámina/inventario). Commit `cee126f` empujado al PR #33. Verificado con `python manage.py test product` contra un Postgres real (contenedor descartable): 18/18 tests en verde | delivery-engineer |
 | 2026-09-22 | REVIEW → PUBLISH | Veredicto PASS. REV-2026-09-21-003 confirmado Resolved con evidencia real re-ejecutada en esta segunda pasada (contenedor Postgres descartable, puerto 5433): `python manage.py test product` 18/18 en verde. Sin issues nuevos — `flake8`/`bandit` ad hoc sin hallazgos de seguridad, solo 2 nits de estilo no bloqueantes en código nuevo (`test_invoice_pricing.py`). Plan/ADR-004 cumplidos punto por punto, sin scope creep, `create()` sin modificar, sin migraciones nuevas | delivery-review |
+| 2026-09-22 | PUBLISH (sin cambio de etapa) | Verificado: sin commits nuevos desde el último `delivery-review` (HEAD = `f350971`, el mismo commit del veredicto PASS), `git status` limpio, diff sin secretos ni archivos fuera del plan. Descripción del PR #33 completada (`## Architecture decisions`, `## Known limitations` con la deuda aceptada de ADR-004). Cambio sensible (tiene ADR, lógica de negocio de precio en un endpoint real de producción) — queda pendiente de aprobación humana explícita antes de mergear, no se mergea automáticamente | delivery-publish |
 
 ## Investigación
 
@@ -195,4 +196,12 @@ Destroying test database for alias 'default'...
 - **REV-003**: ningún test de `test_invoice_pricing.py` cubría una proforma con más de un ítem en `carPartItems` — el caso de uso real de este dominio. La suma de `total_price` a través de varios ítems recalculados quedaba sin cobertura, violando "todo cambio de lógica de negocio lleva su test" de `docs/CLAUDE.md`.
 
 ## Publicación
-_Pendiente_
+
+**Estado: Listo para aprobación humana.** PR único del task: https://github.com/rolion/praxsa-django-panel-admin/pull/33 (commit `f350971`).
+
+Verificado antes de dejarlo listo:
+- `## Review` en `PASS`, sin commits nuevos desde esa pasada (`HEAD` = `f350971`, el mismo commit del veredicto).
+- `git status` limpio; diff (`git diff origin/master...HEAD`) sin archivos fuera de lo previsto en el plan, sin secretos ni credenciales comiteadas.
+- Descripción del PR #33 actualizada con la trazabilidad completa: `## Architecture decisions` (resumen de ADR-004) y `## Known limitations` (deuda aceptada conscientemente, tomada de la sección "Consecuencias" de ADR-004).
+
+**Cambio sensible — requiere aprobación humana explícita antes de mergear** (no se mergea automáticamente, no es un caso de auto-merge opt-in): este task tiene un ADR (ADR-004, decisión arquitectónica de recálculo de precio) y modifica lógica de negocio de precio en `SalesHeaderSerializer`, el endpoint real que usa la calculadora Angular en producción hoy. `delivery-review` dio `PASS` con evidencia real de ejecución, pero eso no sustituye la aprobación de un humano para este tipo de cambio.
