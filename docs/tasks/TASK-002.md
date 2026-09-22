@@ -1,6 +1,6 @@
 # TASK-002: Cerrar endpoints públicos que exponen stock/precio (backlog #5)
 
-**Etapa actual:** REVIEW
+**Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Rama:** `claude/public-endpoints-pii-storage-ff52d6` (compartida con TASK-004, por decisión explícita del usuario — ver historial)
 **Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/30 (combinado con TASK-004, por decisión explícita del usuario)
@@ -14,6 +14,7 @@
 | 2026-09-21 | ENGINEERING → REVIEW | Implementación completa según el plan v1, commit e4bdf62 empujado al PR #30. Un desvío menor documentado (AnonRateThrottle con scope fijo en vez de ScopedRateThrottle, porque `@api_view` no reenvía `throttle_scope`) — no cambia alcance ni riesgo, resuelto directamente sin escalar | delivery-engineer |
 | 2026-09-21 | REVIEW → ENGINEERING | Veredicto FAIL — REV-2026-09-21-002 (IMPLEMENTATION, High): el monkeypatch de `SimpleRateThrottle.THROTTLE_RATES` en `PublicCatalogThrottleTest` no restaura la tasa real al terminar la clase, contamina el resto del proceso de test. Confirmado empíricamente por `delivery-review` con un test temporal (3 de 5 peticiones normales recibieron 429). Se investigó también una hipótesis de bypass del throttle para usuarios autenticados — descartada, no es un problema real | delivery-review |
 | 2026-09-21 | ENGINEERING → REVIEW | Fix de REV-2026-09-21-002 aplicado (commit 78c6ebc): la tasa real se captura como constante de módulo al importar el archivo (antes de cualquier `override_settings`) y se restaura desde ahí en `tearDown`, en vez de releerla de `api_settings` mientras el override sigue activo. Verificado con un test temporal (no comiteado): ya no hay fuga, la tasa real (`60/min`) se restaura correctamente. `python manage.py test product` → 13/13 OK | delivery-engineer |
+| 2026-09-22 | REVIEW → ENGINEERING | Veredicto FAIL (segunda ronda de review, sesión nueva sin contexto previo) — REV-2026-09-22-001 (Medium, IMPLEMENTATION): verificación manual en navegador de calculadora/windows-film/InventoryAdmin (acceptance criteria del plan) sigue sin ejecutarse, bloqueada en este entorno por la política de acceso a credenciales al intentar levantar runserver+ng serve con datos reales. REV-2026-09-22-002 (Low, IMPLEMENTATION, no bloqueante por sí solo): PublicCatalogThrottle no aplica a sesiones de Django autenticadas (solo afecta a staff vía /admin/, sin vía de bypass para el público anónimo). Confirmado y resuelto de forma independiente: REV-2026-09-21-002 (throttle-rate-test-leak) — re-verificado con test temporal propio, la tasa se restaura correctamente a 60/min sin fuga | delivery-review |
 
 ## Investigación
 
@@ -127,17 +128,36 @@ Resumen (detalle completo en PR #30, sección `## Changes`):
 
 ## Review
 
-**Veredicto: FAIL** — 1 issue abierto: [REV-2026-09-21-002](../reviews/REV-2026-09-21-002-throttle-rate-test-leak.md) (**High / IMPLEMENTATION**, corresponde a `delivery-engineer`).
+### Ronda 2 (2026-09-22, sesión nueva sin contexto previo)
+
+**Veredicto: FAIL** — 1 issue bloqueante, 1 adicional no bloqueante por sí solo:
+
+- [REV-2026-09-22-001](../reviews/REV-2026-09-22-001-manual-browser-verification-pending.md) (**Medium / IMPLEMENTATION**): la verificación manual en navegador de la calculadora pública, `/windows-film/:id` e `InventoryAdmin` (paso 7 del plan, acceptance criteria) sigue sin ejecutarse. No es un defecto de código: se intentó completarla en esta revisión levantando `runserver`+`ng serve` con datos reales, pero la política de acceso a credenciales de este entorno de sesión bloqueó copiar el `.env` real para ese fin (sí lo permitió minutos antes para correr la suite de tests). El riesgo principal que esta verificación cubriría (cambio de shape al migrar `JsonResponse`→`Response`) ya está mitigado por los tests de caracterización exactos (`GetInventoryEndpointTest`/`GetLayerInfoEndpointTest`) y por la verificación previa de `delivery-engineer` contra `runserver` real.
+- [REV-2026-09-22-002](../reviews/REV-2026-09-22-002-throttle-bypass-for-session-authenticated-staff.md) (**Low / IMPLEMENTATION**, no bloqueante por sí solo): `PublicCatalogThrottle` (subclase de `AnonRateThrottle`) no throttlea requests con sesión de Django válida, porque DRF usa `SessionAuthentication` por default (no hay `DEFAULT_AUTHENTICATION_CLASSES` configurado) y las vistas no restringen `authentication_classes`. En la práctica solo exime a staff logueado en `/admin/` (no existe login por sesión para clientes de `proforma` — confirmado por grep) — no es una vía de bypass para el público anónimo, que es el objetivo real del throttle. La investigación de la ronda anterior (REV-2026-09-21-002) había descartado el bypass solo para `TokenAuthentication`, sin considerar `SessionAuthentication`.
+
+**REV-2026-09-21-002 (throttle-rate-test-leak, High): resuelto y confirmado de forma independiente.** Re-ejecuté un test temporal propio (no comiteado, revertido después) después de `PublicCatalogThrottleTest`: `SimpleRateThrottle.THROTTLE_RATES` se restaura correctamente a `{'public_catalog': '60/min'}` y 5 peticiones normales a `get_inventory` devuelven `200` — el leak ya no ocurre.
+
+Verificación adicional hecha en esta ronda:
+- `python manage.py test product` (13/13) y `python manage.py test` (proyecto completo, mismos 13/13) — corrida independiente contra Postgres real de dev, con permiso explícito del usuario en el chat.
+- `python manage.py check` y `makemigrations --check --dry-run` — sin issues nuevos, sin migraciones pendientes.
+- `flake8` (defaults, sin config en el repo) y `bandit` sobre `views.py`/`settings.py`/tests nuevos — sin hallazgos en el código efectivamente agregado/modificado por este diff.
+- Sin scope creep: diff acotado a los archivos que el plan declaraba (backend); los archivos de `proforma/` en el mismo PR pertenecen a TASK-004 (combinado por decisión explícita del usuario).
+
+Detalle completo de evidencia en [REV-2026-09-22-001](../reviews/REV-2026-09-22-001-manual-browser-verification-pending.md), [REV-2026-09-22-002](../reviews/REV-2026-09-22-002-throttle-bypass-for-session-authenticated-staff.md) y en el PR #30 (`## Testing`/`## Review`).
+
+**Nota de aislamiento de contexto**: esta ronda sí corrió en una sesión nueva, sin contexto previo de la implementación ni de la revisión anterior — reconstruida enteramente desde TASK-002.md, el plan, ADR-002, el REV anterior y el diff real (`git diff origin/master...HEAD`), como pide el skill.
+
+### Ronda 1 (2026-09-21, misma sesión que implementó el cambio)
+
+**Veredicto: FAIL** — 1 issue abierto: [REV-2026-09-21-002](../reviews/REV-2026-09-21-002-throttle-rate-test-leak.md) (**High / IMPLEMENTATION**, corresponde a `delivery-engineer`). **Resuelto en la ronda 2** (ver arriba).
 
 Resumen del issue: `PublicCatalogThrottleTest` sobreescribe `DEFAULT_THROTTLE_RATES['public_catalog']` a `2/min` y fuerza a `SimpleRateThrottle.THROTTLE_RATES` (atributo de clase global, compartido por todas las subclases de throttle del proceso) a releer ese valor en `setUp`/`tearDown` — pero `tearDown` corre **dentro** del `@override_settings` de nivel de clase, así que su intento de "restaurar" el valor real en realidad vuelve a leer el valor sobreescrito. Al terminar la clase, `SimpleRateThrottle.THROTTLE_RATES` queda contaminado con `2/min` para el resto del proceso de test — confirmado agregando un test temporal después de esa clase: 3 de 5 peticiones normales a `get_inventory` recibieron `429` en vez de `200`. No rompe la suite actual (por el orden en que están definidas las clases en el archivo), pero es un riesgo real de tests intermitentes a futuro.
 
 Verificación adicional hecha en esta revisión, sin hallazgos:
-- Se investigó una hipótesis de bypass del throttle para usuarios autenticados (dado que crear cuenta es público vía `create_client`) — **descartada con evidencia**: `get_inventory`/`get_layer_info` no declaran `authentication_classes`, por lo que `TokenAuthentication` nunca reconoce el token del cliente para estas vistas y `request.user` siempre es `AnonymousUser` a efectos del throttle. El mecanismo protege a todos los llamadores por igual, sin excepción.
+- Se investigó una hipótesis de bypass del throttle para usuarios autenticados (dado que crear cuenta es público vía `create_client`) — **descartada con evidencia, aunque de forma incompleta** (ver REV-2026-09-22-002 arriba: la investigación cubrió `TokenAuthentication` pero no `SessionAuthentication`): `get_inventory`/`get_layer_info` no declaran `authentication_classes`, por lo que `TokenAuthentication` nunca reconoce el token del cliente para estas vistas y `request.user` siempre es `AnonymousUser` a efectos del throttle para ese mecanismo de auth específico.
 - `python manage.py test product` (13/13), `manage.py check`, `makemigrations --check --dry-run`: todo OK, corrida independiente.
 - Sin scope creep: diff acotado a los archivos que el plan declaraba.
 - Sin lint/security tooling configurado en el proyecto (no ejecutado porque no existe, disclosure explícito).
-
-Detalle completo de evidencia en [REV-2026-09-21-002](../reviews/REV-2026-09-21-002-throttle-rate-test-leak.md) y en el PR #30 (`## Testing`/`## Review`).
 
 **Nota de aislamiento de contexto**: esta revisión corrió en la misma sesión que implementó el cambio (`delivery-engineer`) — limitación procedimental señalada explícitamente. Se compensó re-ejecutando todos los comandos de forma independiente y buscando activamente fallas en vez de confirmar lo ya reportado.
 
