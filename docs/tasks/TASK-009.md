@@ -1,6 +1,6 @@
 # TASK-009: Máquina de estados para proforma→instalación→venta→pago (backlog #9)
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Rama:** `claude/proforma-state-machine-186295`
 **Pull Request:** [#37](https://github.com/rolion/praxsa-django-panel-admin/pull/37)
@@ -11,6 +11,7 @@
 | 2026-09-23 17:52 | (nuevo) → INVESTIGATION | Task creado | delivery-investigate |
 | 2026-09-23 17:58 | INVESTIGATION → PLANNING | Decisión arquitectónica registrada en ADR-006 | delivery-architect |
 | 2026-09-23 18:05 | PLANNING → ENGINEERING | Plan v1 escrito y PR #37 abierto | delivery-plan |
+| 2026-09-23 18:32 | ENGINEERING → REVIEW | Implementación completa, verificada localmente (tests + backfill real) | delivery-engineer |
 
 ## Investigación
 
@@ -111,7 +112,32 @@ Resumen de la decisión:
 Resumen: campo `status` en `Proforma_Header` + método único `Proforma_Business.refresh_status()` llamado desde las 4 transiciones existentes + migración `0106` con backfill de datos existentes + tests de equivalencia contra `ProformaAdmin.get_estado()`. Sin E2E (cambio 100% backend/admin). Constraints e migrar el admin a leer el campo quedan fuera de alcance (ver `## Out of scope` del plan).
 
 ## Implementación
-_Pendiente_
+
+Implementado según [PLAN-2026-09-23-proforma-status-field.md (v1)](../plans/PLAN-2026-09-23-proforma-status-field.md) / [ADR-006](../adr/ADR-006-proforma-status-field.md). PR [#37](https://github.com/rolion/praxsa-django-panel-admin/pull/37).
+
+### Resumen de lo implementado
+- `Proforma_Header.status` (choices, default `'proforma'`) — [models.py:164](../../praxsa_manager/product/models.py).
+- `Proforma_Helper`: repurpose de `status`/`default_status` (huérfanos) a los 4 valores nuevos — [helper/proforma.py](../../praxsa_manager/product/helper/proforma.py).
+- `Proforma_Business.refresh_status()` — replica la misma lógica y el mismo orden que `ProformaAdmin.get_estado` — [business/proforma.py](../../praxsa_manager/product/business/proforma.py).
+- Llamadas a `refresh_status()` desde `create_work_note`, `abrir_proforma`, `crear_nota_venta` (`business/proforma.py`) y `cerrar_pago` (`business/pago.py`), tal como especifica el plan.
+- Migración `0106_proforma_header_status.py`: `AddField` + `RunPython` de backfill sobre modelos históricos, con manejo de excepción por fila.
+- Tests nuevos: `tests/test_proforma_status_field.py` (7 casos).
+
+### Desvío del plan encontrado durante la implementación (documentado, no escalado — ver criterio abajo)
+El plan listaba 4 transiciones (`create_work_note`, `abrir_proforma`, `crear_nota_venta`, `cerrar_pago`) como "cada transición existente". Al implementar se encontró una **quinta**: `Orden_Trabajo_Business.delete_work_note` ([business/orden_trabajo.py:61-88](../../praxsa_manager/product/business/orden_trabajo.py)) — invocada desde `NotaTrabajoAdmin.delete_queryset` al borrar una nota de trabajo — es el único camino existente que **remueve** la relación `proforma↔nota_trabajo` (a diferencia de `abrir_proforma`, que solo reabre el formulario sin borrar nada). Sin sincronizar `status` ahí, el campo quedaría permanentemente desactualizado (`'nota_trabajo'`) después de borrar la nota, violando el criterio de aceptación "`status` coincide con `get_estado()` en todo momento del ciclo". Se agregó la llamada a `refresh_status()` en ese método (con `proforma.refresh_from_db()` previo, necesario porque `work_note.delete()` no limpia el caché en memoria de la relación inversa ya cacheada). No se marcó `PLAN_UPDATE_REQUIRED` porque no cambia arquitectura, dependencias ni nivel de riesgo — extiende el mismo mecanismo ya diseñado a un caso que el propio objetivo del plan ("sincronizado explícitamente en cada transición real de negocio") ya implicaba cubrir.
+
+También se corrigió una afirmación del plan: "Expected behavior" decía que `abrir_proforma` revertía `status` a `'proforma'`. Verificado que **no es así**: `abrir_proforma` no borra la `Nota_trabajo` existente, así que `status` correctamente se queda en `'nota_trabajo'` tras reabrir (igual que ya hace `get_estado()` hoy) — el diseño de `refresh_status()` (replicar la misma lógica de `get_estado`) ya produce el resultado correcto por construcción; solo la prosa del plan estaba equivocada sobre el resultado esperado. Test correspondiente ajustado y con comentario explicando el porqué.
+
+### Verificación propia (no reemplaza el Quality Gate de delivery-review)
+- `python manage.py test`: 53/53 en verde (46 preexistentes + 7 nuevos), sin regresiones.
+- `python manage.py makemigrations --check --dry-run`: sin cambios pendientes.
+- Migración `0106` aplicada contra la base de desarrollo real (Postgres local): backfill sobre 25 `Proforma_Header` existentes, comparado 1 a 1 contra `ProformaAdmin.get_estado()` — 0 discrepancias.
+
+### Deuda técnica / fuera de alcance (sin resolver, según ADR-006)
+- `CheckConstraint`/validación de invariantes de transición.
+- Migrar `ProformaAdmin.get_estado`, `NotaVentaAdmin.get_estado`, `NotaTrabajoAdmin.get_estado` a leer `status` en vez de recalcular por `hasattr()`.
+- Limpieza del código muerto ya identificado en la investigación (`sales_status` residual en `business/proforma.py:28`/`Forms/car_model_part.py:20-24`, entrada `"create_sales_note"` mal referenciada en `ProformaAdmin.actions`) — no tocado, cambio independiente.
+- Nota colateral (no es un hallazgo nuevo del backlog, solo una observación hecha al verificar `abrir_proforma`): ese método no valida que la proforma no tenga ya una `Nota_Venta`/`pago` antes de "reabrirla" — podría, en teoría, reabrirse una proforma ya finalizada. Comportamiento preexistente, no introducido ni agravado por este cambio; se deja constancia por transparencia, sin acción tomada.
 
 ## Review
 _Pendiente_
