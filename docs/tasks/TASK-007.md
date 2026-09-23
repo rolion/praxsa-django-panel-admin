@@ -1,0 +1,128 @@
+# TASK-007: Recálculo server-side de precio en el admin (`ProformaAdmin`) + corregir divergencia de fórmula `venta_metro_lineal` en `sales_event.js`/`convertir_venta_metro_lineal` (backlog #2, pasos 5-6)
+
+**Etapa actual:** PLANNING
+**Veredicto de complejidad:** NEEDS_ARCHITECTURE
+**Rama:** _sin asignar todavía_
+**Pull Request:** _sin abrir todavía_
+
+## Historial de transiciones
+| Fecha (UTC) | Transición | Motivo | Origen |
+|---|---|---|---|
+| 2026-09-23 | (nuevo) → INVESTIGATION | Task creado a pedido del usuario: cerrar backlog #2 (`docs/integration-and-backlog.md`, pasos 5-6) para el camino admin de Django, que TASK-005/PR #33 dejó explícitamente fuera de alcance (solo cubrió el camino REST usado por Angular) | delivery-investigate |
+| 2026-09-23 | INVESTIGATION → PLANNING | Decisión arquitectónica tomada tras confirmar 3 preguntas de negocio con el usuario: (1) admin sobrescribe siempre el precio recalculado de `venta_instalacion`, nunca rechaza por discrepancia — mismo criterio que ADR-004; (2) la fórmula de `venta_metro_lineal` sigue sin resolver con negocio, así que queda explícitamente fuera de alcance (backlog #2 paso 6 no se cierra en este task); (3) se corrige en este mismo task el bug `sales_header`/`proforma_header` de `CarModelPartForm.clean()` (validaciones dormidas desde 2023) | delivery-architect |
+
+## Investigación
+
+### Requerimiento
+
+Backlog #2 de `docs/integration-and-backlog.md` (líneas 141-150) tiene 6 pasos; TASK-005 (PR #33, ya en `PUBLISH`, pendiente solo de aprobación humana) cubrió los pasos 1, 3 y 4 — pero únicamente para `SalesHeaderSerializer.create()`/`InvoiceView` (el endpoint REST que usa la calculadora Angular). Quedan pendientes, tal como los define el backlog:
+
+- **Paso 5** (línea 149): reusar el mismo cálculo centralizado de precio/subtotal en `ProformaAdmin.save_model`/`save_related` (camino admin de Django) y en la rama `else` de `calculate_subtotal` en `sales_event.js` — o su equivalente si se recalcula server-side.
+- **Paso 6** (línea 150): corregir `convertir_venta_metro_lineal` para que use el mismo método centralizado, eliminando la divergencia numérica confirmada en la sección 2.1 del documento (el JS del admin no multiplica por `quantity`, `convertir_venta_metro_lineal` sí, para el mismo caso `venta_metro_lineal`).
+
+Este task investiga el estado actual de ambos caminos (creación de proforma desde cero en el admin, y conversión de una proforma existente a `venta_metro_lineal`) para dejar la base sobre la que `delivery-architect` pueda decidir el diseño.
+
+### Hechos encontrados
+
+**El admin no recalcula ni valida el precio real al crear una proforma — confía en lo que el formulario (relleno por JS) envía, igual que el endpoint REST antes de TASK-005:**
+- [admin_config/proforma_admin.py:207-209](praxsa_manager/product/admin_config/proforma_admin.py) — `ProformaAdmin.save_model` solo asigna `created_by`, no toca `total_price` ni recalcula nada.
+- [admin_config/proforma_admin.py:149-163](praxsa_manager/product/admin_config/proforma_admin.py) — `save_related` solo actúa cuando `change == True` (edición de una proforma ya existente), y ahí únicamente resta del `total_price` el `sub_total` de los ítems **eliminados** (`to_reduce`); no recalcula el total contra precios reales, ni en creación ni en edición. En creación (`change == False`), el método no hace nada más que llamar al `super()`.
+- Consecuencia: **el flujo completo de creación desde el admin (header `SaleHeaderForm` + inlines `CarModelPartForm`) persiste exactamente los valores que trae el POST del formulario** — `total_price`, y por cada ítem `sub_total`/`installation_price`/`window_film_price` — sin ninguna consulta a `precio_venta_sucursal`, `inventario.precio_venta_mtr_lineal` ni `Car_Model_Part.installation_price` del lado servidor. Mismo hallazgo BIZ-01 que ya estaba confirmado para el camino REST antes de TASK-005, pero nunca cerrado para este camino.
+
+**El único cálculo real ocurre en el navegador, en `sales_event.js`, y el campo `total_price` solo es `readonly` a nivel de UI, no de servidor:**
+- [sales_event.js:270-292](praxsa_manager/product/static/product/sales_event.js) (`calculate_subtotal`) — rama `venta_instalacion`: `subtotal = ((length * quantity) * film_price) + (installation_price * quantity)` (líneas 272-281, coincide con Angular y con `Pricing_Business.calculate_subtotal_venta_instalacion` ya creada en TASK-005). Rama `else` (`venta_metro_lineal`, líneas 283-291): `subtotal = length * film_price` — **no multiplica por `quantity`**.
+- [sales_event.js:219-229](praxsa_manager/product/static/product/sales_event.js) (`sum_all_price`) — suma los `sub_total` de todas las filas visibles en el DOM y escribe el resultado en `#id_total_price` (el input `total_price` del header).
+- [sales_event.js:209](praxsa_manager/product/static/product/sales_event.js) — `$('input[name="total_price"]').prop('readonly', true)`: es un atributo HTML `readonly`, trivialmente removible desde las devtools del navegador o evitable mandando el POST directo sin pasar por el formulario — no es una defensa server-side.
+- Ningún archivo Python del admin vuelve a calcular `total_price`/`sub_total` después de recibir el POST — se confirma con la ausencia de esa lógica en `save_model`/`save_related` (ver punto anterior) y en `SaleHeaderForm`/`CarModelPartForm` (ver hallazgo siguiente, que solo hacen validaciones de forma/rango, no de valor contra precio real).
+
+**Hallazgo nuevo, no documentado en `docs/integration-and-backlog.md` ni en TASK-005: la validación condicional por `sales_type` de `CarModelPartForm.clean()` está muerta por un bug de nombre de campo, así que hoy no se ejecuta para ningún ítem creado desde el admin.**
+- [Forms/car_model_part.py:56](praxsa_manager/product/Forms/car_model_part.py) — `sale_header = cleaned_data.get("sales_header")`, y todo el bloque de reglas de negocio del método `clean()` (líneas 63-79: chequeo de ancho de lámina vs. ítem, `quantity`/`installation_price` requeridos para `venta_instalacion`, `quantity`/`installation_price` prohibidos para `venta_metro_lineal`) está condicionado a `if sale_header is not None and sale_header.sales_type == ...`.
+- El campo del modelo `Proforma_Detail` que enlaza con la cabecera se llama `proforma_header`, no `sales_header` — renombrado explícitamente en [migrations/0066_alter_proforma_header_options_and_more.py:19-23](praxsa_manager/product/migrations/0066_alter_proforma_header_options_and_more.py) (`RenameField`, `old_name='sales_header'`, `new_name='proforma_header'`, 2023-09-14). Como `CarModelPartForm.Meta.fields = "__all__"`, el formulario expone `proforma_header` (el nombre actual del modelo), no `sales_header` — `cleaned_data.get("sales_header")` siempre devuelve `None` porque esa clave nunca existe en `cleaned_data`.
+- Consecuencia verificada por lectura directa del flujo de control: `sale_header` es siempre `None`, así que **ninguna de las dos ramas condicionales de `clean()` (`venta_instalacion` / `venta_metro_lineal`) se ejecuta jamás** — hoy solo corren las validaciones incondicionales (`clean_sub_total` rechaza `sub_total <= 0`, `clean_length` rechaza `length <= 0`). No hay ningún chequeo activo de que el ancho de la lámina cubra el ítem, ni de que `quantity`/`installation_price` sean coherentes con el `sales_type` elegido.
+- Es un hallazgo nuevo porque ninguna de las dos auditorías originales ni `docs/integration-and-backlog.md` lo menciona — probablemente porque ambas leyeron el código a nivel de "qué reglas existen", no trazaron el flujo de datos completo desde el rename de 2023.
+
+**`convertir_venta_metro_lineal` opera sobre una proforma ya persistida (con `quantity` real de cuando se creó como `venta_instalacion`), no sobre datos de un formulario en blanco — es un caso de uso distinto al de "crear desde cero", aunque ambos producen `sales_type = venta_metro_lineal`:**
+- [business/proforma.py:116-157](praxsa_manager/product/business/proforma.py) — recorre `Proforma_Detail` existentes de la proforma, agrupa por `(window_film, width)`, y para cada grupo consolidado calcula `sub_total = length_acumulado * window_film_price * quantity` (línea 137 para el caso de merge, línea 148 para el primer ítem del grupo) — **usa el `quantity` que ya tenía cada detalle original** (no lo pone en 0 ni lo ignora). `window_film_price` tampoco se re-resuelve contra `precio_venta_sucursal`/`inventario` — se copia tal cual del detalle original (`new_detalle.window_film_price = detalle.window_film_price`, línea 147), que a su vez pudo haber sido el valor no verificado que trajo el POST original de creación.
+- Es una acción de `ModelAdmin.actions` ([admin_config/proforma_admin.py:252-258](praxsa_manager/product/admin_config/proforma_admin.py), `convertir_proforma_metro_lineal`), invocada sobre una `queryset` de proformas ya guardadas — no pasa por `CarModelPartForm`/`SaleHeaderForm` en absoluto.
+- Confirma lo ya documentado en TASK-005 (líneas 44-50): el admin también permite crear una proforma `venta_metro_lineal` **desde cero** (formulario de alta, `sales_type` como `<select>` editable cuando `obj is None`, [proforma_admin.py:199-205](praxsa_manager/product/admin_config/proforma_admin.py)) — en ese camino, el subtotal por ítem lo calcula `sales_event.js` con la fórmula `else` (sin `quantity`), y como la validación de `CarModelPartForm.clean()` está muerta (hallazgo anterior), tampoco hay ningún chequeo server-side de que `quantity` deba ser 0/vacío en ese caso, aunque el formulario **pretendía** exigirlo.
+
+**La pregunta de negocio bloqueante de la sección 6 del backlog sigue sin resolver, y este task la hereda directamente (a diferencia de TASK-005, que la esquivó porque `sales_type` nunca llega por REST):**
+- `docs/integration-and-backlog.md:251` — para `venta_metro_lineal`, ¿el subtotal de un ítem con `quantity > 1` debe multiplicarse por `quantity` (como `convertir_venta_metro_lineal`) o no (como la rama `else` de `sales_event.js`)? Ambas implementaciones siguen coexistiendo hoy sin cambios.
+- No se puede "corregir la divergencia" (paso 6) sin que alguien defina primero cuál de las dos fórmulas es la correcta — exactamente el mismo bloqueo que ya identificó TASK-005 para este caso, pero que TASK-005 no necesitó resolver.
+
+**Ya existe una base reusable de TASK-005 en `business/pricing.py`, pero solo cubre el caso `venta_instalacion`:**
+- [business/pricing.py](praxsa_manager/product/business/pricing.py) — `Pricing_Business.resolve_unit_price(sucursal_id, lamina_id, width)` (reusa `Inventario_Business.get_total_meters_window_film_in_inventory`, ya usado también por `get_car_part_info`, el endpoint que alimenta a `sales_event.js` vía AJAX) y `calculate_subtotal_venta_instalacion(length, quantity, unit_price, installation_price)` (función pura). No existe todavía una función equivalente para `venta_metro_lineal` — tendría que agregarse una vez resuelta la pregunta de negocio de arriba.
+- `resolve_unit_price` ya es agnóstico de `sales_type` (solo resuelve el precio unitario de la lámina), así que es directamente reusable desde el camino admin sin cambios — lo que falta es la función de subtotal para el segundo caso y el punto de integración en `ProformaAdmin`.
+
+**El precio de instalación real por ítem también tiene la misma fuente única que ya usa el REST, pero el admin no la vuelve a consultar al guardar:**
+- [models.py:41-52](praxsa_manager/product/models.py) — `Car_Model_Part.installation_price`, con `UniqueConstraint(['car_model_id', 'car_part_id'])`, la misma fuente que ya resuelve `get_car_part_info` ([views.py:94-102](praxsa_manager/product/views.py)) para poblar el AJAX que alimenta a `sales_event.js` — el valor que el JS pone en el input `installation_price` de cada fila es una copia de ese dato real, pero una vez que llega al servidor por POST, nada lo vuelve a comparar contra `Car_Model_Part.installation_price`.
+
+**No hay harness de tests para creación de proformas vía admin (`ProformaAdmin`) hoy:**
+- `praxsa_manager/product/tests/` (`helpers.py`, `test_invoice_pricing.py`, `test_public_catalog_endpoints.py`, `test_smoke.py`, `test_sucursal_scope_admin.py`) — ninguno instancia `SaleHeaderForm`/`CarModelPartForm` ni hace un POST simulado al admin de `Proforma_Header`/`Proforma_Detail`. `test_sucursal_scope_admin.py` (de TASK-002) sí tiene fixtures de usuarios/grupos/sucursal reusables, pero no cubre creación de proformas por el admin.
+- `helpers.py::build_full_scenario()` (usado por TASK-005) arma sucursal/marca/modelo/`Car_Model_Part`/lámina/bobina/inventario — reusable como base de fixtures, pero fue pensado para el flujo REST (`SalesHeaderSerializer`), no para instanciar los forms del admin directamente.
+
+### Hipótesis / supuestos no confirmados
+
+- No se confirmó si `SaleHeaderForm`/`CarModelPartForm` se usan en algún otro lugar además de `ProformaAdmin` (p. ej. otro `ModelAdmin` o vista custom) — una búsqueda rápida (`grep -rn "SaleHeaderForm\|CarModelPartForm"`) solo encontró las importaciones en `proforma_admin.py`, pero no se descartó exhaustivamente.
+- No se confirmó con negocio si arreglar el bug de `sales_header`/`proforma_header` en `CarModelPartForm.clean()` (hallazgo nuevo) es deseable como parte de este task o si activar esas validaciones (hoy dormidas) rompería flujos de trabajo actuales del personal de sucursal que dependen, sin saberlo, de que esas reglas no se apliquen. Se reporta como hallazgo, no se asume la solución.
+- No se verificó si `convertir_venta_metro_lineal` tiene algún caller adicional fuera de la acción de admin `convertir_proforma_metro_lineal` (p. ej. un management command o una tarea programada) — se buscó con `grep -rn "convertir_venta_metro_lineal"` y solo apareció la definición y el llamador del admin, pero no se descartó un uso vía shell/management command no versionado.
+- No se confirmó si existen proformas reales en producción con `sales_type = venta_metro_lineal` creadas directamente desde el admin (formulario de alta) frente a las creadas por conversión — dato que solo vive en la base de datos de cada ambiente, no en el código.
+
+### Módulos y dependencias relacionadas
+
+- **Admin a modificar**: `praxsa_manager/product/admin_config/proforma_admin.py` (`ProformaAdmin.save_model`, `save_related`, posiblemente `SalesDetailInLine`).
+- **Forms a revisar/corregir**: `praxsa_manager/product/Forms/Sale_header.py` (`SaleHeaderForm`), `praxsa_manager/product/Forms/car_model_part.py` (`CarModelPartForm`, incluye el bug `sales_header`/`proforma_header`).
+- **JS del admin**: `praxsa_manager/product/static/product/sales_event.js` (rama `else` de `calculate_subtotal`, líneas 283-291).
+- **Business a extender**: `praxsa_manager/product/business/proforma.py` (`Proforma_Business.convertir_venta_metro_lineal`), `praxsa_manager/product/business/pricing.py` (`Pricing_Business`, agregada por TASK-005 — candidata a extender con una función para `venta_metro_lineal`).
+- **Fuente de precios ya centralizada (TASK-005), reusable sin cambios**: `Pricing_Business.resolve_unit_price` (`business/pricing.py`), que a su vez reusa `Inventario_Business.get_total_meters_window_film_in_inventory` (`business/inventario.py:92`).
+- **Modelo de datos**: `Proforma_Header.total_price`/`discount` ([models.py:156-160](praxsa_manager/product/models.py)), `Proforma_Detail.sub_total`/`installation_price`/`window_film_price`/`proforma_header` ([models.py:227-234](praxsa_manager/product/models.py)), `Car_Model_Part.installation_price` ([models.py:41-52](praxsa_manager/product/models.py)).
+- **No tocado por el camino REST (ya resuelto en TASK-005, no repetir)**: `serializer/invoice_serializer.py`, `custom_views/invoice.py`.
+
+### Implementaciones similares existentes
+
+- `SalesHeaderSerializer.validate()` (agregado por TASK-005, [invoice_serializer.py](praxsa_manager/product/serializer/invoice_serializer.py)) es el precedente directo a replicar conceptualmente: resuelve precio unitario real + `installation_price` real por ítem, recalcula `sub_total`/`total_price`, y sobrescribe (nunca rechaza por discrepancia, decisión de negocio ya tomada para ese camino en ADR-004). La pregunta de arquitectura central de este task es si esa misma decisión de producto ("sobrescribir siempre, nunca rechazar") debe extenderse tal cual al admin, o si el admin (usado por personal interno, no por el cliente final) amerita un criterio distinto (p. ej. rechazar con error visible en el form si el operador cambió el precio a mano).
+- `Pricing_Business.resolve_unit_price` ya es el punto único de resolución de precio unitario — no hay necesidad de inventar una cuarta implementación para el camino admin, solo de decidir dónde y cómo se invoca (en `clean()` de los forms, en `save_model`/`save_related`, o en ambos).
+
+### Comportamiento actual
+
+Hoy, crear o editar una proforma desde el admin de Django persiste `total_price` (header) y `sub_total`/`installation_price`/`window_film_price` (por cada `Proforma_Detail`) exactamente como los calculó `sales_event.js` en el navegador y los envió el formulario — sin ninguna verificación server-side contra `precio_venta_sucursal`/`inventario.precio_venta_mtr_lineal`/`Car_Model_Part.installation_price`. Además, la única validación condicional que existía para chequear consistencia entre `sales_type` y los datos del ítem (`CarModelPartForm.clean()`) está inactiva por un bug de nombre de campo desde 2023. Por separado, convertir una proforma `venta_instalacion` ya creada a `venta_metro_lineal` (acción de admin `convertir_proforma_metro_lineal`) recalcula el subtotal con una fórmula (`length * window_film_price * quantity`) que multiplica por `quantity`, mientras que crear una proforma `venta_metro_lineal` desde cero en el mismo admin usa la fórmula de `sales_event.js` (`length * film_price`, sin `quantity`) — mismo caso de negocio, dos resultados numéricos distintos según el camino.
+
+### Restricciones
+
+- `docs/CLAUDE.md`: "El dinero se maneja con `Decimal`, nunca con `float`" — aplica igual que en TASK-005; los forms del admin (`DecimalField` de Django) y el modelo ya usan `Decimal`, cuidado con no perder precisión al integrar `Pricing_Business` (que ya trabaja en `Decimal`).
+- `docs/CLAUDE.md`: "Todo cambio de lógica de negocio lleva su test" — no existe hoy ningún test de creación de proforma vía admin; este task necesita, como mínimo, tests de caracterización del comportamiento actual antes de tocar código (mismo patrón que TASK-005 paso 1).
+- `docs/CLAUDE.md`: "Antes de cambios que afecten varios archivos, proponer un plan y esperar confirmación" — aplica de lleno: como mínimo `proforma_admin.py`, `sales_event.js`, `business/proforma.py`, posiblemente `Forms/car_model_part.py` y `business/pricing.py`.
+- `docs/integration-and-backlog.md:251` — pregunta de negocio bloqueante sin resolver (fórmula de `venta_metro_lineal` con `quantity`), igual que ya advertía TASK-005 para el paso 2 original del backlog.
+- El admin es la herramienta de trabajo diaria del personal de sucursal — un cambio que empiece a rechazar (en vez de sobrescribir) precios que hoy se aceptan podría bloquear operación real si el criterio elegido no es cuidadoso, a diferencia del REST donde el "cliente" es siempre la app Angular con un flujo controlado.
+
+### Riesgos identificados
+
+- **Decisión de producto pendiente, más sensible que en TASK-005**: en el REST, "sobrescribir siempre" fue seguro porque el cliente (Angular) nunca decide el `sales_type` y el operador es el usuario final comprando. En el admin, quien llena el formulario es personal interno que puede estar aplicando un descuento manual legítimo por fuera del campo `discount` (p. ej. negociación en sucursal) — sobrescribir silenciosamente el precio sin avisar podría chocar con una práctica operativa real que no está documentada en ningún lado. Esto es una pregunta de negocio nueva, específica de este task, no heredada de TASK-005.
+- **Arreglar el bug de `sales_header`/`proforma_header` activa validaciones dormidas desde 2023**: si se corrige como efecto colateral de este task, empezarían a bloquearse combinaciones que hoy se guardan sin problema (p. ej. anchos de lámina insuficientes, `quantity`/`installation_price` en 0 para `venta_instalacion`) — riesgo de romper un flujo de trabajo que el personal usa hoy sin darse cuenta de que la validación estaba apagada. Necesita decisión explícita de si corregirlo en este task o dejarlo como hallazgo separado.
+- **La fórmula de `venta_metro_lineal` sigue bloqueada por la misma pregunta de negocio no resuelta** (sección 6 del backlog) — sin esa respuesta, no se puede escribir `calculate_subtotal_venta_metro_lineal` ni decidir qué fórmula usar en `sales_event.js`/`convertir_venta_metro_lineal`.
+- **Alcance de "recalcular en el admin" no es simétrico entre creación y edición**: `save_related` ya tiene lógica especial para `change == True` (resta ítems eliminados) que no existe para `change == False`. Cualquier recálculo centralizado tiene que convivir con esa lógica existente de edición sin romperla (p. ej. qué pasa si se recalculan precios en una edición donde también se eliminaron ítems).
+- **`convertir_venta_metro_lineal` no vuelve a resolver el precio unitario, solo copia `window_film_price` del detalle original** — si se corrige la fórmula de subtotal (paso 6) sin también revisar si el precio unitario copiado sigue siendo válido (pudo cambiar desde que se creó la proforma original), la corrección quedaría a medias.
+
+### Veredicto de complejidad
+
+**NEEDS_ARCHITECTURE** — Igual que TASK-005 (mismo backlog #2), pero con dos indicadores adicionales que lo hacen aún más claro: (a) hay una decisión de producto nueva y más sensible que la ya resuelta en ADR-004 (sobrescribir vs. rechazar en un formulario operado por personal interno, no por el cliente final); (b) la pregunta de negocio bloqueante de la fórmula `venta_metro_lineal` (sección 6 del backlog) que TASK-005 pudo esquivar, este task la hereda directamente porque `sales_type` sí es seleccionable desde el admin; y (c) el hallazgo nuevo del bug `sales_header`/`proforma_header` obliga a una decisión explícita (¿corregirlo acá, tratarlo aparte, o documentarlo y no tocarlo?) antes de poder centralizar cualquier validación en los forms. Impacta múltiples archivos (`admin_config/`, `Forms/`, `business/`, `static/product/sales_event.js`) y toca directamente lógica de negocio de dinero en el camino de creación de proformas usado a diario por el personal de sucursal.
+
+## Arquitectura
+
+**[ADR-006: Recalcular server-side el precio de `venta_instalacion` en `ProformaAdmin`, reusando `Pricing_Business`; dejar `venta_metro_lineal` fuera de alcance hasta resolver la pregunta de negocio pendiente](../adr/ADR-006-admin-price-recalculation-venta-instalacion.md)**
+
+Decisión (confirmada con el usuario, ver historial): el admin recalcula siempre el precio real de proformas `venta_instalacion` (precio unitario vía `Pricing_Business.resolve_unit_price`, `installation_price` vía `Car_Model_Part`, subtotal vía `Pricing_Business.calculate_subtotal_venta_instalacion`, ya existentes de TASK-005) y **siempre sobrescribe** lo enviado por el form — nunca rechaza por discrepancia; ajustes intencionales de precio deben usar el campo `discount` ya existente. `Proforma_Header.total_price` pasa a recalcularse como la suma de los `sub_total` reales de sus `Proforma_Detail` (reemplaza la resta manual `to_reduce` de `save_related`, unificando creación y edición). Solo rechaza (error de validación del form) cuando el precio real no se puede resolver (`Car_Model_Part`/inventario faltante). Se corrige además el bug `sales_header`→`proforma_header` de `CarModelPartForm.clean()` (líneas 56 y siguientes, dormido desde la migración 0066 de 2023), reactivando sus validaciones condicionales por `sales_type`.
+
+**Fuera de alcance, explícitamente bloqueado**: `venta_metro_lineal` no se toca — ni `sales_event.js` (rama `else`) ni `convertir_venta_metro_lineal`. La pregunta de negocio de si el subtotal se multiplica por `quantity` (backlog `docs/integration-and-backlog.md:251`) sigue sin respuesta; backlog #2 paso 6 queda pendiente para un task futuro una vez resuelta. Ver el ADR para las alternativas descartadas y la estrategia de rollback/mitigación (incluye recomendación de verificación manual explícita antes de publicar, dado el precedente de ADR-002 donde un test automatizado en verde no capturó un error de requerimiento de negocio).
+
+## Plan
+_Pendiente_
+
+## Implementación
+_Pendiente_
+
+## Review
+_Pendiente_
+
+## Publicación
+_Pendiente_
