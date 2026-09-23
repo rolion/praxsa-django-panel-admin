@@ -1,6 +1,6 @@
 # TASK-009: Máquina de estados para proforma→instalación→venta→pago (backlog #9)
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Rama:** `claude/proforma-state-machine-186295`
 **Pull Request:** [#37](https://github.com/rolion/praxsa-django-panel-admin/pull/37)
@@ -12,6 +12,7 @@
 | 2026-09-23 17:58 | INVESTIGATION → PLANNING | Decisión arquitectónica registrada en ADR-006 | delivery-architect |
 | 2026-09-23 18:05 | PLANNING → ENGINEERING | Plan v1 escrito y PR #37 abierto | delivery-plan |
 | 2026-09-23 18:32 | ENGINEERING → REVIEW | Implementación completa, verificada localmente (tests + backfill real) | delivery-engineer |
+| 2026-09-23 18:43 | REVIEW → PUBLISH | Quality Gate: PASS (3 hallazgos Low, no bloqueantes) | delivery-review |
 
 ## Investigación
 
@@ -140,7 +141,17 @@ También se corrigió una afirmación del plan: "Expected behavior" decía que `
 - Nota colateral (no es un hallazgo nuevo del backlog, solo una observación hecha al verificar `abrir_proforma`): ese método no valida que la proforma no tenga ya una `Nota_Venta`/`pago` antes de "reabrirla" — podría, en teoría, reabrirse una proforma ya finalizada. Comportamiento preexistente, no introducido ni agravado por este cambio; se deja constancia por transparencia, sin acción tomada.
 
 ## Review
-_Pendiente_
+
+**Veredicto: PASS.** PR [#37](https://github.com/rolion/praxsa-django-panel-admin/pull/37).
+
+Nota de aislamiento: esta revisión corrió en la misma sesión de Claude Code que implementó el código (limitación procedimental, no real — ver detalle en `## Review` del PR). Se mitigó reconstruyendo contexto solo desde artefactos en disco y re-ejecutando cada verificación de forma independiente: suite completa (53/53 OK, corrida dos veces), rollback + reaplicación real de la migración `0106` sobre la base de desarrollo, backfill re-verificado 1 a 1 contra `ProformaAdmin.get_estado()` (0 discrepancias sobre 25 filas reales), y relectura directa del código fuente de `abrir_proforma` para confirmar de forma independiente la corrección más consecuente que hizo `delivery-engineer`.
+
+3 hallazgos, todos **Low**, ninguno bloqueante:
+- [REV-2026-09-23-001](../reviews/REV-2026-09-23-001-orden-trabajo-file-not-in-plan-scope.md) (PLAN) — `business/orden_trabajo.py` tocado fuera de lo declarado en el plan v1 (justificado, pero el plan no se versionó a v2).
+- [REV-2026-09-23-002](../reviews/REV-2026-09-23-002-backfill-n-plus-1.md) (IMPLEMENTATION) — backfill de la migración sin `select_related`, N+1 de impacto bajo dado el volumen actual.
+- [REV-2026-09-23-003](../reviews/REV-2026-09-23-003-adr-plan-abrir-proforma-narrative-incorrect.md) (ARCHITECTURE) — ADR-006 y el plan describen incorrectamente el resultado de `abrir_proforma`; el código y los tests ya son correctos, solo el texto de la decisión quedó desactualizado.
+
+Verificaciones no ejecutadas (no por omisión, sino porque las herramientas no están instaladas en el proyecto — declarado explícitamente, no un PASS silencioso): lint (`flake8`/`ruff`), type-checking (`mypy`), security (`bandit`/`safety`). Frontend/E2E no aplican (diff no toca `proforma/`).
 
 ## Publicación
 _Pendiente_
