@@ -161,7 +161,8 @@ class Proforma_Header(models.Model):
     is_delete = models.BooleanField(default=False)
     created_by = models.ForeignKey(User, verbose_name='Creado Por',on_delete=models.DO_NOTHING, null=False,related_name='proforma_created_by')
     is_close = models.BooleanField(default=False)
-    
+    status = models.CharField(max_length=20, choices=helper.status, default=helper.default_status, verbose_name='Estado')
+
     class Meta:
         verbose_name = 'Proforma'
         ordering = ["-id","-proforma_created_on",]
