@@ -1,6 +1,6 @@
 # TASK-008: IDOR en `InvoiceView.get` y `get_proforma_car_part_info` (backlog #4)
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Rama:** `task/TASK-008-idor-proforma-access`
 **Pull Request:** [#35](https://github.com/rolion/praxsa-django-panel-admin/pull/35)
@@ -11,6 +11,7 @@
 | 2026-09-23 | (nuevo) → INVESTIGATION | Task creado | delivery-investigate |
 | 2026-09-23 | INVESTIGATION → PLANNING | Decisión de arquitectura registrada en ADR-006 | delivery-architect |
 | 2026-09-23 | PLANNING → ENGINEERING | Plan v1 escrito y PR abierto | delivery-plan |
+| 2026-09-23 | ENGINEERING → REVIEW | Implementación completa, tests OK, PR actualizado | delivery-engineer |
 
 ## Investigación
 
@@ -106,7 +107,18 @@ Ver [PLAN-2026-09-23-idor-invoice-and-proforma-car-part-info.md](../plans/PLAN-2
 Resumen: fix trivial en `InvoiceView.get` (`.get(id=pk, created_by=request.user)`, mismo patrón que `ListUserInvoice.get`) + fix en `get_proforma_car_part_info` (chequeo `is_authenticated and is_staff` + scoping por sucursal/rol reusando `Proforma_Business.get_proforma_queryset_by_role`). Tests de caracterización antes de cada fix, matriz de autorización completa para el segundo endpoint, regresión de la suite de `product/tests/`. Sin E2E (justificado: cambio 100% server-side, sin consumidor Angular de `get_proforma_car_part_info`). Sin dependencias nuevas.
 
 ## Implementación
-_Pendiente_
+
+Implementado según el plan v1 sin desvíos. Resumen:
+
+- **`InvoiceView.get`** ([custom_views/invoice.py:36-73](../../praxsa_manager/product/custom_views/invoice.py)): `Proforma_Header.objects.select_related('car_model_id', 'sucursal').get(id=pk, created_by=request.user)`. Eliminado el código muerto comentado. El `except ObjectDoesNotExist` existente cubre el 404 sin cambios.
+- **`get_proforma_car_part_info`** ([views.py:154-201](../../praxsa_manager/product/views.py)): chequeo `is_authenticated and is_staff` (403 si falla) + scoping con `Proforma_Business().get_proforma_queryset_by_role(user=request.user, qs=...)` (403 si devuelve `None`, 404 si el `.get(pk=...)` no encuentra la fila dentro del queryset acotado). `except ObjectDoesNotExist` separado del `except Exception` genérico.
+- Import nuevo `from .business.proforma import Proforma_Business` en `views.py` — verificado sin ciclo de imports (`python -c "... import product.views"` importa limpio).
+- Tests nuevos: `praxsa_manager/product/tests/test_idor_invoice_and_proforma_car_part_info.py`, 10 casos (3 para `InvoiceView.get`, 7 para `get_proforma_car_part_info`, incluida la matriz completa de autorización: anónimo, no-staff, admin, staff de la sucursal correcta, staff de otra sucursal, staff sin sucursal asignada, proforma inexistente).
+- Regresión: `python manage.py test product` completo → 56/56 OK (46 preexistentes + 10 nuevos). Corrido contra Postgres real local, no SQLite.
+
+**Deuda técnica / fuera de alcance señalada, no resuelta aquí** (ya documentada como out-of-scope en el plan/ADR): `get_inventory_window_film_reel_widths` sigue recibiendo `request.user` (el staff) en vez de resolver la sucursal desde `proforma.sucursal`; `get_car_part_info` sigue sin auth (no es parte de backlog #4).
+
+**No verificado en esta etapa** (pendiente de `delivery-review`, según sus propias reglas): verificación manual en navegador (cliente Angular real con dos usuarios; staff no-admin en el admin de Django abriendo la nota de trabajo).
 
 ## Review
 _Pendiente_
