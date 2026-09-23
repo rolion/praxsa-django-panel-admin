@@ -130,15 +130,32 @@ Ninguna de las dos auditorías podía detectar estos dos por sí sola, porque ca
 
 Para cada ítem: severidad, archivo(s), tests a escribir **antes** de tocar el código (regla del proyecto: "todo cambio de lógica de negocio lleva su test"), y pasos pequeños (1 PR por paso).
 
-### 1. [CRÍTICO] Secretos de producción committeados en git
+> **Nota de seguimiento (2026-09-23)**: se verificó el estado real de cada ítem contra `docs/tasks/TASK-*.md`, `docs/adr/ADR-*.md` y el historial de merges en `origin/master`. Los ítems marcados `✅ HECHO` ya están mergeados a `master`; el resto sigue pendiente. Detalle de qué falta de cada ítem parcialmente resuelto, en su propia sección.
+
+### 1. ✅ [CRÍTICO] Secretos de producción committeados en git — **HECHO (parcial)**
+**TASK-001, PR [#29](https://github.com/rolion/praxsa-django-panel-admin/pull/29) (mergeado, `origin/master` commit `6663fcd`).** Se implementó la inyección de secretos en runtime vía `env_file` para el despliegue de producción (Docker), según ADR-001, resolviendo el paso 2 original. **Pendiente explícitamente fuera de ese PR** (decisión del usuario, no ejecutado todavía): rotar `SECRET_KEY`/password de Postgres (paso 1), y limpiar el historial de git con `git filter-repo`/BFG (paso 3) — bloqueado a coordinación con el equipo.
+
+<details>
+<summary>Descripción original del ítem</summary>
+
 **Backend SEC-01.** `praxsa_manager/.env-prod`, `.env-dev`, `.env-stg` trackeados en git, mismo `SECRET_KEY` compartido entre entornos, password real de Postgres de producción en el historial.
 - **Tests**: no aplica (no es lógica de negocio) — pero sí verificar post-rotación que la app levanta con las nuevas credenciales en cada entorno (`.env-dev`/`.env-stg`/`.env-prod`).
 - **Pasos**:
   1. Rotar `SECRET_KEY` (por entorno, ya no compartido) y la contraseña de Postgres de producción — acción operativa, no PR de código.
   2. PR: mover los `.env*` fuera del repo, agregar `.env-*` a `.gitignore`, documentar en README cómo se inyectan en cada Dockerfile/pipeline.
   3. Limpiar el historial de git (`git filter-repo`/BFG) — coordinar con el equipo antes, ya que reescribe historia compartida.
+</details>
 
-### 2. [CRÍTICO] Precio/total sin validar en servidor + fórmulas y resolución de precio divergentes
+### 2. 🟡 [CRÍTICO] Precio/total sin validar en servidor + fórmulas y resolución de precio divergentes — **HECHO (parcial: pasos 1-4 de 6, camino REST)**
+**TASK-005, PR [#33](https://github.com/rolion/praxsa-django-panel-admin/pull/33) (mergeado, `origin/master` commit `12a9cf6`), ADR-004.** Se agregaron tests de caracterización del comportamiento actual (paso 1) y se centralizó la resolución de precio unitario + cálculo de subtotal en `business/pricing.py::Pricing_Business`, usado ahora por `SalesHeaderSerializer.create()` para recalcular/sobrescribir siempre el precio en el servidor (pasos 2-4), **solo para el camino REST usado por Angular** (`POST /product/invoice`, que siempre crea `sales_type = venta_instalacion`, nunca llega `venta_metro_lineal` por ahí).
+**Pendiente (fuera del alcance de TASK-005 por decisión explícita):**
+- Paso 5: reusar el mismo `Pricing_Business` en `ProformaAdmin.save_model`/`save_related` (camino admin, que sí permite crear proformas `venta_metro_lineal` desde cero) y en la rama `else` de `calculate_subtotal` en `sales_event.js`.
+- Paso 6: corregir `convertir_venta_metro_lineal` para usar el método centralizado (el drift de la sección 2.1 — `sales_event.js` sin multiplicar por `quantity` vs. `convertir_venta_metro_lineal` sí — **sigue sin resolverse**).
+- La pregunta de negocio bloqueante de la sección 6 (¿`venta_metro_lineal` multiplica por `quantity` o no?) sigue sin respuesta registrada; necesaria antes de tocar los pasos 5-6.
+
+<details>
+<summary>Descripción original del ítem</summary>
+
 **Backend BIZ-01 + Frontend BIZ-01 + QUAL-01, unificados** (detalle en sección 2). Cubre tres capas del mismo problema: (a) el precio unitario (`precio_venta_sucursal.precio_venta`, con fallback a `inventario.precio_venta_mtr_lineal`) se resuelve con dos implementaciones separadas (2.2); (b) dentro del caso `venta_metro_lineal`, el JS del admin y `convertir_venta_metro_lineal` calculan el subtotal de forma distinta entre sí — uno multiplica por `quantity`, el otro no (2.1); (c) ninguna de las dos capas se valida server-side al crear la proforma.
 - **Tests**: primero, tests que capturan el comportamiento **actual** de ambos `sales_type` (un POST a `/product/invoice` con `sub_total` arbitrariamente distinto al precio real de `precio_venta_sucursal`/`inventario.precio_venta_mtr_lineal` se persiste tal cual; y un test que documenta explícitamente el resultado numérico distinto entre la rama `else` de `sales_event.js` y `convertir_venta_metro_lineal` para el mismo input, como evidencia del bug antes de decidir cuál es la fórmula correcta). Luego, tests que definen el comportamiento esperado una vez resuelta la pregunta de negocio de la sección 6.
 - **Pasos**:
@@ -148,8 +165,9 @@ Para cada ítem: severidad, archivo(s), tests a escribir **antes** de tocar el c
   4. PR: crear el método centralizado de *cálculo de subtotal*, con una función por `sales_type` (con instalación / metro lineal, usando la fórmula ya decidida en el paso 2), y usarlo en `SalesHeaderSerializer.create()`, ignorando/validando `sub_total`/`total_price` recibidos.
   5. PR: reusar el mismo método en `ProformaAdmin.save_model`/`save_related` (camino admin) y en la rama `else` de `calculate_subtotal` en `sales_event.js` (o su equivalente si se recalcula server-side).
   6. PR: corregir `convertir_venta_metro_lineal` para usar el método centralizado (elimina el drift confirmado en 2.1).
+</details>
 
-### 3. [CRÍTICO] Condición de carrera / sobreventa de inventario
+### 3. ⬜ [CRÍTICO] Condición de carrera / sobreventa de inventario — **PENDIENTE**
 **Backend BIZ-02.** `reduce_inventory`/`return_to_inventory` ([business/inventario.py:35-66](praxsa_manager/product/business/inventario.py)) sin `select_for_update`.
 - **Tests**: test de concurrencia (dos llamadas a `create_work_note` casi simultáneas para la misma sucursal/bobina/ancho con stock exacto para una sola) que hoy demuestra la sobreventa; debe pasar a demostrar que la segunda falla correctamente tras el fix.
 - **Pasos**:
@@ -157,45 +175,70 @@ Para cada ítem: severidad, archivo(s), tests a escribir **antes** de tocar el c
   2. PR: agregar `select_for_update()` en `reduce_inventory` y `return_to_inventory`.
   3. PR (opcional, red de seguridad adicional): `CheckConstraint(to_install__gte=0)` a nivel de base de datos.
 
-### 4. [ALTO] IDOR — cualquier usuario ve proformas ajenas
+### 4. ⬜ [ALTO] IDOR — cualquier usuario ve proformas ajenas — **PENDIENTE**
 **Backend SEC-04 + SEC-05.** `InvoiceView.get` sin filtrar por `created_by`; `get_proforma_car_part_info` sin auth ni filtro.
 - **Tests**: test con dos usuarios (A crea una proforma, B intenta leerla por `pk`) que hoy pasa (B accede) y debe pasar a fallar con 403/404.
 - **Pasos**:
   1. PR: test + fix en `InvoiceView.get` (agregar `.filter(created_by=request.user)`).
   2. PR: test + fix en `get_proforma_car_part_info` (requerir auth y filtrar por pertenencia, mismo patrón que `ListUserInvoice`).
 
-### 5. [ALTO] Endpoints públicos sin autenticación exponen stock/precios
+### 5. ✅ [ALTO] Endpoints públicos sin autenticación exponen stock/precios — **HECHO**
+**TASK-006 (renombrado de TASK-002), PR [#30](https://github.com/rolion/praxsa-django-panel-admin/pull/30) (mergeado, `origin/master` commit `4c79e20`), ADR-005.** Decisión de negocio ya tomada y aplicada: `calculator_info`/`model_parts` quedan públicos intencionalmente; `get_inventory`/`get_layer_info` siguen públicos pero ahora con `AllowAny` explícito + throttle (`60/min`); `get_bobina` se cerró con chequeo de `is_staff` (no lo consume `proforma`). Verificado en navegador contra datos reales (calculadora pública, `get_bobina` 403 anónimo / 200 staff).
+
+<details>
+<summary>Descripción original del ítem</summary>
+
 **Backend SEC-03.** 7 vistas de función plana sin `@api_view` (`get_bobina`, `get_car_part_info`, `get_proforma_car_part_info`, `get_layer_info`, `get_inventory`, `get_calculator_info`, `get_model_parts`).
 - **Tests**: para cada endpoint, un test que documente si debe seguir siendo público o no (requiere la respuesta a la pregunta de negocio en sección 6 sobre cuáles son intencionalmente públicos).
 - **Pasos**:
   1. PR: decisión + test explícito marcando `calculator_info`/`model_parts` como públicos intencionalmente (son datos de referencia).
   2. PR: convertir `get_inventory` (expone stock/precio por sucursal) a `@api_view` con permisos explícitos.
   3. PR: mismo tratamiento para `get_bobina`/`get_layer_info` según la decisión de negocio.
+</details>
 
-### 6. [ALTO] Token de sesión + PII en `localStorage` sin defensas
+### 6. ✅ [ALTO] Token de sesión + PII en `localStorage` sin defensas — **HECHO (pasos 1-2 de 3)**
+**TASK-003 (PR [#31](https://github.com/rolion/praxsa-django-panel-admin/pull/31), mergeado, commit `2761fbd`) + TASK-004 (PR [#30](https://github.com/rolion/praxsa-django-panel-admin/pull/30), mergeado, commit `4c79e20`, ADR-003).** Paso 1: `logout()` ahora también limpia `email`. Paso 2: se redujo el PII persistido en `localStorage` a solo `token`+`name`; el resto (`email`, `phone_number`, `ci_nit`) vive en memoria vía el `BehaviorSubject` ya existente. Verificado end-to-end en navegador (login → localStorage solo con token+name → refresh → saludo/guard sobreviven).
+**Pendiente:** paso 3, migrar el token a cookie `httpOnly`/`secure` — documentado explícitamente como épica separada, no forzado aún.
+
+<details>
+<summary>Descripción original del ítem</summary>
+
 **Frontend SEC-01.** Token y PII (nombre, teléfono, email, CI/NIT) en `localStorage` en texto plano.
 - **Tests**: test de `AutheticationService` que verifique qué se guarda y qué se limpia en `logout()` (la verificación ya detectó que `logout()` no limpia `email`, aunque `login()` sí lo guarda — bug menor a corregir en el mismo paso).
 - **Pasos**:
   1. PR chico: corregir `logout()` para limpiar también `email` (paridad con lo que `login()` guarda).
   2. PR: evaluar reducir el PII persistido en `localStorage` a lo estrictamente necesario para la UI (nombre para saludo, nada más), moviendo el resto a estado en memoria.
   3. Ítem de mayor alcance (requiere coordinación con backend, no es un PR chico): migrar el token a cookie `httpOnly`/`secure` — documentar como épica separada, no forzarlo en las primeras dos semanas.
+</details>
 
-### 7. [ALTO] Sin manejo de sesión expirada ni route guards
+### 7. ✅ [ALTO] Sin manejo de sesión expirada ni route guards — **HECHO**
+**PR [#22](https://github.com/rolion/praxsa-django-panel-admin/pull/22) "Manejar 401 en el interceptor HTTP del frontend" (mergeado) + PR [#27](https://github.com/rolion/praxsa-django-panel-admin/pull/27) "Centraliza el chequeo de sesión en AuthGuard" (mergeado).** `app-http-interceptor.ts` maneja 401 (con test); se creó `guards/auth.guard.ts` (`CanActivate`, con test) y se aplicó en `app-routing.module.ts`, eliminando los chequeos manuales duplicados en `lista.component.ts`/`proforma.component.ts` (conecta con sección 2.3, ya resuelta).
+
+<details>
+<summary>Descripción original del ítem</summary>
+
 **Frontend SEC-02 + BIZ-02, unificados.** Cero manejo de 401/403 en el interceptor; rutas privadas protegidas solo por chequeos manuales en `ngOnInit`.
 - **Tests**: test del interceptor simulando una respuesta 401 → debe limpiar sesión y redirigir a `/login`. Test del guard: usuario no autenticado → `canActivate` retorna `false`/redirige.
 - **Pasos**:
   1. PR: agregar manejo de 401/403 en `app-http-interceptor.ts` (o un interceptor de errores adicional) con test.
   2. PR: crear `AuthGuard` (`CanActivate`) reutilizable con test, aplicarlo a `my-invoice`, `proforma/:id`, `create-user` en `app-routing.module.ts`, eliminando los chequeos manuales duplicados (conecta con sección 2.3).
+</details>
 
-### 8. [ALTO] Cobertura de tests real: cero en ambos lados
+### 8. ✅ [ALTO] Cobertura de tests real: cero en ambos lados — **HECHO**
+**PR [#20](https://github.com/rolion/praxsa-django-panel-admin/pull/20) "Add backend test harness for product app" (mergeado) + PR [#26](https://github.com/rolion/praxsa-django-panel-admin/pull/26) "Fix 22 preexisting frontend testbed failures" (mergeado).** Harness backend (`product/tests/helpers.py`, fixtures reusables) y harness frontend (arregló los 22 specs rotos que solo hacían `toBeTruthy()`, ahora con providers/mocks reales) ya existen y se usaron como base de los tests de los ítems #2, #5, #6, #7, #10.
+
+<details>
+<summary>Descripción original del ítem</summary>
+
 **Backend QUAL-05 + Frontend TEST-01.** `product/tests.py` es boilerplate; los 21 `*.spec.ts` del frontend solo verifican `toBeTruthy()`.
 - Este ítem se posiciona antes de varios de los anteriores en el orden de ataque (sección 5) porque los bloquea con seguridad: no se puede aplicar la regla del proyecto "todo cambio de lógica de negocio lleva su test" sin un harness mínimo funcionando primero.
 - **Pasos**:
   1. PR: harness de tests backend para `product/` (fixtures mínimos: usuario, sucursal, marca/modelo, `Window_Film_Reel`, `inventario`) reusable por los tests de los ítems #2-#5.
   2. PR: harness de tests frontend para `AutheticationService`/interceptor/guard (reusable por el ítem #7).
   3. A partir de aquí, cada PR de los ítems #2-#7 ya incluye sus propios tests — no hace falta un PR de "cobertura general" separado.
+</details>
 
-### 9. [MEDIO] Sin máquina de estados para proforma→instalación→venta→pago
+### 9. ⬜ [MEDIO] Sin máquina de estados para proforma→instalación→venta→pago — **PENDIENTE**
 **Backend BIZ-04.** Estado inferido con `hasattr()`, sin campo persistido ni constraint.
 - **Tests**: tests que documenten las transiciones válidas hoy (crear pago sin nota de venta cerrada, por ejemplo) antes de agregar restricciones, para no romper flujos legítimos existentes.
 - **Pasos**:
@@ -203,7 +246,12 @@ Para cada ítem: severidad, archivo(s), tests a escribir **antes** de tocar el c
   2. PR: agregar campo `status` explícito con `choices`, poblado en cada transición existente (sin quitar aún la inferencia por `hasattr`, para no romper el admin de golpe).
   3. PR: agregar `CheckConstraint`/validación en `clean()` para las invariantes mínimas (p. ej. no `pago` sin `nota_venta.is_close`), y migrar el admin a leer el campo persistido.
 
-### 10. [MEDIO] Filtrado por sucursal inconsistente en reportes/pagos del admin
+### 10. ✅ [MEDIO] Filtrado por sucursal inconsistente en reportes/pagos del admin — **HECHO**
+**TASK-002, PR [#32](https://github.com/rolion/praxsa-django-panel-admin/pull/32) (mergeado, commit `2afeb29`), ADR-002.** `PagosAdmin`, `ReportDailySellAdmin`, `ReportStorageAdmin`, `ReportUtilidadAdmin` y `ReportNotaTrabajoAdmin` ahora filtran por sucursal (delegando en `User_Helper.can_view_all_sucursales`, corregido en producción tras verificación manual: solo el grupo `Admin` ve todas las sucursales, `Caja` queda restringido a la propia); el filtro comentado en `orden_trabajo.py` se reimplementó. 27/27 tests verificados contra Postgres real.
+
+<details>
+<summary>Descripción original del ítem</summary>
+
 **Backend SEC-06.** `PagosAdmin`, `ReportDailySellAdmin`, `ReportStorageAdmin`, `ReportUtilidadAdmin` no filtran por sucursal del usuario; `orden_trabajo.py` tiene el filtro comentado.
 - Depende de la respuesta a la pregunta de negocio sobre quién debe ver datos de todas las sucursales (sección 6) antes de decidir si es "bug" o "comportamiento reservado a un rol".
 - **Tests**: test por cada `ModelAdmin` afectado, con dos usuarios de distinta sucursal, verificando qué debería ver cada uno según la decisión de negocio.
@@ -211,27 +259,32 @@ Para cada ítem: severidad, archivo(s), tests a escribir **antes** de tocar el c
   1. PR: aplicar el patrón de `get_queryset` filtrado por sucursal (ya usado en `InventoryAdmin`/`ProformaAdmin`) a `PagosAdmin` y `ReportDailySellAdmin`.
   2. PR: mismo patrón para `ReportStorageAdmin`/`ReportUtilidadAdmin`.
   3. PR: descomentar/reimplementar el filtro en `orden_trabajo.py:32-36`.
+</details>
 
 ---
 
 ## 5. Orden de ataque — primeras dos semanas
 
-**Día 0 (fuera del ciclo de PRs, es un incidente activo):** rotar `SECRET_KEY` y la contraseña de Postgres de producción. No espera al sprint — cualquiera con acceso de lectura al repo tiene la contraseña real de producción hoy.
+> **Estado (2026-09-23)**: de los 9 pasos originales de esta sección, quedan **pendientes solo el 4 (IDOR) y el 8 (`select_for_update` en inventario)**. Todo lo demás ya está mergeado a `master` — ver checklist abajo y el detalle por ítem en la sección 4.
+
+**Día 0 (fuera del ciclo de PRs, es un incidente activo):** rotar `SECRET_KEY` y la contraseña de Postgres de producción. **⬜ Pendiente** — explícitamente no ejecutado todavía (decisión del usuario en TASK-001), sigue siendo un incidente activo.
 
 **Semana 1 — cerrar exposiciones activas de datos:**
-1. PR chico: `.env-stg` `DEBUG=0` (SEC-02 backend, trivial, agruparlo con la limpieza de secretos).
-2. PR: sacar los `.env*` del repo y `.gitignore` (backlog #1, paso 2).
-3. PR: harness mínimo de tests backend (backlog #8, paso 1) — necesario para hacer con seguridad los dos siguientes.
-4. PR + PR: fix IDOR en `InvoiceView.get` y en `get_proforma_car_part_info` (backlog #4).
-5. PR: manejo de 401/403 en el interceptor del frontend (backlog #7, paso 1) — no depende del backend, se puede hacer en paralelo.
+1. ✅ PR chico: `.env-stg` `DEBUG=0` (SEC-02 backend, trivial, agruparlo con la limpieza de secretos) — incluido en PR #29 (TASK-001).
+2. ✅ PR: sacar los `.env*` del repo y `.gitignore` (backlog #1, paso 2) — PR #29 (TASK-001).
+3. ✅ PR: harness mínimo de tests backend (backlog #8, paso 1) — PR #20.
+4. ⬜ PR + PR: fix IDOR en `InvoiceView.get` y en `get_proforma_car_part_info` (backlog #4) — **sigue pendiente**, ningún PR lo tocó.
+5. ✅ PR: manejo de 401/403 en el interceptor del frontend (backlog #7, paso 1) — PR #22.
 
 **Semana 2 — proteger dinero e inventario:**
-6. PR: tests de caracterización + recálculo server-side de precio en `SalesHeaderSerializer.create()` (backlog #2, pasos 1-2).
-7. PR: centralizar la fórmula en `business/` y reusarla en el admin + corregir `convertir_venta_metro_lineal` (backlog #2, pasos 3-4).
-8. PR: `select_for_update()` en inventario + test de concurrencia (backlog #3).
-9. PR: `AuthGuard` en frontend, reemplazando los chequeos manuales (backlog #7, paso 2).
+6. ✅ PR: tests de caracterización + recálculo server-side de precio en `SalesHeaderSerializer.create()` (backlog #2, pasos 1-2) — PR #33 (TASK-005).
+7. 🟡 PR: centralizar la fórmula en `business/` y reusarla en el admin + corregir `convertir_venta_metro_lineal` (backlog #2, pasos 3-4) — la centralización en `business/pricing.py` y el uso en `SalesHeaderSerializer.create()` **sí se hizo** (PR #33); reusarla en el admin y corregir `convertir_venta_metro_lineal` (pasos 5-6) **sigue pendiente**.
+8. ⬜ PR: `select_for_update()` en inventario + test de concurrencia (backlog #3) — **sigue pendiente**, ningún PR lo tocó.
+9. ✅ PR: `AuthGuard` en frontend, reemplazando los chequeos manuales (backlog #7, paso 2) — PR #27.
 
 **Por qué este orden**: primero lo que ya es explotable hoy sin esfuerzo (secretos en git, IDOR con solo cambiar un `pk` en la URL) — es exposición de datos activa, no un riesgo teórico. Después, lo que protege dinero directamente (precio confiado al cliente, sobreventa de inventario), que requiere más diseño (de ahí que quede en la semana 2, con tests de caracterización primero). Lo estructural (máquina de estados #9, filtrado de reportes #10) y lo de menor severidad quedan fuera de las primeras dos semanas — se abordan después, una vez cerrada la exposición activa y protegido el dinero.
+
+**Siguientes pasos recomendados, dado lo ya hecho**: el IDOR (#4) y la condición de carrera de inventario (#3) quedaron como los dos huecos de mayor severidad sin tocar — son los candidatos naturales para el próximo ciclo de tasks, junto con cerrar los pasos 5-6 del ítem #2 (recalcular precio también en el camino admin).
 
 ---
 
