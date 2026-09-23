@@ -140,6 +140,35 @@ class CarModelPartFormPriceRecalculationTest(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn('window_film', form.errors)
 
+    def test_missing_width_is_rejected_not_a_crash(self):
+        """REV-2026-09-23-003: item_width_lte_film_width(width=None) lanzaba
+        ValueError ('Cannot use None as a query value') en vez de invalidar."""
+        data = self._valid_data()
+        del data['width']
+        form = CarModelPartForm(data=data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('width', form.errors)
+
+    def test_no_required_field_omission_crashes_the_form(self):
+        """Guarda de regresión general: reactivar sale_header (2023 -> hoy)
+        expuso, uno por uno en revisiones sucesivas, que quantity/installation_price
+        (REV-001) y width (REV-003) no estaban protegidos contra None. En vez de
+        seguir descubriéndolos de a uno, se barre cada campo requerido y se
+        confirma que ninguna omisión crashea is_valid(), para ambos sales_type."""
+        required_fields = ['car_part', 'window_film', 'width', 'length', 'quantity', 'installation_price']
+        metro_lineal_header = _make_header(self.scenario, sales_type=Proforma_Helper().tipo_venta_metro_lineal)
+        for header, label in [(self.header, 'venta_instalacion'), (metro_lineal_header, 'venta_metro_lineal')]:
+            for field in required_fields:
+                with self.subTest(sales_type=label, missing_field=field):
+                    data = self._valid_data(proforma_header=header.pk)
+                    if field != 'proforma_header':
+                        del data[field]
+                    form = CarModelPartForm(data=data)
+                    try:
+                        form.is_valid()
+                    except Exception as exc:  # pragma: no cover - el assert de abajo documenta el fallo
+                        self.fail(f"{label}: omitir '{field}' crasheó con {type(exc).__name__}: {exc}")
+
     def test_missing_quantity_and_installation_price_venta_metro_lineal_is_rejected_not_a_crash(self):
         """REV-2026-09-23-001: mismo patrón en la rama venta_metro_lineal
         (cc_installation_price.compare(0), cc_quantity > 0)."""

@@ -64,7 +64,7 @@ class CarModelPartForm(ModelForm):
             return
 
         if sale_header is not None and sale_header.sales_type == self.proforma_helper.tipo_venta_instalacion:
-            if self.item_width_lte_film_width(cc_car_part_id, sale_header.car_model_id, cc_width) == False:
+            if cc_width is None or self.item_width_lte_film_width(cc_car_part_id, sale_header.car_model_id, cc_width) == False:
                 self.add_error('window_film','el ancho de la bobina es menor que el ancho del item')
             if cc_quantity is None or cc_quantity < 1:
                 self.add_error('quantity','campo requerido')
@@ -78,9 +78,9 @@ class CarModelPartForm(ModelForm):
 
             # El precio nunca se confía del form (calculado client-side por sales_event.js):
             # se recalcula acá con los precios reales y se sobrescribe siempre. Ver ADR-006.
-            # Solo se intenta si quantity ya es válida — sin ella no hay subtotal que calcular,
-            # y los errores 'campo requerido' de arriba ya bastan para invalidar el form.
-            if cc_quantity is not None:
+            # Solo se intenta si quantity/width ya son válidos — sin ellos no hay subtotal que
+            # calcular, y los errores 'campo requerido' de arriba ya bastan para invalidar el form.
+            if cc_quantity is not None and cc_width is not None:
                 car_model_part = Car_Model_Part.objects.filter(
                     car_model_id=sale_header.car_model_id, car_part_id=cc_car_part_id
                 ).first()
