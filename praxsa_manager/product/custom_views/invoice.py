@@ -35,8 +35,7 @@ class InvoiceView(APIView):
     
     def get(self, request, pk, format=None):
         try:
-            invoice = Proforma_Header.objects.select_related('car_model_id', 'sucursal').get(id = pk)
-            # if invoice.client_id.id == client.id:
+            invoice = Proforma_Header.objects.select_related('car_model_id', 'sucursal').get(id = pk, created_by = request.user)
             details = Proforma_Detail.objects.select_related('car_part','window_film').filter(proforma_header = invoice)
            
             items = list(map(lambda item: {'car_part_id': item.car_part.id, 
@@ -67,8 +66,6 @@ class InvoiceView(APIView):
                     'proforma_created_on': invoice.proforma_created_on.strftime("%d/%m/%Y"),
                     'carPartItems': items}
             return Response(data = data  , status=status.HTTP_200_OK)
-            # else:
-            #     return Response(data ={'not allowed'}  , status=status.HTTP_401_UNAUTHORIZED)
         except ObjectDoesNotExist:
             return Response(data='not found', status=status.HTTP_404_NOT_FOUND)
         except MultipleObjectsReturned:
