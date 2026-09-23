@@ -37,6 +37,14 @@ def create_user_with_token(username=None, password='testpass123'):
     return user, token
 
 
+def create_staff_user(username=None, password='testpass123'):
+    """Usuario staff logueable por sesión (self.client.login), para endpoints
+    protegidos por request.user.is_staff en vez de token DRF."""
+    username = username or f'{_unique("staff")}@test.com'
+    user = User.objects.create_user(username=username, email=username, password=password, is_staff=True)
+    return user, password
+
+
 def add_user_to_group(user, group_name):
     group, _ = Group.objects.get_or_create(name=group_name)
     user.groups.add(group)

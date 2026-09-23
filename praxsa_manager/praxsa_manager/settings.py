@@ -121,7 +121,11 @@ REST_FRAMEWORK = {
     # or allow read-only access for unauthenticated users.
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
-    ]
+    ],
+    # Rate limit for public read-only catalog endpoints, see PublicCatalogThrottle in product/views.py.
+    'DEFAULT_THROTTLE_RATES': {
+        'public_catalog': '60/min',
+    },
 }
 
 TEMPLATES = [

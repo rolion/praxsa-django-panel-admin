@@ -26,10 +26,10 @@ export class AutheticationService {
 
   constructor(private http: HttpClient, private local: LocalStorageService, @Inject(PLATFORM_ID) plataformId: Object) {
     this.base_url = isPlatformBrowser(plataformId)? environment.BROWSER_APP_BASE_REF: environment.SERVER_APP_BASE_REF;
-    this.userLoginSource = new BehaviorSubject(this.getUser())
+    this.userLoginSource = new BehaviorSubject(this.restoreMinimalSession())
     this.isUserLoged = this.userLoginSource.asObservable()
     this.plataformId = plataformId;
-    
+
    }
 
   createUser(newUser: User): Observable<{data: User}>{
@@ -44,12 +44,11 @@ export class AutheticationService {
   login(crendentials: Credentials): Observable<User>{
     return this.http.post<Credentials>(`${this.base_url}/product/api-token-auth/`, crendentials, this.httpOptions)
     .pipe(map((res: any) => {
+        // Solo token+name se persisten en localStorage (TASK-004/ADR-003); el
+        // resto del perfil vive únicamente en memoria (userLoginSource) durante
+        // la sesión del SPA, se pierde en un refresh de página.
         this.local.saveData('token', res.token)
         this.local.saveData('name', res.name)
-        this.local.saveData('lastname', res.lastname)
-        this.local.saveData('phone_number', res.phone_number)
-        this.local.saveData('email', res.email)
-        this.local.saveData('ci_nit', res.ci_nit)
         let user = new User(res.email,'', res.name, res.lastname, res.phone_number, res.ci_nit)
         this.userLoginSource.next(user)
         return user
@@ -60,6 +59,8 @@ export class AutheticationService {
     if (this.local.getData('token')){
         this.local.removeData('token')
         this.local.removeData('name')
+        // Limpia también las claves que este servicio ya no escribe desde
+        // login(), por si quedaron de una sesión anterior a este cambio.
         this.local.removeData('lastname')
         this.local.removeData('phone_number')
         this.local.removeData('email')
@@ -68,16 +69,15 @@ export class AutheticationService {
     }
   }
   getUser(): User | null{
-    let user : User | null = null;
-    if (this.local.getData('token')){
-      user = new User(
-        `${this.local.getData('email')}`,
-        '', 
-        `${this.local.getData('name')}`, 
-        `${this.local.getData('lastname')}`, 
-        `${this.local.getData('phone_number')}`, 
-        `${this.local.getData('ci_nit')}`)
+    return this.userLoginSource.value;
+  }
+  /** Reconstruye el estado mínimo de sesión (token+name) desde localStorage al
+   * arrancar la app. lastname/email/phone_number/ci_nit quedan vacíos hasta el
+   * próximo login() en esta sesión de navegador — no se persisten (TASK-004). */
+  private restoreMinimalSession(): User | null {
+    if (this.local.getData('token')) {
+      return new User('', '', `${this.local.getData('name')}`, '', '', '');
     }
-    return user;
+    return null;
   }
 }
