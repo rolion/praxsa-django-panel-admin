@@ -3,7 +3,7 @@
 **Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Rama:** `task/TASK-008-idor-proforma-access`
-**Pull Request:** _pendiente de asignar (se agrega tras abrir el PR)_
+**Pull Request:** [#35](https://github.com/rolion/praxsa-django-panel-admin/pull/35)
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
