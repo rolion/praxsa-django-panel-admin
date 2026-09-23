@@ -1,6 +1,6 @@
 # TASK-008: IDOR en `InvoiceView.get` y `get_proforma_car_part_info` (backlog #4)
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Rama:** `task/TASK-008-idor-proforma-access`
 **Pull Request:** [#35](https://github.com/rolion/praxsa-django-panel-admin/pull/35)
@@ -12,6 +12,7 @@
 | 2026-09-23 | INVESTIGATION → PLANNING | Decisión de arquitectura registrada en ADR-006 | delivery-architect |
 | 2026-09-23 | PLANNING → ENGINEERING | Plan v1 escrito y PR abierto | delivery-plan |
 | 2026-09-23 | ENGINEERING → REVIEW | Implementación completa, tests OK, PR actualizado | delivery-engineer |
+| 2026-09-23 | REVIEW → PUBLISH | Veredicto PASS, sin issues Critical/High | delivery-review |
 
 ## Investigación
 
@@ -121,7 +122,20 @@ Implementado según el plan v1 sin desvíos. Resumen:
 **No verificado en esta etapa** (pendiente de `delivery-review`, según sus propias reglas): verificación manual en navegador (cliente Angular real con dos usuarios; staff no-admin en el admin de Django abriendo la nota de trabajo).
 
 ## Review
-_Pendiente_
+
+**Veredicto: PASS.** Cero issues (ningún `REV-*.md` generado). Detalle completo de la verificación en `## Testing`/`## Review` del [PR #35](https://github.com/rolion/praxsa-django-panel-admin/pull/35).
+
+Nota de aislamiento: esta revisión corrió en la misma sesión que implementó el código (limitación procedimental declarada al usuario al inicio de la revisión). Mitigación aplicada: reconstrucción de contexto solo desde artefactos (TASK, plan, ADR, diff real contra `origin/master`), y verificación 100% ejecutada (regresión completa corrida dos veces de forma independiente + verificación HTTP en vivo con `StaticLiveServerTestCase`+`requests`, no solo relectura del código ya escrito).
+
+Resumen de evidencia:
+- 56/56 tests OK (regresión completa, dos corridas independientes contra Postgres real).
+- Verificación en vivo con HTTP real (servidor real, login real de admin con CSRF, token real): dueño ve su proforma (200), otro usuario 404, anónimo 403 en `get_proforma_car_part_info`, staff de la sucursal correcta 200, staff de otra sucursal 404.
+- `makemigrations --check --dry-run`: sin cambios pendientes.
+- Lint/type-check/security: no instalados en el backend — registrado como verificación no realizada, no como PASS silencioso.
+- Sin scope creep: diff limitado a los archivos que el plan identificó.
+- ADR-006 compliance: verificado punto por punto, sin desvíos.
+
+**Hallazgo fuera de alcance, no bloqueante**: `product_proforma_header` tiene una columna `status` NOT NULL en la Postgres real de desarrollo que no existe en `models.py` ni en las migraciones actuales (drift de esquema preexistente). Se marcó por separado para investigación futura, no es parte de backlog #4.
 
 ## Publicación
 _Pendiente_
