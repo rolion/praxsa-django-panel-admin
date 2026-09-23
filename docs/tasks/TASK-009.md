@@ -13,6 +13,7 @@
 | 2026-09-23 18:05 | PLANNING → ENGINEERING | Plan v1 escrito y PR #37 abierto | delivery-plan |
 | 2026-09-23 18:32 | ENGINEERING → REVIEW | Implementación completa, verificada localmente (tests + backfill real) | delivery-engineer |
 | 2026-09-23 18:43 | REVIEW → PUBLISH | Quality Gate: PASS (3 hallazgos Low, no bloqueantes) | delivery-review |
+| 2026-09-23 18:59 | PUBLISH → PUBLISH | PR #37 completo y listo; pendiente aprobación humana (cambio sensible: schema + ADR) | delivery-publish |
 
 ## Investigación
 
@@ -154,4 +155,12 @@ Nota de aislamiento: esta revisión corrió en la misma sesión de Claude Code q
 Verificaciones no ejecutadas (no por omisión, sino porque las herramientas no están instaladas en el proyecto — declarado explícitamente, no un PASS silencioso): lint (`flake8`/`ruff`), type-checking (`mypy`), security (`bandit`/`safety`). Frontend/E2E no aplican (diff no toca `proforma/`).
 
 ## Publicación
-_Pendiente_
+
+**Estado: Listo para aprobación humana.** PR [#37](https://github.com/rolion/praxsa-django-panel-admin/pull/37), descripción completa (Summary, Changes, Testing, Architecture decisions, Related plan/ADRs, Review, Known limitations).
+
+Verificado antes de publicar:
+- `git status` limpio, sin nada pendiente de comitear.
+- `HEAD` coincide exactamente con el último commit revisado por `delivery-review` (sin commits nuevos sin revisar).
+- Diff completo (`git diff origin/master...HEAD --name-only`) corresponde íntegramente al plan + hallazgos ya documentados — sin archivos temporales, sin `.env`/credenciales, sin cambios fuera de lo evaluado por el review.
+
+**No se mergea en esta invocación.** Este task tiene ADR (ADR-006) y modifica el esquema de la tabla central del dominio (`Proforma_Header`) — es un cambio sensible según las reglas de este flujo, así que requiere aprobación humana explícita en el chat antes de considerarlo listo para merge, independientemente del `PASS` de `delivery-review`. `**Etapa actual:**` se mantiene en `PUBLISH` hasta esa aprobación.
