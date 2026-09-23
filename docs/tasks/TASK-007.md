@@ -1,6 +1,6 @@
 # TASK-007: Recálculo server-side de precio en el admin (`ProformaAdmin`) + corregir divergencia de fórmula `venta_metro_lineal` en `sales_event.js`/`convertir_venta_metro_lineal` (backlog #2, pasos 5-6)
 
-**Etapa actual:** REVIEW
+**Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Rama:** `claude/precio-total-validation-steps-1362c2` (rama existente del worktree, mismo criterio que TASK-001/TASK-002/TASK-005 — sin crear `task/TASK-007-...` aparte)
 **Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/36
@@ -12,6 +12,7 @@
 | 2026-09-23 | INVESTIGATION → PLANNING | Decisión arquitectónica tomada tras confirmar 3 preguntas de negocio con el usuario: (1) admin sobrescribe siempre el precio recalculado de `venta_instalacion`, nunca rechaza por discrepancia — mismo criterio que ADR-004; (2) la fórmula de `venta_metro_lineal` sigue sin resolver con negocio, así que queda explícitamente fuera de alcance (backlog #2 paso 6 no se cierra en este task); (3) se corrige en este mismo task el bug `sales_header`/`proforma_header` de `CarModelPartForm.clean()` (validaciones dormidas desde 2023) | delivery-architect |
 | 2026-09-23 | PLANNING → ENGINEERING | Plan v1 escrito ([PLAN-2026-09-23-admin-price-recalculation-venta-instalacion.md](../plans/PLAN-2026-09-23-admin-price-recalculation-venta-instalacion.md)) y PR #36 abierto sobre la rama existente del worktree (mismo criterio que TASK-001/TASK-002/TASK-005: worktree nombrado para este task, sin crear `task/TASK-007-...`) | delivery-plan |
 | 2026-09-23 | ENGINEERING → REVIEW | Implementación completa según el plan v1, commit `1cc195e` empujado al PR #36. 11 tests nuevos + suite completa `product` (57/57) verificados contra Postgres real (venv local del usuario). Verificación manual explícita en el admin real (paso 7 del plan, exigido por ADR-006): confirmado en pantalla que un POST manipulado se sobrescribe con el precio recalculado y que falta un `Car_Model_Part` rechaza el guardado con el error esperado | delivery-engineer |
+| 2026-09-23 | REVIEW → ENGINEERING | Veredicto FAIL — [REV-2026-09-23-001](../reviews/REV-2026-09-23-001-crash-on-blank-required-numeric-field.md) (Severity High, Category IMPLEMENTATION): el fix del bug `sales_header`→`proforma_header` reactiva comparaciones sin proteger contra `None` (`cc_quantity`/`cc_installation_price`), causando un `TypeError`/`AttributeError` (500) si esos campos llegan vacíos en un ítem — reproducido con evidencia real. También [REV-2026-09-23-002](../reviews/REV-2026-09-23-002-untested-missing-window-film-branch.md) (Severity Low, Category IMPLEMENTATION): rama nueva `cc_window_film is None` sin test. Suite completa (57/57), migraciones y ADR compliance re-verificados de forma independiente y sin hallazgos | delivery-review |
 
 ## Investigación
 
@@ -144,7 +145,22 @@ Implementado según el plan v1, commit `1cc195e` (rama `claude/precio-total-vali
 Sin nuevas dependencias, sin migraciones (no se tocó ningún modelo), sin cambios en `views.py`/`serializer/`/`custom_views/`/`static/product/sales_event.js`/`proforma/src/` — consistente con "Files/components affected" del plan. `venta_metro_lineal` queda sin tocar, tal como definía ADR-006.
 
 ## Review
-_Pendiente_
+
+**Nota de aislamiento**: esta revisión corrió en la misma sesión que investigó, diseñó, planificó e implementó TASK-007 — no hay aislamiento real de contexto entre roles en esta ejecución concreta (limitación procedimental, señalada explícitamente por `delivery-review/SKILL.md`). Se reconstruyó el contexto solo desde los artefactos (TASK, plan, ADR, diff real vía `git diff origin/master...HEAD`) y se corrieron las verificaciones de forma independiente en un entorno nuevo, en vez de confiar en lo que reportó `delivery-engineer`.
+
+**Veredicto: FAIL** — [REV-2026-09-23-001](../reviews/REV-2026-09-23-001-crash-on-blank-required-numeric-field.md) (Severity: High, Category: IMPLEMENTATION).
+
+Verificado de forma independiente (venv local del usuario, Postgres real):
+- `python manage.py test product` (suite completa): **57/57 en verde**, sin regresión (11 tests nuevos + 46 preexistentes).
+- `python manage.py makemigrations product --check --dry-run`: `No changes detected` — confirma "sin migraciones".
+- `flake8`/`bandit`/`mypy`/`coverage.py`: ninguno instalado ni configurado en el proyecto — verificación técnica no ejecutable en este entorno, declarada explícitamente como no realizada (no es un PASS silencioso). Se hizo revisión manual del diff para cobertura de ramas nuevas en su lugar.
+- Plan/ADR-006 compliance: alcance (`venta_instalacion` únicamente), decisión de sobrescribir siempre, `total_price` como suma real post-formset, `venta_metro_lineal` fuera de alcance — todo verificado línea por línea contra el diff real y confirmado sin desviaciones. Sin scope creep (`git diff origin/master...HEAD --stat` coincide exactamente con "Files/components affected" del plan).
+
+**Hallazgo crítico de esta revisión — no capturado por la suite del PR**: al verificar cobertura de las ramas nuevas de `CarModelPartForm.clean()`, se construyó un test ad hoc (fuera del PR) enviando un ítem `venta_instalacion` sin `quantity`. El fix del bug `sales_header`→`proforma_header` reactivó, por primera vez desde 2023, comparaciones como `if cc_quantity < 1:`/`if cc_installation_price < 1:` que nunca están protegidas contra `cleaned_data.get(...)` devolviendo `None` (caso de un campo requerido vacío/ausente) — el resultado es un `TypeError` sin capturar que el admin de Django no envuelve en ningún `try/except`, es decir, un 500 real para un error de captura de datos plausible a diario (dejar "Cantidad" o "Costo Instalación" en blanco), no un caso de manipulación maliciosa. Antes de este PR el riesgo era 100% latente porque esa rama nunca se ejecutaba. Ver [REV-2026-09-23-001](../reviews/REV-2026-09-23-001-crash-on-blank-required-numeric-field.md) para la traza completa.
+
+Hallazgo adicional, no bloqueante: [REV-2026-09-23-002](../reviews/REV-2026-09-23-002-untested-missing-window-film-branch.md) (Low) — la rama nueva `cc_window_film is None` no tiene test dedicado.
+
+No hay issues de categoría `PLAN` ni `ARCHITECTURE`. El plan (paso 3) pedía reactivar las validaciones "tal como ya estaban escritas, sin modificar esas reglas" — la instrucción en sí era razonable (no cambiar la regla de negocio), pero la implementación necesitaba agregar una guarda defensiva contra `None` que no cambia ninguna regla de negocio, solo evita el crash. Corresponde a `delivery-engineer`.
 
 ## Publicación
 _Pendiente_
