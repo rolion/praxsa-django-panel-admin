@@ -5,6 +5,7 @@ from .inventario import Inventario_Business
 from ..utils.exception.nohaylaminas import NoHayLaminasDisponibles
 from ..utils.exception.proforma import ProformaException, NotaVentaException
 from django.db import IntegrityError, transaction
+from django.db.models import Sum
 from datetime import datetime
 from ..business.orden_trabajo import Orden_Trabajo_Business
 from decimal import *
@@ -158,7 +159,18 @@ class Proforma_Business:
         except Exception as e:
             self.log_errors.error(f'algo salio mal, contactar administrador {e}')
             raise Exception('algo salio mal, contactar administrador')
-        
+
+    def recalculate_total_price(self, proforma):
+        """Recalcula Proforma_Header.total_price como la suma real de los
+        sub_total de sus Proforma_Detail actuales (ver ADR-006, TASK-007).
+        Agnóstico de sales_type: agrupa lo que ya haya en BD, sin recalcular
+        el sub_total de cada ítem (eso lo hace CarModelPartForm.clean())."""
+        total = Proforma_Detail.objects.filter(proforma_header=proforma).aggregate(
+            total=Sum('sub_total')
+        )['total']
+        proforma.total_price = total if total is not None else Decimal('0')
+        proforma.save(update_fields=['total_price'])
+
     def crear_nota_venta(self, nota_trabajo, user):
         if nota_trabajo.proforma.is_close == False:
                     raise Exception(f'la proforma {nota_trabajo.proforma.id}, debe estar cerrada antes de crear la nota de venta')

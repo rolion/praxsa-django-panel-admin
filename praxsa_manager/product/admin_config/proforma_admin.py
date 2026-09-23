@@ -147,20 +147,8 @@ class ProformaAdmin(admin.ModelAdmin):
         return form
     
     def save_related(self, request, form, formsets, change):
-        to_reduce = 0
-        to_add = 0
-        proforma = form.instance
-        if change == True:
-            for formset in formsets:
-                formset.save(commit=False)
-                if formset.model == Proforma_Detail:
-                    for deleted_data in formset.deleted_objects:
-                        to_reduce = to_reduce + deleted_data.sub_total
-                    
-            proforma.total_price = proforma.total_price - to_reduce
-            # proforma.origen = self.proforma_helper.origin_portal
-            proforma.save()
         super(ProformaAdmin, self).save_related(request, form, formsets, change)
+        self.proforma_business.recalculate_total_price(form.instance)
 
     def has_change_permission(self, request: HttpRequest, obj=None):
         if obj is None:
