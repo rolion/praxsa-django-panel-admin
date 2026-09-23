@@ -1,15 +1,16 @@
 # TASK-007: Recálculo server-side de precio en el admin (`ProformaAdmin`) + corregir divergencia de fórmula `venta_metro_lineal` en `sales_event.js`/`convertir_venta_metro_lineal` (backlog #2, pasos 5-6)
 
-**Etapa actual:** PLANNING
+**Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
-**Rama:** _sin asignar todavía_
-**Pull Request:** _sin abrir todavía_
+**Rama:** `claude/precio-total-validation-steps-1362c2` (rama existente del worktree, mismo criterio que TASK-001/TASK-002/TASK-005 — sin crear `task/TASK-007-...` aparte)
+**Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/36
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
 |---|---|---|---|
 | 2026-09-23 | (nuevo) → INVESTIGATION | Task creado a pedido del usuario: cerrar backlog #2 (`docs/integration-and-backlog.md`, pasos 5-6) para el camino admin de Django, que TASK-005/PR #33 dejó explícitamente fuera de alcance (solo cubrió el camino REST usado por Angular) | delivery-investigate |
 | 2026-09-23 | INVESTIGATION → PLANNING | Decisión arquitectónica tomada tras confirmar 3 preguntas de negocio con el usuario: (1) admin sobrescribe siempre el precio recalculado de `venta_instalacion`, nunca rechaza por discrepancia — mismo criterio que ADR-004; (2) la fórmula de `venta_metro_lineal` sigue sin resolver con negocio, así que queda explícitamente fuera de alcance (backlog #2 paso 6 no se cierra en este task); (3) se corrige en este mismo task el bug `sales_header`/`proforma_header` de `CarModelPartForm.clean()` (validaciones dormidas desde 2023) | delivery-architect |
+| 2026-09-23 | PLANNING → ENGINEERING | Plan v1 escrito ([PLAN-2026-09-23-admin-price-recalculation-venta-instalacion.md](../plans/PLAN-2026-09-23-admin-price-recalculation-venta-instalacion.md)) y PR #36 abierto sobre la rama existente del worktree (mismo criterio que TASK-001/TASK-002/TASK-005: worktree nombrado para este task, sin crear `task/TASK-007-...`) | delivery-plan |
 
 ## Investigación
 
@@ -116,7 +117,10 @@ Decisión (confirmada con el usuario, ver historial): el admin recalcula siempre
 **Fuera de alcance, explícitamente bloqueado**: `venta_metro_lineal` no se toca — ni `sales_event.js` (rama `else`) ni `convertir_venta_metro_lineal`. La pregunta de negocio de si el subtotal se multiplica por `quantity` (backlog `docs/integration-and-backlog.md:251`) sigue sin respuesta; backlog #2 paso 6 queda pendiente para un task futuro una vez resuelta. Ver el ADR para las alternativas descartadas y la estrategia de rollback/mitigación (incluye recomendación de verificación manual explícita antes de publicar, dado el precedente de ADR-002 donde un test automatizado en verde no capturó un error de requerimiento de negocio).
 
 ## Plan
-_Pendiente_
+
+[PLAN-2026-09-23-admin-price-recalculation-venta-instalacion.md (v1)](../plans/PLAN-2026-09-23-admin-price-recalculation-venta-instalacion.md)
+
+Alcance: `Proforma_Business.recalculate_total_price` (nuevo, `business/proforma.py`); `CarModelPartForm.clean()` corrige `sales_header`→`proforma_header` y agrega resolución de precio real (`Car_Model_Part` + `Pricing_Business.resolve_unit_price` + `calculate_subtotal_venta_instalacion`, ya existentes de TASK-005) para `venta_instalacion`; `ProformaAdmin.save_related` reescrito para recalcular `total_price` después de que el formset persiste, reemplazando la resta manual `to_reduce`. Tests unitarios de cada pieza nueva/corregida + tests de integración de `save_related` (creación y edición). Sin E2E (mismo criterio que TASK-005: no toca contrato de API ni frontend). Sin migraciones ni dependencias nuevas. Fuera de alcance: `venta_metro_lineal` en cualquiera de sus dos caminos (bloqueado por pregunta de negocio sin resolver), `sales_event.js`, `convertir_venta_metro_lineal`, REST/Angular.
 
 ## Implementación
 _Pendiente_
