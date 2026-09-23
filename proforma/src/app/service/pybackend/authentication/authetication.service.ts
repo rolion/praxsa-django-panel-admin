@@ -62,6 +62,7 @@ export class AutheticationService {
         this.local.removeData('name')
         this.local.removeData('lastname')
         this.local.removeData('phone_number')
+        this.local.removeData('email')
         this.local.removeData('ci_nit')
         this.userLoginSource.next(null)
     }
