@@ -1,6 +1,6 @@
 # TASK-007: Recálculo server-side de precio en el admin (`ProformaAdmin`) + corregir divergencia de fórmula `venta_metro_lineal` en `sales_event.js`/`convertir_venta_metro_lineal` (backlog #2, pasos 5-6)
 
-**Etapa actual:** REVIEW
+**Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Rama:** `claude/precio-total-validation-steps-1362c2` (rama existente del worktree, mismo criterio que TASK-001/TASK-002/TASK-005 — sin crear `task/TASK-007-...` aparte)
 **Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/36
@@ -14,6 +14,7 @@
 | 2026-09-23 | ENGINEERING → REVIEW | Implementación completa según el plan v1, commit `1cc195e` empujado al PR #36. 11 tests nuevos + suite completa `product` (57/57) verificados contra Postgres real (venv local del usuario). Verificación manual explícita en el admin real (paso 7 del plan, exigido por ADR-006): confirmado en pantalla que un POST manipulado se sobrescribe con el precio recalculado y que falta un `Car_Model_Part` rechaza el guardado con el error esperado | delivery-engineer |
 | 2026-09-23 | REVIEW → ENGINEERING | Veredicto FAIL — [REV-2026-09-23-001](../reviews/REV-2026-09-23-001-crash-on-blank-required-numeric-field.md) (Severity High, Category IMPLEMENTATION): el fix del bug `sales_header`→`proforma_header` reactiva comparaciones sin proteger contra `None` (`cc_quantity`/`cc_installation_price`), causando un `TypeError`/`AttributeError` (500) si esos campos llegan vacíos en un ítem — reproducido con evidencia real. También [REV-2026-09-23-002](../reviews/REV-2026-09-23-002-untested-missing-window-film-branch.md) (Severity Low, Category IMPLEMENTATION): rama nueva `cc_window_film is None` sin test. Suite completa (57/57), migraciones y ADR compliance re-verificados de forma independiente y sin hallazgos | delivery-review |
 | 2026-09-23 | ENGINEERING → REVIEW | Ambos hallazgos corregidos, commit `ecf16c7` empujado al PR #36. REV-2026-09-23-001 requirió 3 correcciones (no solo las 3 comparaciones citadas por el review): además de esas, el bloque de resolución de precio y una línea preexistente no relacionada al bug `sales_header` (`total_length_to_sell`) compartían el mismo patrón sin `None`-guard y seguían crasheando el mismo escenario reportado por una vía distinta — se verificó paso a paso con un test ad hoc hasta confirmar que el escenario queda resuelto de punta a punta. REV-2026-09-23-002 resuelto con 1 test nuevo. 4 tests nuevos (15 en total en `test_admin_price_recalculation.py`), suite completa `product` 61/61 en verde contra Postgres real, sin migraciones nuevas | delivery-engineer |
+| 2026-09-23 | REVIEW → ENGINEERING | Veredicto FAIL (tercera pasada) — [REV-2026-09-23-003](../reviews/REV-2026-09-23-003-crash-on-blank-width.md) (Severity High, Category IMPLEMENTATION): mismo patrón que REV-2026-09-23-001 (ya resuelto), en un campo que esa corrección no cubrió — `width` vacío en un ítem `venta_instalacion` crashea `item_width_lte_film_width` (primera línea de la rama reactivada) con `ValueError: Cannot use None as a query value`, sin capturar. Reproducido con evidencia real. REV-2026-09-23-001 y REV-2026-09-23-002 confirmados `Resolved` de forma independiente (guardas presentes en el diff, tests en verde). Suite completa (61/61) y migraciones re-verificadas sin hallazgos adicionales | delivery-review |
 
 ## Investigación
 
@@ -174,6 +175,20 @@ Verificado de forma independiente (venv local del usuario, Postgres real):
 Hallazgo adicional, no bloqueante: [REV-2026-09-23-002](../reviews/REV-2026-09-23-002-untested-missing-window-film-branch.md) (Low) — la rama nueva `cc_window_film is None` no tiene test dedicado.
 
 No hay issues de categoría `PLAN` ni `ARCHITECTURE`. El plan (paso 3) pedía reactivar las validaciones "tal como ya estaban escritas, sin modificar esas reglas" — la instrucción en sí era razonable (no cambiar la regla de negocio), pero la implementación necesitaba agregar una guarda defensiva contra `None` que no cambia ninguna regla de negocio, solo evita el crash. Corresponde a `delivery-engineer`.
+
+### Tercera pasada (2026-09-23) — Veredicto: FAIL
+
+**Nota de aislamiento**: igual que las pasadas anteriores, corrió en la misma sesión — limitación procedimental, no memoria real. Contexto reconstruido de nuevo solo desde artefactos (TASK, plan, ADR, diff real).
+
+Verificado de forma independiente (venv local del usuario, Postgres real):
+- `python manage.py test product --noinput`: **61/61 en verde** (57 previos + 4 nuevos de la corrección de REV-2026-09-23-001/002).
+- `python manage.py makemigrations product --check --dry-run`: `No changes detected`.
+- `git diff origin/master...HEAD --stat`: 9 archivos, sin scope creep.
+- [REV-2026-09-23-001](../reviews/REV-2026-09-23-001-crash-on-blank-required-numeric-field.md) y [REV-2026-09-23-002](../reviews/REV-2026-09-23-002-untested-missing-window-film-branch.md): confirmados **Resolved** — las guardas contra `None` (`quantity`, `installation_price` en ambas ramas, el bloque de precio, `total_length_to_sell`) están presentes en el diff, y los 4 tests nuevos (incluido el de `window_film`) pasan.
+
+**Nuevo hallazgo — [REV-2026-09-23-003](../reviews/REV-2026-09-23-003-crash-on-blank-width.md) (Severity: High, Category: IMPLEMENTATION)**: al verificar que la corrección anterior resolvía el problema de raíz (no solo lo desplazaba), se probó el mismo patrón con `width` — otro campo requerido de la misma rama `venta_instalacion` reactivada que la corrección de REV-2026-09-23-001 no cubrió, porque ese hallazgo original solo citó `quantity`/`installation_price`. `width` vacío crashea `item_width_lte_film_width` (la primera línea de la rama reactivada, [Forms/car_model_part.py:67](../../praxsa_manager/product/Forms/car_model_part.py)) con `ValueError: Cannot use None as a query value`, sin capturar — reproducido con evidencia real (traceback completo en el REV).
+
+No hay issues nuevos de categoría `PLAN` ni `ARCHITECTURE`. Mismo patrón que la pasada anterior: código dormido desde 2023 reactivado por este PR, con un campo adicional que aún necesita la misma guarda defensiva ya aplicada a los otros tres. Corresponde a `delivery-engineer`.
 
 ## Publicación
 _Pendiente_
