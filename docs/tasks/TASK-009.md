@@ -1,15 +1,16 @@
 # TASK-009: Máquina de estados para proforma→instalación→venta→pago (backlog #9)
 
-**Etapa actual:** PLANNING
+**Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
-**Rama:** _sin asignar todavía_
-**Pull Request:** _sin abrir todavía_
+**Rama:** `claude/proforma-state-machine-186295`
+**Pull Request:** [#37](https://github.com/rolion/praxsa-django-panel-admin/pull/37)
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
 |---|---|---|---|
 | 2026-09-23 17:52 | (nuevo) → INVESTIGATION | Task creado | delivery-investigate |
 | 2026-09-23 17:58 | INVESTIGATION → PLANNING | Decisión arquitectónica registrada en ADR-006 | delivery-architect |
+| 2026-09-23 18:05 | PLANNING → ENGINEERING | Plan v1 escrito y PR #37 abierto | delivery-plan |
 
 ## Investigación
 
@@ -104,7 +105,10 @@ Resumen de la decisión:
 - Limpieza del código muerto encontrado en la investigación (`sales_status` residual, acción `create_sales_note` mal referenciada, métodos muertos en `car_model_part.py`) queda fuera de alcance de este ADR — es un cambio independiente de bajo riesgo.
 
 ## Plan
-_Pendiente_
+
+[PLAN-2026-09-23-proforma-status-field.md (v1)](../plans/PLAN-2026-09-23-proforma-status-field.md)
+
+Resumen: campo `status` en `Proforma_Header` + método único `Proforma_Business.refresh_status()` llamado desde las 4 transiciones existentes + migración `0106` con backfill de datos existentes + tests de equivalencia contra `ProformaAdmin.get_estado()`. Sin E2E (cambio 100% backend/admin). Constraints e migrar el admin a leer el campo quedan fuera de alcance (ver `## Out of scope` del plan).
 
 ## Implementación
 _Pendiente_
