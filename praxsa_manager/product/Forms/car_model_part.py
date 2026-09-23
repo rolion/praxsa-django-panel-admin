@@ -66,9 +66,9 @@ class CarModelPartForm(ModelForm):
         if sale_header is not None and sale_header.sales_type == self.proforma_helper.tipo_venta_instalacion:
             if self.item_width_lte_film_width(cc_car_part_id, sale_header.car_model_id, cc_width) == False:
                 self.add_error('window_film','el ancho de la bobina es menor que el ancho del item')
-            if cc_quantity < 1:
+            if cc_quantity is None or cc_quantity < 1:
                 self.add_error('quantity','campo requerido')
-            if cc_installation_price < 1:
+            if cc_installation_price is None or cc_installation_price < 1:
                 self.add_error('installation_price','campo requerido')
 
             # available_reel = self.inv_bussiness.available_window_film_reel_in_inventory_to_sell(width=cc_width,
@@ -78,43 +78,46 @@ class CarModelPartForm(ModelForm):
 
             # El precio nunca se confía del form (calculado client-side por sales_event.js):
             # se recalcula acá con los precios reales y se sobrescribe siempre. Ver ADR-006.
-            car_model_part = Car_Model_Part.objects.filter(
-                car_model_id=sale_header.car_model_id, car_part_id=cc_car_part_id
-            ).first()
-            if car_model_part is None:
-                self.add_error('car_part', 'No existe información de precio de instalación para este ítem en el modelo seleccionado.')
-            elif cc_window_film is None:
-                self.add_error('window_film', 'Tiene que seleccionar una lámina.')
-            else:
-                unit_price = self.pricing_business.resolve_unit_price(
-                    sucursal_id=getattr(sale_header, 'sucursal_id', None),
-                    lamina_id=cc_window_film.id,
-                    width=cc_width,
-                )
-                if unit_price is None:
-                    self.add_error('window_film', 'No hay precio disponible para la lámina/ancho solicitado en esa sucursal.')
+            # Solo se intenta si quantity ya es válida — sin ella no hay subtotal que calcular,
+            # y los errores 'campo requerido' de arriba ya bastan para invalidar el form.
+            if cc_quantity is not None:
+                car_model_part = Car_Model_Part.objects.filter(
+                    car_model_id=sale_header.car_model_id, car_part_id=cc_car_part_id
+                ).first()
+                if car_model_part is None:
+                    self.add_error('car_part', 'No existe información de precio de instalación para este ítem en el modelo seleccionado.')
+                elif cc_window_film is None:
+                    self.add_error('window_film', 'Tiene que seleccionar una lámina.')
                 else:
-                    cleaned_data['installation_price'] = car_model_part.installation_price
-                    cleaned_data['window_film_price'] = unit_price
-                    # La multiplicación de Decimals conserva exponentes (p. ej. 1.00 * 120.00 =
-                    # 120.0000), lo que hace fallar el DecimalValidator(decimal_places=2) que
-                    # ModelForm._post_clean() corre sobre el modelo — se redondea explícito acá.
-                    cleaned_data['sub_total'] = calculate_subtotal_venta_instalacion(
-                        length=cc_length,
-                        quantity=cc_quantity,
-                        unit_price=unit_price,
-                        installation_price=car_model_part.installation_price,
-                    ).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+                    unit_price = self.pricing_business.resolve_unit_price(
+                        sucursal_id=getattr(sale_header, 'sucursal_id', None),
+                        lamina_id=cc_window_film.id,
+                        width=cc_width,
+                    )
+                    if unit_price is None:
+                        self.add_error('window_film', 'No hay precio disponible para la lámina/ancho solicitado en esa sucursal.')
+                    else:
+                        cleaned_data['installation_price'] = car_model_part.installation_price
+                        cleaned_data['window_film_price'] = unit_price
+                        # La multiplicación de Decimals conserva exponentes (p. ej. 1.00 * 120.00 =
+                        # 120.0000), lo que hace fallar el DecimalValidator(decimal_places=2) que
+                        # ModelForm._post_clean() corre sobre el modelo — se redondea explícito acá.
+                        cleaned_data['sub_total'] = calculate_subtotal_venta_instalacion(
+                            length=cc_length,
+                            quantity=cc_quantity,
+                            unit_price=unit_price,
+                            installation_price=car_model_part.installation_price,
+                        ).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
         if sale_header is not None and sale_header.sales_type == self.proforma_helper.tipo_venta_metro_lineal:
         #     if cc_car_part_id is not None:
         #         self.add_error('car_part_id','este campo no es requerido')
-            if cc_quantity > 0:
+            if cc_quantity is not None and cc_quantity > 0:
                 self.add_error('quantity','campo no requerido')
-            if cc_installation_price.compare(0) == 1:
+            if cc_installation_price is not None and cc_installation_price.compare(0) == 1:
                 self.add_error('installation_price','campo no requerido')
         
-        total_length_to_sell=cc_length * (cc_quantity if cc_quantity > 0 else 1)
+        total_length_to_sell=cc_length * (cc_quantity if cc_quantity is not None and cc_quantity > 0 else 1)
         # available_reel = self.inv_bussiness.available_window_film_reel_in_inventory_to_sell(width=cc_width, 
         #                                                                                         windows_film=cc_window_film, 
         #                                                                                         sucursal=sale_header.sucursal, 

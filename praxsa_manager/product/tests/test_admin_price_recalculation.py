@@ -114,6 +114,44 @@ class CarModelPartFormPriceRecalculationTest(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn('installation_price', form.errors)
 
+    def test_missing_quantity_is_rejected_not_a_crash(self):
+        """REV-2026-09-23-001: reactivar sale_header expuso comparaciones sin
+        proteger contra None cuando un campo requerido llega vacío — antes de
+        la corrección, form.is_valid() lanzaba TypeError en vez de invalidar."""
+        data = self._valid_data()
+        del data['quantity']
+        form = CarModelPartForm(data=data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('quantity', form.errors)
+
+    def test_missing_installation_price_is_rejected_not_a_crash(self):
+        """REV-2026-09-23-001, ver test_missing_quantity_is_rejected_not_a_crash."""
+        data = self._valid_data()
+        del data['installation_price']
+        form = CarModelPartForm(data=data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('installation_price', form.errors)
+
+    def test_missing_window_film_is_rejected_with_car_model_part_present(self):
+        """REV-2026-09-23-002: rama nueva cc_window_film is None sin cobertura."""
+        data = self._valid_data()
+        del data['window_film']
+        form = CarModelPartForm(data=data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('window_film', form.errors)
+
+    def test_missing_quantity_and_installation_price_venta_metro_lineal_is_rejected_not_a_crash(self):
+        """REV-2026-09-23-001: mismo patrón en la rama venta_metro_lineal
+        (cc_installation_price.compare(0), cc_quantity > 0)."""
+        header = _make_header(self.scenario, sales_type=Proforma_Helper().tipo_venta_metro_lineal)
+        data = self._valid_data(proforma_header=header.pk, sub_total='120.00')
+        del data['quantity']
+        del data['installation_price']
+        form = CarModelPartForm(data=data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('quantity', form.errors)
+        self.assertIn('installation_price', form.errors)
+
 
 class ProformaBusinessRecalculateTotalPriceTest(TestCase):
 
