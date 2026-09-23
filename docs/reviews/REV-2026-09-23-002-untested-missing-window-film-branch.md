@@ -1,6 +1,6 @@
 # REV-2026-09-23-002: Rama `cc_window_film is None` de `CarModelPartForm.clean()` sin test
 
-**Status:** Open
+**Status:** Resolved (2026-09-23) — ver `## Resolución`.
 **Severity:** Low
 **Category:** IMPLEMENTATION
 **Related plan:** docs/plans/PLAN-2026-09-23-admin-price-recalculation-venta-instalacion.md (v1)
@@ -34,3 +34,7 @@ $ grep -n "window_film" praxsa_manager/product/tests/test_admin_price_recalculat
 ...
 ```
 (ningún test omite `window_film` ni lo deja vacío para un ítem `venta_instalacion` con `Car_Model_Part` válido).
+
+## Resolución
+
+Agregado `test_missing_window_film_is_rejected_with_car_model_part_present` a `test_admin_price_recalculation.py` (commit `ecf16c7`, PR #36) — envía un ítem `venta_instalacion` con `Car_Model_Part` válido pero sin `window_film`, y verifica `form.is_valid() == False` con el error en `window_film`. Verificado en la misma corrida que REV-2026-09-23-001: `python manage.py test product --noinput` → 61/61 en verde.

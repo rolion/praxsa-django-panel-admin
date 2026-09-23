@@ -1,6 +1,6 @@
 # REV-2026-09-23-001: `CarModelPartForm.clean()` crashea con `TypeError`/`AttributeError` (500) si `quantity`/`installation_price` llegan vacíos
 
-**Status:** Open
+**Status:** Resolved (2026-09-23) — ver `## Resolución` para la evidencia.
 **Severity:** High
 **Category:** IMPLEMENTATION
 **Related plan:** docs/plans/PLAN-2026-09-23-admin-price-recalculation-venta-instalacion.md (v1)
@@ -83,3 +83,30 @@ if cc_installation_price is None or cc_installation_price < 1:
 ```
 
 y el equivalente en la rama `venta_metro_lineal` (línea 99) para `cc_installation_price.compare(0)`. Agregar un test por cada campo requerido omitido (mínimo: `quantity` e `installation_price` en `venta_instalacion`) para que quede protegido contra regresión.
+
+## Resolución
+
+Corregido en el commit `ecf16c7` (rama `claude/precio-total-validation-steps-1362c2`, PR #36), `praxsa_manager/product/Forms/car_model_part.py`:
+
+- `if cc_quantity < 1:` → `if cc_quantity is None or cc_quantity < 1:`.
+- `if cc_installation_price < 1:` → `if cc_installation_price is None or cc_installation_price < 1:`.
+- Rama `venta_metro_lineal`: `if cc_quantity > 0:` → `if cc_quantity is not None and cc_quantity > 0:`; `if cc_installation_price.compare(0) == 1:` → `if cc_installation_price is not None and cc_installation_price.compare(0) == 1:`.
+- **Hallazgo adicional durante la verificación del fix**: guardar solo estas cuatro comparaciones no bastaba — el bloque de resolución de precio real (que llama a `calculate_subtotal_venta_instalacion(quantity=cc_quantity, ...)`) se ejecutaba igual después de agregar el error de `quantity`, y `Decimal * None` también lanza `TypeError`. Se envolvió ese bloque completo en `if cc_quantity is not None:` — sin `quantity` no hay subtotal que calcular, y el error "campo requerido" ya agregado basta para invalidar el form.
+- **Segundo hallazgo adicional**: la línea `total_length_to_sell=cc_length * (cc_quantity if cc_quantity > 0 else 1)` (fuera de ambas ramas `if sale_header...`, siempre se ejecuta) tiene el mismo patrón sin `None`-guard — y es **anterior a este PR, no causado por el bug `sales_header`** (nunca dependió de `sale_header`). Sin embargo, dejarla sin corregir significaba que el escenario reportado (quantity vacío → 500) seguía crasheando, solo que en una línea distinta. Se corrigió con el mismo criterio (`cc_quantity is not None and cc_quantity > 0`) para que el fix resuelva el problema de punta a punta, no solo mueva el punto de falla.
+
+**Verificación real, paso a paso, antes de escribir los tests permanentes**: se armó un test ad hoc (`test_crash_check_tmp.py`, descartado después) que reproducía exactamente el `TypeError` original; tras cada corrección parcial, se volvió a correr y se confirmó que el punto de falla se desplazaba (primero línea 69, luego el bloque de precio, luego línea 117/120) hasta que las tres correcciones juntas dejaron `form.is_valid()` devolviendo `False` limpiamente, con el error esperado en `quantity`, en vez de una excepción.
+
+**Tests permanentes agregados** a `test_admin_price_recalculation.py`: `test_missing_quantity_is_rejected_not_a_crash`, `test_missing_installation_price_is_rejected_not_a_crash`, `test_missing_quantity_and_installation_price_venta_metro_lineal_is_rejected_not_a_crash`.
+
+**Evidencia de re-ejecución** (venv local del usuario, Postgres real):
+
+```
+$ python manage.py test product --noinput
+Found 61 test(s).
+...
+Ran 61 tests in 16.056s
+
+OK
+```
+
+61/61 en verde (57 previos + 4 nuevos: los 3 de este REV más el de REV-2026-09-23-002). `python manage.py makemigrations product --check --dry-run`: `No changes detected`.

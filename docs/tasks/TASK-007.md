@@ -1,6 +1,6 @@
 # TASK-007: Recálculo server-side de precio en el admin (`ProformaAdmin`) + corregir divergencia de fórmula `venta_metro_lineal` en `sales_event.js`/`convertir_venta_metro_lineal` (backlog #2, pasos 5-6)
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Rama:** `claude/precio-total-validation-steps-1362c2` (rama existente del worktree, mismo criterio que TASK-001/TASK-002/TASK-005 — sin crear `task/TASK-007-...` aparte)
 **Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/36
@@ -13,6 +13,7 @@
 | 2026-09-23 | PLANNING → ENGINEERING | Plan v1 escrito ([PLAN-2026-09-23-admin-price-recalculation-venta-instalacion.md](../plans/PLAN-2026-09-23-admin-price-recalculation-venta-instalacion.md)) y PR #36 abierto sobre la rama existente del worktree (mismo criterio que TASK-001/TASK-002/TASK-005: worktree nombrado para este task, sin crear `task/TASK-007-...`) | delivery-plan |
 | 2026-09-23 | ENGINEERING → REVIEW | Implementación completa según el plan v1, commit `1cc195e` empujado al PR #36. 11 tests nuevos + suite completa `product` (57/57) verificados contra Postgres real (venv local del usuario). Verificación manual explícita en el admin real (paso 7 del plan, exigido por ADR-006): confirmado en pantalla que un POST manipulado se sobrescribe con el precio recalculado y que falta un `Car_Model_Part` rechaza el guardado con el error esperado | delivery-engineer |
 | 2026-09-23 | REVIEW → ENGINEERING | Veredicto FAIL — [REV-2026-09-23-001](../reviews/REV-2026-09-23-001-crash-on-blank-required-numeric-field.md) (Severity High, Category IMPLEMENTATION): el fix del bug `sales_header`→`proforma_header` reactiva comparaciones sin proteger contra `None` (`cc_quantity`/`cc_installation_price`), causando un `TypeError`/`AttributeError` (500) si esos campos llegan vacíos en un ítem — reproducido con evidencia real. También [REV-2026-09-23-002](../reviews/REV-2026-09-23-002-untested-missing-window-film-branch.md) (Severity Low, Category IMPLEMENTATION): rama nueva `cc_window_film is None` sin test. Suite completa (57/57), migraciones y ADR compliance re-verificados de forma independiente y sin hallazgos | delivery-review |
+| 2026-09-23 | ENGINEERING → REVIEW | Ambos hallazgos corregidos, commit `ecf16c7` empujado al PR #36. REV-2026-09-23-001 requirió 3 correcciones (no solo las 3 comparaciones citadas por el review): además de esas, el bloque de resolución de precio y una línea preexistente no relacionada al bug `sales_header` (`total_length_to_sell`) compartían el mismo patrón sin `None`-guard y seguían crasheando el mismo escenario reportado por una vía distinta — se verificó paso a paso con un test ad hoc hasta confirmar que el escenario queda resuelto de punta a punta. REV-2026-09-23-002 resuelto con 1 test nuevo. 4 tests nuevos (15 en total en `test_admin_price_recalculation.py`), suite completa `product` 61/61 en verde contra Postgres real, sin migraciones nuevas | delivery-engineer |
 
 ## Investigación
 
@@ -143,6 +144,18 @@ Implementado según el plan v1, commit `1cc195e` (rama `claude/precio-total-vali
 - Usuario y datos de prueba (sucursal/marca/modelo/ítem/lámina/inventario/proforma) creados y eliminados solo en este proceso; no se tocaron datos reales del usuario ni se imprimieron credenciales.
 
 Sin nuevas dependencias, sin migraciones (no se tocó ningún modelo), sin cambios en `views.py`/`serializer/`/`custom_views/`/`static/product/sales_event.js`/`proforma/src/` — consistente con "Files/components affected" del plan. `venta_metro_lineal` queda sin tocar, tal como definía ADR-006.
+
+### Segunda pasada (2026-09-23) — corrección de REV-2026-09-23-001 y REV-2026-09-23-002
+
+Commit `ecf16c7` (mismo PR #36). `praxsa_manager/product/Forms/car_model_part.py`:
+
+- `if cc_quantity < 1:` → `if cc_quantity is None or cc_quantity < 1:`; `if cc_installation_price < 1:` → `if cc_installation_price is None or cc_installation_price < 1:` (rama `venta_instalacion`).
+- Rama `venta_metro_lineal`: `if cc_quantity > 0:` → `if cc_quantity is not None and cc_quantity > 0:`; `if cc_installation_price.compare(0) == 1:` → `if cc_installation_price is not None and cc_installation_price.compare(0) == 1:`.
+- El bloque de resolución de precio real (`Car_Model_Part`/`Pricing_Business`/`calculate_subtotal_venta_instalacion`) quedó envuelto en `if cc_quantity is not None:` — sin esto, seguía crasheando con `Decimal * None` aunque el error de "campo requerido" ya se hubiera agregado más arriba.
+- **Hallazgo adicional, no causado por el bug `sales_header` pero del mismo patrón y descubierto al verificar el fix paso a paso**: la línea `total_length_to_sell=cc_length * (cc_quantity if cc_quantity > 0 else 1)`, fuera de ambas ramas `if sale_header...` (siempre se ejecuta, independiente de `sale_header`), tenía el mismo problema — corregida a `cc_quantity is not None and cc_quantity > 0`. Sin esta corrección, el escenario reportado por REV-2026-09-23-001 (quantity vacío → 500) seguía ocurriendo, solo que por una línea distinta a la citada originalmente en el hallazgo.
+- 4 tests nuevos en `test_admin_price_recalculation.py` (queda en 15 tests en ese archivo): `test_missing_quantity_is_rejected_not_a_crash`, `test_missing_installation_price_is_rejected_not_a_crash`, `test_missing_window_film_is_rejected_with_car_model_part_present` (cierra REV-002), `test_missing_quantity_and_installation_price_venta_metro_lineal_is_rejected_not_a_crash`.
+
+**Verificación**: se armó un test ad hoc (`test_crash_check_tmp.py`, no incluido en el PR, descartado después de usarlo) que reprodujo el `TypeError` original y confirmó, corrección por corrección, que el punto de falla se desplazaba hasta que las tres correcciones juntas dejaron `form.is_valid()` devolviendo `False` limpiamente. `python manage.py test product --noinput`: **61/61 en verde** (57 previos + 4 nuevos), contra Postgres real. `python manage.py makemigrations product --check --dry-run`: `No changes detected`. `git diff origin/master...HEAD --stat`: solo los 2 archivos tocados por esta corrección (`Forms/car_model_part.py`, `test_admin_price_recalculation.py`), sin scope creep.
 
 ## Review
 
