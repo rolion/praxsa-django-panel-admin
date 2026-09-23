@@ -13,6 +13,7 @@
 | 2026-09-23 | PLANNING → ENGINEERING | Plan v1 escrito y PR abierto | delivery-plan |
 | 2026-09-23 | ENGINEERING → REVIEW | Implementación completa, tests OK, PR actualizado | delivery-engineer |
 | 2026-09-23 | REVIEW → PUBLISH | Veredicto PASS, sin issues Critical/High | delivery-review |
+| 2026-09-23 | PUBLISH (sin cambio de etapa) | PR completado con trazabilidad final; queda pendiente de aprobación humana explícita por ser cambio de autorización | delivery-publish |
 
 ## Investigación
 
@@ -138,4 +139,7 @@ Resumen de evidencia:
 **Hallazgo fuera de alcance, no bloqueante**: `product_proforma_header` tiene una columna `status` NOT NULL en la Postgres real de desarrollo que no existe en `models.py` ni en las migraciones actuales (drift de esquema preexistente). Se marcó por separado para investigación futura, no es parte de backlog #4.
 
 ## Publicación
-_Pendiente_
+
+PR [#35](https://github.com/rolion/praxsa-django-panel-admin/pull/35) actualizado con la trazabilidad completa (Summary, Changes, Testing, Architecture decisions, Related plan/ADRs, Review, Known limitations). Verificado antes de publicar: `git status` limpio, sin commits posteriores al último `delivery-review`, diff coincide exactamente con lo revisado, sin secretos ni archivos temporales en el diff.
+
+**Estado: listo para aprobación humana — no mergeado.** Este cambio toca autorización (IDOR, con ADR-006 de por medio), así que corresponde aprobación humana explícita antes de cualquier merge, sin importar el `PASS` de `delivery-review` (regla del propio skill). No se hizo ni se propone auto-merge.
