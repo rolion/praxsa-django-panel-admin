@@ -1,1 +1,19 @@
+.login-brand-logo {
+  max-width: 220px;
+  height: auto;
+}
 
+.auth-form-btn {
+  background: #203b84;
+}
+
+@media (max-width: 769px) {
+  .login-card .col-md-5 {
+    display: none;
+  }
+
+  .login-card .col-md-7 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+}

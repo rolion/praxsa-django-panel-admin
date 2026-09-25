@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FeatherModule } from 'angular-feather';
 import { AuthService } from '@core';
 @Component({
@@ -11,7 +12,6 @@ import { AuthService } from '@core';
         FormsModule,
         ReactiveFormsModule,
         FeatherModule,
-        RouterLink,
     ]
 })
 export class SigninComponent implements OnInit {
@@ -27,9 +27,8 @@ export class SigninComponent implements OnInit {
   constructor() { }
   ngOnInit() {
     this.loginForm = this.formBuilder.group({
-      username: ['admin@email.com', Validators.required],
-      password: ['admin@123', Validators.required],
-      remember: [''],
+      username: ['', Validators.required],
+      password: ['', Validators.required],
     });
   }
   get f() {
@@ -40,31 +39,23 @@ export class SigninComponent implements OnInit {
     this.error = '';
 
     if (this.loginForm.invalid) {
-      this.error = 'Username and Password not valid !';
+      this.error = 'Usuario y contraseña son obligatorios';
       return;
-    } else {
-      this.authService
-        .login(this.f['username'].value, this.f['password'].value)
-        .subscribe({
-          next: (res) => {
-            if (res) {
-              if (res) {
-                const token = this.authService.currentUserValue.token;
-                if (token) {
-                  this.router.navigate(['/dashboard/main']);
-                }
-              } else {
-                this.error = 'Invalid Login';
-              }
-            } else {
-              this.error = 'Invalid Login';
-            }
-          },
-          error: (error) => {
-            this.error = error;
-            this.submitted = false;
-          },
-        });
     }
+
+    this.authService
+      .login(this.f['username'].value, this.f['password'].value)
+      .subscribe({
+        next: () => {
+          this.router.navigate(['/dashboard/main']);
+        },
+        error: (error: HttpErrorResponse) => {
+          this.error =
+            error.status === 0
+              ? 'Algo salió mal, inténtalo de nuevo más tarde'
+              : 'Credenciales inválidas';
+          this.submitted = false;
+        },
+      });
   }
 }

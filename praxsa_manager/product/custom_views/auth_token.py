@@ -27,3 +27,24 @@ class CustomAuthToken(ObtainAuthToken):
             response['phone_number'] = client.phone_number
             response['ci_nit'] = client.ci_nit
         return Response(response)
+
+
+class PanelAdminAuthToken(ObtainAuthToken):
+    """Login para panel_admin/: no depende de Client (los usuarios de este panel
+    no pasan por el registro de cliente de proforma/) y no verifica rol/is_staff
+    (decisión de negocio explícita: por ahora cualquier usuario válido entra)."""
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data,
+                                           context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        token, created = Token.objects.get_or_create(user=user)
+        response = {
+            'token': token.key,
+            'user_id': user.pk,
+            'username': user.username,
+            'name': user.first_name,
+            'lastname': user.last_name,
+        }
+        return Response(response)

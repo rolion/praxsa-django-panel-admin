@@ -6,6 +6,9 @@
           collapse-btn" (click)="mobileMenuSidebarOpen($event,'overlay-open')">
           <i-feather name="menu"></i-feather>
         </a></li>
+        <li class="nav-item">
+          <span class="nav-link nav-link-lg current-user-name">{{currentUserName}}</span>
+        </li>
         <li>
           <form class="form-inline me-auto">
             <div class="search-element d-flex">
@@ -163,17 +166,9 @@ template! <span class="time">Yesterday</span>
 </li>
 <li ngbDropdown><a ngbDropdownToggle data-toggle="dropdown"
   class="nav-link dropdown-toggle nav-link-lg nav-link-user">
-  <img alt="image" src="assets/images/user.png" class="user-img-radious-style collapse-btn"> <span
-  class="d-sm-none d-lg-inline-block"></span></a>
+  <i-feather name="user" class="collapse-btn"></i-feather></a>
   <div ngbDropdownMenu class="dropdown-menu dropdown-menu-right header-dropdown pullDown">
-    <div class="dropdown-title">Hello Sarah..</div>
-    <a routerLink="/extra-pages/profile" class="dropdown-item has-icon"> <i class="far
-    fa-user"></i> Profile
-  </a> <a routerLink="/email/inbox" class="dropdown-item has-icon"> <i class="far fa-envelope"></i>
-  Email
-</a> <a href="" onClick="return false;" class="dropdown-item has-icon"> <i class="fas fa-cog"></i>
-Settings
-</a>
+    <div class="dropdown-title">{{currentUserName}}</div>
 <div class="dropdown-divider"></div>
 <a href="javascript:void(0);" class="dropdown-item has-icon text-danger" (click)="logout()"> <i
 class="fas fa-sign-out-alt"></i>

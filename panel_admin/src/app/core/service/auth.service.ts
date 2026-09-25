@@ -1,27 +1,27 @@
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { User } from '../models/user';
-import { HttpResponse } from '@angular/common/http';
 import { LocalStorageService } from './storage.service';
+import { environment } from '../../../environments/environment';
+
+interface PanelAdminLoginResponse {
+  token: string;
+  user_id: number;
+  username: string;
+  name: string;
+  lastname: string;
+}
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
+  private http = inject(HttpClient);
   private storageService = inject(LocalStorageService);
   private currentUserSubject: BehaviorSubject<User>;
   public currentUser: Observable<User>;
-
-  private users = [
-    {
-      id: 1,
-      username: 'admin@email.com',
-      password: 'admin@123',
-      firstName: 'Sarah',
-      lastName: 'Smith',
-      token: 'admin-token',
-    },
-  ];
 
   constructor() {
     this.currentUserSubject = new BehaviorSubject<User>(
@@ -34,37 +34,28 @@ export class AuthService {
     return this.currentUserSubject.value;
   }
 
-  login(username: string, password: string) {
-
-    const user = this.users.find((u) => u.username === username && u.password === password);
-
-    if (!user) {
-      return this.error('Username or password is incorrect');
-    } else {
-      this.storageService.set('currentUser', user);
-      this.currentUserSubject.next(user);
-      return this.ok({
-        id: user.id,
-        username: user.username,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        token: user.token,
-      });
-    }
-
-
-  }
-  ok(body?: {
-    id: number;
-    username: string;
-    firstName: string;
-    lastName: string;
-    token: string;
-  }) {
-    return of(new HttpResponse({ status: 200, body }));
-  }
-  error(message: string) {
-    return throwError(message);
+  login(username: string, password: string): Observable<User> {
+    return this.http
+      .post<PanelAdminLoginResponse>(`${environment.apiUrl}/product/api-panel-admin-token-auth/`, {
+        username,
+        password,
+      })
+      .pipe(
+        map((res) => {
+          const user: User = {
+            id: res.user_id,
+            username: res.username,
+            // Los usuarios creados con createsuperuser no tienen first_name: se
+            // muestra el username en vez de un nombre vacío.
+            firstName: res.name || res.username,
+            lastName: res.lastname,
+            token: res.token,
+          };
+          this.storageService.set('currentUser', user);
+          this.currentUserSubject.next(user);
+          return user;
+        })
+      );
   }
 
   logout() {
