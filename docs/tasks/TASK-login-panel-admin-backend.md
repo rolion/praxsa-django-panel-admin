@@ -1,6 +1,6 @@
 # TASK-login-panel-admin-backend: Login de `panel_admin/` conectado al backend real, branding PRAXSA y menú mínimo
 
-**Etapa actual:** PUBLISH
+**Etapa actual:** PUBLISHED
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** `task/TASK-login-panel-admin-backend`
@@ -17,6 +17,7 @@
 | 2026-09-25 | REVIEW → PUBLISH | Quality Gate PASS (2 hallazgos Low, no bloqueantes) | delivery-review |
 | 2026-09-25 | PUBLISH → PUBLISH | Plan versionado a v2 para resolver REV-01, a pedido del usuario | delivery-plan |
 | 2026-09-25 | PUBLISH → PUBLISH | Descripción del PR completada; queda pendiente de aprobación humana explícita por ser cambio de autenticación | delivery-publish |
+| 2026-09-25 | PUBLISH → PUBLISHED | Usuario aprobó y mergeó el PR #46 | delivery-publish |
 
 ## Investigación
 
@@ -155,7 +156,7 @@ Hallazgos (ninguno bloqueante, sin issues Critical/High):
 
 ## Publicación
 
-**Estado: Listo para aprobación humana** (no mergeado).
+**Estado: Mergeado.** Aprobado y mergeado por el usuario (2026-09-25), commit `42f99bb41dada239ec9c5af9a5137a633d794f78`.
 
 PR único del task: https://github.com/rolion/praxsa-django-panel-admin/pull/46, con descripción completa (Summary, Changes, Testing, Architecture decisions, Related plan/ADRs, Review, Known limitations) y trazabilidad íntegra a TASK → DDR → ADR → PLAN (v2) → REV-01/REV-02.
 
