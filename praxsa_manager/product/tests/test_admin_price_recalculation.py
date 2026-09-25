@@ -1,8 +1,8 @@
 """TASK-007 / ADR-006: el admin de Django recalcula server-side el precio real
 de proformas venta_instalacion (CarModelPartForm.clean() + ProformaAdmin.save_related
 via Proforma_Business.recalculate_total_price), sin confiar en lo que envía el form
-(calculado client-side por sales_event.js). venta_metro_lineal queda explícitamente
-fuera de alcance (ver ADR-006) y se documenta como tal en un test dedicado.
+(calculado client-side por sales_event.js). TASK-010 extiende el mismo recálculo a
+venta_metro_lineal (sin quantity en la fórmula, ver business/pricing.py).
 """
 from decimal import Decimal
 
@@ -85,8 +85,9 @@ class CarModelPartFormPriceRecalculationTest(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn('window_film', form.errors)
 
-    def test_venta_metro_lineal_price_still_trusted_from_client(self):
-        """Fuera de alcance de ADR-006: venta_metro_lineal no se recalcula."""
+    def test_overwrites_manipulated_price_with_real_recalculated_value_metro_lineal(self):
+        """TASK-010: venta_metro_lineal ahora también se recalcula server-side,
+        sin quantity en la fórmula (length * unit_price)."""
         header = _make_header(self.scenario, sales_type=Proforma_Helper().tipo_venta_metro_lineal)
         form = CarModelPartForm(data=self._valid_data(
             proforma_header=header.pk,
@@ -96,8 +97,22 @@ class CarModelPartFormPriceRecalculationTest(TestCase):
             window_film_price='5.00',
         ))
         self.assertTrue(form.is_valid(), form.errors)
-        self.assertEqual(form.cleaned_data['sub_total'], Decimal('999.99'))
-        self.assertEqual(form.cleaned_data['window_film_price'], Decimal('5.00'))
+        # length(1.00) * unit_price(120.00), fallback a inventario.precio_venta_mtr_lineal
+        self.assertEqual(form.cleaned_data['sub_total'], Decimal('120.00'))
+        self.assertEqual(form.cleaned_data['window_film_price'], Decimal('120.00'))
+
+    def test_rejects_when_no_inventory_covers_requested_width_metro_lineal(self):
+        # mismo caso que test_rejects_when_no_inventory_covers_requested_width,
+        # pero para venta_metro_lineal.
+        header = _make_header(self.scenario, sales_type=Proforma_Helper().tipo_venta_metro_lineal)
+        form = CarModelPartForm(data=self._valid_data(
+            proforma_header=header.pk,
+            quantity='0',
+            installation_price='0',
+            width='2.00',
+        ))
+        self.assertFalse(form.is_valid())
+        self.assertIn('window_film', form.errors)
 
     def test_reactivated_validation_width_insufficient(self):
         form = CarModelPartForm(data=self._valid_data(width='1.00'))
