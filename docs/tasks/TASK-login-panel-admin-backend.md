@@ -126,10 +126,15 @@ Implementado según [PLAN-2026-09-25-login-panel-admin-backend](../plans/PLAN-20
 
 **Deuda técnica señalada, no resuelta (fuera de alcance del plan):**
 - 15 de los 34 specs de `panel_admin/` ya fallaban antes de este PR por dependencias de test faltantes (`FeatherModule.pick`, `ActivatedRoute`, `ToastConfig` no provistos) en componentes de ejemplo de la plantilla no tocados por este cambio (Footer, Sidebar, Page404/500, AdvanceTable, Blank, Signup, Second1/2, First1/2/3, Third1, Main, Dashboard2). No se corrigieron por no ser parte del objetivo de este task.
-- El bloque de identidad propio del sidebar (`sidebar.component.html`, nombre hardcodeado "Emily Smith") quedó sin actualizar — fuera de alcance según el plan (pregunta abierta no resuelta por el usuario).
 - `environment.ts` de producción de `panel_admin/` queda con un `apiUrl` placeholder documentado (`TODO`), no una URL real confirmada.
 
 **Fix incidental aplicado (fuera del plan, pero bloqueante para verificar el propio plan):** `app.component.spec.ts` tenía un error de compilación preexistente que impedía correr `ng test` por completo (no solo ese archivo). Se corrigió lo mínimo indispensable para poder ejecutar y verificar los tests nuevos de este task.
+
+**Ajuste post-implementación (2026-09-25), pedido directo del usuario tras ver el resultado — ver `## Actualización` en el [DDR](../design/DDR-login-panel-admin-backend-login-branding-menu.md):**
+- Se reemplazaron los dos SVG generados por los assets reales que compartió el usuario (`praxsa-admin-logo.png`, `praxsa-login-hero.png`).
+- Se eliminó el bloque de identidad hardcodeado del propio sidebar ("Emily Smith") — resuelve la pregunta abierta que había quedado pendiente en el DDR y en el plan.
+- El nombre del usuario se movió del dropdown derecho del header al nav izquierdo (junto al toggle del sidebar); el dropdown derecho ahora es un ícono genérico con el nombre solo como título y "Logout" como única acción.
+- Verificado de nuevo: `ng lint` sin errores, `ng test` 20 SUCCESS (mismos 15 preexistentes sin cambios) y smoke test manual en navegador con el usuario real `oleon`.
 
 ## Review
 _Pendiente_
