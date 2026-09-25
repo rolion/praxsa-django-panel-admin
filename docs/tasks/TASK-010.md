@@ -13,6 +13,7 @@
 | 2026-09-25 | PLANNING → ENGINEERING | Plan v1 listo, PR #41 abierto | delivery-plan |
 | 2026-09-25 | ENGINEERING → REVIEW | Implementación completa, tests en verde, verificación manual en vivo OK | delivery-engineer |
 | 2026-09-25 | REVIEW → PUBLISH | Quality Gate PASS, sin issues abiertos | delivery-review |
+| 2026-09-25 | PUBLISH → PUBLISH | Descripción del PR completada; cambio sensible (ADR-006 + lógica de precios), queda esperando aprobación humana explícita para mergear | delivery-publish |
 
 ## Investigación
 
@@ -118,4 +119,9 @@ Verificado de forma independiente (re-ejecutado, no reutilizando lo reportado po
 Detalle completo en [PR #41](https://github.com/rolion/praxsa-django-panel-admin/pull/41), secciones `## Testing` y `## Review`.
 
 ## Publicación
-_Pendiente_
+
+PR [#41](https://github.com/rolion/praxsa-django-panel-admin/pull/41) completo con trazabilidad íntegra (Summary, Task, Changes, Testing, Architecture decisions, Related plan, Related ADRs, Review, Known limitations). `git status` limpio, diff (`origin/master...HEAD`) coincide exactamente con lo que predecía el plan, sin commits posteriores al `PASS` de `delivery-review`, sin secretos en el diff.
+
+**Cambio sensible — requiere aprobación humana explícita antes de mergear**: este task tiene un ADR relacionado (ADR-006, cuyo alcance se extiende aquí) y modifica lógica de negocio de precios (dinero). Por regla del proceso, no se marca como listo para merge automático sin confirmación explícita del usuario en el chat, aunque el Quality Gate haya dado PASS.
+
+**Estado: Listo para aprobación humana.** No mergeado.
