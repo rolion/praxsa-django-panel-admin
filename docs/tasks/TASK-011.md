@@ -3,7 +3,7 @@
 **Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_PLAN
 **Rama:** `task/TASK-011-inventario-select-for-update`
-**Pull Request:** _pendiente de abrir_
+**Pull Request:** [#43](https://github.com/rolion/praxsa-django-panel-admin/pull/43)
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
