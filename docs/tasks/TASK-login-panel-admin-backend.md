@@ -16,6 +16,7 @@
 | 2026-09-25 | ENGINEERING → REVIEW | Implementación completa, verificada con tests y smoke test manual | delivery-engineer |
 | 2026-09-25 | REVIEW → PUBLISH | Quality Gate PASS (2 hallazgos Low, no bloqueantes) | delivery-review |
 | 2026-09-25 | PUBLISH → PUBLISH | Plan versionado a v2 para resolver REV-01, a pedido del usuario | delivery-plan |
+| 2026-09-25 | PUBLISH → PUBLISH | Descripción del PR completada; queda pendiente de aprobación humana explícita por ser cambio de autenticación | delivery-publish |
 
 ## Investigación
 
@@ -153,4 +154,9 @@ Hallazgos (ninguno bloqueante, sin issues Critical/High):
 - [REV-2026-09-25-login-panel-admin-backend-02](../reviews/REV-2026-09-25-login-panel-admin-backend-02.md) (IMPLEMENTATION, Low): fix de `app.component.spec.ts` fuera del alcance declarado en el plan — verificado como necesario, informativo.
 
 ## Publicación
-_Pendiente_
+
+**Estado: Listo para aprobación humana** (no mergeado).
+
+PR único del task: https://github.com/rolion/praxsa-django-panel-admin/pull/46, con descripción completa (Summary, Changes, Testing, Architecture decisions, Related plan/ADRs, Review, Known limitations) y trazabilidad íntegra a TASK → DDR → ADR → PLAN (v2) → REV-01/REV-02.
+
+**Cambio sensible — requiere aprobación humana explícita antes de mergear:** este task introduce un endpoint nuevo de autenticación (`PanelAdminAuthToken`, ver `docs/adr/ADR-login-panel-admin-backend-staff-auth-endpoint.md`) sin verificación de rol/`is_staff` — cualquier usuario válido de Django puede autenticarse en `panel_admin/`. Es una decisión de negocio explícita del usuario, ya verificada y con Quality Gate en `PASS`, pero por tratarse de autenticación no se marca como mergeable sin que un humano lo confirme.
