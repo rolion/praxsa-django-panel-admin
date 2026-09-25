@@ -175,12 +175,18 @@ Para cada ítem: severidad, archivo(s), tests a escribir **antes** de tocar el c
   2. PR: agregar `select_for_update()` en `reduce_inventory` y `return_to_inventory`.
   3. PR (opcional, red de seguridad adicional): `CheckConstraint(to_install__gte=0)` a nivel de base de datos.
 
-### 4. ⬜ [ALTO] IDOR — cualquier usuario ve proformas ajenas — **PENDIENTE**
+### 4. ✅ [ALTO] IDOR — cualquier usuario ve proformas ajenas — **HECHO**
+**TASK-008, PR [#35](https://github.com/rolion/praxsa-django-panel-admin/pull/35) (mergeado, `origin/master` commit `9815652`), ADR-006.** `InvoiceView.get` ahora filtra `.get(id=pk, created_by=request.user)` (mismo patrón que `ListUserInvoice.get`). `get_proforma_car_part_info` se cerró con un mecanismo distinto al sugerido originalmente por este mismo ítem: en vez de "filtrar por pertenencia como `ListUserInvoice`", exige `is_staff` y acota por sucursal/rol reusando `Proforma_Business.get_proforma_queryset_by_role` (el mismo método que ya protege `ProformaAdmin`) — su consumidor real resultó ser el staff que arma la nota de trabajo, no el cliente dueño de la proforma, así que el filtro por `created_by` sugerido habría roto ese flujo. Verificado con 10 tests nuevos (matriz completa de autorización) + regresión de 56/56 + verificación HTTP en vivo con servidor real (login real de admin, token real).
+
+<details>
+<summary>Descripción original del ítem</summary>
+
 **Backend SEC-04 + SEC-05.** `InvoiceView.get` sin filtrar por `created_by`; `get_proforma_car_part_info` sin auth ni filtro.
 - **Tests**: test con dos usuarios (A crea una proforma, B intenta leerla por `pk`) que hoy pasa (B accede) y debe pasar a fallar con 403/404.
 - **Pasos**:
   1. PR: test + fix en `InvoiceView.get` (agregar `.filter(created_by=request.user)`).
   2. PR: test + fix en `get_proforma_car_part_info` (requerir auth y filtrar por pertenencia, mismo patrón que `ListUserInvoice`).
+</details>
 
 ### 5. ✅ [ALTO] Endpoints públicos sin autenticación exponen stock/precios — **HECHO**
 **TASK-006 (renombrado de TASK-002), PR [#30](https://github.com/rolion/praxsa-django-panel-admin/pull/30) (mergeado, `origin/master` commit `4c79e20`), ADR-005.** Decisión de negocio ya tomada y aplicada: `calculator_info`/`model_parts` quedan públicos intencionalmente; `get_inventory`/`get_layer_info` siguen públicos pero ahora con `AllowAny` explícito + throttle (`60/min`); `get_bobina` se cerró con chequeo de `is_staff` (no lo consume `proforma`). Verificado en navegador contra datos reales (calculadora pública, `get_bobina` 403 anónimo / 200 staff).
@@ -265,7 +271,7 @@ Para cada ítem: severidad, archivo(s), tests a escribir **antes** de tocar el c
 
 ## 5. Orden de ataque — primeras dos semanas
 
-> **Estado (2026-09-23)**: de los 9 pasos originales de esta sección, quedan **pendientes solo el 4 (IDOR) y el 8 (`select_for_update` en inventario)**. Todo lo demás ya está mergeado a `master` — ver checklist abajo y el detalle por ítem en la sección 4.
+> **Estado (2026-09-25)**: de los 9 pasos originales de esta sección, queda **pendiente solo el 8 (`select_for_update` en inventario)**. El paso 4 (IDOR) se cerró con TASK-008/PR #35. Todo lo demás ya está mergeado a `master` — ver checklist abajo y el detalle por ítem en la sección 4.
 
 **Día 0 (fuera del ciclo de PRs, es un incidente activo):** rotar `SECRET_KEY` y la contraseña de Postgres de producción. **⬜ Pendiente** — explícitamente no ejecutado todavía (decisión del usuario en TASK-001), sigue siendo un incidente activo.
 
@@ -273,7 +279,7 @@ Para cada ítem: severidad, archivo(s), tests a escribir **antes** de tocar el c
 1. ✅ PR chico: `.env-stg` `DEBUG=0` (SEC-02 backend, trivial, agruparlo con la limpieza de secretos) — incluido en PR #29 (TASK-001).
 2. ✅ PR: sacar los `.env*` del repo y `.gitignore` (backlog #1, paso 2) — PR #29 (TASK-001).
 3. ✅ PR: harness mínimo de tests backend (backlog #8, paso 1) — PR #20.
-4. ⬜ PR + PR: fix IDOR en `InvoiceView.get` y en `get_proforma_car_part_info` (backlog #4) — **sigue pendiente**, ningún PR lo tocó.
+4. ✅ PR + PR: fix IDOR en `InvoiceView.get` y en `get_proforma_car_part_info` (backlog #4) — TASK-008, PR #35 (mergeado, commit `9815652`).
 5. ✅ PR: manejo de 401/403 en el interceptor del frontend (backlog #7, paso 1) — PR #22.
 
 **Semana 2 — proteger dinero e inventario:**
@@ -284,7 +290,7 @@ Para cada ítem: severidad, archivo(s), tests a escribir **antes** de tocar el c
 
 **Por qué este orden**: primero lo que ya es explotable hoy sin esfuerzo (secretos en git, IDOR con solo cambiar un `pk` en la URL) — es exposición de datos activa, no un riesgo teórico. Después, lo que protege dinero directamente (precio confiado al cliente, sobreventa de inventario), que requiere más diseño (de ahí que quede en la semana 2, con tests de caracterización primero). Lo estructural (máquina de estados #9, filtrado de reportes #10) y lo de menor severidad quedan fuera de las primeras dos semanas — se abordan después, una vez cerrada la exposición activa y protegido el dinero.
 
-**Siguientes pasos recomendados, dado lo ya hecho**: el IDOR (#4) y la condición de carrera de inventario (#3) quedaron como los dos huecos de mayor severidad sin tocar — son los candidatos naturales para el próximo ciclo de tasks, junto con cerrar los pasos 5-6 del ítem #2 (recalcular precio también en el camino admin).
+**Siguientes pasos recomendados, dado lo ya hecho**: con el IDOR (#4) ya cerrado, la condición de carrera de inventario (#3, `select_for_update`) queda como el hueco de mayor severidad sin tocar — es el candidato natural para el próximo ciclo de tasks, junto con cerrar los pasos 5-6 del ítem #2 (recalcular precio también en el camino admin).
 
 ---
 
