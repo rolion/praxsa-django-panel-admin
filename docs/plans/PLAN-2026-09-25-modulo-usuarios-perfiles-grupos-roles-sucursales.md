@@ -84,13 +84,13 @@ Implementación en dos fases dentro del mismo PR (backend primero, para que el f
 
 ### Fase 2 — Frontend (`panel_admin/src/app/`)
 
-8. `environments/environment.ts` y `environment.development.ts`: `apiUrl` apuntando al backend real de `praxsa_manager` (puerto/host a confirmar con el usuario — ver "Out of scope").
+8. `environments/environment.ts` y `environment.development.ts`: `apiUrl` = `http://localhost:8000` (confirmado por el usuario — puerto por defecto de `python manage.py runserver`).
 9. `core/models/user.ts`: agregar `email, isStaff, groups: string[]` (lo que el nuevo endpoint de login devuelve).
 10. `core/service/auth.service.ts`: reemplazar el array mock por `HttpClient.post(apiUrl + '/product/admin-token-auth/', {username, password})`; guardar token+datos vía `LocalStorageService` ya existente.
 11. `core/interceptor/jwt.interceptor.ts`: adaptar el header de `Bearer <token>` a `Token <token>` (esquema de DRF `TokenAuthentication`).
 12. `core/guard/auth.guard.ts`: mantiene el chequeo de sesión existente; se evalúa si agregar chequeo de `isStaff` aquí o dejarlo a nivel de componente (decisión menor, no bloqueante, a resolver al implementar).
 13. Nuevo módulo `panel_admin/src/app/users/` con `users.routes.ts` (lazy-loaded desde `app.routes.ts`, mismo patrón que `dashboard`/`multilevel`):
-    - `list/` (tabla `ngx-datatable`, columnas usuario/correo/nombre/apellido/teléfono/acciones).
+    - `list/` (tabla `ngx-datatable`, columnas usuario/correo/nombre/apellido/teléfono/acciones). Por defecto muestra solo usuarios activos (`is_active=True`); incluye un filtro/toggle "mostrar inactivos" para revelar los dados de baja (confirmado por el usuario) — el backend debe soportar el parámetro de query correspondiente (p. ej. `?include_inactive=true`) en `UserListCreateView` (paso 5).
     - `view/:id` (solo lectura).
     - `edit/:id` (Reactive Form).
     - `create/` (wizard de 4 pasos: `create-step1-credentials`, `create-step2-profile`, `create-step3-groups`, `create-step4-confirm`, o un solo componente con estado de paso interno — decisión de implementación, no de diseño).
@@ -143,7 +143,7 @@ Implementación en dos fases dentro del mismo PR (backend primero, para que el f
 - [ ] Endpoints nuevos rechazan (403) a un usuario sin el `Permission` Django correspondiente, y a un usuario sin `is_staff`.
 - [ ] Menú "Usuarios" visible en `panel_admin/` con sus 5 submenús, siguiendo el patrón visual ya usado por "Multi level Menu".
 - [ ] Tabla de Usuarios muestra usuario/correo/nombre/apellido/teléfono y acciones Ver/Editar/Cambiar contraseña/Activar-Desactivar/Eliminar.
-- [ ] Eliminar = `is_active=False` (verificado que la fila no desaparece de la base de datos).
+- [ ] Eliminar = `is_active=False` (verificado que la fila no desaparece de la base de datos); el usuario desactivado queda oculto del listado por defecto y aparece al activar el filtro "mostrar inactivos".
 - [ ] Suite de tests backend y frontend en verde.
 - [ ] Verificación manual en vivo documentada (login real, creación real, chequeo en Django admin).
 
@@ -160,8 +160,6 @@ Implementación en dos fases dentro del mismo PR (backend primero, para que el f
 - Migrar el token a cookie `httpOnly` (deuda ya documentada como épica separada en `docs/integration-and-backlog.md` backlog #6).
 - Una vista de "Perfil" separada de "Usuarios" para autoedición (el DDR ya decidió no incluirla; si negocio la pide, es un task nuevo).
 - Desplegar `panel_admin/` a producción (`docker-compose*.yml`/`nginx/`) — no está conectado hoy y este task no lo conecta.
-- **Pregunta abierta para el usuario, no resuelta por investigación/arquitectura/diseño**: ¿qué `apiUrl` real debe usar `panel_admin/` en desarrollo (host/puerto donde corre `praxsa_manager` localmente)? Se necesita antes de implementar el paso 8.
-- **Pregunta abierta**: ¿el estado "eliminado" (`is_active=False`) debe ocultarse por defecto del listado de Usuarios (con un filtro "mostrar inactivos"), o mostrarse siempre con indicador visual? El DDR lo dejó como pregunta abierta para esta etapa y tampoco se resolvió aquí — se necesita una decisión antes de implementar el paso 13 (`list/`).
 
 ## Dependencias nuevas
 
