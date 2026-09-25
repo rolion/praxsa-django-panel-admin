@@ -1,6 +1,6 @@
 # TASK-login-panel-admin-backend: Login de `panel_admin/` conectado al backend real, branding PRAXSA y menú mínimo
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** `task/TASK-login-panel-admin-backend`
@@ -14,6 +14,7 @@
 | 2026-09-25 | ARCHITECTURE → PLANNING | Endpoint de auth dedicado (sin verificación de rol) definido | delivery-architect |
 | 2026-09-25 | PLANNING → ENGINEERING | Plan v1 escrito, PR #46 abierto | delivery-plan |
 | 2026-09-25 | ENGINEERING → REVIEW | Implementación completa, verificada con tests y smoke test manual | delivery-engineer |
+| 2026-09-25 | REVIEW → PUBLISH | Quality Gate PASS (2 hallazgos Low, no bloqueantes) | delivery-review |
 
 ## Investigación
 
@@ -137,7 +138,18 @@ Implementado según [PLAN-2026-09-25-login-panel-admin-backend](../plans/PLAN-20
 - Verificado de nuevo: `ng lint` sin errores, `ng test` 20 SUCCESS (mismos 15 preexistentes sin cambios) y smoke test manual en navegador con el usuario real `oleon`.
 
 ## Review
-_Pendiente_
+
+**Veredicto: PASS** (limitación de aislamiento declarada: esta revisión corrió en la misma sesión que `delivery-engineer`; se mitigó reconstruyendo el veredicto solo desde artefactos — TASK, plan, ADR, diff real — y con evidencia ejecutada de forma independiente, incluyendo un worktree temporal en `origin/master` para no asumir las afirmaciones de la etapa anterior).
+
+Verificación funcional/técnica ejecutada de forma independiente:
+- Backend: 85/85 tests pasan (`python manage.py test product`).
+- Frontend: `ng lint` limpio, `ng build` sin errores, `ng test --code-coverage`: 20 SUCCESS / 15 FAILED. Confirmado contra un worktree temporal en `origin/master` que esos 15 son exactamente el subconjunto preexistente (ahí fallan 17, este PR corrige 2 — `SigninComponent`, `HeaderComponent` — como parte de su propio alcance). Sin regresiones.
+- Smoke test manual repetido de forma independiente (localStorage limpio): usuario inexistente → "Credenciales inválidas"; usuario real (`oleon`) → login exitoso, navega a dashboard, nombre visible en el nav izquierdo; responsive mobile oculta la imagen del login; botón `#203b84`.
+- `npm audit`: 3 vulnerabilidades preexistentes en dependencias de la plantilla (echarts, lodash-es, xlsx), ninguna introducida por este cambio. Backend: sin `flake8`/`bandit` configurados en el proyecto — verificación no realizada, no se reporta como PASS.
+
+Hallazgos (ninguno bloqueante, sin issues Critical/High):
+- [REV-2026-09-25-login-panel-admin-backend-01](../reviews/REV-2026-09-25-login-panel-admin-backend-01.md) (PLAN, Low): el plan v1 no se versionó a v2 pese a los ajustes post-implementación pedidos por el usuario en el chat.
+- [REV-2026-09-25-login-panel-admin-backend-02](../reviews/REV-2026-09-25-login-panel-admin-backend-02.md) (IMPLEMENTATION, Low): fix de `app.component.spec.ts` fuera del alcance declarado en el plan — verificado como necesario, informativo.
 
 ## Publicación
 _Pendiente_
