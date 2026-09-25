@@ -1,6 +1,6 @@
 # TASK-007: Recálculo server-side de precio en el admin (`ProformaAdmin`) + corregir divergencia de fórmula `venta_metro_lineal` en `sales_event.js`/`convertir_venta_metro_lineal` (backlog #2, pasos 5-6)
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Rama:** `claude/precio-total-validation-steps-1362c2` (rama existente del worktree, mismo criterio que TASK-001/TASK-002/TASK-005 — sin crear `task/TASK-007-...` aparte)
 **Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/36
@@ -16,6 +16,7 @@
 | 2026-09-23 | ENGINEERING → REVIEW | Ambos hallazgos corregidos, commit `ecf16c7` empujado al PR #36. REV-2026-09-23-001 requirió 3 correcciones (no solo las 3 comparaciones citadas por el review): además de esas, el bloque de resolución de precio y una línea preexistente no relacionada al bug `sales_header` (`total_length_to_sell`) compartían el mismo patrón sin `None`-guard y seguían crasheando el mismo escenario reportado por una vía distinta — se verificó paso a paso con un test ad hoc hasta confirmar que el escenario queda resuelto de punta a punta. REV-2026-09-23-002 resuelto con 1 test nuevo. 4 tests nuevos (15 en total en `test_admin_price_recalculation.py`), suite completa `product` 61/61 en verde contra Postgres real, sin migraciones nuevas | delivery-engineer |
 | 2026-09-23 | REVIEW → ENGINEERING | Veredicto FAIL (tercera pasada) — [REV-2026-09-23-003](../reviews/REV-2026-09-23-003-crash-on-blank-width.md) (Severity High, Category IMPLEMENTATION): mismo patrón que REV-2026-09-23-001 (ya resuelto), en un campo que esa corrección no cubrió — `width` vacío en un ítem `venta_instalacion` crashea `item_width_lte_film_width` (primera línea de la rama reactivada) con `ValueError: Cannot use None as a query value`, sin capturar. Reproducido con evidencia real. REV-2026-09-23-001 y REV-2026-09-23-002 confirmados `Resolved` de forma independiente (guardas presentes en el diff, tests en verde). Suite completa (61/61) y migraciones re-verificadas sin hallazgos adicionales | delivery-review |
 | 2026-09-23 | ENGINEERING → REVIEW | REV-2026-09-23-003 corregido, commit `4aebb82` empujado al PR #36 — mismo patrón que la corrección de REV-001 (`cc_width is None` guard en `item_width_lte_film_width`, y el guard del bloque de precio extendido a `cc_width is not None`). Dado que este es el tercer campo con el mismo patrón encontrado en 3 pasadas de review sucesivas, se agregó un test de barrido permanente que omite cada campo requerido uno a la vez (6 campos × 2 `sales_type`) y falla si `is_valid()` lanza cualquier excepción, en vez de seguir corrigiendo campo por campo. 2 tests nuevos (17 en total en `test_admin_price_recalculation.py`), suite completa `product` 63/63 en verde contra Postgres real, sin migraciones nuevas | delivery-engineer |
+| 2026-09-25 | REVIEW → PUBLISH | Veredicto PASS (cuarta pasada) — REV-2026-09-23-001/002/003 confirmados `Resolved` de forma independiente; REV-003 verificado además con mutation testing (revertir el guard manualmente hace fallar los 2 tests nuevos con el error original, restaurar los vuelve a poner en verde), confirmando que el test de barrido detecta regresiones reales y no es vacuo. Suite completa 63/63 en verde, sin migraciones, sin scope creep, plan/ADR-006 cumplidos punto por punto. Sin issues abiertos de ninguna categoría | delivery-review |
 
 ## Investigación
 
@@ -201,6 +202,22 @@ Verificado de forma independiente (venv local del usuario, Postgres real):
 **Nuevo hallazgo — [REV-2026-09-23-003](../reviews/REV-2026-09-23-003-crash-on-blank-width.md) (Severity: High, Category: IMPLEMENTATION)**: al verificar que la corrección anterior resolvía el problema de raíz (no solo lo desplazaba), se probó el mismo patrón con `width` — otro campo requerido de la misma rama `venta_instalacion` reactivada que la corrección de REV-2026-09-23-001 no cubrió, porque ese hallazgo original solo citó `quantity`/`installation_price`. `width` vacío crashea `item_width_lte_film_width` (la primera línea de la rama reactivada, [Forms/car_model_part.py:67](../../praxsa_manager/product/Forms/car_model_part.py)) con `ValueError: Cannot use None as a query value`, sin capturar — reproducido con evidencia real (traceback completo en el REV).
 
 No hay issues nuevos de categoría `PLAN` ni `ARCHITECTURE`. Mismo patrón que la pasada anterior: código dormido desde 2023 reactivado por este PR, con un campo adicional que aún necesita la misma guarda defensiva ya aplicada a los otros tres. Corresponde a `delivery-engineer`.
+
+### Cuarta pasada (2026-09-25) — Veredicto: PASS
+
+**Nota de aislamiento**: igual que las tres pasadas anteriores, corrió en la misma sesión que investigó/diseñó/planificó/implementó TASK-007 — limitación procedimental, no memoria real. Contexto reconstruido de nuevo solo desde artefactos.
+
+Verificado de forma independiente (venv local del usuario, Postgres real):
+- `python manage.py test product --noinput`: **63/63 en verde** (61 previos + 2 nuevos de la corrección de REV-2026-09-23-003).
+- `python manage.py makemigrations product --check --dry-run`: `No changes detected`.
+- `git diff origin/master...HEAD --stat`: 10 archivos, sin scope creep.
+- [REV-2026-09-23-001](../reviews/REV-2026-09-23-001-crash-on-blank-required-numeric-field.md), [REV-2026-09-23-002](../reviews/REV-2026-09-23-002-untested-missing-window-film-branch.md) y [REV-2026-09-23-003](../reviews/REV-2026-09-23-003-crash-on-blank-width.md): confirmados **Resolved**.
+
+**Mutation testing del test de barrido**: dado que esta revisión encontró 3 campos con el mismo bug en 3 pasadas sucesivas, no bastaba con que los tests nuevos pasaran en verde — había que confirmar que de verdad detectan una regresión. Se revirtió manualmente el guard de `width` (quitando `cc_width is None or` de `Forms/car_model_part.py`), se corrieron `test_missing_width_is_rejected_not_a_crash` y `test_no_required_field_omission_crashes_the_form`: ambos fallaron con el `ValueError` original, confirmando que no son tests vacuos. Se restauró el archivo con `git checkout --` (confirmado con `git diff` vacío) y se re-corrió la suite completa (63/63 en verde) para confirmar que el working tree quedó exactamente como estaba.
+
+Plan/ADR-006 compliance re-verificado sin cambios respecto a pasadas anteriores: alcance (`venta_instalacion` únicamente), sobrescribir siempre sin rechazar por discrepancia, `total_price` como suma real post-formset, `venta_metro_lineal` explícitamente fuera de alcance, rechazo solo cuando el precio real no se puede resolver.
+
+**Sin issues abiertos de ninguna categoría.** Nota no bloqueante, repetida en las 4 pasadas: `flake8`/`bandit`/`mypy`/`coverage.py` no están instalados ni configurados en el proyecto — verificación técnica declarada explícitamente como no realizada en este entorno.
 
 ## Publicación
 _Pendiente_
