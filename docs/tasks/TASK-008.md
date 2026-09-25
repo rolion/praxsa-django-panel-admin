@@ -1,6 +1,6 @@
 # TASK-008: IDOR en `InvoiceView.get` y `get_proforma_car_part_info` (backlog #4)
 
-**Etapa actual:** PUBLISH
+**Etapa actual:** PUBLISHED
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Rama:** `task/TASK-008-idor-proforma-access`
 **Pull Request:** [#35](https://github.com/rolion/praxsa-django-panel-admin/pull/35)
@@ -14,6 +14,7 @@
 | 2026-09-23 | ENGINEERING → REVIEW | Implementación completa, tests OK, PR actualizado | delivery-engineer |
 | 2026-09-23 | REVIEW → PUBLISH | Veredicto PASS, sin issues Critical/High | delivery-review |
 | 2026-09-23 | PUBLISH (sin cambio de etapa) | PR completado con trazabilidad final; queda pendiente de aprobación humana explícita por ser cambio de autorización | delivery-publish |
+| 2026-09-25 | PUBLISH → PUBLISHED | Usuario aprobó explícitamente el merge en el chat; PR #35 mergeado a `master` (commit `9815652`) | usuario |
 
 ## Investigación
 
@@ -142,4 +143,6 @@ Resumen de evidencia:
 
 PR [#35](https://github.com/rolion/praxsa-django-panel-admin/pull/35) actualizado con la trazabilidad completa (Summary, Changes, Testing, Architecture decisions, Related plan/ADRs, Review, Known limitations). Verificado antes de publicar: `git status` limpio, sin commits posteriores al último `delivery-review`, diff coincide exactamente con lo revisado, sin secretos ni archivos temporales en el diff.
 
-**Estado: listo para aprobación humana — no mergeado.** Este cambio toca autorización (IDOR, con ADR-006 de por medio), así que corresponde aprobación humana explícita antes de cualquier merge, sin importar el `PASS` de `delivery-review` (regla del propio skill). No se hizo ni se propone auto-merge.
+**Estado: MERGEADO.** El usuario aprobó explícitamente el merge en el chat (2026-09-25) después de revisar el resumen de riesgo/evidencia. PR #35 mergeado a `master` como commit [`9815652`](https://github.com/rolion/praxsa-django-panel-admin/commit/9815652536a82da7540c0083fb4d7928cafb51d7).
+
+**Nota de colisión de ID detectada post-merge**: casi al mismo tiempo se mergeó PR #37 (TASK-009, máquina de estados de proforma), que también creó un archivo `docs/adr/ADR-006-proforma-status-field.md` — duplicando el número de ADR con el `ADR-006-idor-invoice-and-proforma-car-part-info.md` de este task (ambos archivos coexisten en `master` con distinto nombre, sin conflicto de merge, pero con el mismo ID lógico). Sigue el mismo patrón de colisión que ya ocurrió una vez antes (ver historial de TASK-002→006/ADR-002→005). No se resuelve en este task — queda para quien continúe: renombrar uno de los dos ADR-006 a un ID libre.
