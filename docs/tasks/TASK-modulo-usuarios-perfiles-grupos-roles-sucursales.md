@@ -1,10 +1,10 @@
 # TASK-modulo-usuarios-perfiles-grupos-roles-sucursales: Módulo de Usuarios, Perfiles, Grupos, Roles y Sucursales en `panel_admin/`
 
-**Etapa actual:** PLANNING
+**Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
-**Rama:** _sin asignar todavía_
-**Pull Request:** _sin abrir todavía_
+**Rama:** `claude/admin-panel-user-module-bd8fd2`
+**Pull Request:** [#47](https://github.com/rolion/praxsa-django-panel-admin/pull/47)
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
@@ -12,6 +12,7 @@
 | 2026-09-25 | (nuevo) → INVESTIGATION | Task creado | delivery-investigate |
 | 2026-09-25 | INVESTIGATION → ARCHITECTURE | Diseño de UI completado (menú, tabla, wizard, componentes de plantilla); veredicto de complejidad del task exige decisión arquitectónica (modelo de datos, permisos, auth) antes de planificar | delivery-design |
 | 2026-09-25 | ARCHITECTURE → PLANNING | Decisiones de modelo de datos (Profile, Group/Permission como Roles, Sucursal.empleado único, soft delete vía is_active) y de autenticación/API admin (Token auth, endpoint de login staff nuevo, permisos Django nativos) registradas en ADR | delivery-architect |
+| 2026-09-25 | PLANNING → ENGINEERING | Plan v1 escrito (backend primero, frontend después), PR #47 abierto sobre la rama ya asignada a este task por el entorno de trabajo | delivery-plan |
 
 ## Investigación
 
@@ -100,7 +101,7 @@ Agregar al nuevo panel de administración (`panel_admin/`, plantilla Angular) un
 - [ADR-modulo-usuarios-perfiles-grupos-roles-sucursales-api-autenticacion-admin](../adr/ADR-modulo-usuarios-perfiles-grupos-roles-sucursales-api-autenticacion-admin.md) — `panel_admin/` se autentica con Token auth de DRF (no JWT, pese a que la plantilla trae interceptor JWT); nuevo endpoint de login para staff (no se reusa `CustomAuthToken`, que asume `Client` y rompería con usuarios de staff); endpoints REST nuevos para User/Profile/Sucursal/Group/Permission bajo `DjangoModelPermissions` + chequeo de `is_staff`; creación de usuario = un solo POST atómico al confirmar el wizard, no un endpoint por paso.
 
 ## Plan
-_Pendiente_
+[PLAN-2026-09-25-modulo-usuarios-perfiles-grupos-roles-sucursales](../plans/PLAN-2026-09-25-modulo-usuarios-perfiles-grupos-roles-sucursales.md) (v1) — backend primero (modelo `Profile`, serializers, endpoint de login staff, endpoints CRUD de User/Group/Permission/Sucursal, tests) y frontend después (auth real, módulo `users/` con listado/ver/editar/wizard de 4 pasos, menú). E2E explícitamente descartado (justificación en el plan); dos preguntas abiertas para el usuario antes de implementar: `apiUrl` real de desarrollo y si los usuarios inactivos se ocultan por defecto en el listado.
 
 ## Implementación
 _Pendiente_
