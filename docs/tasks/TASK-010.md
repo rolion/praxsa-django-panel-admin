@@ -1,6 +1,6 @@
 # TASK-010: Recalcular server-side el precio de `venta_metro_lineal` en el admin (extender ADR-006)
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_PLAN
 **Rama:** `task/TASK-010-venta-metro-lineal-pricing`
 **Pull Request:** [#41](https://github.com/rolion/praxsa-django-panel-admin/pull/41)
@@ -11,6 +11,7 @@
 | 2026-09-25 14:28 UTC | (nuevo) → INVESTIGATION | Task creado | delivery-investigate |
 | 2026-09-25 | INVESTIGATION → PLANNING | Investigación completa, veredicto NEEDS_PLAN | delivery-plan |
 | 2026-09-25 | PLANNING → ENGINEERING | Plan v1 listo, PR #41 abierto | delivery-plan |
+| 2026-09-25 | ENGINEERING → REVIEW | Implementación completa, tests en verde, verificación manual en vivo OK | delivery-engineer |
 
 ## Investigación
 
@@ -84,7 +85,21 @@ _No aplica según veredicto — ADR-006 ya cubre el criterio de producto aplicab
 [docs/plans/PLAN-2026-09-25-venta-metro-lineal-pricing.md](../plans/PLAN-2026-09-25-venta-metro-lineal-pricing.md) (v1)
 
 ## Implementación
-_Pendiente_
+
+Implementado exactamente según el plan v1, sin desvíos:
+
+- `praxsa_manager/product/business/pricing.py`: agregada `calculate_subtotal_venta_metro_lineal(length, unit_price) -> Decimal` (`length * unit_price`, sin `quantity`).
+- `praxsa_manager/product/Forms/car_model_part.py`: en el bloque `venta_metro_lineal` de `CarModelPartForm.clean()`, tras las validaciones existentes de `quantity`/`installation_price`, se agregó la resolución de precio real (guard `if cc_width is not None and cc_window_film is not None`, idéntico patrón al de `venta_instalacion`): `Pricing_Business.resolve_unit_price(sucursal_id, lamina_id, width)` → si `None`, `add_error('window_film', ...)`; si no, sobrescribe `cleaned_data['window_film_price']` y `cleaned_data['sub_total']` (redondeado con `.quantize(Decimal('0.01'), ROUND_HALF_UP)`, mismo motivo ya documentado en el código existente).
+- `praxsa_manager/product/tests/test_admin_price_recalculation.py`: se reemplazó `test_venta_metro_lineal_price_still_trusted_from_client` (documentaba el comportamiento viejo) por `test_overwrites_manipulated_price_with_real_recalculated_value_metro_lineal` (afirma la sobrescritura) y se agregó `test_rejects_when_no_inventory_covers_requested_width_metro_lineal`.
+
+**Tests**: suite completa `product/tests/` — 81/81 en verde (incluye los 18 tests de `test_admin_price_recalculation.py`).
+
+**Verificación manual en vivo** (servidor real en `localhost:8010`, HTTP real con `requests`, login real, datos reales creados/eliminados en el mismo checkeo contra el Postgres dev del usuario):
+1. Proforma `venta_metro_lineal` real, ítem con `length=3.00`, inventario con `precio_venta_mtr_lineal=77.00`. POST con `sub_total=999999.99` y `window_film_price=5.00` manipulados → persistido: `sub_total=231.00`, `window_film_price=77.00`, `total_price` de cabecera `231.00` — el servidor ignoró por completo los valores del navegador.
+2. Ítem con un ancho (`2.00`) que ningún reel de la lámina elegida cubre → rechazado con error de formulario `"No hay precio disponible para la lámina/ancho solicitado en esa sucursal."`, HTTP 200 (no 500).
+3. Nota incidental descubierta durante la verificación (no relacionada al cambio, no requiere acción): el filtro de inventario (`bobina__width__gte=width`) acepta cualquier reel **igual o más ancho** que el solicitado, no solo coincidencia exacta — comportamiento preexistente y ya usado igual en la rama `venta_instalacion`, no introducido por este cambio.
+
+**Deuda técnica no tocada (fuera de alcance, ver plan)**: `convertir_venta_metro_lineal`, el listener faltante de `quantity` en `sales_event.js`, y la opcionalidad de `car_part` para `venta_metro_lineal` — sin cambios, según lo acordado.
 
 ## Review
 _Pendiente_
