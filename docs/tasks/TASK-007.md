@@ -17,6 +17,7 @@
 | 2026-09-23 | REVIEW → ENGINEERING | Veredicto FAIL (tercera pasada) — [REV-2026-09-23-003](../reviews/REV-2026-09-23-003-crash-on-blank-width.md) (Severity High, Category IMPLEMENTATION): mismo patrón que REV-2026-09-23-001 (ya resuelto), en un campo que esa corrección no cubrió — `width` vacío en un ítem `venta_instalacion` crashea `item_width_lte_film_width` (primera línea de la rama reactivada) con `ValueError: Cannot use None as a query value`, sin capturar. Reproducido con evidencia real. REV-2026-09-23-001 y REV-2026-09-23-002 confirmados `Resolved` de forma independiente (guardas presentes en el diff, tests en verde). Suite completa (61/61) y migraciones re-verificadas sin hallazgos adicionales | delivery-review |
 | 2026-09-23 | ENGINEERING → REVIEW | REV-2026-09-23-003 corregido, commit `4aebb82` empujado al PR #36 — mismo patrón que la corrección de REV-001 (`cc_width is None` guard en `item_width_lte_film_width`, y el guard del bloque de precio extendido a `cc_width is not None`). Dado que este es el tercer campo con el mismo patrón encontrado en 3 pasadas de review sucesivas, se agregó un test de barrido permanente que omite cada campo requerido uno a la vez (6 campos × 2 `sales_type`) y falla si `is_valid()` lanza cualquier excepción, en vez de seguir corrigiendo campo por campo. 2 tests nuevos (17 en total en `test_admin_price_recalculation.py`), suite completa `product` 63/63 en verde contra Postgres real, sin migraciones nuevas | delivery-engineer |
 | 2026-09-25 | REVIEW → PUBLISH | Veredicto PASS (cuarta pasada) — REV-2026-09-23-001/002/003 confirmados `Resolved` de forma independiente; REV-003 verificado además con mutation testing (revertir el guard manualmente hace fallar los 2 tests nuevos con el error original, restaurar los vuelve a poner en verde), confirmando que el test de barrido detecta regresiones reales y no es vacuo. Suite completa 63/63 en verde, sin migraciones, sin scope creep, plan/ADR-006 cumplidos punto por punto. Sin issues abiertos de ninguna categoría | delivery-review |
+| 2026-09-25 | PUBLISH → PUBLISH | PR #36 verificado (diff sin scope creep, sin secretos, sin commits posteriores al PASS de review) y descripción completada con `## Architecture decisions` y `## Known limitations`. Cambio sensible (ADR-006, lógica de negocio de precio en formulario de uso diario) — queda pendiente de aprobación humana explícita antes de mergear | delivery-publish |
 
 ## Investigación
 
@@ -220,4 +221,14 @@ Plan/ADR-006 compliance re-verificado sin cambios respecto a pasadas anteriores:
 **Sin issues abiertos de ninguna categoría.** Nota no bloqueante, repetida en las 4 pasadas: `flake8`/`bandit`/`mypy`/`coverage.py` no están instalados ni configurados en el proyecto — verificación técnica declarada explícitamente como no realizada en este entorno.
 
 ## Publicación
-_Pendiente_
+
+**Estado: Listo para aprobación humana** — [PR #36](https://github.com/rolion/praxsa-django-panel-admin/pull/36).
+
+Verificaciones de `delivery-publish` antes de completar la descripción:
+- `## Review` en `PASS` (cuarta pasada), sin commits nuevos desde esa pasada (`HEAD` = `0822152`, el mismo commit del veredicto).
+- `git status` limpio en la rama (solo `.claude/launch.json` sin trackear, herramienta local de desarrollo, no parte del cambio).
+- `git diff origin/master...HEAD --stat`: 10 archivos — 6 docs (`TASK-007.md`, `ADR-006...md`, `PLAN-2026-09-23...md`, `REV-2026-09-23-001/002/003...md`) + 3 archivos de código (`business/proforma.py`, `Forms/car_model_part.py`, `admin_config/proforma_admin.py`) + 1 test (`test_admin_price_recalculation.py`) — sin scope creep.
+- Sin secretos en el diff (`grep` por patrones de `SECRET_KEY`/`PASSWORD`/`api_key`/tokens/claves privadas sin resultados; no se tocó ningún `.env`).
+- Descripción del PR completada con la plantilla estándar: `## Architecture decisions` (resumen de ADR-006) y `## Known limitations` (deuda aceptada conscientemente — `venta_metro_lineal` sin recalcular en ningún camino, `convertir_venta_metro_lineal` con precio potencialmente obsoleto, nota de eficiencia menor de `CarModelPartForm.clean()`, y lint/seguridad no ejecutables en este entorno).
+
+**Cambio sensible — requiere aprobación humana explícita antes de mergear**: este task tiene un ADR asociado ([ADR-006](../adr/ADR-006-admin-price-recalculation-venta-instalacion.md)) y modifica lógica de negocio de precio en un formulario que usa a diario el personal de sucursal (`ProformaAdmin`). Por regla de `delivery-publish`, no se marca como listo para merge automático ni se mergea en esta invocación — queda a la espera de que el usuario lo apruebe explícitamente en el chat.
