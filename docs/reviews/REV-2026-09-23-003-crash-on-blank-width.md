@@ -1,6 +1,6 @@
 # REV-2026-09-23-003: `CarModelPartForm.clean()` crashea con `ValueError` (500) si `width` llega vacío
 
-**Status:** Open
+**Status:** Resolved (2026-09-23) — ver `## Resolución`.
 **Severity:** High
 **Category:** IMPLEMENTATION
 **Related plan:** docs/plans/PLAN-2026-09-23-admin-price-recalculation-venta-instalacion.md (v1)
@@ -80,3 +80,14 @@ if cc_width is None or self.item_width_lte_film_width(cc_car_part_id, sale_heade
 ```
 
 Agregar un test (`test_missing_width_is_rejected_not_a_crash` o similar) para que quede protegido contra regresión, siguiendo el mismo patrón que los tests ya agregados para REV-2026-09-23-001.
+
+## Resolución
+
+Corregido en el commit `4aebb82` (rama `claude/precio-total-validation-steps-1362c2`, PR #36), `praxsa_manager/product/Forms/car_model_part.py`:
+
+- `if self.item_width_lte_film_width(...) == False:` → `if cc_width is None or self.item_width_lte_film_width(...) == False:` (exactamente la sugerencia del hallazgo).
+- El guard del bloque de resolución de precio real (`if cc_quantity is not None:`, agregado al resolver REV-2026-09-23-001) pasó a `if cc_quantity is not None and cc_width is not None:` — sin esto, `Pricing_Business.resolve_unit_price(width=cc_width)` (que hace `float(width)` internamente) igual crasheaba con `width=None` después de que el chequeo de la línea 67 ya hubiera agregado su error.
+
+**Dado que este es el tercer campo encontrado con el mismo patrón en pasadas de revisión sucesivas** (REV-2026-09-23-001: `quantity`/`installation_price`; este REV: `width`), en vez de seguir corrigiendo campo por campo se agregó un test de barrido permanente (`test_no_required_field_omission_crashes_the_form`, en `test_admin_price_recalculation.py`) que omite **cada** campo requerido de `CarModelPartForm` uno a la vez, para ambos `sales_type`, y falla explícitamente si `form.is_valid()` lanza cualquier excepción — cubre `car_part`, `window_film`, `width`, `length`, `quantity`, `installation_price`. Se verificó localmente (test ad hoc, descartado después) que las 12 combinaciones (6 campos × 2 `sales_type`) ya no crashean con las correcciones acumuladas de REV-001 y REV-003.
+
+**Evidencia**: `python manage.py test product --noinput` → **63/63 en verde** (61 previos + `test_missing_width_is_rejected_not_a_crash` + `test_no_required_field_omission_crashes_the_form`). `python manage.py makemigrations product --check --dry-run`: `No changes detected`.
