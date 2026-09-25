@@ -29,3 +29,11 @@ def calculate_subtotal_venta_instalacion(length: Decimal, quantity: int, unit_pr
     desde SalesHeaderSerializer, ver TASK-005) - misma fórmula que ya usan Angular
     (formulario.component.ts:238) y sales_event.js (rama venta_instalacion)."""
     return (length * quantity * unit_price) + (installation_price * quantity)
+
+
+def calculate_subtotal_venta_metro_lineal(length: Decimal, unit_price: Decimal) -> Decimal:
+    """Fórmula de subtotal para sales_type='venta_metro_lineal' (creación directa de un
+    ítem, no la conversión masiva de convertir_venta_metro_lineal). Sin término de
+    quantity: CarModelPartForm.clean() prohíbe quantity>0 para este caso (ver TASK-010),
+    misma fórmula que ya usa sales_event.js (rama else de calculate_subtotal)."""
+    return length * unit_price

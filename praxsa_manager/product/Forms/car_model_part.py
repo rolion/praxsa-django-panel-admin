@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from ..helper.proforma import Proforma_Helper
 from ..helper.inventory import Inventory_helper
 from ..business.inventario import Inventario_Business
-from ..business.pricing import Pricing_Business, calculate_subtotal_venta_instalacion
+from ..business.pricing import Pricing_Business, calculate_subtotal_venta_instalacion, calculate_subtotal_venta_metro_lineal
 
 class CarItemField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
@@ -116,7 +116,26 @@ class CarModelPartForm(ModelForm):
                 self.add_error('quantity','campo no requerido')
             if cc_installation_price is not None and cc_installation_price.compare(0) == 1:
                 self.add_error('installation_price','campo no requerido')
-        
+
+            # El precio nunca se confía del form (calculado client-side por sales_event.js):
+            # se recalcula acá con el precio real y se sobrescribe siempre. Ver ADR-006,
+            # extendido a venta_metro_lineal en TASK-010. Sin quantity en la fórmula: el
+            # bloque de arriba ya la prohíbe para este sales_type.
+            if cc_width is not None and cc_window_film is not None:
+                unit_price = self.pricing_business.resolve_unit_price(
+                    sucursal_id=getattr(sale_header, 'sucursal_id', None),
+                    lamina_id=cc_window_film.id,
+                    width=cc_width,
+                )
+                if unit_price is None:
+                    self.add_error('window_film', 'No hay precio disponible para la lámina/ancho solicitado en esa sucursal.')
+                else:
+                    cleaned_data['window_film_price'] = unit_price
+                    cleaned_data['sub_total'] = calculate_subtotal_venta_metro_lineal(
+                        length=cc_length,
+                        unit_price=unit_price,
+                    ).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+
         total_length_to_sell=cc_length * (cc_quantity if cc_quantity is not None and cc_quantity > 0 else 1)
         # available_reel = self.inv_bussiness.available_window_film_reel_in_inventory_to_sell(width=cc_width, 
         #                                                                                         windows_film=cc_window_film, 
