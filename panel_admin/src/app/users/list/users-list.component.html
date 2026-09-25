@@ -56,35 +56,35 @@
               <ng-template let-row="row" ngx-datatable-cell-template>
                 <a
                   [routerLink]="['/users/view', row.id]"
-                  class="btn btn-sm btn-outline-secondary rounded-circle icon-btn me-1"
+                  class="btn btn-tbl-view h-auto"
                   title="Ver"
                 >
-                  <i-feather name="eye"></i-feather>
+                  <i class="fas fa-eye"></i>
                 </a>
                 <a
                   [routerLink]="['/users/edit', row.id]"
-                  class="btn btn-sm btn-outline-primary rounded-circle icon-btn me-1"
+                  class="btn btn-tbl-edit h-auto"
                   title="Editar"
                 >
-                  <i-feather name="edit-2"></i-feather>
+                  <i class="fas fa-pen"></i>
                 </a>
                 @if (row.is_active) {
                   <button
                     type="button"
-                    class="btn btn-sm btn-outline-danger rounded-circle icon-btn"
+                    class="btn btn-tbl-delete h-auto"
                     title="Eliminar"
                     (click)="deactivate(row)"
                   >
-                    <i-feather name="trash-2"></i-feather>
+                    <i class="far fa-trash-alt"></i>
                   </button>
                 } @else {
                   <button
                     type="button"
-                    class="btn btn-sm btn-outline-success rounded-circle icon-btn"
+                    class="btn btn-tbl-activate h-auto"
                     title="Activar"
                     (click)="activate(row)"
                   >
-                    <i-feather name="user-check"></i-feather>
+                    <i class="fas fa-user-check"></i>
                   </button>
                 }
               </ng-template>

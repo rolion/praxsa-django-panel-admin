@@ -2,7 +2,6 @@ import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { NgxDatatableModule } from '@swimlane/ngx-datatable';
-import { FeatherModule } from 'angular-feather';
 import Swal from 'sweetalert2';
 import { AppUser } from '../users.model';
 import { UsersService } from '../users.service';
@@ -10,7 +9,7 @@ import { UsersService } from '../users.service';
 @Component({
   selector: 'app-users-list',
   standalone: true,
-  imports: [FormsModule, RouterLink, NgxDatatableModule, FeatherModule],
+  imports: [FormsModule, RouterLink, NgxDatatableModule],
   templateUrl: './users-list.component.html',
 })
 export class UsersListComponent implements OnInit {
