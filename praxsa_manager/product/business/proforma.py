@@ -24,6 +24,28 @@ class Proforma_Business:
     def get_proforma_by_id(self, id):
         return Proforma_Header.objects.get(pk = id)
 
+    def refresh_status(self, proforma):
+        # Misma logica y mismo orden que ProformaAdmin.get_estado (admin_config/proforma_admin.py),
+        # para que el campo persistido nunca diverja de lo que el admin ya muestra hoy (TASK-009/ADR-006).
+        status = self.helper.estado_proforma
+        if hasattr(proforma, 'nota_trabajo'):
+            status = self.helper.estado_nota_trabajo
+        else:
+            proforma.status = status
+            proforma.save(update_fields=['status'])
+            return proforma
+        if hasattr(proforma.nota_trabajo, 'nota_venta'):
+            status = self.helper.estado_por_cobrar
+        else:
+            proforma.status = status
+            proforma.save(update_fields=['status'])
+            return proforma
+        if hasattr(proforma.nota_trabajo.nota_venta, 'pago'):
+            status = self.helper.estado_finalizado
+        proforma.status = status
+        proforma.save(update_fields=['status'])
+        return proforma
+
     def delete_proforma(self, user, proforma):
         if proforma.sales_status == self.helper.req  :
             proforma.is_delete = True
@@ -52,7 +74,8 @@ class Proforma_Business:
                             if result is not True:
                                 self.log_errors.error(f'no se actualizo el inventario {e}')
                                 raise Exception('no se actualizo el inventario')
-                    return proforma.save()
+                    proforma.save()
+                    return self.refresh_status(proforma)
             except Exception as e:
                 self.log_errors.error(f'algo salio mal, contactar administrador {e}')
                 raise Exception('algo salio mal, contactar administrador')
@@ -100,7 +123,9 @@ class Proforma_Business:
                                 sumary.append({"window_film": detalle.window_film, "width": inventario.bobina.width, 'length':  to_reduce})
                     proforma.is_close = True
                     proforma.save()
-                    return self.orden_trabajo_bussiness.create_work_note(proforma=proforma, sumary=sumary,responsable= responsable)
+                    nota_trabajo = self.orden_trabajo_bussiness.create_work_note(proforma=proforma, sumary=sumary,responsable= responsable)
+                    self.refresh_status(proforma)
+                    return nota_trabajo
             except IntegrityError as e:
                 raise Exception(f'ya existe una nota de trabajo asignada a la Proforma {proforma.id}')
             except NoHayLaminasDisponibles as e:
@@ -178,6 +203,7 @@ class Proforma_Business:
             nota_venta.save()
             nota_trabajo.is_close = True
             nota_trabajo.save()
+            self.refresh_status(nota_trabajo.proforma)
         except Exception as e:
             self.log_errors.error(f'algo salio mal, contactar administrador {e}')
             raise Exception('algo salio mal, contactar administrador')

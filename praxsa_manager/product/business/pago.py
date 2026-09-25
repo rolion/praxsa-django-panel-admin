@@ -1,12 +1,14 @@
 from ..models import pago, Proforma_Header, Nota_trabajo, Sucursal
 from django.db import IntegrityError, transaction
 from ..helper.user import User_Helper
+from .proforma import Proforma_Business
 import logging
 
 class Pago_Business:
 
     def __init__(self) -> None:
         self.user_helper = User_Helper()
+        self.proforma_business = Proforma_Business()
         self.log_errors = logging.getLogger('django_admin')
 
     def get_pago_queryset_by_role(self, user, qs):
@@ -39,6 +41,7 @@ class Pago_Business:
                 nota_trabajo = proforma.nota_trabajo
                 nota_trabajo.is_close = True
                 nota_trabajo.save()
+                self.proforma_business.refresh_status(proforma)
         except Exception as e:
             print(str(e))
             raise Exception('algo salio mal, contacte al administrador')

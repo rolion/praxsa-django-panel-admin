@@ -80,6 +80,14 @@ class Orden_Trabajo_Business:
                     inventario.save()
                 work_note.delete()
                 proforma.save()
+                # Import diferido: proforma.py ya importa este modulo (Orden_Trabajo_Business),
+                # un import a nivel de modulo aca crearia un ciclo.
+                from .proforma import Proforma_Business
+                # work_note.delete() no limpia el cache en memoria de proforma.nota_trabajo
+                # (quedaria apuntando al registro ya borrado); refresh_from_db lo fuerza a
+                # recalcularse contra la base antes de recomputar el estado.
+                proforma.refresh_from_db()
+                Proforma_Business().refresh_status(proforma)
 
         except OrdenTrabajo as e:
             raise e
