@@ -1,6 +1,6 @@
 ---
 name: delivery-publish
-description: Publica únicamente el trabajo de un task (docs/tasks/TASK-<id>.md) que haya pasado el Quality Gate de delivery-review con veredicto PASS en este monorepo (praxsa_manager en Django/DRF + proforma en Angular). No crea un PR nuevo: actualiza la descripción del PR único del task (Summary, Changes, Testing con evidencia real, Architecture decisions, Related plan/ADRs, Known limitations) y lo deja listo para aprobación humana final. Verifica que no haya cambios accidentales, archivos temporales, secretos ni cambios fuera de scope. Nunca marca como listo para merge un PR cuyo review terminó en FAIL, y nunca mergea automáticamente cambios de arquitectura, autenticación/autorización, base de datos o infraestructura sin aprobación humana explícita — el auto-merge para veredictos TRIVIAL_FIX de bajo riesgo es una decisión explícita y configurable del equipo, no un comportamiento implícito. Se invoca explícitamente con /delivery-publish TASK-<id>; no debe activarse solo porque el usuario mencione "publicar" o "subir" en una frase suelta.
+description: Publica únicamente el trabajo de un task (docs/tasks/TASK-<slug>.md) que haya pasado el Quality Gate de delivery-review con veredicto PASS en este monorepo (praxsa_manager en Django/DRF + proforma en Angular). No crea un PR nuevo: actualiza la descripción del PR único del task (Summary, Changes, Testing con evidencia real, Architecture decisions, Related plan/ADRs, Known limitations) y lo deja listo para aprobación humana final. Verifica que no haya cambios accidentales, archivos temporales, secretos ni cambios fuera de scope. Nunca marca como listo para merge un PR cuyo review terminó en FAIL, y nunca mergea automáticamente cambios de arquitectura, autenticación/autorización, base de datos o infraestructura sin aprobación humana explícita — el auto-merge para veredictos TRIVIAL_FIX de bajo riesgo es una decisión explícita y configurable del equipo, no un comportamiento implícito. Se invoca explícitamente con /delivery-publish TASK-<slug>; no debe activarse solo porque el usuario mencione "publicar" o "subir" en una frase suelta.
 ---
 
 # Delivery Publish
@@ -11,23 +11,23 @@ Es la última etapa del flujo: el punto donde se confirma que todo lo acumulado 
 
 ## Cuándo usarlo
 
-Solo cuando el usuario invoque `/delivery-publish TASK-<id>` explícitamente.
+Solo cuando el usuario invoque `/delivery-publish TASK-<slug>` explícitamente.
 
 ## Inputs
 
-- `TASK-<id>` en etapa `PUBLISH` (es decir, `delivery-review` ya emitió `PASS`).
+- `TASK-<slug>` en etapa `PUBLISH` (es decir, `delivery-review` ya emitió `PASS`).
 
 ## Outputs
 
 - Descripción del PR único del task actualizada y completa.
-- `docs/tasks/TASK-<id>.md` actualizado: sección `## Publicación`, historial.
+- `docs/tasks/TASK-<slug>.md` actualizado: sección `## Publicación`, historial.
 - El PR queda señalado como listo para aprobación humana final (nunca mergeado automáticamente, salvo la excepción configurable descrita abajo).
 
 ## Flujo
 
 ### 1. Verificar que el Quality Gate esté realmente en PASS
 
-Lee `docs/tasks/TASK-<id>.md`. Si `**Etapa actual:**` no es `PUBLISH`, o `## Review` no muestra `PASS` explícito, detente — no continúes "a ver si igual está bien". Este skill nunca re-decide un `FAIL` de `delivery-review` por su cuenta.
+Lee `docs/tasks/TASK-<slug>.md`. Si `**Etapa actual:**` no es `PUBLISH`, o `## Review` no muestra `PASS` explícito, detente — no continúes "a ver si igual está bien". Este skill nunca re-decide un `FAIL` de `delivery-review` por su cuenta.
 
 ### 2. Verificar que no hay nada fuera de lugar
 
@@ -47,7 +47,7 @@ Actualiza (`gh pr edit`) el PR único del task para dejarlo con la trazabilidad 
 Resumen claro de qué cambia y por qué, para quien apruebe el merge sin tener que leer todo el historial.
 
 ## Task
-TASK-<id> (docs/tasks/TASK-<id>.md)
+TASK-<slug> (docs/tasks/TASK-<slug>.md)
 
 ## Changes
 <lo que dejó delivery-engineer — no lo reescribas, solo verifica que siga vigente>
@@ -83,7 +83,7 @@ La única excepción es un veredicto `TRIVIAL_FIX` de bajo riesgo, y solo si el 
 
 ### 6. Actualizar el TASK y detener
 
-Completa `## Publicación` en `docs/tasks/TASK-<id>.md` (enlace al PR, estado: "Listo para aprobación humana" o "Mergeado" si el usuario ya aprobó y se ejecutó el merge en esta misma invocación), agrega la fila final al historial de transiciones, y actualiza `**Etapa actual:**` a `PUBLISHED` (o déjala en `PUBLISH` si sigue pendiente de aprobación humana).
+Completa `## Publicación` en `docs/tasks/TASK-<slug>.md` (enlace al PR, estado: "Listo para aprobación humana" o "Mergeado" si el usuario ya aprobó y se ejecutó el merge en esta misma invocación), agrega la fila final al historial de transiciones, y actualiza `**Etapa actual:**` a `PUBLISHED` (o déjala en `PUBLISH` si sigue pendiente de aprobación humana).
 
 ## Reglas
 

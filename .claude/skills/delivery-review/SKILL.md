@@ -1,6 +1,6 @@
 ---
 name: delivery-review
-description: Actúa como Quality Gate independiente de la implementación de un task en este monorepo (praxsa_manager en Django/DRF + proforma en Angular). Evalúa el estado acumulado del PR único del task (plan + código en el momento de la revisión), ejecutando de verdad las verificaciones funcionales (unit, integración, E2E cuando corresponda) y técnicas (lint, formatting, type checking, build, coverage, security checks como bandit/npm audit) con evidencia real de cada comando, y comparando la implementación contra el plan (acceptance criteria, alcance, ADRs, tests definidos). Nunca corrige código: documenta cada problema como issue en docs/reviews/REV-<fecha>-<seq>-<slug>.md, con triage IMPLEMENTATION/PLAN/ARCHITECTURE, y emite PASS o FAIL. Debe ejecutarse preferentemente en una sesión nueva, sin el historial de delivery-engineer, usando el plan, el diff y los ADRs como única fuente de verdad. Se invoca explícitamente con /delivery-review TASK-<id>; no debe activarse solo porque el usuario mencione "revisar" o "aprobar" en una frase suelta.
+description: Actúa como Quality Gate independiente de la implementación de un task en este monorepo (praxsa_manager en Django/DRF + proforma en Angular). Evalúa el estado acumulado del PR único del task (plan + código en el momento de la revisión), ejecutando de verdad las verificaciones funcionales (unit, integración, E2E cuando corresponda) y técnicas (lint, formatting, type checking, build, coverage, security checks como bandit/npm audit) con evidencia real de cada comando, y comparando la implementación contra el plan (acceptance criteria, alcance, ADRs, tests definidos). Nunca corrige código: documenta cada problema como issue en docs/reviews/REV-<fecha>-<task-slug>-<seq>.md, con triage IMPLEMENTATION/PLAN/ARCHITECTURE, y emite PASS o FAIL. Debe ejecutarse preferentemente en una sesión nueva, sin el historial de delivery-engineer, usando el plan, el diff y los ADRs como única fuente de verdad. Se invoca explícitamente con /delivery-review TASK-<slug>; no debe activarse solo porque el usuario mencione "revisar" o "aprobar" en una frase suelta.
 ---
 
 # Delivery Review
@@ -13,27 +13,27 @@ Es el Quality Gate del flujo: el punto donde alguien que no escribió el código
 
 Todas las skills `delivery-*` pueden ejecutarse en la misma sesión de Claude Code — no hay aislamiento real de memoria entre ellas. Si esta skill corre en la misma sesión donde se acaba de implementar el código con `delivery-engineer`, existe sesgo de continuidad: es fácil "recordar" por qué se escribió algo de determinada forma y darlo por bueno en vez de cuestionarlo de nuevo.
 
-**Mitigación esperada:** ejecuta `delivery-review` en una sesión o contexto nuevo de Claude Code siempre que sea posible (una terminal/ventana distinta, o después de limpiar el contexto). Al iniciar, no asumas nada de una conversación previa sobre esta implementación: lee únicamente `docs/tasks/TASK-<id>.md`, el plan enlazado (con su changelog), los ADR relacionados, y el diff real del PR (`git diff origin/master...HEAD` o el que corresponda) como única fuente de verdad. Si te invocan en la misma sesión que acaba de correr `delivery-engineer`, dilo explícitamente al usuario como una limitación de esta ejecución concreta (no te niegues a revisar, pero deja constancia de que el aislamiento es procedimental, no real).
+**Mitigación esperada:** ejecuta `delivery-review` en una sesión o contexto nuevo de Claude Code siempre que sea posible (una terminal/ventana distinta, o después de limpiar el contexto). Al iniciar, no asumas nada de una conversación previa sobre esta implementación: lee únicamente `docs/tasks/TASK-<slug>.md`, el plan enlazado (con su changelog), los ADR relacionados, y el diff real del PR (`git diff origin/master...HEAD` o el que corresponda) como única fuente de verdad. Si te invocan en la misma sesión que acaba de correr `delivery-engineer`, dilo explícitamente al usuario como una limitación de esta ejecución concreta (no te niegues a revisar, pero deja constancia de que el aislamiento es procedimental, no real).
 
 ## Cuándo usarlo
 
-Solo cuando el usuario invoque `/delivery-review TASK-<id>` explícitamente.
+Solo cuando el usuario invoque `/delivery-review TASK-<slug>` explícitamente.
 
 ## Inputs
 
-- `TASK-<id>` con `## Implementación` completa (etapa `REVIEW`) y un PR con commits de `delivery-engineer`.
+- `TASK-<slug>` con `## Implementación` completa (etapa `REVIEW`) y un PR con commits de `delivery-engineer`.
 
 ## Outputs
 
-- `docs/reviews/REV-<fecha>-<seq>-<slug>.md` por cada problema encontrado (puede haber cero si todo pasa).
+- `docs/reviews/REV-<fecha>-<task-slug>-<seq>.md` por cada problema encontrado (puede haber cero si todo pasa).
 - `## Testing` y `## Review` del PR actualizados con evidencia real.
-- `docs/tasks/TASK-<id>.md` actualizado: sección `## Review`, historial, transición de etapa según el resultado.
+- `docs/tasks/TASK-<slug>.md` actualizado: sección `## Review`, historial, transición de etapa según el resultado.
 
 ## Flujo
 
 ### 1. Reconstruir contexto solo desde artefactos
 
-Lee, en este orden, sin asumir nada previo: `docs/tasks/TASK-<id>.md` completo, el plan vigente en `docs/plans/` (versión actual + changelog si lo hay), los ADR enlazados, y el diff acumulado del PR contra la base (`git diff origin/master...HEAD`, o la rama base que corresponda). Si el TASK no está en etapa `REVIEW`, detente y dilo.
+Lee, en este orden, sin asumir nada previo: `docs/tasks/TASK-<slug>.md` completo, el plan vigente en `docs/plans/` (versión actual + changelog si lo hay), los ADR enlazados, y el diff acumulado del PR contra la base (`git diff origin/master...HEAD`, o la rama base que corresponda). Si el TASK no está en etapa `REVIEW`, detente y dilo.
 
 ### 2. Verificación funcional — ejecutando, no solo leyendo
 
@@ -71,17 +71,18 @@ Por cada hallazgo, clasifícalo en una sola categoría:
 - **IMPLEMENTATION** — el plan es correcto pero el código está mal → corresponde a `delivery-engineer`.
 - **PLAN** — el plan estaba incompleto o incorrecto → corresponde a `delivery-plan`.
 - **ARCHITECTURE** — la implementación sigue el plan correctamente, pero la decisión arquitectónica es insuficiente o incorrecta → corresponde a `delivery-architect`.
+- **DESIGN** — el plan sigue el DDR correctamente, pero la decisión de diseño no cubre un caso real o el componente elegido no funciona como se esperaba en uso real → corresponde a `delivery-design`.
 
-Crea `docs/reviews/REV-<fecha>-<seq>-<slug>.md` por cada issue (secuencia de 3 dígitos, reiniciando cada día — calcula el próximo número listando `docs/reviews/REV-<fecha>-*.md`):
+Crea `docs/reviews/REV-<fecha>-<task-slug>-<seq>.md` por cada issue (secuencia de 2 dígitos, reiniciando por task y día — calcula el próximo número listando solo `docs/reviews/REV-<fecha>-<task-slug>-*.md`, **no** todo `docs/reviews/`, para no competir por número con reviews de otros tasks corriendo en paralelo):
 
 ```markdown
-# REV-<fecha>-<seq>: <título corto del problema>
+# REV-<fecha>-<task-slug>-<seq>: <título corto del problema>
 
 **Status:** Open
 **Severity:** <Critical | High | Medium | Low>
-**Category:** <IMPLEMENTATION | PLAN | ARCHITECTURE>
+**Category:** <IMPLEMENTATION | PLAN | ARCHITECTURE | DESIGN>
 **Related plan:** docs/plans/PLAN-<fecha>-<slug>.md (v<N>)
-**Suggested owner:** <delivery-engineer | delivery-plan | delivery-architect>
+**Suggested owner:** <delivery-engineer | delivery-plan | delivery-architect | delivery-design>
 
 ## Description
 Qué está mal, en términos concretos.
@@ -108,7 +109,7 @@ Actualiza en el PR (`gh pr edit`) solo tus secciones:
 - `## Testing`: salida real de cada verificación funcional ejecutada.
 - `## Review`: resultado (`PASS`/`FAIL`), lista de issues con enlace a cada `REV-...md`, y evidencia de las verificaciones técnicas.
 
-Actualiza `docs/tasks/TASK-<id>.md`:
+Actualiza `docs/tasks/TASK-<slug>.md`:
 - `## Review`: enlace a esta revisión, resultado, issues abiertos.
 - Historial de transiciones y `**Etapa actual:**`:
   - `PASS` → `PUBLISH`.
@@ -119,7 +120,7 @@ Actualiza `docs/tasks/TASK-<id>.md`:
 
 ### 8. Reportar y detener
 
-Resume el veredicto y los issues (si los hay) en el chat, con el comando sugerido para la siguiente etapa (`/delivery-engineer TASK-<id>`, `/delivery-plan TASK-<id>`, `/delivery-architect TASK-<id>`, o `/delivery-publish TASK-<id>` si `PASS`). No corriges nada tú mismo ni invocas la siguiente skill.
+Resume el veredicto y los issues (si los hay) en el chat, con el comando sugerido para la siguiente etapa (`/delivery-engineer TASK-<slug>`, `/delivery-plan TASK-<slug>`, `/delivery-architect TASK-<slug>`, o `/delivery-publish TASK-<slug>` si `PASS`). No corriges nada tú mismo ni invocas la siguiente skill.
 
 ## Reglas
 
