@@ -1,6 +1,6 @@
 # TASK-010: Recalcular server-side el precio de `venta_metro_lineal` en el admin (extender ADR-006)
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_PLAN
 **Rama:** `task/TASK-010-venta-metro-lineal-pricing`
 **Pull Request:** [#41](https://github.com/rolion/praxsa-django-panel-admin/pull/41)
@@ -12,6 +12,7 @@
 | 2026-09-25 | INVESTIGATION → PLANNING | Investigación completa, veredicto NEEDS_PLAN | delivery-plan |
 | 2026-09-25 | PLANNING → ENGINEERING | Plan v1 listo, PR #41 abierto | delivery-plan |
 | 2026-09-25 | ENGINEERING → REVIEW | Implementación completa, tests en verde, verificación manual en vivo OK | delivery-engineer |
+| 2026-09-25 | REVIEW → PUBLISH | Quality Gate PASS, sin issues abiertos | delivery-review |
 
 ## Investigación
 
@@ -102,7 +103,19 @@ Implementado exactamente según el plan v1, sin desvíos:
 **Deuda técnica no tocada (fuera de alcance, ver plan)**: `convertir_venta_metro_lineal`, el listener faltante de `quantity` en `sales_event.js`, y la opcionalidad de `car_part` para `venta_metro_lineal` — sin cambios, según lo acordado.
 
 ## Review
-_Pendiente_
+
+**Veredicto: PASS.** Sin issues abiertos — no se generó ningún `docs/reviews/REV-*.md`.
+
+Verificado de forma independiente (re-ejecutado, no reutilizando lo reportado por `delivery-engineer`):
+- `python manage.py test product` → 81/81 OK.
+- `python manage.py makemigrations --check --dry-run` → sin cambios pendientes, confirma que el plan acertó ("sin migración de esquema").
+- Lint/type-check/coverage/security: no configurados/instalados en el proyecto — verificación no realizable en este entorno, dejado explícito, no un PASS silencioso.
+- Cobertura del código nuevo revisada manualmente (sin `coverage.py`): ambas ramas de la nueva lógica tienen test dedicado.
+- Los 7 acceptance criteria del plan v1 se cumplen con evidencia concreta. Alcance respetado: el diff de código toca únicamente los archivos que predecía el plan.
+
+**Nota de proceso**: esta revisión corrió en la misma sesión que implementó el código — aislamiento procedimental (reconstruido desde TASK-010.md, el plan, ADR-006 y el diff real contra `origin/master`), no aislamiento real de contexto.
+
+Detalle completo en [PR #41](https://github.com/rolion/praxsa-django-panel-admin/pull/41), secciones `## Testing` y `## Review`.
 
 ## Publicación
 _Pendiente_
