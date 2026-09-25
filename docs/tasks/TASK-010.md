@@ -1,14 +1,16 @@
 # TASK-010: Recalcular server-side el precio de `venta_metro_lineal` en el admin (extender ADR-006)
 
-**Etapa actual:** INVESTIGATION
+**Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_PLAN
-**Rama:** _sin asignar todavía_
-**Pull Request:** _sin abrir todavía_
+**Rama:** `task/TASK-010-venta-metro-lineal-pricing`
+**Pull Request:** [#41](https://github.com/rolion/praxsa-django-panel-admin/pull/41)
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
 |---|---|---|---|
 | 2026-09-25 14:28 UTC | (nuevo) → INVESTIGATION | Task creado | delivery-investigate |
+| 2026-09-25 | INVESTIGATION → PLANNING | Investigación completa, veredicto NEEDS_PLAN | delivery-plan |
+| 2026-09-25 | PLANNING → ENGINEERING | Plan v1 listo, PR #41 abierto | delivery-plan |
 
 ## Investigación
 
@@ -79,7 +81,7 @@ TASK-007/PR #36 (ADR-006) es el precedente directo y el patrón a seguir: en `Ca
 _No aplica según veredicto — ADR-006 ya cubre el criterio de producto aplicable; no se identificó ninguna decisión arquitectónica nueva pendiente._
 
 ## Plan
-_Pendiente_
+[docs/plans/PLAN-2026-09-25-venta-metro-lineal-pricing.md](../plans/PLAN-2026-09-25-venta-metro-lineal-pricing.md) (v1)
 
 ## Implementación
 _Pendiente_
