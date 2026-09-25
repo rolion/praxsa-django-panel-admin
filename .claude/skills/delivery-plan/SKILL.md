@@ -1,6 +1,6 @@
 ---
 name: delivery-plan
-description: Convierte la investigación y (si existen) las decisiones arquitectónicas de un task en un plan de implementación concreto y ejecutable para este monorepo (praxsa_manager en Django/DRF + proforma en Angular). Lee docs/tasks/TASK-<id>.md, incorpora los ADR relevantes de docs/adr/, define cambios backend/frontend/base de datos, estrategia de testing (incluyendo el criterio explícito de si corresponde E2E con Playwright), acceptance criteria, edge cases, riesgos y fuera de alcance. Guarda el plan versionado en docs/plans/PLAN-<fecha>-<slug>.md y abre el único Pull Request del task (con el plan como primer contenido, sin código todavía), dejando el enlace registrado en el TASK. Si se le pide una actualización del plan (PLAN_UPDATE_REQUIRED), no sobrescribe en silencio: versiona e incluye un changelog. Respeta las reglas de docs/CLAUDE.md. Se invoca explícitamente con /delivery-plan TASK-<id>; no debe activarse solo porque el usuario mencione "plan" o "implementar" en una frase suelta.
+description: Convierte la investigación y (si existen) las decisiones arquitectónicas de un task en un plan de implementación concreto y ejecutable para este monorepo (praxsa_manager en Django/DRF + proforma en Angular). Lee docs/tasks/TASK-<slug>.md, incorpora los ADR relevantes de docs/adr/, define cambios backend/frontend/base de datos, estrategia de testing (incluyendo el criterio explícito de si corresponde E2E con Playwright), acceptance criteria, edge cases, riesgos y fuera de alcance. Guarda el plan versionado en docs/plans/PLAN-<fecha>-<slug>.md y abre el único Pull Request del task (con el plan como primer contenido, sin código todavía), dejando el enlace registrado en el TASK. Si se le pide una actualización del plan (PLAN_UPDATE_REQUIRED), no sobrescribe en silencio: versiona e incluye un changelog. Respeta las reglas de docs/CLAUDE.md. Se invoca explícitamente con /delivery-plan TASK-<slug>; no debe activarse solo porque el usuario mencione "plan" o "implementar" en una frase suelta.
 ---
 
 # Delivery Plan
@@ -11,26 +11,27 @@ description: Convierte la investigación y (si existen) las decisiones arquitect
 
 ## Cuándo usarlo
 
-Solo cuando el usuario invoque `/delivery-plan TASK-<id>` explícitamente. No lo dispares por tu cuenta al detectar "plan" o "implementar" en una conversación normal.
+Solo cuando el usuario invoque `/delivery-plan TASK-<slug>` explícitamente. No lo dispares por tu cuenta al detectar "plan" o "implementar" en una conversación normal.
 
 ## Inputs
 
-- `TASK-<id>` con `## Investigación` completa (y `## Arquitectura` completa si el veredicto fue `NEEDS_ARCHITECTURE`).
+- `TASK-<slug>` con `## Investigación` completa (y `## Arquitectura` completa si el veredicto fue `NEEDS_ARCHITECTURE`).
 
 ## Outputs
 
 - `docs/plans/PLAN-<fecha>-<slug>.md`, versionado (`v1`, `v2`, ...).
 - El Pull Request único del task, abierto (primera vez) o actualizado con un nuevo commit (actualizaciones posteriores).
-- `docs/tasks/TASK-<id>.md` actualizado: sección `## Plan`, rama, enlace al PR, historial.
+- `docs/tasks/TASK-<slug>.md` actualizado: sección `## Plan`, rama, enlace al PR, historial.
 
 ## Flujo
 
 ### 1. Leer el TASK y verificar que está listo para planificar
 
-Lee `docs/tasks/TASK-<id>.md`. Reglas de entrada:
-- Si `## Investigación` está vacía o dice "Pendiente": detente, pide correr `/delivery-investigate TASK-<id>` primero.
+Lee `docs/tasks/TASK-<slug>.md`. Reglas de entrada:
+- Si `## Investigación` está vacía o dice "Pendiente": detente, pide correr `/delivery-investigate TASK-<slug>` primero.
 - Si el veredicto de complejidad es `TRIVIAL_FIX`: este skill no aplica — ese camino va directo a `delivery-engineer`. Dilo y detente.
-- Si el veredicto es `NEEDS_ARCHITECTURE` y `## Arquitectura` sigue "Pendiente": detente, pide correr `/delivery-architect TASK-<id>` primero.
+- Si `**Diseño requerido:**` es `SI` y `## Diseño` sigue "Pendiente": detente, pide correr `/delivery-design TASK-<slug>` primero.
+- Si el veredicto es `NEEDS_ARCHITECTURE` y `## Arquitectura` sigue "Pendiente": detente, pide correr `/delivery-architect TASK-<slug>` primero.
 
 ### 2. Analizar la tarea con criterio de arquitecto/planner senior
 
@@ -47,6 +48,7 @@ Aunque el veredicto haya sido `NEEDS_PLAN` (sin `delivery-architect` de por medi
 - **Rendimiento**: consultas N+1, cálculos en loop sobre inventario/proformas.
 - **Seguridad y permisos**: vistas de admin o endpoints que deberían estar restringidos.
 - **Acoplamiento**: dada la deuda técnica conocida, ¿tocar este archivo tiene efectos secundarios en otra parte?
+- **Consistencia visual**: si el task sí pasó por `delivery-design`, los componentes/patrones ya están decididos en el DDR — no los reinventes acá, solo tradúcelos a pasos de implementación.
 
 Si el task sí pasó por `delivery-architect`, esta sección resume las decisiones de los ADR relevantes en vez de re-derivarlas.
 
@@ -65,14 +67,15 @@ Calcula el slug de la tarea (kebab-case corto) y la fecha de hoy. Guarda como `d
 ```markdown
 # PLAN-<fecha>-<slug> (v1)
 
-**Task:** TASK-<id>
+**Task:** TASK-<slug>
+**DDRs relacionados:** <lista, o "Ninguno">
 **ADRs relacionados:** <lista, o "Ninguno">
 
 ## Objective
 Qué se quiere lograr y por qué, en 1-3 frases.
 
 ## Context
-Resumen de la investigación relevante (referencia TASK-<id> en vez de copiar todo).
+Resumen de la investigación relevante (referencia TASK-<slug> en vez de copiar todo).
 
 ## Current behavior
 Cómo funciona hoy, con `archivo:línea`.
@@ -113,7 +116,7 @@ Si aplica, qué se necesita instalar — requiere confirmación antes de que `de
 Si `**Pull Request:**` en el TASK ya tiene un enlace, salta al paso 7 — no abras un segundo PR.
 
 1. Revisa el estado del repo (`git status`) y no descartes trabajo sin comitear ajeno.
-2. Trae `origin/master` actualizado y crea la rama `task/TASK-<id>-<slug>` desde ahí.
+2. Trae `origin/master` actualizado y crea la rama `task/TASK-<slug>` desde ahí (el nombre del task ya es descriptivo, no le agregues otro slug encima).
 3. Comitea únicamente el archivo del plan (y el TASK actualizado si vive en la misma rama de trabajo — normalmente el TASK se mantiene en la rama por defecto del repo si así lo prefiere el equipo; si no es obvio, pregunta). Mensaje de commit corto referenciando el plan.
 4. `git push` y abre el PR contra la rama base (normalmente `master`) con este cuerpo inicial:
 
@@ -122,10 +125,13 @@ Si `**Pull Request:**` en el TASK ya tiene un enlace, salta al paso 7 — no abr
 <resumen de una línea de la tarea>
 
 ## Task
-TASK-<id> (docs/tasks/TASK-<id>.md)
+TASK-<slug> (docs/tasks/TASK-<slug>.md)
 
 ## Plan
 docs/plans/PLAN-<fecha>-<slug>.md (v1)
+
+## DDRs relacionados
+- <enlace a cada DDR, o "Ninguno">
 
 ## ADRs relacionados
 - <enlace a cada ADR, o "Ninguno">
@@ -143,7 +149,7 @@ _Pendiente (delivery-review)_
 _Ninguna conocida todavía_
 ```
 
-El título del PR debe referenciar el task: `TASK-<id>: <título corto>`. Este cuerpo es un contrato entre skills: cada una edita solo su propia sección (`delivery-engineer` → `## Changes`, `delivery-review` → `## Testing` y `## Review`, `delivery-publish` → `## Summary` y `## Known limitations` al cerrar). No pises secciones que no te correspondan.
+El título del PR debe referenciar el task: `TASK-<slug>: <título corto>`. Este cuerpo es un contrato entre skills: cada una edita solo su propia sección (`delivery-engineer` → `## Changes`, `delivery-review` → `## Testing` y `## Review`, `delivery-publish` → `## Summary` y `## Known limitations` al cerrar). No pises secciones que no te correspondan.
 
 ### 7. Si es una actualización (PLAN_UPDATE_REQUIRED): versionar, no sobrescribir
 
@@ -154,7 +160,7 @@ Cuando te invoquen porque `delivery-engineer` o `delivery-review` reportaron un 
 
 ```markdown
 ## Changelog
-- **v2** (<fecha>): <motivo del cambio>. Solicitado por <delivery-engineer | delivery-review, referenciando REV-<id> si aplica>.
+- **v2** (<fecha>): <motivo del cambio>. Solicitado por <delivery-engineer | delivery-review, referenciando REV-<fecha>-<task-slug>-<seq> si aplica>.
 ```
 
 4. Comitea y **empuja a la misma rama** del PR ya abierto — nunca crees un PR nuevo. Actualiza el número de versión en `## Plan` del PR (`gh pr edit`) si el enlace de versión aparece ahí.
@@ -182,4 +188,4 @@ Resume el plan en el chat (no repitas el archivo completo), incluye el enlace de
 
 ## Cuándo delega a otra skill
 
-Siempre termina delegando a `delivery-engineer` (nunca implementa). Si durante el análisis descubre que en realidad la tarea necesita una decisión arquitectónica que `delivery-investigate` no detectó, debe detenerse y sugerir `/delivery-architect TASK-<id>` en su lugar, dejando constancia en el TASK de por qué.
+Siempre termina delegando a `delivery-engineer` (nunca implementa). Si durante el análisis descubre que en realidad la tarea necesita una decisión arquitectónica que `delivery-investigate` no detectó, debe detenerse y sugerir `/delivery-architect TASK-<slug>` en su lugar, dejando constancia en el TASK de por qué.

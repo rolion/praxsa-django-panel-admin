@@ -1,6 +1,6 @@
 ---
 name: delivery-architect
-description: Toma la investigación de un task (docs/tasks/TASK-<id>.md, producida por delivery-investigate) y determina las decisiones arquitectónicas necesarias en este monorepo (praxsa_manager en Django/DRF + proforma en Angular). Interviene cuando hay cambio estructural, nuevo módulo o bounded context, nueva integración externa, cambios importantes de base de datos, cambios de autenticación/autorización, cambios de infraestructura, impacto en múltiples módulos, problemas con la arquitectura existente, o decisiones que puedan generar deuda técnica importante. Evalúa la arquitectura existente, identifica impactos, compara alternativas, explica trade-offs, evita sobreingeniería y define una estrategia explícita de rollback/mitigación para cambios sensibles (o justifica por qué no aplica). Registra la decisión como ADR en docs/adr/ADR-<id>-<slug>.md y actualiza el TASK. No implementa código. Se invoca explícitamente con /delivery-architect TASK-<id>; no debe activarse solo porque el usuario mencione "arquitectura" o "diseño" en una frase suelta.
+description: Toma la investigación de un task (docs/tasks/TASK-<slug>.md, producida por delivery-investigate) y, si existe, la decisión de diseño (docs/design/DDR-*.md de delivery-design), y determina las decisiones arquitectónicas necesarias en este monorepo (praxsa_manager en Django/DRF + proforma en Angular). Interviene cuando hay cambio estructural, nuevo módulo o bounded context, nueva integración externa, cambios importantes de base de datos, cambios de autenticación/autorización, cambios de infraestructura, impacto en múltiples módulos, problemas con la arquitectura existente, o decisiones que puedan generar deuda técnica importante. Evalúa la arquitectura existente, identifica impactos, compara alternativas, explica trade-offs, evita sobreingeniería y define una estrategia explícita de rollback/mitigación para cambios sensibles (o justifica por qué no aplica). Registra la decisión como ADR en docs/adr/ADR-<task-slug>-<decision-slug>.md y actualiza el TASK. No implementa código. Se invoca explícitamente con /delivery-architect TASK-<slug>; no debe activarse solo porque el usuario mencione "arquitectura" o "diseño" en una frase suelta (para diseño/UX visual, el skill correcto es delivery-design).
 ---
 
 # Delivery Architect
@@ -11,22 +11,22 @@ No todas las tareas necesitan una decisión arquitectónica, pero las que sí la
 
 ## Cuándo usarlo
 
-Solo cuando el usuario invoque `/delivery-architect TASK-<id>` explícitamente — típicamente porque `delivery-investigate` emitió `NEEDS_ARCHITECTURE`, o porque `delivery-review`/`delivery-engineer` reabrieron el task con `ARCHITECTURE_REVIEW_REQUIRED`. No lo dispares por tu cuenta.
+Solo cuando el usuario invoque `/delivery-architect TASK-<slug>` explícitamente — típicamente porque `delivery-investigate` emitió `NEEDS_ARCHITECTURE`, o porque `delivery-review`/`delivery-engineer` reabrieron el task con `ARCHITECTURE_REVIEW_REQUIRED`. No lo dispares por tu cuenta.
 
 ## Inputs
 
-- `TASK-<id>` con la sección `## Investigación` ya completa.
+- `TASK-<slug>` con la sección `## Investigación` ya completa.
 
 ## Outputs
 
 - Uno o más ADR en `docs/adr/ADR-<id>-<slug>.md`.
-- `docs/tasks/TASK-<id>.md` actualizado: sección `## Arquitectura` enlazando el/los ADR, transición de etapa, fila en el historial.
+- `docs/tasks/TASK-<slug>.md` actualizado: sección `## Arquitectura` enlazando el/los ADR, transición de etapa, fila en el historial.
 
 ## Flujo
 
 ### 1. Leer el TASK
 
-Lee `docs/tasks/TASK-<id>.md` completo. Si `## Investigación` está vacía o dice "Pendiente", detente y dile al usuario que primero corra `/delivery-investigate TASK-<id>`. Si el task viene de un `ARCHITECTURE_REVIEW_REQUIRED` (reportado por `delivery-engineer` o `delivery-review`), lee también esa nota en `## Implementación` o `## Review` para entender qué problema arquitectónico se encontró a mitad de camino.
+Lee `docs/tasks/TASK-<slug>.md` completo. Si `## Investigación` está vacía o dice "Pendiente", detente y dile al usuario que primero corra `/delivery-investigate TASK-<slug>`. Si `**Diseño requerido:**` es `SI` y `## Diseño` sigue "Pendiente", detente y dile que primero corra `/delivery-design TASK-<slug>` — la decisión de qué componentes/flujo de UI se necesitan puede cambiar el contrato que esta etapa define. Si `## Diseño` ya tiene DDR(s) enlazados, léelos: son insumo de esta etapa, no algo a re-decidir. Si el task viene de un `ARCHITECTURE_REVIEW_REQUIRED` (reportado por `delivery-engineer` o `delivery-review`), lee también esa nota en `## Implementación` o `## Review` para entender qué problema arquitectónico se encontró a mitad de camino.
 
 ### 2. Evaluar la arquitectura existente
 
@@ -51,13 +51,13 @@ Para cambios sensibles (infraestructura, autenticación/autorización, base de d
 
 ### 6. Crear o actualizar el ADR
 
-Calcula el próximo id: lista `docs/adr/ADR-*.md` (Glob), toma el número más alto y súmale 1 (`001` si no hay ninguno), 3 dígitos. Nombra el archivo `docs/adr/ADR-<id>-<slug-corto-de-la-decisión>.md`.
+No uses un contador global (con sesiones en paralelo, dos calculan el mismo "próximo número" antes de que la otra escriba — ya pasó: hay dos `ADR-006` distintos en `docs/adr/`). En su lugar, nombra el archivo a partir del task y de un slug corto de la decisión (kebab-case, 2-4 palabras): `docs/adr/ADR-<task-slug>-<decision-slug>.md`. Si el task necesita más de un ADR, se diferencian solo por `<decision-slug>`. Antes de escribir, verifica con Glob que ese nombre exacto no exista ya con contenido distinto; si existe y es la misma decisión, actualízalo en vez de duplicar.
 
 ```markdown
-# ADR-<id>: <título de la decisión>
+# ADR-<task-slug>-<decision-slug>: <título de la decisión>
 
 **Estado:** Propuesto
-**Task relacionado:** TASK-<id>
+**Task relacionado:** TASK-<slug>
 **Fecha:** <fecha real>
 
 ## Contexto
@@ -76,15 +76,15 @@ Cómo se revierte o mitiga si algo falla. Si no aplica, justifica por qué.
 Qué queda más fácil, qué queda más difícil, qué deuda técnica se acepta conscientemente (si alguna).
 ```
 
-Si esta invocación **actualiza** una decisión arquitectónica ya tomada (por ejemplo, `delivery-review` encontró que la decisión era insuficiente), no borres el ADR anterior: cambia su `**Estado:**` a `Reemplazado por ADR-<nuevo-id>` y crea uno nuevo que referencie al anterior en `## Contexto`.
+Si esta invocación **actualiza** una decisión arquitectónica ya tomada (por ejemplo, `delivery-review` encontró que la decisión era insuficiente), no borres el ADR anterior: cambia su `**Estado:**` a `Reemplazado por ADR-<nuevo-nombre>` y crea uno nuevo que referencie al anterior en `## Contexto`.
 
 ### 7. Actualizar el TASK
 
-Actualiza `## Arquitectura` en `docs/tasks/TASK-<id>.md` enlazando el/los ADR creados, agrega la fila al historial de transiciones (`ARCHITECTURE → PLANNING`, motivo, `delivery-architect`), y actualiza `**Etapa actual:**` a `PLANNING`.
+Actualiza `## Arquitectura` en `docs/tasks/TASK-<slug>.md` enlazando el/los ADR creados, agrega la fila al historial de transiciones (`ARCHITECTURE → PLANNING`, motivo, `delivery-architect`), y actualiza `**Etapa actual:**` a `PLANNING`.
 
 ### 8. Reportar y detener
 
-Resume la decisión y su justificación en el chat. Sugiere `/delivery-plan TASK-<id>` como siguiente paso. No implementes nada ni invoques `delivery-plan` tú mismo.
+Resume la decisión y su justificación en el chat. Sugiere `/delivery-plan TASK-<slug>` como siguiente paso. No implementes nada ni invoques `delivery-plan` tú mismo.
 
 ## Reglas
 
