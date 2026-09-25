@@ -15,6 +15,7 @@ from rest_framework import status
 from .models import Window_Film_Reel, inventario
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from .business.inventario import Inventario_Business
+from .business.proforma import Proforma_Business
 
 from django.db.models import OuterRef, Subquery
 from django.db.models.functions import Coalesce
@@ -152,8 +153,16 @@ def get_car_part_info(request, car_model_id, sucursal_id):
     
 def get_proforma_car_part_info(request, proforma_id):
     '''devuelve la informacion de item del auto seleccionado'''
+    if not (request.user.is_authenticated and request.user.is_staff):
+        return JsonResponse(data={'error': True, 'message': 'not allowed'}, status=403)
     try:
-        proforma = Proforma_Header.objects.select_related('sucursal', 'car_model_id').get(pk= proforma_id)
+        scoped_qs = Proforma_Business().get_proforma_queryset_by_role(
+            user=request.user,
+            qs=Proforma_Header.objects.select_related('sucursal', 'car_model_id'),
+        )
+        if scoped_qs is None:
+            return JsonResponse(data={'error': True, 'message': 'not allowed'}, status=403)
+        proforma = scoped_qs.get(pk=proforma_id)
         helper = Proforma_Helper()
         sales_type = proforma.sales_type
         if sales_type == helper.tipo_venta_instalacion:
@@ -189,6 +198,8 @@ def get_proforma_car_part_info(request, proforma_id):
                                     'inv_widths': [],
                                     'sales_type': proforma.sales_type
                                     }, safe=False)
+    except ObjectDoesNotExist:
+        return JsonResponse(data={'error': True, 'message': 'not found'}, status=404)
     except Exception as e:
         print('algo salio mal -->', str(e))
         return JsonResponse(data={'error':True, 'message': 'algo salio mal'}, status=500)
