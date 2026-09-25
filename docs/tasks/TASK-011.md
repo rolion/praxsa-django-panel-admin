@@ -1,6 +1,6 @@
 # TASK-011: Condición de carrera / sobreventa de inventario (select_for_update en reduce_inventory/return_to_inventory)
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_PLAN
 **Rama:** `task/TASK-011-inventario-select-for-update`
 **Pull Request:** [#43](https://github.com/rolion/praxsa-django-panel-admin/pull/43)
@@ -11,6 +11,7 @@
 | 2026-09-25 | (nuevo) → INVESTIGATION | Task creado desde backlog #3 (docs/integration-and-backlog.md) | delivery-investigate |
 | 2026-09-25 | INVESTIGATION → PLANNING | Investigación completa, veredicto NEEDS_PLAN | delivery-plan |
 | 2026-09-25 | PLANNING → ENGINEERING | Plan v1 listo (docs/plans/PLAN-2026-09-25-inventario-select-for-update.md), PR abierto | delivery-plan |
+| 2026-09-25 | ENGINEERING → REVIEW | Implementación completa: select_for_update + test de concurrencia, suite completa sin regresiones | delivery-engineer |
 
 ## Investigación
 
@@ -68,7 +69,16 @@ _Pendiente / No aplica según veredicto_
 [docs/plans/PLAN-2026-09-25-inventario-select-for-update.md](../plans/PLAN-2026-09-25-inventario-select-for-update.md) (v1).
 
 ## Implementación
-_Pendiente_
+
+**Cambios:**
+- [praxsa_manager/product/business/inventario.py](../../praxsa_manager/product/business/inventario.py) — agregado `.select_for_update()` a la queryset de lectura en `reduce_inventory` (antes de `.filter(...)`) y en `return_to_inventory` (antes de `.get(...)`). Ambos siguen dentro de las transacciones `@transaction.atomic` ya existentes en `Proforma_Business.create_work_note` y `abrir_proforma` (`praxsa_manager/product/business/proforma.py`) — no se tocó ninguno de los dos callers.
+- [praxsa_manager/product/tests/test_inventory_concurrency.py](../../praxsa_manager/product/tests/test_inventory_concurrency.py) (nuevo) — `TransactionTestCase` con dos threads reales (conexiones de BD separadas, sincronizados con `threading.Barrier` al inicio) ejecutando `create_work_note` para dos proformas que compiten por el mismo stock exacto (`to_install = 1.00`, alcanza para una sola). Verifica que exactamente una transacción tiene éxito y la otra falla con `NoHayLaminasDisponibles` ("no hay lamina disponible..."), y que el `inventario.to_install` final es `0.00` (nunca negativo).
+
+**Evidencia de que el test reproduce el bug real (paso 3 del plan):** se revirtió temporalmente el fix (vía `git stash` sobre solo `inventario.py`, sin tocar el test) y se corrió el test 3 veces contra el código anterior — las 3 corridas fallaron mostrando que **ambas** transacciones concurrentes tenían éxito (`{'a': ('ok', ...), 'b': ('ok', ...)}`), confirmando la sobreventa descrita en el backlog. Se restauró el fix inmediatamente después y se dejó el repo limpio (sin el stash).
+
+**Verificación:** `python manage.py test` — 82 tests, todos pasan (incluye el nuevo test de concurrencia). Sin regresiones en `test_proforma_status_field.py` ni en el resto de la suite que ejercita `create_work_note`/`abrir_proforma`.
+
+**Deuda técnica / fuera de alcance (ya documentado en el plan):** `CheckConstraint(to_install__gte=0)` a nivel de BD (paso 3 opcional del backlog) no se implementó — requiere verificar datos existentes antes de una migración, queda para un task separado si se decide perseguirlo.
 
 ## Review
 _Pendiente_
