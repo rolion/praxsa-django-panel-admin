@@ -1,6 +1,6 @@
 # TASK-login-panel-admin-backend: Login de `panel_admin/` conectado al backend real, branding PRAXSA y menú mínimo
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** `task/TASK-login-panel-admin-backend`
@@ -13,6 +13,7 @@
 | 2026-09-25 | INVESTIGATION → ARCHITECTURE | Diseño de login/branding/menú completado | delivery-design |
 | 2026-09-25 | ARCHITECTURE → PLANNING | Endpoint de auth dedicado (sin verificación de rol) definido | delivery-architect |
 | 2026-09-25 | PLANNING → ENGINEERING | Plan v1 escrito, PR #46 abierto | delivery-plan |
+| 2026-09-25 | ENGINEERING → REVIEW | Implementación completa, verificada con tests y smoke test manual | delivery-engineer |
 
 ## Investigación
 
@@ -115,7 +116,20 @@ El patrón de integración con `/product/api-token-auth/` ya está resuelto en `
 [PLAN-2026-09-25-login-panel-admin-backend](../plans/PLAN-2026-09-25-login-panel-admin-backend.md) (v1)
 
 ## Implementación
-_Pendiente_
+
+Implementado según [PLAN-2026-09-25-login-panel-admin-backend](../plans/PLAN-2026-09-25-login-panel-admin-backend.md) (v1), sin desviaciones de alcance. Detalle completo en `## Changes` del [PR #46](https://github.com/rolion/praxsa-django-panel-admin/pull/46).
+
+**Verificación propia (no es el Quality Gate formal, eso es `delivery-review`):**
+- Backend: 85/85 tests pasan (`python manage.py test product`), incluyendo los 4 nuevos de `test_panel_admin_auth.py`.
+- Frontend: `ng lint` sin errores. `ng test`: 19 SUCCESS incluyendo los specs nuevos/actualizados (`auth.service.spec.ts`, `signin.component.spec.ts`, `header.component.spec.ts`); 15 FAILED preexistentes en specs de componentes de ejemplo de la plantilla no relacionados a este cambio (ver deuda técnica abajo).
+- Smoke test manual end-to-end (backend + frontend reales, navegador): login correcto → dashboard; contraseña incorrecta y usuario inexistente → "Credenciales inválidas"; sidebar solo "Dashboard"; header con logo PRAXSA + nombre real del usuario + Logout. Usuario de prueba eliminado tras la verificación.
+
+**Deuda técnica señalada, no resuelta (fuera de alcance del plan):**
+- 15 de los 34 specs de `panel_admin/` ya fallaban antes de este PR por dependencias de test faltantes (`FeatherModule.pick`, `ActivatedRoute`, `ToastConfig` no provistos) en componentes de ejemplo de la plantilla no tocados por este cambio (Footer, Sidebar, Page404/500, AdvanceTable, Blank, Signup, Second1/2, First1/2/3, Third1, Main, Dashboard2). No se corrigieron por no ser parte del objetivo de este task.
+- El bloque de identidad propio del sidebar (`sidebar.component.html`, nombre hardcodeado "Emily Smith") quedó sin actualizar — fuera de alcance según el plan (pregunta abierta no resuelta por el usuario).
+- `environment.ts` de producción de `panel_admin/` queda con un `apiUrl` placeholder documentado (`TODO`), no una URL real confirmada.
+
+**Fix incidental aplicado (fuera del plan, pero bloqueante para verificar el propio plan):** `app.component.spec.ts` tenía un error de compilación preexistente que impedía correr `ng test` por completo (no solo ese archivo). Se corrigió lo mínimo indispensable para poder ejecutar y verificar los tests nuevos de este task.
 
 ## Review
 _Pendiente_
