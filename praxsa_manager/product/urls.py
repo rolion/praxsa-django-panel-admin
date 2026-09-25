@@ -3,9 +3,20 @@ from rest_framework.urlpatterns import format_suffix_patterns
 
 from . import views
 from rest_framework.authtoken import views as rf_token
-from .custom_views.auth_token import CustomAuthToken
+from .custom_views.auth_token import CustomAuthToken, StaffAuthToken
 from .custom_views.invoice import InvoiceView, ListUserInvoice
 from .custom_views.bobina import BobinaView
+from .custom_views.user_admin import (
+    GroupDetailView,
+    GroupListCreateView,
+    PermissionListView,
+    SucursalDetailView,
+    SucursalListCreateView,
+    UserDetailView,
+    UserListCreateView,
+    UserSetPasswordView,
+    UserToggleActiveView,
+)
 app_name = 'product'
 urlpatterns = [
     path('get_car_part_info/<int:car_model_id>/<int:sucursal_id>', views.get_car_part_info, name= 'get_car_part_info'),
@@ -21,6 +32,17 @@ urlpatterns = [
     path('invoice/<int:pk>/', InvoiceView.as_view()),
     path('invoice/all', ListUserInvoice.as_view()),
     path('bobina/<int:pk>', views.get_bobina, name='get_bobina'),
-    path('layer/<int:layer_id>', views.get_layer_info, name='get_layer_info')
+    path('layer/<int:layer_id>', views.get_layer_info, name='get_layer_info'),
+    # Modulo de Usuarios, Perfiles, Grupos, Roles y Sucursales (panel_admin/)
+    path('admin-token-auth/', StaffAuthToken.as_view()),
+    path('users', UserListCreateView.as_view()),
+    path('users/<int:pk>/', UserDetailView.as_view()),
+    path('users/<int:pk>/set-password/', UserSetPasswordView.as_view()),
+    path('users/<int:pk>/toggle-active/', UserToggleActiveView.as_view()),
+    path('groups', GroupListCreateView.as_view()),
+    path('groups/<int:pk>/', GroupDetailView.as_view()),
+    path('permissions', PermissionListView.as_view()),
+    path('sucursales', SucursalListCreateView.as_view()),
+    path('sucursales/<int:pk>/', SucursalDetailView.as_view()),
 ]
 urlpatterns = format_suffix_patterns(urlpatterns)
