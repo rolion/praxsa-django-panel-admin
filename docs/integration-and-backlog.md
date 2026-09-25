@@ -244,13 +244,23 @@ Para cada ítem: severidad, archivo(s), tests a escribir **antes** de tocar el c
   3. A partir de aquí, cada PR de los ítems #2-#7 ya incluye sus propios tests — no hace falta un PR de "cobertura general" separado.
 </details>
 
-### 9. ⬜ [MEDIO] Sin máquina de estados para proforma→instalación→venta→pago — **PENDIENTE**
+### 9. 🟡 [MEDIO] Sin máquina de estados para proforma→instalación→venta→pago — **HECHO (parcial: pasos 1-2 de 3)**
+**TASK-009, PR [#37](https://github.com/rolion/praxsa-django-panel-admin/pull/37) (mergeado, `origin/master` commit `f37473a`), ADR-006.** Se agregaron tests de caracterización del flujo actual (paso 1) y un campo `status` persistido en `Proforma_Header` (`proforma`/`nota_trabajo`/`por_cobrar`/`finalizado`), sincronizado explícitamente por un único método (`Proforma_Business.refresh_status`, misma lógica que `ProformaAdmin.get_estado`) en las 5 transiciones reales de negocio, incluida una quinta (`Orden_Trabajo_Business.delete_work_note`) detectada durante la implementación (paso 2). Backfill de datos existentes verificado contra Postgres real: 25/25 proformas, 0 discrepancias contra `get_estado()`. La inferencia por `hasattr()` del admin **no se tocó** — sigue siendo la fuente visible hoy.
+**Pendiente (diferido explícitamente por ADR-006):**
+- Paso 3: `CheckConstraint`/validación en `clean()` para las invariantes mínimas (p. ej. no `pago` sin `nota_venta.is_close`), y migrar `ProformaAdmin`/`NotaVentaAdmin`/`NotaTrabajoAdmin` a leer el campo `status` persistido en vez de recalcular por `hasattr()`.
+- Bloqueante para el paso 3: la pregunta de negocio de la sección 6 (¿existe una regla formal de transición, o se decide caso a caso?) sigue sin respuesta registrada.
+- 3 hallazgos Low de la revisión (no bloqueantes, sin resolver): `business/orden_trabajo.py` tocado fuera del alcance declarado en el plan v1; el backfill de la migración sin `select_related` (N+1 de impacto bajo); y una narrativa incorrecta en ADR-006/plan sobre el resultado de `abrir_proforma` (el código y los tests ya son correctos, solo el texto de la decisión). Detalle en `docs/reviews/REV-2026-09-23-00{1,2,3}-*.md`.
+
+<details>
+<summary>Descripción original del ítem</summary>
+
 **Backend BIZ-04.** Estado inferido con `hasattr()`, sin campo persistido ni constraint.
 - **Tests**: tests que documenten las transiciones válidas hoy (crear pago sin nota de venta cerrada, por ejemplo) antes de agregar restricciones, para no romper flujos legítimos existentes.
 - **Pasos**:
   1. PR: agregar tests de caracterización del flujo actual (sin cambiar comportamiento).
   2. PR: agregar campo `status` explícito con `choices`, poblado en cada transición existente (sin quitar aún la inferencia por `hasattr`, para no romper el admin de golpe).
   3. PR: agregar `CheckConstraint`/validación en `clean()` para las invariantes mínimas (p. ej. no `pago` sin `nota_venta.is_close`), y migrar el admin a leer el campo persistido.
+</details>
 
 ### 10. ✅ [MEDIO] Filtrado por sucursal inconsistente en reportes/pagos del admin — **HECHO**
 **TASK-002, PR [#32](https://github.com/rolion/praxsa-django-panel-admin/pull/32) (mergeado, commit `2afeb29`), ADR-002.** `PagosAdmin`, `ReportDailySellAdmin`, `ReportStorageAdmin`, `ReportUtilidadAdmin` y `ReportNotaTrabajoAdmin` ahora filtran por sucursal (delegando en `User_Helper.can_view_all_sucursales`, corregido en producción tras verificación manual: solo el grupo `Admin` ve todas las sucursales, `Caja` queda restringido a la propia); el filtro comentado en `orden_trabajo.py` se reimplementó. 27/27 tests verificados contra Postgres real.
