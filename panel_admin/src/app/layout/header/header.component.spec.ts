@@ -72,4 +72,15 @@ describe('HeaderComponent', () => {
     expect(text).not.toContain('Profile');
     expect(text).not.toContain('Settings');
   });
+
+  it('renders the username on the left side of the header nav', () => {
+    authService.login('admin', 'secret123').subscribe();
+    httpMock
+      .expectOne(loginUrl)
+      .flush({ token: 'abc123', user_id: 1, username: 'admin', name: 'Ana', lastname: 'Gomez' });
+    fixture.detectChanges();
+
+    const nameEl = (fixture.nativeElement as HTMLElement).querySelector('.current-user-name');
+    expect(nameEl?.textContent?.trim()).toBe('Ana');
+  });
 });

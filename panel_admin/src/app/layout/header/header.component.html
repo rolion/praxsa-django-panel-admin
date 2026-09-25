@@ -6,6 +6,9 @@
           collapse-btn" (click)="mobileMenuSidebarOpen($event,'overlay-open')">
           <i-feather name="menu"></i-feather>
         </a></li>
+        <li class="nav-item">
+          <span class="nav-link nav-link-lg current-user-name">{{currentUserName}}</span>
+        </li>
         <li>
           <form class="form-inline me-auto">
             <div class="search-element d-flex">
@@ -162,9 +165,8 @@ template! <span class="time">Yesterday</span>
 </div>
 </li>
 <li ngbDropdown><a ngbDropdownToggle data-toggle="dropdown"
-  class="nav-link dropdown-toggle nav-link-lg nav-link-user d-flex flex-column align-items-center">
-  <img alt="PRAXSA" src="assets/images/praxsa-logo.svg" class="user-brand-logo"> <span
-  class="d-sm-none d-lg-inline-block">{{currentUserName}}</span></a>
+  class="nav-link dropdown-toggle nav-link-lg nav-link-user">
+  <i-feather name="user" class="collapse-btn"></i-feather></a>
   <div ngbDropdownMenu class="dropdown-menu dropdown-menu-right header-dropdown pullDown">
     <div class="dropdown-title">{{currentUserName}}</div>
 <div class="dropdown-divider"></div>
