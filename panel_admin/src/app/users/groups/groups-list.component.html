@@ -11,6 +11,9 @@
       <div class="col-lg-8 col-md-12">
         <div class="card">
           <div class="card-body">
+            <p class="text-muted">
+              Cada grupo agrupa los permisos (roles) que se asignan a los usuarios. Al crear o editar un grupo, elegí sus permisos abajo.
+            </p>
             @if (errorMessage) {
               <div class="alert alert-danger">{{ errorMessage }}</div>
             }
@@ -51,7 +54,15 @@
                 </div>
                 <div class="mb-3">
                   <label class="form-label">Permisos</label>
-                  <ng-select [items]="permissions" bindLabel="name" bindValue="id" [multiple]="true" formControlName="permissions"></ng-select>
+                  <ng-select
+                    [items]="permissions"
+                    bindLabel="name"
+                    bindValue="id"
+                    groupBy="app_label"
+                    [multiple]="true"
+                    [closeOnSelect]="false"
+                    formControlName="permissions"
+                  ></ng-select>
                 </div>
                 <button type="submit" class="btn btn-primary me-2">Guardar</button>
                 <button type="button" class="btn btn-outline-secondary" (click)="cancel()">Cancelar</button>

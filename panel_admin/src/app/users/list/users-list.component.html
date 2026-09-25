@@ -1,12 +1,12 @@
 <section class="main-content">
   <ul class="breadcrumb breadcrumb-style">
     <li class="breadcrumb-item">
-      <h5 class="page-title m-b-0">Usuarios</h5>
+      <h5 class="page-title m-b-0">Credenciales</h5>
     </li>
     <li class="breadcrumb-item bcrumb-1">
       <a routerLink="/dashboard/main"><i class="fas fa-home font-17"></i></a>
     </li>
-    <li class="breadcrumb-item">Usuarios</li>
+    <li class="breadcrumb-item">Credenciales</li>
   </ul>
   <div class="section-body">
     <div class="row clearfix">
@@ -23,7 +23,7 @@
               />
               <label class="form-check-label" for="includeInactive">Mostrar inactivos</label>
             </div>
-            <a routerLink="/users/create" class="btn btn-primary">Nuevo usuario</a>
+            <a routerLink="/users/create" class="btn btn-primary">Nueva credencial</a>
           </div>
           @if (errorMessage) {
             <div class="alert alert-danger m-3">{{ errorMessage }}</div>
@@ -52,25 +52,39 @@
                 }
               </ng-template>
             </ngx-datatable-column>
-            <ngx-datatable-column name="Acciones" [sortable]="false" [width]="260">
+            <ngx-datatable-column name="Acciones" [sortable]="false" [width]="160">
               <ng-template let-row="row" ngx-datatable-cell-template>
-                <a [routerLink]="['/users/view', row.id]" class="btn btn-sm btn-outline-secondary me-1">Ver</a>
-                <a [routerLink]="['/users/edit', row.id]" class="btn btn-sm btn-outline-primary me-1">Editar</a>
+                <a
+                  [routerLink]="['/users/view', row.id]"
+                  class="btn btn-sm btn-outline-secondary rounded-circle icon-btn me-1"
+                  title="Ver"
+                >
+                  <i-feather name="eye"></i-feather>
+                </a>
+                <a
+                  [routerLink]="['/users/edit', row.id]"
+                  class="btn btn-sm btn-outline-primary rounded-circle icon-btn me-1"
+                  title="Editar"
+                >
+                  <i-feather name="edit-2"></i-feather>
+                </a>
                 @if (row.is_active) {
                   <button
                     type="button"
-                    class="btn btn-sm btn-outline-danger"
+                    class="btn btn-sm btn-outline-danger rounded-circle icon-btn"
+                    title="Eliminar"
                     (click)="deactivate(row)"
                   >
-                    Eliminar
+                    <i-feather name="trash-2"></i-feather>
                   </button>
                 } @else {
                   <button
                     type="button"
-                    class="btn btn-sm btn-outline-success"
+                    class="btn btn-sm btn-outline-success rounded-circle icon-btn"
+                    title="Activar"
                     (click)="activate(row)"
                   >
-                    Activar
+                    <i-feather name="user-check"></i-feather>
                   </button>
                 }
               </ng-template>

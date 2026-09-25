@@ -1,10 +1,13 @@
 import { TestBed } from '@angular/core/testing';
+import { importProvidersFrom } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
 import {
   HttpTestingController,
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
+import { FeatherModule } from 'angular-feather';
+import { allIcons } from 'angular-feather/icons';
 import Swal from 'sweetalert2';
 import { environment } from '../../../environments/environment';
 import { UsersListComponent } from './users-list.component';
@@ -32,7 +35,12 @@ describe('UsersListComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [UsersListComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        importProvidersFrom(FeatherModule.pick(allIcons)),
+      ],
     });
     const fixture = TestBed.createComponent(UsersListComponent);
     component = fixture.componentInstance;

@@ -23,18 +23,7 @@
       "submenu": [
         {
           "path": "/users",
-          "title": "Usuarios",
-          "iconType": "",
-          "icon": "",
-          "class": "ml-menu",
-          "groupTitle": false,
-          "badge": "",
-          "badgeClass": "",
-          "submenu": []
-        },
-        {
-          "path": "/users",
-          "title": "Perfiles",
+          "title": "Credenciales",
           "iconType": "",
           "icon": "",
           "class": "ml-menu",
@@ -46,17 +35,6 @@
         {
           "path": "/users/groups",
           "title": "Grupos",
-          "iconType": "",
-          "icon": "",
-          "class": "ml-menu",
-          "groupTitle": false,
-          "badge": "",
-          "badgeClass": "",
-          "submenu": []
-        },
-        {
-          "path": "/users/roles",
-          "title": "Roles",
           "iconType": "",
           "icon": "",
           "class": "ml-menu",

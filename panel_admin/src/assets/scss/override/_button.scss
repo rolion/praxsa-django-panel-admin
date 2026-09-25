@@ -471,3 +471,21 @@
     line-height: 24px;
   }
 }
+// Boton circular con icono feather centrado (acciones de tabla: ver/editar/eliminar).
+.icon-btn {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  i-feather {
+    display: inline-flex;
+
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+}

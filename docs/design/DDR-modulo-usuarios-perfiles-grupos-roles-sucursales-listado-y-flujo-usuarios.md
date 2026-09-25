@@ -1,8 +1,16 @@
 # DDR-modulo-usuarios-perfiles-grupos-roles-sucursales-listado-y-flujo-usuarios: Menú, listado y flujo de creación del módulo Usuarios en `panel_admin/`
 
-**Estado:** Propuesto
+**Estado:** Propuesto (con ajuste post-implementación, ver abajo)
 **Task relacionado:** TASK-modulo-usuarios-perfiles-grupos-roles-sucursales
 **Fecha:** 2026-09-25
+
+## Actualización (2026-09-25, post-implementación)
+
+El usuario, al ver la implementación en vivo, pidió tres ajustes — se aplican directamente sobre lo ya construido, sin reabrir el resto de las decisiones de este DDR:
+
+1. **"Usuarios" y "Perfiles" se consolidan en un solo submenú, "Credenciales"**: ambos apuntaban a la misma pantalla (`/users`) desde el principio (ver sección "Alternativas consideradas" más abajo), así que el usuario confirmó que mostrarlos como dos entradas de menú separadas era redundante. Se renombra la entrada única a "Credenciales" (y los títulos/breadcrumbs de ver/editar/crear pasan a "Ver/Editar/Nueva credencial") — el nombre de archivos, rutas (`/users`, `/users/edit/:id`, etc.) y componentes no cambian, solo el texto visible.
+2. **"Roles" se elimina como submenú separado**: el usuario notó que ya no hace falta — la asignación de permisos a un grupo ya ocurre dentro del formulario de "Grupos" (el `ng-select` de permisos). Se quita la ruta `/users/roles` y su componente (`roles-list.component.*`), y se enriquece el selector de permisos de Grupos con `groupBy="app_label"` (mismo agrupamiento por app que tenía el catálogo de Roles) para no perder esa claridad al consolidar.
+3. **Columna de Acciones con botones circulares e íconos** (`ngx-datatable`, `FeatherModule` ya usado en el resto de la plantilla): Ver = `eye`, Editar = `edit-2`, Eliminar = `trash-2`, Activar = `user-check` — reemplaza los botones de texto plano de la primera versión, consistente con el pedido explícito del usuario.
 
 ## Contexto
 
