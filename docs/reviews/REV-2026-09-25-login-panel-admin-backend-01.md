@@ -1,10 +1,14 @@
 # REV-2026-09-25-login-panel-admin-backend-01: El plan v1 no se versionó tras cambios post-implementación pedidos por el usuario
 
-**Status:** Open
+**Status:** Resolved
 **Severity:** Low
 **Category:** PLAN
-**Related plan:** docs/plans/PLAN-2026-09-25-login-panel-admin-backend.md (v1)
+**Related plan:** docs/plans/PLAN-2026-09-25-login-panel-admin-backend.md (v2)
 **Suggested owner:** delivery-plan
+
+## Resolution
+
+Resuelto en `PLAN-2026-09-25-login-panel-admin-backend.md` v2 (2026-09-25), a pedido explícito del usuario ("actualiza el REV-01"). Se actualizaron `Expected behavior`, los pasos 9/10/12/14 de `Proposed solution`, `Acceptance criteria`, `Risks` y `Out of scope` para reflejar la implementación real (assets reales en vez de SVG, eliminación del bloque de identidad del sidebar, nombre de usuario en el nav izquierdo del header), con un `## Changelog` documentando el motivo del cambio. No hubo cambio de código — solo el documento del plan quedó desincronizado, ahora corregido.
 
 ## Description
 

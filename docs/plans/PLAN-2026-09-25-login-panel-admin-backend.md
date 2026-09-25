@@ -1,4 +1,4 @@
-# PLAN-2026-09-25-login-panel-admin-backend (v1)
+# PLAN-2026-09-25-login-panel-admin-backend (v2)
 
 **Task:** TASK-login-panel-admin-backend
 **DDRs relacionados:** [DDR-login-panel-admin-backend-login-branding-menu](../design/DDR-login-panel-admin-backend-login-branding-menu.md)
@@ -30,9 +30,9 @@ Ver `TASK-login-panel-admin-backend` (`## Investigación`) para el detalle compl
 
 1. El usuario ingresa usuario/contraseña reales en el login de `panel_admin/`; si son correctos, el backend emite un token y el usuario entra a `/dashboard/main`.
 2. Si el usuario no existe o la contraseña es incorrecta, se muestra "Credenciales inválidas" y no se navega.
-3. El login, el logo del sidebar y el logo del menú de usuario muestran el branding de PRAXSA (logo generado); el panel izquierdo del login muestra la imagen de auto generada.
-4. El sidebar solo lista "Dashboard".
-5. El menú de usuario del header muestra el logo de PRAXSA encima del nombre real del usuario autenticado, y solo la opción "Logout" además de esa identidad (sin Profile/Email/Settings).
+3. El login y el sidebar muestran el branding real de PRAXSA (logo "PRAXSA Admin" y foto de auto provistos por el usuario); en mobile (<770px) la imagen del login se oculta y solo se ve el formulario.
+4. El sidebar solo lista "Dashboard", sin ningún bloque de identidad de usuario propio (se elimina el bloque "Emily Smith").
+5. El nombre real del usuario autenticado se muestra en el nav izquierdo del header (junto al toggle del sidebar); el dropdown de usuario a la derecha queda con un ícono genérico y solo la opción "Logout" (sin Profile/Email/Settings).
 
 ## Architecture considerations
 
@@ -60,12 +60,12 @@ Resumen del ADR (ver enlace arriba, detalle completo ahí):
 8. `authentication/signin/signin.component.ts`:
    - Quitar los valores por defecto hardcodeados (`admin@email.com`/`admin@123`) del formulario.
    - En el callback de error de `onSubmit()`, mostrar `'Credenciales inválidas'` para cualquier error del login (sin exponer el mensaje crudo del backend), y un mensaje distinto (p. ej. `'Algo salió mal, inténtalo de nuevo más tarde'`) solo si `error.status === 0` — mismo patrón que `proforma/`.
-9. `authentication/signin/signin.component.html`: quitar "Remember me", "Forgot password?", "Or Login With" (redes sociales) y "Don't have an account? Sign Up" (líneas 32-72 del archivo actual). Reemplazar `assets/images/login.jpg` por el asset de auto generado y `assets/images/logo.png` + texto "Oreva" por el logo generado + wordmark "PRAXSA".
-10. `layout/sidebar/sidebar.component.html:4-7`: reemplazar el logo del sidebar por el mismo logo generado.
+9. `authentication/signin/signin.component.html`: quitar "Remember me", "Forgot password?", "Or Login With" (redes sociales) y "Don't have an account? Sign Up" (líneas 32-72 del archivo actual). Reemplazar `assets/images/login.jpg` por `assets/images/praxsa-login-hero.png` (foto real provista por el usuario, con el logo "PRAXSA WINDOW FILM" ya integrado en la imagen) y `assets/images/logo.png` + texto "Oreva" por `assets/images/praxsa-admin-logo.png` (lockup "PRAXSA ADMIN" completo, sin necesidad de texto separado). En pantallas <770px se oculta la imagen (`.col-md-5`) y el formulario ocupa el 100% del ancho; el botón "Ingresar" usa el color `#203b84`.
+10. `layout/sidebar/sidebar.component.html:4-7`: reemplazar el logo del sidebar por `praxsa-admin-logo.png`, y **eliminar por completo** el bloque `.sidebar-user-panel` (imagen + "Emily Smith" + cargo) — pedido explícito del usuario, resuelve la pregunta abierta que dejaba este plan en v1.
 11. `src/assets/data/routes.json`: reemplazar todo el contenido por una sola entrada apuntando a `/dashboard/main`, sin submenú (ver punto 13 para el título).
-12. `layout/header/header.component.html:164-183`: reemplazar el trigger (avatar) y el título `"Hello Sarah.."` por el logo generado (pequeño) apilado sobre el nombre real del usuario (`currentUserValue.firstName`, con el mismo fallback a `username`); quitar los enlaces "Profile", "Email" y "Settings"; conservar "Logout".
+12. `layout/header/header.component.html`: el nombre real del usuario (`currentUserValue.firstName`, con fallback a `username`) se muestra como texto en el nav **izquierdo** del header, junto al toggle del sidebar — no en el dropdown derecho. El trigger del dropdown derecho pasa a un ícono genérico (`i-feather name="user"`); su contenido queda con el nombre solo como título (evita duplicarlo) y "Logout" como única acción, quitando "Profile", "Email" y "Settings".
 13. `src/assets/i18n/es.json` (y `en.json`, `de.json` si se quiere mantener el soporte multi-idioma ya presente): agregar una clave nueva de menú, p. ej. `MENUITEMS.DASHBOARD.TEXT` = `"Dashboard"`, en vez de reutilizar `MENUITEMS.HOME.LIST.DASHBOARD1` (que dice "Tablero 1", pensado para distinguir de un "Tablero 2" que ya no aparece en el menú).
-14. Generar los dos assets nuevos en `src/assets/images/` (p. ej. `praxsa-logo.svg`, `praxsa-login-hero.svg`) — **nota de alcance de herramienta**: este entorno no tiene una herramienta de generación de imágenes fotorrealistas; "generar" acá significa construir gráficos vectoriales (SVG) a mano que sigan el lenguaje visual de la referencia (ícono "P" en degradado azul + wordmark "PRAXSA"; para el auto, una ilustración vectorial estilizada de un auto con vidrios polarizados sobre fondo oscuro con overlay azul, no una fotografía). Si el usuario esperaba una fotografía realista, esto debe confirmarse como una limitación antes de dar el task por cerrado.
+14. Ubicar en `src/assets/images/` los dos assets de branding: `praxsa-admin-logo.png` (lockup "PRAXSA ADMIN") y `praxsa-login-hero.png` (foto del auto). **Nota (v2, reemplaza la nota de v1):** en la primera versión de este plan se anticipó generar estos assets como SVG vectoriales, ya que este entorno no tiene herramienta de generación de imágenes fotorrealistas. Tras ver esa primera versión, el usuario compartió directamente las dos imágenes reales (capturas de su propio diseño) — se usan esos archivos provistos por el usuario en vez de los SVG generados.
 
 ## Files/components affected
 
@@ -126,18 +126,18 @@ Resumen del ADR (ver enlace arriba, detalle completo ahí):
 - [ ] `POST /product/api-panel-admin-token-auth/` autentica un usuario de Django real (con o sin `Client`, con o sin `is_staff`) y devuelve un token.
 - [ ] Login con usuario/contraseña incorrectos o usuario inexistente muestra "Credenciales inválidas" en la pantalla de login de `panel_admin/`, sin navegar.
 - [ ] Login exitoso navega a `/dashboard/main` (contenido del dashboard sin cambios).
-- [ ] El login muestra el logo de PRAXSA generado y la imagen de auto generada, sin "Remember me"/"Forgot password"/login social/"Sign Up".
-- [ ] El sidebar izquierdo solo lista "Dashboard" (sin Advance Table, Authentication, Extra Pages, Multi-level Menu) y su logo es el de PRAXSA.
-- [ ] El menú de usuario del header muestra el logo de PRAXSA sobre el nombre real del usuario autenticado, con solo la opción "Logout" además de esa identidad.
+- [ ] El login muestra el logo "PRAXSA Admin" y la foto de auto reales (provistos por el usuario), sin "Remember me"/"Forgot password"/login social/"Sign Up"; en mobile (<770px) la imagen se oculta y el botón "Ingresar" es `#203b84`.
+- [ ] El sidebar izquierdo solo lista "Dashboard" (sin Advance Table, Authentication, Extra Pages, Multi-level Menu), su logo es el de PRAXSA, y no muestra ningún bloque de identidad de usuario propio.
+- [ ] El nombre real del usuario autenticado se muestra en el nav izquierdo del header; el dropdown derecho tiene un ícono genérico y solo la opción "Logout".
 - [ ] `proforma/` sigue funcionando sin cambios (no se tocó `/product/api-token-auth/`).
 - [ ] Tests backend y frontend nuevos/actualizados pasan.
 
 ## Risks
 
-- **El asset del auto será una ilustración vectorial, no una fotografía real** — ver nota del paso 14. Mitigación: confirmarlo explícitamente con el usuario antes de publicar el task como terminado; si se necesita una fotografía real, se puede pedir que la provea o buscar un banco de imágenes con licencia adecuada (fuera del alcance de este plan).
 - **Cambiar el contrato de `error.interceptor.ts` (de string a `HttpErrorResponse`) es un cambio global** a un interceptor usado por toda la app. Mitigación: se verificó que ningún otro componente de `panel_admin/` consume hoy el valor de error de una petición HTTP real (las demás pantallas son datos de ejemplo sin backend); el único punto que cambia de comportamiento es `signin.component.ts`, que se actualiza en el mismo cambio.
-- **El bloque `.sidebar-user-panel` del propio sidebar** (`sidebar.component.html:13-21`, nombre hardcodeado "Emily Smith") es un elemento visual distinto del menú de usuario del header y **no fue pedido explícitamente** ni decidido en el DDR. Se deja fuera de este plan (ver "Out of scope") para no inventar alcance no solicitado — pero queda visiblemente inconsistente con el resto del branding si no se actualiza en un cambio posterior.
 - **Dominio de producción para `panel_admin/`** no confirmado — no se toca configuración de despliegue en este plan (ver "Out of scope").
+- ~~El asset del auto será una ilustración vectorial, no una fotografía real~~ — **resuelto en v2**: el usuario proveyó las imágenes reales directamente, ver paso 14.
+- ~~El bloque `.sidebar-user-panel` del propio sidebar... no fue pedido explícitamente~~ — **resuelto en v2**: el usuario pidió explícitamente eliminarlo, ver paso 10.
 
 ## Out of scope
 
@@ -146,9 +146,11 @@ Resumen del ADR (ver enlace arriba, detalle completo ahí):
 - Pantalla de registro (la referencia visual del usuario mostraba una, pero el requerimiento pedido es solo login — ver DDR).
 - Eliminar del código fuente los módulos de ejemplo de la plantilla (`advance-table`, `extra-pages`, `multilevel`, `dashboard2`) — solo se dejan de listar en el menú.
 - Fijar la URL de producción del backend para `panel_admin/` (`environment.ts` de producción queda con un placeholder documentado, no una URL real confirmada) y cualquier cambio de `CORS_ORIGIN_WHITELIST`/`CSRF_TRUSTED_ORIGINS` para un dominio de producción de `panel_admin/`.
-- **Pregunta abierta para el usuario:** el bloque de "Emily Smith" dentro del propio sidebar (distinto del menú de usuario del header) — ¿se actualiza también en este task o se deja para después? Este plan asume que se deja para después, al no haber sido parte del pedido original ni del DDR.
-- **Pregunta abierta para el usuario:** confirmar que un asset de auto en formato ilustración vectorial (no fotografía) es aceptable para este task.
 
 ## Dependencias nuevas
 
 Ninguna. No se instala Playwright (no corresponde E2E) ni ninguna librería nueva; se reutiliza `rest_framework.authtoken` (ya instalado) y `HttpClient`/`ngbDropdown` ya presentes en `panel_admin/`.
+
+## Changelog
+
+- **v2** (2026-09-25): Actualiza el plan para reflejar tres ajustes que el usuario pidió directamente en el chat tras ver la primera implementación (v1): (1) usar las imágenes reales que proveyó (`praxsa-admin-logo.png`, `praxsa-login-hero.png`) en vez de los SVG generados anticipados en el paso 14 de v1; (2) eliminar por completo el bloque de identidad del propio sidebar ("Emily Smith"), resolviendo la pregunta abierta que v1 dejaba sin decidir; (3) mover el nombre del usuario del dropdown derecho del header al nav izquierdo, dejando el dropdown derecho con un ícono genérico en vez de logo+nombre. También se agrega el comportamiento responsive del login (imagen oculta <770px) y el color del botón `#203b84`, pedidos en una ronda posterior. Se actualizan `Expected behavior`, los pasos 9/10/12/14 de `Proposed solution`, `Acceptance criteria`, `Risks` y `Out of scope` para que coincidan con lo realmente implementado (ya verificado y con Quality Gate en `PASS` — ver `docs/reviews/REV-2026-09-25-login-panel-admin-backend-01.md`). Solicitado por el usuario en el chat; formalizado por `delivery-plan` a pedido explícito de actualizar ese hallazgo de revisión.

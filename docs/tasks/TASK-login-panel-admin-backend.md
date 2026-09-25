@@ -15,6 +15,7 @@
 | 2026-09-25 | PLANNING → ENGINEERING | Plan v1 escrito, PR #46 abierto | delivery-plan |
 | 2026-09-25 | ENGINEERING → REVIEW | Implementación completa, verificada con tests y smoke test manual | delivery-engineer |
 | 2026-09-25 | REVIEW → PUBLISH | Quality Gate PASS (2 hallazgos Low, no bloqueantes) | delivery-review |
+| 2026-09-25 | PUBLISH → PUBLISH | Plan versionado a v2 para resolver REV-01, a pedido del usuario | delivery-plan |
 
 ## Investigación
 
@@ -114,7 +115,7 @@ El patrón de integración con `/product/api-token-auth/` ya está resuelto en `
 [ADR-login-panel-admin-backend-staff-auth-endpoint](../adr/ADR-login-panel-admin-backend-staff-auth-endpoint.md) — no reutilizar `/product/api-token-auth/` (asume `Client`, produce `500` para cualquier usuario sin `Client`, como es el caso típico de un usuario admin de Django). Se crea un endpoint nuevo (`/product/api-panel-admin-token-auth/` o similar) que valida credenciales igual que hoy pero no depende de `Client`, devolviendo `{token, user_id, username, name, lastname}` directamente desde `User`. **Sin verificación de rol/`is_staff`** — decisión explícita del usuario (2026-09-25): por ahora cualquier usuario válido entra al dashboard; la redirección futura de usuarios staff hacia `proforma/` queda fuera de alcance de este task, documentada como pendiente en el ADR. El interceptor de `panel_admin/` se adapta para enviar `Authorization: Token {token}` (no `Bearer`), consistente con `TokenAuthentication` de DRF ya usado por `proforma/`. Cambio aditivo, sin migraciones, sin tocar el endpoint existente.
 
 ## Plan
-[PLAN-2026-09-25-login-panel-admin-backend](../plans/PLAN-2026-09-25-login-panel-admin-backend.md) (v1)
+[PLAN-2026-09-25-login-panel-admin-backend](../plans/PLAN-2026-09-25-login-panel-admin-backend.md) (v2 — actualizado tras REV-01 para reflejar los ajustes post-implementación pedidos por el usuario)
 
 ## Implementación
 
@@ -148,7 +149,7 @@ Verificación funcional/técnica ejecutada de forma independiente:
 - `npm audit`: 3 vulnerabilidades preexistentes en dependencias de la plantilla (echarts, lodash-es, xlsx), ninguna introducida por este cambio. Backend: sin `flake8`/`bandit` configurados en el proyecto — verificación no realizada, no se reporta como PASS.
 
 Hallazgos (ninguno bloqueante, sin issues Critical/High):
-- [REV-2026-09-25-login-panel-admin-backend-01](../reviews/REV-2026-09-25-login-panel-admin-backend-01.md) (PLAN, Low): el plan v1 no se versionó a v2 pese a los ajustes post-implementación pedidos por el usuario en el chat.
+- [REV-2026-09-25-login-panel-admin-backend-01](../reviews/REV-2026-09-25-login-panel-admin-backend-01.md) (PLAN, Low) — **Resolved**: plan actualizado a v2 a pedido del usuario, ver `## Plan` arriba.
 - [REV-2026-09-25-login-panel-admin-backend-02](../reviews/REV-2026-09-25-login-panel-admin-backend-02.md) (IMPLEMENTATION, Low): fix de `app.component.spec.ts` fuera del alcance declarado en el plan — verificado como necesario, informativo.
 
 ## Publicación
