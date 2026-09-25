@@ -1,0 +1,77 @@
+<section class="main-content">
+  <ul class="breadcrumb breadcrumb-style">
+    <li class="breadcrumb-item">
+      <h5 class="page-title m-b-0">Sucursales</h5>
+    </li>
+    <li class="breadcrumb-item bcrumb-1"><a routerLink="/users"><i class="fas fa-users font-17"></i></a></li>
+    <li class="breadcrumb-item">Sucursales</li>
+  </ul>
+  <div class="section-body">
+    <div class="row clearfix">
+      <div class="col-lg-8 col-md-12">
+        <div class="card">
+          <div class="card-body">
+            @if (errorMessage) {
+              <div class="alert alert-danger">{{ errorMessage }}</div>
+            }
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Dirección</th>
+                  <th>Teléfono</th>
+                  <th>Habilitada</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (sucursal of sucursales; track sucursal.id) {
+                  <tr>
+                    <td>{{ sucursal.name }}</td>
+                    <td>{{ sucursal.address }}</td>
+                    <td>{{ sucursal.phone_number || '—' }}</td>
+                    <td>{{ sucursal.enable_to_install_windows_film ? 'Sí' : 'No' }}</td>
+                    <td class="text-end">
+                      <button type="button" class="btn btn-sm btn-outline-primary me-1" (click)="startEdit(sucursal)">Editar</button>
+                      <button type="button" class="btn btn-sm btn-outline-danger" (click)="remove(sucursal)">Eliminar</button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+            <button type="button" class="btn btn-primary" (click)="startCreate()">Nueva sucursal</button>
+          </div>
+        </div>
+      </div>
+      @if (editingId !== null) {
+        <div class="col-lg-4 col-md-12">
+          <div class="card">
+            <div class="card-body">
+              <h6>{{ editingId > 0 ? 'Editar sucursal' : 'Nueva sucursal' }}</h6>
+              <form [formGroup]="form" (ngSubmit)="save()">
+                <div class="mb-3">
+                  <label class="form-label">Nombre</label>
+                  <input type="text" class="form-control" formControlName="name" />
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Dirección</label>
+                  <input type="text" class="form-control" formControlName="address" />
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Teléfono</label>
+                  <input type="text" class="form-control" formControlName="phone_number" />
+                </div>
+                <div class="form-check mb-3">
+                  <input class="form-check-input" type="checkbox" id="enableFilm" formControlName="enable_to_install_windows_film" />
+                  <label class="form-check-label" for="enableFilm">Habilitada</label>
+                </div>
+                <button type="submit" class="btn btn-primary me-2">Guardar</button>
+                <button type="button" class="btn btn-outline-secondary" (click)="cancel()">Cancelar</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>

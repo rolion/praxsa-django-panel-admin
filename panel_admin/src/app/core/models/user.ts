@@ -5,4 +5,7 @@ export class User {
   firstName!: string;
   lastName!: string;
   token!: string;
+  email?: string;
+  isStaff?: boolean;
+  groups?: string[];
 }

@@ -1,27 +1,29 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, map } from 'rxjs';
+import { environment } from '../../../environments/environment';
 import { User } from '../models/user';
-import { HttpResponse } from '@angular/common/http';
 import { LocalStorageService } from './storage.service';
+
+interface StaffLoginResponse {
+  token: string;
+  user_id: number;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  is_staff: boolean;
+  groups: string[];
+}
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
+  private http = inject(HttpClient);
   private storageService = inject(LocalStorageService);
   private currentUserSubject: BehaviorSubject<User>;
   public currentUser: Observable<User>;
-
-  private users = [
-    {
-      id: 1,
-      username: 'admin@email.com',
-      password: 'admin@123',
-      firstName: 'Sarah',
-      lastName: 'Smith',
-      token: 'admin-token',
-    },
-  ];
 
   constructor() {
     this.currentUserSubject = new BehaviorSubject<User>(
@@ -34,43 +36,35 @@ export class AuthService {
     return this.currentUserSubject.value;
   }
 
-  login(username: string, password: string) {
-
-    const user = this.users.find((u) => u.username === username && u.password === password);
-
-    if (!user) {
-      return this.error('Username or password is incorrect');
-    } else {
-      this.storageService.set('currentUser', user);
-      this.currentUserSubject.next(user);
-      return this.ok({
-        id: user.id,
-        username: user.username,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        token: user.token,
-      });
-    }
-
-
-  }
-  ok(body?: {
-    id: number;
-    username: string;
-    firstName: string;
-    lastName: string;
-    token: string;
-  }) {
-    return of(new HttpResponse({ status: 200, body }));
-  }
-  error(message: string) {
-    return throwError(message);
+  login(username: string, password: string): Observable<User> {
+    return this.http
+      .post<StaffLoginResponse>(`${environment.apiUrl}/product/admin-token-auth/`, {
+        username,
+        password,
+      })
+      .pipe(
+        map((response) => {
+          const user: User = {
+            id: response.user_id,
+            username: response.username,
+            password: '',
+            firstName: response.first_name,
+            lastName: response.last_name,
+            token: response.token,
+            email: response.email,
+            isStaff: response.is_staff,
+            groups: response.groups,
+          };
+          this.storageService.set('currentUser', user);
+          this.currentUserSubject.next(user);
+          return user;
+        })
+      );
   }
 
   logout() {
     // remove user from local storage to log user out
     this.storageService.remove('currentUser');
     this.currentUserSubject.next({} as User);
-    return of({ success: false });
   }
 }

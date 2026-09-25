@@ -37,6 +37,11 @@ export const APP_ROUTE: Route[] = [
                         (m) => m.MULTILEVEL_ROUTE
                     ),
             },
+            {
+                path: 'users',
+                loadChildren: () =>
+                    import('./users/users.routes').then((m) => m.USERS_ROUTE),
+            },
         ],
     },
     {

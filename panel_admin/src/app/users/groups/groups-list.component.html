@@ -1,0 +1,65 @@
+<section class="main-content">
+  <ul class="breadcrumb breadcrumb-style">
+    <li class="breadcrumb-item">
+      <h5 class="page-title m-b-0">Grupos</h5>
+    </li>
+    <li class="breadcrumb-item bcrumb-1"><a routerLink="/users"><i class="fas fa-users font-17"></i></a></li>
+    <li class="breadcrumb-item">Grupos</li>
+  </ul>
+  <div class="section-body">
+    <div class="row clearfix">
+      <div class="col-lg-8 col-md-12">
+        <div class="card">
+          <div class="card-body">
+            @if (errorMessage) {
+              <div class="alert alert-danger">{{ errorMessage }}</div>
+            }
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Permisos</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (group of groups; track group.id) {
+                  <tr>
+                    <td>{{ group.name }}</td>
+                    <td>{{ permissionNames(group) || '—' }}</td>
+                    <td class="text-end">
+                      <button type="button" class="btn btn-sm btn-outline-primary me-1" (click)="startEdit(group)">Editar</button>
+                      <button type="button" class="btn btn-sm btn-outline-danger" (click)="remove(group)">Eliminar</button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+            <button type="button" class="btn btn-primary" (click)="startCreate()">Nuevo grupo</button>
+          </div>
+        </div>
+      </div>
+      @if (editingId !== null) {
+        <div class="col-lg-4 col-md-12">
+          <div class="card">
+            <div class="card-body">
+              <h6>{{ editingId > 0 ? 'Editar grupo' : 'Nuevo grupo' }}</h6>
+              <form [formGroup]="form" (ngSubmit)="save()">
+                <div class="mb-3">
+                  <label class="form-label">Nombre</label>
+                  <input type="text" class="form-control" formControlName="name" />
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Permisos</label>
+                  <ng-select [items]="permissions" bindLabel="name" bindValue="id" [multiple]="true" formControlName="permissions"></ng-select>
+                </div>
+                <button type="submit" class="btn btn-primary me-2">Guardar</button>
+                <button type="button" class="btn btn-outline-secondary" (click)="cancel()">Cancelar</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>
