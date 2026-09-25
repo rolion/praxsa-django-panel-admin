@@ -1,6 +1,6 @@
 import { AuthService } from '../service/auth.service';
 import { Injectable, inject } from '@angular/core';
-import { HttpRequest, HttpHandler, HttpEvent, HttpInterceptor } from '@angular/common/http';
+import { HttpRequest, HttpHandler, HttpEvent, HttpInterceptor, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
@@ -13,15 +13,17 @@ export class ErrorInterceptor implements HttpInterceptor {
     next: HttpHandler
   ): Observable<HttpEvent<unknown>> {
     return next.handle(request).pipe(
-      catchError((err) => {
+      catchError((err: HttpErrorResponse) => {
         if (err.status === 401) {
           // auto logout if 401 response returned from api
           this.authenticationService.logout();
           location.reload();
         }
 
-        const error = err.error.message || err.statusText;
-        return throwError(error);
+        // Se propaga el HttpErrorResponse original (no un string derivado) para
+        // que cada consumidor decida cómo interpretar status/body del error
+        // (ej. distinguir sin conexión de credenciales inválidas en el login).
+        return throwError(() => err);
       })
     );
   }

@@ -162,18 +162,11 @@ template! <span class="time">Yesterday</span>
 </div>
 </li>
 <li ngbDropdown><a ngbDropdownToggle data-toggle="dropdown"
-  class="nav-link dropdown-toggle nav-link-lg nav-link-user">
-  <img alt="image" src="assets/images/user.png" class="user-img-radious-style collapse-btn"> <span
-  class="d-sm-none d-lg-inline-block"></span></a>
+  class="nav-link dropdown-toggle nav-link-lg nav-link-user d-flex flex-column align-items-center">
+  <img alt="PRAXSA" src="assets/images/praxsa-logo.svg" class="user-brand-logo"> <span
+  class="d-sm-none d-lg-inline-block">{{currentUserName}}</span></a>
   <div ngbDropdownMenu class="dropdown-menu dropdown-menu-right header-dropdown pullDown">
-    <div class="dropdown-title">Hello Sarah..</div>
-    <a routerLink="/extra-pages/profile" class="dropdown-item has-icon"> <i class="far
-    fa-user"></i> Profile
-  </a> <a routerLink="/email/inbox" class="dropdown-item has-icon"> <i class="far fa-envelope"></i>
-  Email
-</a> <a href="" onClick="return false;" class="dropdown-item has-icon"> <i class="fas fa-cog"></i>
-Settings
-</a>
+    <div class="dropdown-title">{{currentUserName}}</div>
 <div class="dropdown-divider"></div>
 <a href="javascript:void(0);" class="dropdown-item has-icon text-danger" (click)="logout()"> <i
 class="fas fa-sign-out-alt"></i>
