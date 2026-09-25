@@ -1,17 +1,18 @@
 # TASK-login-panel-admin-backend: Login de `panel_admin/` conectado al backend real, branding PRAXSA y menú mínimo
 
-**Etapa actual:** PLANNING
+**Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
-**Rama:** _sin asignar todavía_
-**Pull Request:** _sin abrir todavía_
+**Rama:** `task/TASK-login-panel-admin-backend`
+**Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/46
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
 |---|---|---|---|
 | 2026-09-25 | (nuevo) → INVESTIGATION | Task creado | delivery-investigate |
 | 2026-09-25 | INVESTIGATION → ARCHITECTURE | Diseño de login/branding/menú completado | delivery-design |
-| 2026-09-25 | ARCHITECTURE → PLANNING | Endpoint de auth dedicado para staff definido | delivery-architect |
+| 2026-09-25 | ARCHITECTURE → PLANNING | Endpoint de auth dedicado (sin verificación de rol) definido | delivery-architect |
+| 2026-09-25 | PLANNING → ENGINEERING | Plan v1 escrito, PR #46 abierto | delivery-plan |
 
 ## Investigación
 
@@ -111,7 +112,7 @@ El patrón de integración con `/product/api-token-auth/` ya está resuelto en `
 [ADR-login-panel-admin-backend-staff-auth-endpoint](../adr/ADR-login-panel-admin-backend-staff-auth-endpoint.md) — no reutilizar `/product/api-token-auth/` (asume `Client`, produce `500` para cualquier usuario sin `Client`, como es el caso típico de un usuario admin de Django). Se crea un endpoint nuevo (`/product/api-panel-admin-token-auth/` o similar) que valida credenciales igual que hoy pero no depende de `Client`, devolviendo `{token, user_id, username, name, lastname}` directamente desde `User`. **Sin verificación de rol/`is_staff`** — decisión explícita del usuario (2026-09-25): por ahora cualquier usuario válido entra al dashboard; la redirección futura de usuarios staff hacia `proforma/` queda fuera de alcance de este task, documentada como pendiente en el ADR. El interceptor de `panel_admin/` se adapta para enviar `Authorization: Token {token}` (no `Bearer`), consistente con `TokenAuthentication` de DRF ya usado por `proforma/`. Cambio aditivo, sin migraciones, sin tocar el endpoint existente.
 
 ## Plan
-_Pendiente_
+[PLAN-2026-09-25-login-panel-admin-backend](../plans/PLAN-2026-09-25-login-panel-admin-backend.md) (v1)
 
 ## Implementación
 _Pendiente_
