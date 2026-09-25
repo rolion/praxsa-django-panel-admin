@@ -1,8 +1,14 @@
 # ADR-modulo-usuarios-perfiles-grupos-roles-sucursales-api-autenticacion-admin: Autenticación de `panel_admin/` y contrato API para el módulo de Usuarios
 
-**Estado:** Propuesto
+**Estado:** Parcialmente superseded — ver actualización 2026-09-25 (endpoint de login)
 **Task relacionado:** TASK-modulo-usuarios-perfiles-grupos-roles-sucursales
 **Fecha:** 2026-09-25
+
+## Actualización (2026-09-25, al sincronizar con `master`)
+
+`master` mergeó en paralelo `TASK-login-panel-admin-backend` (PR #46), que resuelve exactamente el mismo problema de login descrito abajo (`Client.objects.get` sin manejar ausencia) con su propio endpoint `PanelAdminAuthToken` (`/product/api-panel-admin-token-auth/`, ver `ADR-login-panel-admin-backend-staff-auth-endpoint.md`), ya revisado y publicado. La diferencia con la decisión original de este ADR: `PanelAdminAuthToken` **no verifica `is_staff`** — es una decisión de negocio explícita del usuario documentada en ese ADR ("por ahora no se distingue por rol").
+
+**Resolución del conflicto al sincronizar ramas:** se descarta el `StaffAuthToken`/`admin-token-auth/` que este ADR proponía y se adopta `PanelAdminAuthToken` como el único endpoint de login de `panel_admin/`. Esto no debilita la protección del módulo de Usuarios: los endpoints REST (`custom_views/user_admin.py`) siguen exigiendo `IsStaffUser` + `DjangoModelPermissions` en cada vista, independientemente de cómo se obtuvo el token — la barrera de "quién puede loguearse en `panel_admin/`" y la de "quién puede gestionar usuarios/grupos/sucursales" son capas separadas, y solo la segunda es responsabilidad de este ADR. El resto de las decisiones de esta página (endpoints CRUD nuevos, permisos Django, creación atómica) sigue vigente sin cambios.
 
 ## Contexto
 

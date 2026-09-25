@@ -1,60 +1,25 @@
 """Tests del modulo de Usuarios, Perfiles, Grupos, Roles y Sucursales
 (TASK-modulo-usuarios-perfiles-grupos-roles-sucursales). Cubre:
-- Login de staff (StaffAuthToken) vs. no-regresion del login de clientes (CustomAuthToken).
 - Creacion atomica de usuario (User+Profile+grupos+sucursales) con sus validaciones.
 - Permisos Django (DjangoModelPermissions + IsStaffUser) en los endpoints nuevos.
 - Activar/desactivar (bloqueo de auto-desactivacion) y cambio de contraseña.
+
+El login de panel_admin/ (PanelAdminAuthToken, /product/api-panel-admin-token-auth/)
+se resolvio en TASK-login-panel-admin-backend (ver test_panel_admin_auth.py) y
+deliberadamente no filtra por is_staff a nivel de login -- la barrera real para
+este modulo son los permission_classes (IsStaffUser + DjangoModelPermissions) de
+cada vista de custom_views/user_admin.py, ejercitados abajo con
+create_staff_user_with_token (crea el usuario+token directo por ORM, sin pasar
+por ningun endpoint de login).
+
 Ver ADR-modulo-usuarios-perfiles-grupos-roles-sucursales-modelo-datos-permisos y
 ADR-modulo-usuarios-perfiles-grupos-roles-sucursales-api-autenticacion-admin.
 """
 from django.contrib.auth.models import User
 from django.test import TestCase
 
-from ..models import Client, Profile
+from ..models import Profile
 from . import helpers
-
-
-class StaffLoginTest(TestCase):
-    def test_staff_user_gets_token(self):
-        user, _token, password = helpers.create_staff_user_with_token()
-
-        response = self.client.post(
-            '/product/admin-token-auth/',
-            {'username': user.username, 'password': password},
-        )
-
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        self.assertIn('token', data)
-        self.assertEqual(data['username'], user.username)
-        self.assertTrue(data['is_staff'])
-
-    def test_non_staff_user_is_rejected(self):
-        user, _token, password = helpers.create_staff_user_with_token(is_staff=False)
-
-        response = self.client.post(
-            '/product/admin-token-auth/',
-            {'username': user.username, 'password': password},
-        )
-
-        self.assertEqual(response.status_code, 403)
-
-    def test_client_login_via_existing_endpoint_is_unaffected(self):
-        """No-regresion: /product/api-token-auth/ (CustomAuthToken, usado por
-        proforma/) sigue funcionando igual para un Client, sin tocar nada de
-        este modulo."""
-        user = User.objects.create_user(username='cliente@test.com', email='cliente@test.com', password='testpass123')
-        Client.objects.create(
-            name='Cliente', last_name='Test', phone_number='70000000', ci_nit='1234567', user_id=user
-        )
-
-        response = self.client.post(
-            '/product/api-token-auth/',
-            {'username': user.username, 'password': 'testpass123'},
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertIn('token', response.json())
 
 
 class UserCreationTest(TestCase):

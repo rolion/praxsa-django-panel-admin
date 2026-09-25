@@ -1,96 +1,82 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
-import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
-import { LocalStorageService } from './storage.service';
+import { User } from '../models/user';
+import { environment } from '../../../environments/environment';
 
 describe('AuthService', () => {
   let service: AuthService;
   let httpMock: HttpTestingController;
-  let storageService: LocalStorageService;
+
+  const loginUrl = `${environment.apiUrl}/product/api-panel-admin-token-auth/`;
 
   beforeEach(() => {
-    // AuthService lee localStorage real en su constructor -- limpiarlo antes
-    // de cada test evita que una sesion guardada por un test anterior
-    // contamine el estado inicial del siguiente.
     localStorage.clear();
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
     });
     service = TestBed.inject(AuthService);
     httpMock = TestBed.inject(HttpTestingController);
-    storageService = TestBed.inject(LocalStorageService);
   });
 
   afterEach(() => {
     httpMock.verify();
+    localStorage.clear();
   });
 
   it('should be created', () => {
     expect(service).toBeTruthy();
   });
 
-  it('successful login stores the token and updates currentUserValue', () => {
-    let result: any;
-    service.login('admin@test.com', 'secret').subscribe((user) => (result = user));
+  it('posts credentials to the panel_admin auth endpoint', () => {
+    service.login('admin', 'secret123').subscribe();
 
-    const req = httpMock.expectOne(`${environment.apiUrl}/product/admin-token-auth/`);
+    const req = httpMock.expectOne(loginUrl);
     expect(req.request.method).toBe('POST');
-    req.flush({
-      token: 'abc123',
-      user_id: 1,
-      username: 'admin@test.com',
-      email: 'admin@test.com',
-      first_name: 'Admin',
-      last_name: 'User',
-      is_staff: true,
-      groups: ['admin'],
-    });
-
-    expect(result.token).toBe('abc123');
-    expect(service.currentUserValue.token).toBe('abc123');
-    expect(service.currentUserValue.isStaff).toBe(true);
-    expect(storageService.get('currentUser')).toBeTruthy();
+    expect(req.request.body).toEqual({ username: 'admin', password: 'secret123' });
+    req.flush({ token: 'abc123', user_id: 1, username: 'admin', name: 'Ana', lastname: 'Gomez' });
   });
 
-  it('failed login does not store anything and propagates the error', () => {
-    let errored = false;
-    service.login('admin@test.com', 'wrong').subscribe({
-      next: () => fail('should not succeed'),
-      error: () => (errored = true),
-    });
+  it('maps the response to a User and persists/emits it on success', () => {
+    let emitted: User | undefined;
+    service.login('admin', 'secret123').subscribe((user) => (emitted = user));
 
-    const req = httpMock.expectOne(`${environment.apiUrl}/product/admin-token-auth/`);
-    req.flush({ detail: 'Invalid credentials' }, { status: 400, statusText: 'Bad Request' });
-
-    expect(errored).toBe(true);
-    expect(service.currentUserValue.token).toBeUndefined();
-    expect(storageService.get('currentUser')).toBeFalsy();
-  });
-
-  it('logout clears the stored session', () => {
-    service.login('admin@test.com', 'secret').subscribe();
     httpMock
-      .expectOne(`${environment.apiUrl}/product/admin-token-auth/`)
-      .flush({
-        token: 'abc123',
-        user_id: 1,
-        username: 'admin@test.com',
-        email: 'admin@test.com',
-        first_name: 'Admin',
-        last_name: 'User',
-        is_staff: true,
-        groups: [],
-      });
+      .expectOne(loginUrl)
+      .flush({ token: 'abc123', user_id: 1, username: 'admin', name: 'Ana', lastname: 'Gomez' });
 
-    service.logout();
+    expect(emitted).toEqual({
+      id: 1,
+      username: 'admin',
+      firstName: 'Ana',
+      lastName: 'Gomez',
+      token: 'abc123',
+    });
+    expect(service.currentUserValue.token).toBe('abc123');
+  });
 
+  it('falls back to username as firstName when the backend name is empty', () => {
+    let emitted: User | undefined;
+    service.login('admin', 'secret123').subscribe((user) => (emitted = user));
+
+    httpMock
+      .expectOne(loginUrl)
+      .flush({ token: 'abc123', user_id: 1, username: 'admin', name: '', lastname: '' });
+
+    expect(emitted?.firstName).toBe('admin');
+  });
+
+  it('propagates the error without persisting a user on invalid credentials', () => {
+    let error: HttpErrorResponse | undefined;
+    service.login('admin', 'wrong').subscribe({ error: (err) => (error = err) });
+
+    httpMock
+      .expectOne(loginUrl)
+      .flush({ non_field_errors: ['Unable to log in with provided credentials.'] }, { status: 400, statusText: 'Bad Request' });
+
+    expect(error?.status).toBe(400);
     expect(service.currentUserValue.token).toBeUndefined();
-    expect(storageService.get('currentUser')).toBeFalsy();
   });
 });

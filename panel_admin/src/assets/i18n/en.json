@@ -11,6 +11,9 @@
     "MAIN": {
       "TEXT": "-- Main"
     },
+    "DASHBOARD": {
+      "TEXT": "Dashboard"
+    },
     "HOME": {
       "TEXT": "Home",
       "LIST": {

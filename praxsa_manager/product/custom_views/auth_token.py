@@ -1,7 +1,6 @@
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
-from rest_framework import status
 from ..models import Client
 
 class CustomAuthToken(ObtainAuthToken):
@@ -30,30 +29,26 @@ class CustomAuthToken(ObtainAuthToken):
         return Response(response)
 
 
-class StaffAuthToken(ObtainAuthToken):
-    """Login para el personal administrativo (panel_admin/). Aislado de
-    CustomAuthToken, que asume que todo usuario autenticado tiene un Client
-    asociado (Client.objects.get) y rompe (500) para un usuario de staff sin
-    ese registro (ver ADR-modulo-usuarios-perfiles-grupos-roles-sucursales-api-autenticacion-admin)."""
+class PanelAdminAuthToken(ObtainAuthToken):
+    """Login para panel_admin/: no depende de Client (los usuarios de este panel
+    no pasan por el registro de cliente de proforma/) y no verifica rol/is_staff
+    (decisión de negocio explícita: por ahora cualquier usuario válido entra).
+
+    Los endpoints de gestión de usuarios/grupos/sucursales (custom_views/user_admin.py)
+    igual exigen is_staff + permisos Django en cada vista -- este endpoint solo
+    decide quién puede autenticarse, no qué puede hacer una vez autenticado."""
 
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data,
                                            context={'request': request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
-        if not user.is_staff:
-            return Response(
-                {'detail': 'Este usuario no tiene acceso al panel administrativo.'},
-                status=status.HTTP_403_FORBIDDEN,
-            )
         token, created = Token.objects.get_or_create(user=user)
-        return Response({
+        response = {
             'token': token.key,
             'user_id': user.pk,
             'username': user.username,
-            'email': user.email,
-            'first_name': user.first_name,
-            'last_name': user.last_name,
-            'is_staff': user.is_staff,
-            'groups': list(user.groups.values_list('name', flat=True)),
-        })
+            'name': user.first_name,
+            'lastname': user.last_name,
+        }
+        return Response(response)

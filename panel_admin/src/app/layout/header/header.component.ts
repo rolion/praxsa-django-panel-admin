@@ -7,7 +7,7 @@ import {
   AfterViewInit,
   inject
 } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { NgScrollbar } from 'ngx-scrollbar';
 import { NgbDropdown, NgbDropdownToggle, NgbDropdownMenu } from '@ng-bootstrap/ng-bootstrap';
@@ -29,7 +29,6 @@ import { ConfigService } from '@config/config.service';
         NgbDropdownMenu,
         NgClass,
         NgScrollbar,
-        RouterLink,
         TranslateModule,
     ],
     providers: [RightSidebarService]
@@ -130,6 +129,9 @@ export class HeaderComponent implements OnInit, AfterViewInit {
     this.flagvalue = flag;
     this.langStoreValue = lang;
     this.languageService.setLanguage(lang);
+  }
+  get currentUserName(): string {
+    return this.authService.currentUserValue.firstName || this.authService.currentUserValue.username;
   }
   mobileMenuSidebarOpen(event: Event, className: string) {
     if (window.innerWidth < 1025) {

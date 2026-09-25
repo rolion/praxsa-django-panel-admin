@@ -3,7 +3,7 @@ from rest_framework.urlpatterns import format_suffix_patterns
 
 from . import views
 from rest_framework.authtoken import views as rf_token
-from .custom_views.auth_token import CustomAuthToken, StaffAuthToken
+from .custom_views.auth_token import CustomAuthToken, PanelAdminAuthToken
 from .custom_views.invoice import InvoiceView, ListUserInvoice
 from .custom_views.bobina import BobinaView
 from .custom_views.user_admin import (
@@ -28,13 +28,14 @@ urlpatterns = [
     path('get_inventory/<int:sucursal_id>/<int:lamina_id>/<str:width>', views.get_inventory, name='get_inventory'),
     path('create_client', views.create_client, name='create_client'),
     path('api-token-auth/', CustomAuthToken.as_view()),
+    path('api-panel-admin-token-auth/', PanelAdminAuthToken.as_view()),
     path('invoice', InvoiceView.as_view()),
     path('invoice/<int:pk>/', InvoiceView.as_view()),
     path('invoice/all', ListUserInvoice.as_view()),
     path('bobina/<int:pk>', views.get_bobina, name='get_bobina'),
     path('layer/<int:layer_id>', views.get_layer_info, name='get_layer_info'),
     # Modulo de Usuarios, Perfiles, Grupos, Roles y Sucursales (panel_admin/)
-    path('admin-token-auth/', StaffAuthToken.as_view()),
+    # (el login del panel es PanelAdminAuthToken, arriba -- ver TASK-login-panel-admin-backend)
     path('users', UserListCreateView.as_view()),
     path('users/<int:pk>/', UserDetailView.as_view()),
     path('users/<int:pk>/set-password/', UserSetPasswordView.as_view()),

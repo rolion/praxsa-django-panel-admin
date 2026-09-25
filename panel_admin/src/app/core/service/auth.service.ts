@@ -1,19 +1,17 @@
-import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable, map } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { User } from '../models/user';
 import { LocalStorageService } from './storage.service';
+import { environment } from '../../../environments/environment';
 
-interface StaffLoginResponse {
+interface PanelAdminLoginResponse {
   token: string;
   user_id: number;
   username: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  is_staff: boolean;
-  groups: string[];
+  name: string;
+  lastname: string;
 }
 
 @Injectable({
@@ -38,22 +36,20 @@ export class AuthService {
 
   login(username: string, password: string): Observable<User> {
     return this.http
-      .post<StaffLoginResponse>(`${environment.apiUrl}/product/admin-token-auth/`, {
+      .post<PanelAdminLoginResponse>(`${environment.apiUrl}/product/api-panel-admin-token-auth/`, {
         username,
         password,
       })
       .pipe(
-        map((response) => {
+        map((res) => {
           const user: User = {
-            id: response.user_id,
-            username: response.username,
-            password: '',
-            firstName: response.first_name,
-            lastName: response.last_name,
-            token: response.token,
-            email: response.email,
-            isStaff: response.is_staff,
-            groups: response.groups,
+            id: res.user_id,
+            username: res.username,
+            // Los usuarios creados con createsuperuser no tienen first_name: se
+            // muestra el username en vez de un nombre vacío.
+            firstName: res.name || res.username,
+            lastName: res.lastname,
+            token: res.token,
           };
           this.storageService.set('currentUser', user);
           this.currentUserSubject.next(user);
@@ -66,5 +62,6 @@ export class AuthService {
     // remove user from local storage to log user out
     this.storageService.remove('currentUser');
     this.currentUserSubject.next({} as User);
+    return of({ success: false });
   }
 }
