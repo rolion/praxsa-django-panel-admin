@@ -1,6 +1,6 @@
 # TASK-modulo-vehiculos: Módulo de Vehículos (Marcas, Modelos, Items) en el panel admin
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** claude/modulo-vehiculos-2168ac
@@ -14,6 +14,7 @@
 | 2026-09-26 01:45 UTC | ARCHITECTURE → PLANNING | Decisiones de arquitectura tomadas: reutilizar `Car_Model_Part` para la relación Modelo↔Item, soft delete con `is_active` filtrado por defecto, almacenamiento de imágenes en filesystem local con `MEDIA_ROOT`/`MEDIA_URL` nuevos servidos por nginx | delivery-architect |
 | 2026-09-26 02:05 UTC | PLANNING → ENGINEERING | Plan v1 escrito y PR por abrir; queda pendiente de aprobación humana antes de implementar | delivery-plan |
 | 2026-09-26 02:20 UTC | ENGINEERING → ENGINEERING | Corrección post-diseño: sí existe patrón de búsqueda reutilizable en `advance-table.component.html/.ts` (usuario lo señaló); se actualiza DDR/TASK/Plan a v2 para reutilizarlo en vez de construir `shared/search-box/` | usuario |
+| 2026-09-26 10:30 UTC | ENGINEERING → REVIEW | Implementación completa (backend + frontend + infra) según Plan v2, empujada al PR #48 | delivery-engineer |
 
 ## Investigación
 
@@ -153,7 +154,19 @@ Patrón de API/CRUD (serializers, vistas, urls, permisos) para las 3 entidades: 
 [PLAN-2026-09-26-modulo-vehiculos.md](../plans/PLAN-2026-09-26-modulo-vehiculos.md) (v2 — corrige búsqueda para reutilizar el patrón de `advance-table`, ver Changelog del plan).
 
 ## Implementación
-_Pendiente_
+
+Implementado íntegramente según [PLAN-2026-09-26-modulo-vehiculos.md](../plans/PLAN-2026-09-26-modulo-vehiculos.md) (v2), sin desvíos de alcance. Detalle completo en la sección `## Changes` del [PR #48](https://github.com/rolion/praxsa-django-panel-admin/pull/48). Resumen:
+
+- **Backend**: migración aditiva `0108_car_brand_is_active_car_model_image_and_more.py` (`is_active` en las 3 entidades, `image` en Modelo); `product/serializer/vehicle_serializer.py` y `product/custom_views/vehicle_admin.py` nuevos, siguiendo el patrón ya establecido por el módulo de Usuarios (permisos, estructura de URLs); `MEDIA_ROOT`/`MEDIA_URL` nuevos en `settings.py`, servidos por Django en dev y por nginx en prod/stg. 39 tests de integración nuevos en `test_vehicles_module.py`; suite completa del backend (142 tests) en verde.
+- **Frontend**: módulo `panel_admin/src/app/vehicles/` completo (listados, formularios, detalle de Modelo con gestión de items), componente compartido `shared/image-upload/` (primera pieza en `shared/`), menú actualizado. `ng build` y `ng lint` limpios; 24 tests Angular nuevos (69 total, mismas 15 fallas preexistentes de la plantilla — ninguna nueva).
+- **Infraestructura**: `docker-compose.prod.yml`/`.stg.yml` y `nginx/nginx.conf.prod`/`.stg` actualizados con el volumen `media` y el bloque `location /media/`, sin tocar `docker-compose.dev.yml` (no aplica, dev corre el backend local).
+
+Deuda técnica y desviaciones señaladas explícitamente (ninguna bloqueante):
+- El formulario de "agregar item a un modelo" (`model-view.component`) quedó con 4 campos numéricos obligatorios además del item, más complejo que lo que el DDR de diseño había previsto originalmente (solo nombre/selección) — decisión tomada en `delivery-architect` (ver ADR-modulo-vehiculos-relacion-modelo-item) para no crear asociaciones con costo de instalación $0 silencioso.
+- Las acciones de tabla (Ver/Editar/Eliminar) replican el estilo **real** de Credenciales hoy (`btn-tbl-view`/`btn-tbl-edit`/`btn-tbl-delete` con iconos FontAwesome) — el DDR de diseño citaba una actualización a íconos `FeatherModule` circulares que no está presente en el código actual de `users-list.component.html`; se siguió el código real, no la descripción del DDR (ver nota en DDR de usuarios vs. código verificado durante esta implementación).
+- No se implementó edición de `width`/`length`/`installation_price` de una asociación Modelo-Item ya creada (explícitamente fuera de alcance del plan).
+- Cobertura de tests Angular: se priorizaron `vehicles.service`, `image-upload`, y las 3 listas (`brands-list`, `parts-list`, `models-list`); no se agregaron specs dedicados para `model-create`/`model-edit`/`model-view` (formularios más complejos, cubiertos indirectamente por los tests de integración del backend y la verificación manual de build/lint) — si `delivery-review` lo considera necesario, es una extensión acotada.
+- El volumen Docker `media` debe crearse manualmente (`docker volume create media`) antes del primer despliegue en `stg`/`prod` — no se pudo verificar en este entorno de desarrollo (sin Docker/nginx real).
 
 ## Review
 _Pendiente_
