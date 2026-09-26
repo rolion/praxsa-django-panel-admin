@@ -38,9 +38,16 @@ class UserAdminSerializer(serializers.ModelSerializer):
                 setattr(instance, attr, value)
             instance.save()
             if profile_data is not None:
-                Profile.objects.update_or_create(
+                profile, _ = Profile.objects.update_or_create(
                     user=instance, defaults=profile_data
                 )
+                # `instance` llega con `.profile` ya resuelto y cacheado por
+                # select_related('profile') (ver UserDetailView.queryset) --
+                # sin reasignarlo aca, to_representation() devolveria el
+                # Profile viejo en la respuesta del PATCH aunque la fila en
+                # la base de datos ya haya quedado bien (REV-2026-09-26-modulo-
+                # usuarios-perfiles-grupos-roles-sucursales-01).
+                instance.profile = profile
             if groups is not None:
                 instance.groups.set(groups)
             if sucursales is not None:

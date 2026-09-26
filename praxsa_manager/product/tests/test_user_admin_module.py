@@ -15,7 +15,7 @@ por ningun endpoint de login).
 Ver ADR-modulo-usuarios-perfiles-grupos-roles-sucursales-modelo-datos-permisos y
 ADR-modulo-usuarios-perfiles-grupos-roles-sucursales-api-autenticacion-admin.
 """
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Group, User
 from django.test import TestCase
 
 from ..models import Profile
@@ -301,3 +301,82 @@ class UserSetPasswordTest(TestCase):
         )
 
         self.assertEqual(response.status_code, 400)
+
+
+class UserDetailViewTest(TestCase):
+    """UserDetailView (GET/PATCH de un usuario existente) -- sin cobertura
+    hasta este fix (REV-2026-09-26-modulo-usuarios-perfiles-grupos-roles-
+    sucursales-02), lo que dejo pasar el bug de cache descripto en REV-01."""
+
+    def test_get_returns_expected_shape(self):
+        admin, admin_token, _ = helpers.create_staff_user_with_token()
+        target, _, _ = helpers.create_staff_user_with_token()
+        Profile.objects.create(user=target, phone_number='70000000')
+
+        response = self.client.get(
+            f'/product/users/{target.id}/',
+            HTTP_AUTHORIZATION=f'Token {admin_token.key}',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data['username'], target.username)
+        self.assertEqual(data['phone_number'], '70000000')
+        self.assertEqual(data['groups'], [])
+        self.assertEqual(data['sucursales'], [])
+
+    def test_patch_response_reflects_saved_data_not_stale_profile(self):
+        """Reproduce REV-01: antes del fix, la respuesta traia el phone_number
+        viejo aunque la base de datos ya tuviera el valor nuevo."""
+        admin, admin_token, _ = helpers.create_staff_user_with_token()
+        helpers.grant_permission(admin, 'auth', 'change_user')
+
+        target, _, _ = helpers.create_staff_user_with_token()
+        Profile.objects.create(user=target, phone_number='11111111')
+        group = Group.objects.create(name='rev_group')
+        sucursal = helpers.create_sucursal(admin, name='RevSucursal')
+
+        response = self.client.patch(
+            f'/product/users/{target.id}/',
+            {
+                'first_name': 'Nuevo',
+                'last_name': 'Apellido',
+                'email': 'nuevo@test.com',
+                'phone_number': '99999999',
+                'groups': [group.id],
+                'sucursales': [sucursal.id],
+            },
+            content_type='application/json',
+            HTTP_AUTHORIZATION=f'Token {admin_token.key}',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        # Este es el assert que hubiera fallado antes del fix: la respuesta
+        # traia '11111111' (el valor viejo, cacheado) en vez de '99999999'.
+        self.assertEqual(data['phone_number'], '99999999')
+        self.assertEqual(data['first_name'], 'Nuevo')
+        self.assertEqual(data['groups'], [group.id])
+        self.assertEqual(data['sucursales'], [sucursal.id])
+
+        target.refresh_from_db()
+        self.assertEqual(target.first_name, 'Nuevo')
+        self.assertEqual(target.profile.phone_number, '99999999')
+        self.assertEqual(list(target.groups.values_list('id', flat=True)), [group.id])
+        self.assertEqual(list(target.sucursal_set.values_list('id', flat=True)), [sucursal.id])
+
+    def test_patch_without_change_user_permission_is_forbidden(self):
+        admin, admin_token, _ = helpers.create_staff_user_with_token()
+        target, _, _ = helpers.create_staff_user_with_token()
+        Profile.objects.create(user=target, phone_number='11111111')
+
+        response = self.client.patch(
+            f'/product/users/{target.id}/',
+            {'phone_number': '99999999'},
+            content_type='application/json',
+            HTTP_AUTHORIZATION=f'Token {admin_token.key}',
+        )
+
+        self.assertEqual(response.status_code, 403)
+        target.refresh_from_db()
+        self.assertEqual(target.profile.phone_number, '11111111')

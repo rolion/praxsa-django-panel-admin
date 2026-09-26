@@ -5,7 +5,7 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
-import Swal from 'sweetalert2';
+import Swal, { SweetAlertResult } from 'sweetalert2';
 import { environment } from '../../../environments/environment';
 import { UsersListComponent } from './users-list.component';
 import { AppUser } from '../users.model';
@@ -66,7 +66,9 @@ describe('UsersListComponent', () => {
   });
 
   it('deactivate() confirms and calls toggle-active with false', () => {
-    spyOn(Swal, 'fire').and.returnValue(Promise.resolve({ isConfirmed: true } as any));
+    spyOn(Swal, 'fire').and.returnValue(
+      Promise.resolve({ isConfirmed: true } as SweetAlertResult)
+    );
     component.rows = sampleUsers;
 
     component.deactivate(sampleUsers[0]);

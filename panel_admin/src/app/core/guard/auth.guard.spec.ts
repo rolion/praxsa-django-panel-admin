@@ -2,9 +2,17 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter, Router } from '@angular/router';
+import { BehaviorSubject } from 'rxjs';
 
 import { AuthGuard } from './auth.guard';
 import { AuthService } from '../service/auth.service';
+import { User } from '../models/user';
+
+// Acceso de solo-test al BehaviorSubject privado de AuthService, para
+// simular una sesion sin pasar por un login HTTP real.
+interface AuthServiceTestAccess {
+  currentUserSubject: BehaviorSubject<User>;
+}
 
 describe('AuthGuard', () => {
   let guard: AuthGuard;
@@ -28,7 +36,9 @@ describe('AuthGuard', () => {
   });
 
   it('allows navigation once a session with a token exists', () => {
-    (authService as any).currentUserSubject.next({ token: 'abc123' });
+    (authService as unknown as AuthServiceTestAccess).currentUserSubject.next({
+      token: 'abc123',
+    } as User);
 
     expect(guard.canActivate()).toBe(true);
   });
