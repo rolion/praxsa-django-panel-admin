@@ -207,7 +207,10 @@ STATICFILES_DIRS = [
 
 if env('ENV') == "PROD":
     STATIC_ROOT =  BASE_DIR / 'staticfiles'
-    
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 
 
 

@@ -1,0 +1,29 @@
+<div class="image-upload">
+  <div class="image-upload-preview">
+    @if (displayUrl) {
+      <img [src]="displayUrl" alt="Imagen del vehículo" />
+    } @else {
+      <div class="image-upload-placeholder">
+        <i class="fas fa-image"></i>
+      </div>
+    }
+  </div>
+  <div class="image-upload-actions">
+    <label class="btn btn-outline-primary btn-sm mb-0">
+      Seleccionar imagen
+      <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp" hidden [disabled]="disabled"
+        (change)="onFileSelected($event)" />
+    </label>
+    @if (displayUrl) {
+      <button type="button" class="btn btn-outline-danger btn-sm" [disabled]="disabled" (click)="removeImage()">
+        Quitar imagen
+      </button>
+    }
+  </div>
+  @if (fileName) {
+    <div class="image-upload-filename text-muted">{{ fileName }}</div>
+  }
+  @if (errorMessage) {
+    <div class="text-danger small mt-1">{{ errorMessage }}</div>
+  }
+</div>

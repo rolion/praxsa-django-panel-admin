@@ -8,6 +8,7 @@ services:
       dockerfile: Dockerfile.stg
     volumes:
       - static:/praxsa_manager/staticfiles
+      - media:/praxsa_manager/media
     restart: always
     expose:
       - "5000"
@@ -38,6 +39,7 @@ services:
       - LETSENCRYPT_EMAIL=roleonm@gmail.com
     volumes:
       - static:/praxsa_manager/staticfiles
+      - media:/praxsa_manager/media
       # - laminas:/etc/nginx/html
     networks:
       - proxy
@@ -92,6 +94,8 @@ volumes:
   postgres:
     external: true
   static:
+    external: true
+  media:
     external: true
   laminas:
     external: true

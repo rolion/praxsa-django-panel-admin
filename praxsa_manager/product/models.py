@@ -15,23 +15,27 @@ registro_contable_regex = RegexValidator(regex=r'\d{1,4}\/\d{2}',
 
 class Car_Brand(models.Model):
     name = models.CharField( max_length=200, verbose_name="Nombre", unique=True)
+    is_active = models.BooleanField(default=True, verbose_name="Activo")
     class Meta:
         ordering = ['name']
         verbose_name = 'Marca'
     def __str__(self):
         return self.name
-    
+
 class Car_Model(models.Model):
     car_brand_id = models.ForeignKey(Car_Brand, on_delete=models.DO_NOTHING, verbose_name="Marca")
     name = models.CharField(max_length=200, verbose_name="Nombre", unique=True)
+    image = models.ImageField(upload_to='car_models/', null=True, blank=True, verbose_name="Imagen")
+    is_active = models.BooleanField(default=True, verbose_name="Activo")
     class Meta:
         ordering = ['car_brand_id']
         verbose_name = 'Modelo'
     def __str__(self):
         return self.name
-    
+
 class Car_Part(models.Model):
     name = models.CharField(max_length=200, verbose_name="Nombre")
+    is_active = models.BooleanField(default=True, verbose_name="Activo")
     class Meta:
         ordering = ['name']
         verbose_name = 'Item'

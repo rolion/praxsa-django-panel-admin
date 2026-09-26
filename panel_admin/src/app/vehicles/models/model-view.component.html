@@ -1,0 +1,180 @@
+<section class="main-content">
+  <ul class="breadcrumb breadcrumb-style">
+    <li class="breadcrumb-item">
+      <h5 class="page-title m-b-0">Ver modelo</h5>
+    </li>
+    <li class="breadcrumb-item bcrumb-1"><a routerLink="/vehicles/models"><i class="fas fa-car font-17"></i></a></li>
+    <li class="breadcrumb-item">Modelos</li>
+  </ul>
+  <div class="section-body">
+    <div class="row clearfix">
+      <div class="col-lg-8 col-md-12">
+        <div class="card">
+          <div class="card-body">
+            @if (loading) {
+              <p>Cargando...</p>
+            } @else if (errorMessage) {
+              <div class="alert alert-danger">{{ errorMessage }}</div>
+            } @else if (model) {
+              <div class="row align-items-center mb-3">
+                <div class="col-md-4 text-center mb-3 mb-md-0">
+                  @if (model.image) {
+                    <img [src]="model.image" alt="Imagen del vehículo" style="max-width: 320px; max-height: 320px; object-fit: cover;" />
+                  } @else {
+                    <div class="d-inline-flex align-items-center justify-content-center" style="width:200px;height:200px;border:1px solid #dee2e6;border-radius:6px;">
+                      <i class="fas fa-image fa-3x text-muted"></i>
+                    </div>
+                  }
+                </div>
+                <div class="col-md-8">
+                  <dl class="row mb-0">
+                    <dt class="col-sm-3">Marca</dt>
+                    <dd class="col-sm-9">{{ model.car_brand_name }}</dd>
+                    <dt class="col-sm-3">Modelo</dt>
+                    <dd class="col-sm-9">{{ model.name }}</dd>
+                    <dt class="col-sm-3">Estado</dt>
+                    <dd class="col-sm-9">{{ model.is_active ? 'Activo' : 'Inactivo' }}</dd>
+                  </dl>
+                </div>
+              </div>
+              <a [routerLink]="['/vehicles/models/edit', model.id]" class="btn btn-primary mb-4">Editar</a>
+
+              <h5>
+                Items
+                <button type="button" class="btn btn-sm btn-outline-primary float-end" (click)="openAddItem(addItemModal)">
+                  Agregar item
+                </button>
+              </h5>
+              @if (items.length) {
+                <ul class="list-group">
+                  @for (item of items; track item.id) {
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                      <div>
+                        <strong>{{ item.car_part_name }}</strong>
+                        <div class="text-muted small">
+                          Ancho: {{ item.width }} · Largo: {{ item.length }} · Cantidad: {{ item.quantity }}
+                        </div>
+                      </div>
+                      <div>
+                        <button type="button" class="btn btn-tbl-edit h-auto" title="Editar" (click)="openEditItem(item, editItemModal)">
+                          <i class="fas fa-pen"></i>
+                        </button>
+                        <button type="button" class="btn btn-tbl-delete h-auto" title="Quitar" (click)="removeItem(item)">
+                          <i class="far fa-trash-alt"></i>
+                        </button>
+                      </div>
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <p class="text-muted">Este modelo todavía no tiene items asociados.</p>
+              }
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #addItemModal let-modal>
+    <div class="modal-header">
+      <h4 class="modal-title">Agregar item</h4>
+      <button type="button" class="close" aria-label="Close" (click)="modal.dismiss()">
+        <span aria-hidden="true"><i class="material-icons">close</i></span>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="btn-group mb-3" role="group">
+        <button type="button" class="btn" [class.btn-primary]="mode === 'existing'" [class.btn-outline-primary]="mode !== 'existing'" (click)="setMode('existing')">
+          Buscar item existente
+        </button>
+        <button type="button" class="btn" [class.btn-primary]="mode === 'new'" [class.btn-outline-primary]="mode !== 'new'" (click)="setMode('new')">
+          Crear nuevo item
+        </button>
+      </div>
+
+      <form [formGroup]="addForm" (ngSubmit)="saveItem()">
+        @if (mode === 'existing') {
+          <div class="mb-3">
+            <label for="search-input"><i class="material-icons search-icon">search</i></label>
+            <input type="text" class="form-control" placeholder="Buscar item" (keyup)="filterParts($event)" />
+            <div class="list-group mt-2" style="max-height: 200px; overflow-y: auto;">
+              @for (part of filteredParts; track part.id) {
+                <button type="button" class="list-group-item list-group-item-action"
+                  [class.active]="addForm.value.car_part_id === part.id" (click)="selectPart(part)">
+                  {{ part.name }}
+                </button>
+              }
+              @if (!filteredParts.length) {
+                <div class="list-group-item text-muted">No hay items disponibles.</div>
+              }
+            </div>
+          </div>
+        } @else {
+          <div class="mb-3">
+            <label>Nombre del nuevo item <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="new_car_part_name" />
+          </div>
+        }
+
+        <div class="row">
+          <div class="col-6 mb-3">
+            <label>Ancho <span class="text-danger">*</span></label>
+            <input type="number" step="0.01" class="form-control" formControlName="width" required />
+          </div>
+          <div class="col-6 mb-3">
+            <label>Largo <span class="text-danger">*</span></label>
+            <input type="number" step="0.01" class="form-control" formControlName="length" required />
+          </div>
+          <div class="col-6 mb-3">
+            <label>Cantidad <span class="text-danger">*</span></label>
+            <input type="number" min="1" class="form-control" formControlName="quantity" required />
+          </div>
+        </div>
+
+        @if (addError) {
+          <div class="alert alert-danger">{{ addError }}</div>
+        }
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary" [disabled]="addForm.invalid || saving">Asociar</button>
+          <button type="button" class="btn btn-light" (click)="modal.dismiss()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </ng-template>
+
+  <ng-template #editItemModal let-modal>
+    <div class="modal-header">
+      <h4 class="modal-title">Editar {{ editingItem?.car_part_name }}</h4>
+      <button type="button" class="close" aria-label="Close" (click)="modal.dismiss()">
+        <span aria-hidden="true"><i class="material-icons">close</i></span>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form [formGroup]="editForm" (ngSubmit)="saveEditItem()">
+        <div class="row">
+          <div class="col-6 mb-3">
+            <label>Ancho <span class="text-danger">*</span></label>
+            <input type="number" step="0.01" class="form-control" formControlName="width" required />
+          </div>
+          <div class="col-6 mb-3">
+            <label>Largo <span class="text-danger">*</span></label>
+            <input type="number" step="0.01" class="form-control" formControlName="length" required />
+          </div>
+          <div class="col-6 mb-3">
+            <label>Cantidad <span class="text-danger">*</span></label>
+            <input type="number" min="1" class="form-control" formControlName="quantity" required />
+          </div>
+        </div>
+
+        @if (editError) {
+          <div class="alert alert-danger">{{ editError }}</div>
+        }
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary" [disabled]="editForm.invalid || saving">Guardar</button>
+          <button type="button" class="btn btn-light" (click)="modal.dismiss()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </ng-template>
+</section>

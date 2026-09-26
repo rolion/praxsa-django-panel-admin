@@ -17,6 +17,19 @@ from .custom_views.user_admin import (
     UserSetPasswordView,
     UserToggleActiveView,
 )
+from .custom_views.vehicle_admin import (
+    CarBrandDetailView,
+    CarBrandListCreateView,
+    CarBrandToggleActiveView,
+    CarModelDetailView,
+    CarModelItemDetailView,
+    CarModelItemsView,
+    CarModelListCreateView,
+    CarModelToggleActiveView,
+    CarPartDetailView,
+    CarPartListCreateView,
+    CarPartToggleActiveView,
+)
 app_name = 'product'
 urlpatterns = [
     path('get_car_part_info/<int:car_model_id>/<int:sucursal_id>', views.get_car_part_info, name= 'get_car_part_info'),
@@ -45,5 +58,17 @@ urlpatterns = [
     path('permissions', PermissionListView.as_view()),
     path('sucursales', SucursalListCreateView.as_view()),
     path('sucursales/<int:pk>/', SucursalDetailView.as_view()),
+    # Modulo de Vehiculos: Marcas, Modelos, Items (panel_admin/)
+    path('vehicles/brands', CarBrandListCreateView.as_view()),
+    path('vehicles/brands/<int:pk>/', CarBrandDetailView.as_view()),
+    path('vehicles/brands/<int:pk>/toggle-active/', CarBrandToggleActiveView.as_view()),
+    path('vehicles/models', CarModelListCreateView.as_view()),
+    path('vehicles/models/<int:pk>/', CarModelDetailView.as_view()),
+    path('vehicles/models/<int:pk>/toggle-active/', CarModelToggleActiveView.as_view()),
+    path('vehicles/models/<int:model_id>/items/', CarModelItemsView.as_view()),
+    path('vehicles/models/<int:model_id>/items/<int:pk>/', CarModelItemDetailView.as_view()),
+    path('vehicles/parts', CarPartListCreateView.as_view()),
+    path('vehicles/parts/<int:pk>/', CarPartDetailView.as_view()),
+    path('vehicles/parts/<int:pk>/toggle-active/', CarPartToggleActiveView.as_view()),
 ]
 urlpatterns = format_suffix_patterns(urlpatterns)

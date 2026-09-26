@@ -23,6 +23,10 @@ http {
             alias /praxsa_manager/staticfiles/; # copy your static file path here
         }
 
+        location /media/ {
+            alias /praxsa_manager/media/;
+        }
+
         location / {
             root /etc/nginx/html/;
             index index.html index.htm;

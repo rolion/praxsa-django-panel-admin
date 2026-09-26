@@ -9,6 +9,7 @@ services:
     env_file: praxsa_manager/.env
     volumes:
       - static:/praxsa_manager/staticfiles
+      - media:/praxsa_manager/media
       - ./praxsa_manager/logs:/praxsa_manager/logs
     restart: always
     expose:
@@ -36,6 +37,7 @@ services:
           memory: 100M
     volumes:
       - static:/praxsa_manager/staticfiles
+      - media:/praxsa_manager/media
       - laminas:/etc/nginx/html
     environment:
       - VIRTUAL_HOST=panel.praxsasrl.store,www.panel.praxsasrl.store,praxsasrl.store,laminas.praxsasrl.store,www.laminas.praxsasrl.store
@@ -93,6 +95,8 @@ volumes:
   postgres:
     external: true
   static:
+    external: true
+  media:
     external: true
   laminas:
     external: true
