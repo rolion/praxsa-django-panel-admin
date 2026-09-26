@@ -1,10 +1,20 @@
 # REV-2026-09-26-modulo-vehiculos-01: Crear un Modelo desde el panel real lo deja inactivo (`is_active=False`) y desaparece del listado al instante
 
-**Status:** Open
+**Status:** Fixed (verificado 2026-09-26, commit `3ee0d28`)
 **Severity:** Critical
 **Category:** IMPLEMENTATION
 **Related plan:** docs/plans/PLAN-2026-09-26-modulo-vehiculos.md (v2)
 **Suggested owner:** delivery-engineer
+
+## Resolución (2026-09-26)
+
+`is_active` pasa a `serializers.BooleanField(read_only=True)` explícito en `CarBrandSerializer`/`CarModelSerializer`/`CarPartSerializer` (`praxsa_manager/product/serializer/vehicle_serializer.py`). Un campo `read_only` nunca entra a `validated_data` sin importar el content-type del request, así que la creación siempre usa el `default=True` del modelo — cierra la clase completa de bug, no solo el síntoma multipart.
+
+Verificado de forma independiente en esta revisión (sesión distinta a la del fix, aunque en el mismo proceso de Claude Code — ver nota de aislamiento del TASK):
+- Código: confirmado que `is_active` es `read_only=True` en las 3 clases.
+- 3 tests de regresión (`test_create_via_multipart_defaults_to_active`, uno por entidad) pasan.
+- Verificación en vivo contra `manage.py runserver` real (proceso nuevo, usuario/token nuevos, no reutilizando los del fix original): creación de Marca/Modelo/Item vía `multipart/form-data` → `is_active: true` en los 3 casos. Además, se intentó forzar explícitamente `-F "is_active=false"` en la creación de Marca — el campo `read_only` lo ignoró igual, confirmando que la protección no depende de que el cliente omita el campo, sino que es estructural.
+- Suite completa: 149 tests backend, 81 frontend, ambos en verde.
 
 ## Description
 

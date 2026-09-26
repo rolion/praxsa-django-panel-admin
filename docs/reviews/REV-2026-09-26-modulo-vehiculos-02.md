@@ -1,10 +1,14 @@
 # REV-2026-09-26-modulo-vehiculos-02: Faltan los specs Angular de `models-create`/`models-edit`/`models-view` definidos en el plan
 
-**Status:** Open (parcialmente resuelto)
-**Severity:** Medium → Low (solo falta `model-create`)
+**Status:** Fixed (verificado 2026-09-26, commit `3ee0d28`)
+**Severity:** Medium → Low (fue bajada, luego cerrada del todo)
 **Category:** IMPLEMENTATION
 **Related plan:** docs/plans/PLAN-2026-09-26-modulo-vehiculos.md (v2)
 **Suggested owner:** delivery-engineer
+
+## Resolución final (2026-09-26, commit `3ee0d28`)
+
+`model-create.component.spec.ts` agregado (4 tests: formulario inválido sin marca, creación sin imagen, creación con imagen, error del backend mostrado). Verificado en esta revisión: `git diff --stat origin/master...HEAD` incluye ahora los 3 `.spec.ts` (`model-create`, `model-edit`, `model-view`). Suite frontend completa (81 tests) corrida de forma fresca, en verde (mismas 15 fallas preexistentes de la plantilla). Los 3 componentes de Modelo definidos en el plan tienen cobertura.
 
 ## Actualización (2026-09-26, post-fixes de UX pedidos por el usuario)
 
