@@ -1,0 +1,52 @@
+<section class="main-content">
+  <ul class="breadcrumb breadcrumb-style">
+    <li class="breadcrumb-item">
+      <h5 class="page-title m-b-0">Editar modelo</h5>
+    </li>
+    <li class="breadcrumb-item bcrumb-1"><a routerLink="/vehicles/models"><i class="fas fa-car font-17"></i></a></li>
+    <li class="breadcrumb-item">Modelos</li>
+  </ul>
+  <div class="section-body">
+    <div class="row clearfix">
+      <div class="col-lg-8 col-md-12">
+        <div class="card">
+          <div class="card-body">
+            @if (loading) {
+              <p>Cargando...</p>
+            } @else {
+              <form [formGroup]="form" (ngSubmit)="save()">
+                <div class="mb-3">
+                  <label>Marca <span class="text-danger">*</span></label>
+                  <select class="form-select form-control" formControlName="car_brand_id" required>
+                    @for (brand of brands; track brand.id) {
+                      <option [value]="brand.id">{{ brand.name }}</option>
+                    }
+                  </select>
+                  @if (form.get('car_brand_id')?.invalid && form.get('car_brand_id')?.touched) {
+                    <small class="form-text text-danger">La marca es obligatoria</small>
+                  }
+                </div>
+                <div class="mb-3">
+                  <label>Nombre <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" formControlName="name" required />
+                  @if (form.get('name')?.invalid && form.get('name')?.touched) {
+                    <small class="form-text text-danger">El nombre es obligatorio</small>
+                  }
+                </div>
+                <div class="mb-3">
+                  <label>Imagen del vehículo</label>
+                  <app-image-upload formControlName="image" [currentImageUrl]="currentImageUrl"></app-image-upload>
+                </div>
+                @if (errorMessage) {
+                  <div class="alert alert-danger">{{ errorMessage }}</div>
+                }
+                <button type="submit" class="btn btn-primary" [disabled]="form.invalid || saving">Guardar</button>
+                <a routerLink="/vehicles/models" class="btn btn-light">Cancelar</a>
+              </form>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
