@@ -31,8 +31,12 @@
                     <td>{{ group.name }}</td>
                     <td>{{ permissionNames(group) || '—' }}</td>
                     <td class="text-end">
-                      <button type="button" class="btn btn-sm btn-outline-primary me-1" (click)="startEdit(group)">Editar</button>
-                      <button type="button" class="btn btn-sm btn-outline-danger" (click)="remove(group)">Eliminar</button>
+                      <button type="button" class="btn btn-tbl-edit h-auto" title="Editar" (click)="startEdit(group)">
+                        <i class="fas fa-pen"></i>
+                      </button>
+                      <button type="button" class="btn btn-tbl-delete h-auto" title="Eliminar" (click)="remove(group)">
+                        <i class="far fa-trash-alt"></i>
+                      </button>
                     </td>
                   </tr>
                 }
