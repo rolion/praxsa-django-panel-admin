@@ -18,6 +18,7 @@
 | 2026-09-26 | PLANNING → ENGINEERING | Plan versionado a v2: reconciliado con la implementación real (login `PanelAdminAuthToken`, menú de 3 submenús) y con 3 pasos nuevos (16-18) para cerrar REV-01/02/03 | delivery-plan |
 | 2026-09-26 | ENGINEERING → REVIEW | Pasos 16-18 del plan v2 implementados: fix del bug de caché en `PATCH /users/<id>/` (REV-01, verificado revirtiéndolo temporalmente y confirmando que el test nuevo falla como se esperaba), `UserDetailViewTest` nuevo (REV-02), `ng lint` limpio (REV-03). Backend 103/103, frontend build+lint limpios, 30/45 tests (mismas 15 fallas preexistentes, 0 nuevas) | delivery-engineer |
 | 2026-09-26 | REVIEW → PUBLISH | Quality Gate corrido de nuevo, verificación independiente de cada fix (incluida una reversión manual del fix de REV-01 para confirmar que el test lo detecta). Backend 103/103, `ng lint` limpio, `ng build` sin errores, frontend 30/45 (mismas 15 fallas preexistentes, 0 nuevas), `npm audit` solo con deuda preexistente. Los 4 issues de la revisión anterior quedaron Resolved. PASS — 0 issues nuevos | delivery-review |
+| 2026-09-26 | PUBLISH (sin cambio de etapa) | Descripción del PR completada (Summary, Architecture decisions, Related plan/ADRs, Known limitations) verificando que `git status` esté limpio, el diff corresponda al plan v2 y no haya secretos ni commits sin revisar. Cambio marcado como sensible (ADRs de modelo de datos + autenticación) — queda pendiente de aprobación humana explícita antes de mergear, no se mergea en esta invocación | delivery-publish |
 
 ## Investigación
 
@@ -142,4 +143,8 @@ Los 4 issues de la corrida 1 se verificaron de forma independiente y quedaron `R
 Detalle completo de comandos/salidas en PR #47.
 
 ## Publicación
-_Pendiente_
+PR [#47](https://github.com/rolion/praxsa-django-panel-admin/pull/47) con descripción completa (Summary, Changes, Testing, Architecture decisions, Related plan/ADRs, Review, Known limitations) — **listo para aprobación humana, no mergeado**.
+
+**Cambio sensible**: toca modelo de datos (`Profile` nuevo, migración aditiva) y autenticación/autorización (`DjangoModelPermissions` + `IsStaffUser` en endpoints nuevos, reconciliación con el login de `TASK-login-panel-admin-backend`) — respaldado por los 2 ADR enlazados. Por regla del flujo, no se marca listo para merge automático bajo ninguna circunstancia; requiere que una persona apruebe el PR explícitamente.
+
+Known limitations declaradas en el PR: `PanelAdminAuthToken` no verifica `is_staff` a nivel de login (decisión de otro task, endpoints de este módulo sí lo verifican); 15 tests preexistentes de la plantilla siguen fallando (deuda no introducida por este cambio); 3 vulnerabilidades de `npm audit` preexistentes; `panel_admin/` no desplegado a producción; `bandit`/`safety` no instalados en el entorno.
