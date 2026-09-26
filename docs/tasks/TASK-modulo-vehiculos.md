@@ -1,6 +1,6 @@
 # TASK-modulo-vehiculos: Módulo de Vehículos (Marcas, Modelos, Items) en el panel admin
 
-**Etapa actual:** PUBLISH
+**Etapa actual:** PUBLISHED
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** claude/modulo-vehiculos-2168ac
@@ -20,6 +20,7 @@
 | 2026-09-26 12:30 UTC | ENGINEERING → REVIEW | Fix de REV-01: `is_active` pasa a `read_only=True` en los 3 serializers (causa raíz: DRF interpretaba el campo ausente en `multipart/form-data` como checkbox sin marcar → `False`, en vez de respetar el `default=True` del modelo). 3 tests de regresión nuevos + verificación en vivo contra `manage.py runserver`. También cierra el resto de REV-02 (`model-create.component.spec.ts`). Suite completa (149 backend, 81 frontend) en verde | delivery-engineer |
 | 2026-09-26 13:00 UTC | REVIEW → PUBLISH | Quality Gate: **PASS**. REV-01 y REV-02 verificados como resueltos de forma independiente (código + tests de regresión + verificación en vivo repetida con proceso/usuario nuevos, incluyendo intento explícito de forzar `is_active=false` para confirmar que la protección es estructural). 149 tests backend, 81 frontend en verde, `ng build`/`ng lint` limpios, sin scope creep en todo el ciclo | delivery-review |
 | 2026-09-26 13:20 UTC | PUBLISH → PUBLISH | Descripción del PR completada con trazabilidad total (Architecture decisions, Plan/ADRs, Changes/Testing/Review ya llenados por etapas previas verificados vigentes). Cambio sensible (3 ADRs, infraestructura de imágenes) — queda pendiente de aprobación humana explícita antes de mergear, no se mergea en esta invocación | delivery-publish |
+| 2026-09-26 13:35 UTC | PUBLISH → PUBLISHED | Usuario aprobó y mergeó el PR #48 (commit `f3e6899`) | usuario |
 
 ## Investigación
 
@@ -220,3 +221,5 @@ PR [#48](https://github.com/rolion/praxsa-django-panel-admin/pull/48) con trazab
 **Cambio sensible — requiere aprobación humana explícita antes de cualquier merge**: este task tiene veredicto `NEEDS_ARCHITECTURE` con 3 ADRs (relación de datos Modelo-Item sobre `Car_Model_Part`, mecanismo de soft-delete nuevo, almacenamiento de imágenes con cambios de infraestructura en `docker-compose.prod.yml`/`.stg.yml` y `nginx/nginx.conf.prod`/`.stg`). No se mergea automáticamente bajo ninguna circunstancia — ver ADR-modulo-vehiculos-almacenamiento-imagenes para el paso manual pendiente (`docker volume create media`) antes de desplegar en `stg`/`prod` una vez aprobado el merge.
 
 Verificado antes de publicar: `git status` limpio, diff (48 archivos) sin secretos ni artefactos temporales, sin commits posteriores al último `delivery-review` (`HEAD` = `origin/claude/modulo-vehiculos-2168ac` = commit revisado).
+
+**Mergeado.** El usuario aprobó explícitamente y mergeó el PR #48 en `master` (commit de merge `f3e6899178ac72941fc2e77986687e5ec4323ae0`, 2026-09-26T11:59:48Z). Pendiente operativo para quien despliegue a `stg`/`prod`: crear el volumen Docker externo (`docker volume create media`) antes del primer despliegue con este cambio — ver ADR-modulo-vehiculos-almacenamiento-imagenes.
