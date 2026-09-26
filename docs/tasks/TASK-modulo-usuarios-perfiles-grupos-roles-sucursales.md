@@ -1,6 +1,6 @@
 # TASK-modulo-usuarios-perfiles-grupos-roles-sucursales: Módulo de Usuarios, Perfiles, Grupos, Roles y Sucursales en `panel_admin/`
 
-**Etapa actual:** PLANNING
+**Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** `claude/admin-panel-user-module-bd8fd2`
@@ -15,6 +15,7 @@
 | 2026-09-25 | PLANNING → ENGINEERING | Plan v1 escrito (backend primero, frontend después), PR #47 abierto sobre la rama ya asignada a este task por el entorno de trabajo | delivery-plan |
 | 2026-09-25 | ENGINEERING (implícito) | Backend y frontend implementados en la misma sesión que planificó (backend: Profile/serializers/endpoints/login staff, 15 tests; frontend: auth real + módulo `users/` completo, 8 tests); conflictos de merge con `master` (que ya traía `TASK-login-panel-admin-backend`) resueltos adoptando su login/branding y conciliando el menú; varios ajustes de UI (consolidar menú a "Credenciales", quitar "Roles", iconos redondos, quitar numeración del wizard) aplicados en vivo por pedido directo del usuario | delivery-engineer (conversacional, sin transición formal registrada en su momento) |
 | 2026-09-26 | ENGINEERING → REVIEW → PLANNING | Quality Gate corrido (backend 100/100, frontend build limpio, 30/45 tests con las mismas 15 fallas preexistentes de la plantilla, `ng lint` con 2 errores nuevos, `npm audit` solo con deuda preexistente). Verificación funcional real encontró un bug confirmado (PATCH de usuario devuelve `phone_number` desactualizado en la respuesta, sin test que lo hubiera atrapado) más una brecha de trazabilidad (plan v1 nunca versionado pese a que ADR/DDR ya registran cambios post-merge). FAIL — 4 issues (1 PLAN, 3 IMPLEMENTATION) | delivery-review |
+| 2026-09-26 | PLANNING → ENGINEERING | Plan versionado a v2: reconciliado con la implementación real (login `PanelAdminAuthToken`, menú de 3 submenús) y con 3 pasos nuevos (16-18) para cerrar REV-01/02/03 | delivery-plan |
 
 ## Investigación
 
@@ -103,7 +104,7 @@ Agregar al nuevo panel de administración (`panel_admin/`, plantilla Angular) un
 - [ADR-modulo-usuarios-perfiles-grupos-roles-sucursales-api-autenticacion-admin](../adr/ADR-modulo-usuarios-perfiles-grupos-roles-sucursales-api-autenticacion-admin.md) — `panel_admin/` se autentica con Token auth de DRF (no JWT, pese a que la plantilla trae interceptor JWT); nuevo endpoint de login para staff (no se reusa `CustomAuthToken`, que asume `Client` y rompería con usuarios de staff); endpoints REST nuevos para User/Profile/Sucursal/Group/Permission bajo `DjangoModelPermissions` + chequeo de `is_staff`; creación de usuario = un solo POST atómico al confirmar el wizard, no un endpoint por paso.
 
 ## Plan
-[PLAN-2026-09-25-modulo-usuarios-perfiles-grupos-roles-sucursales](../plans/PLAN-2026-09-25-modulo-usuarios-perfiles-grupos-roles-sucursales.md) (v1) — backend primero (modelo `Profile`, serializers, endpoint de login staff, endpoints CRUD de User/Group/Permission/Sucursal, tests) y frontend después (auth real, módulo `users/` con listado/ver/editar/wizard de 4 pasos, menú). E2E explícitamente descartado (justificación en el plan); dos preguntas abiertas para el usuario antes de implementar: `apiUrl` real de desarrollo y si los usuarios inactivos se ocultan por defecto en el listado.
+[PLAN-2026-09-25-modulo-usuarios-perfiles-grupos-roles-sucursales](../plans/PLAN-2026-09-25-modulo-usuarios-perfiles-grupos-roles-sucursales.md) (v2) — v1 (backend+frontend completos, ya implementados) reconciliado con la realidad post-merge (login `PanelAdminAuthToken`, menú de 3 submenús) y con 3 pasos nuevos (16-18) para `delivery-engineer`: fix del bug de caché en `PATCH /users/<id>/` (REV-01), test nuevo para `UserDetailView` (REV-02), fix de 2 errores de `ng lint` (REV-03). Ver `## Changelog` del plan.
 
 ## Implementación
 **Backend** (`praxsa_manager/product/`): modelo `Profile` (migración `0107_profile.py`, aditiva); serializers nuevos (`profile_serializer.py`, `user_admin_serializer.py`, `group_serializer.py`, `sucursal_serializer.py`); `permissions.py::IsStaffUser`; vistas nuevas en `custom_views/user_admin.py` (User list/create/detail/set-password/toggle-active, Group list/detail, Permission list, Sucursal list/detail); rutas nuevas en `urls.py`. 18 tests propios (luego 15 tras la reconciliación del merge, ver abajo) en `tests/test_user_admin_module.py`, más helpers nuevos en `tests/helpers.py`.
