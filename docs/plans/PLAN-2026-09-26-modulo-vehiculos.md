@@ -1,4 +1,4 @@
-# PLAN-2026-09-26-modulo-vehiculos (v1)
+# PLAN-2026-09-26-modulo-vehiculos (v2)
 
 **Task:** TASK-modulo-vehiculos
 **DDRs relacionados:** [DDR-modulo-vehiculos-listado-y-flujo-vehiculos](../design/DDR-modulo-vehiculos-listado-y-flujo-vehiculos.md)
@@ -16,13 +16,14 @@ Ver `docs/tasks/TASK-modulo-vehiculos.md` (`## Investigación`, `## Diseño`, `#
 - **Relación Modelo↔Item** (ADR relacion-modelo-item): es `Car_Model_Part`, N─N real con `width`/`length`/`quantity`/`installation_price` propios, consultada en vivo por la calculadora de precios de proformas (`invoice_serializer.py:46-67`, `business/proforma.py:90-92`). No se crea tabla nueva. Asociar un item a un modelo desde el panel **debe** capturar esos 4 campos, no solo el item, para no crear asociaciones con costo $0 silencioso.
 - **Soft delete** (ADR soft-delete): `is_active` (default `True`) nuevo en `Car_Brand`/`Car_Model`/`Car_Part`, filtrado por defecto en cada vista (mismo patrón que `UserListCreateView`, `product/custom_views/user_admin.py:26-30`), toggle vía endpoint dedicado (mismo patrón que `UserToggleActiveView`, `user_admin.py:82-106`). Sin cascada automática.
 - **Imágenes** (ADR almacenamiento-imagenes): `Car_Model.image` (`ImageField`, opcional), `MEDIA_ROOT`/`MEDIA_URL` nuevos en `settings.py`, validación de tipo/tamaño (jpg/png/webp, 5 MB) en el serializer, reemplazo borra el archivo anterior. Infraestructura: volumen Docker `media` + `location /media/` en nginx (prod/stg), sin cambios en dev.
-- **UI** (DDR listado-y-flujo-vehiculos): `ngx-datatable` igual que Credenciales (mismos íconos/estilo de acciones: `eye`/`edit-2`/`trash-2`), dos componentes nuevos en `shared/` (`search-box`, `image-upload`), paginación client-side, modal (`NgbModal`) para Marca/Item (formulario de un campo), página propia para Modelo (marca + nombre + imagen) y para el detalle de Modelo (imagen + items + modal "Agregar item").
+- **UI** (DDR listado-y-flujo-vehiculos, corregido en v2): `ngx-datatable` igual que Credenciales (mismos íconos/estilo de acciones: `eye`/`edit-2`/`trash-2`), **búsqueda reutilizando el patrón ya existente en `advance-table.component.html:29-35`/`.ts:231-257`** (markup `table-search-area` + método `filterDatatable()`, copiado y adaptado por lista — no un componente nuevo), un único componente nuevo en `shared/` (`image-upload`), paginación client-side, modal (`NgbModal`) para Marca/Item (formulario de un campo), página propia para Modelo (marca + nombre + imagen) y para el detalle de Modelo (imagen + items + modal "Agregar item").
 
 ## Current behavior
 
 - `Car_Brand`/`Car_Model`/`Car_Part`/`Car_Model_Part` sin serializer, sin vista DRF, sin entrada en `praxsa_manager/product/urls.py` más allá de 3 funciones de lectura para la calculadora (`urls.py:22,25,27`). Todo el mantenimiento es vía Django Admin (`product/admin.py:34-37`, `product/admin_config/car_brand.py`, `car_model.py`).
 - `panel_admin/src/assets/data/routes.json` no tiene ninguna entrada "Vehículos" — solo "Dashboard" y "Usuarios" (con Credenciales/Grupos/Sucursales).
 - No existe carpeta `shared/` en `panel_admin/src/app/`.
+- **Sí existe un patrón de búsqueda funcional en `panel_admin/src/app/advance-table/advance-table.component.html:29-35` y `.ts:231-257`** (markup + `filterDatatable()`, filtra por substring en cualquier columna y resetea la página) — no usado hoy por Credenciales, pero disponible para reutilizar.
 - No existe `MEDIA_ROOT`/`MEDIA_URL` en `praxsa_manager/praxsa_manager/settings.py` (solo `STATIC_URL`/`STATICFILES_DIRS`/`STATIC_ROOT`, líneas 199-209).
 
 ## Expected behavior
@@ -66,14 +67,14 @@ Ya resueltas en los 3 ADR listados arriba — este plan las traduce a pasos de i
 
 ### Frontend (`panel_admin/src/app/`)
 
-8. **`shared/search-box/`**: componente presentacional (input + debounce, `@Output() search`), primera pieza de la carpeta `shared/` (no existía).
-9. **`shared/image-upload/`**: componente `ControlValueAccessor` (preview, seleccionar/reemplazar/quitar, placeholder con ícono `image` de `FeatherModule`, muestra errores de tipo/tamaño validados también en el cliente antes de enviar).
+8. **Búsqueda**: copiar el markup de `advance-table.component.html:29-35` (`table-search-area`, ícono `search`, input `search-field`) y adaptar `filterDatatable()` (`advance-table.component.ts:231-257`) a cada uno de los 3 componentes de lista (Marcas: filtra por `name`; Modelos: por `name` y por `car_brand_id.name`; Items: por `name`), incluyendo el reset de `table.offset = 0` ya presente en el original. No se crea ningún componente nuevo para esto.
+9. **`shared/image-upload/`**: componente `ControlValueAccessor` (preview, seleccionar/reemplazar/quitar, placeholder con ícono `image` de `FeatherModule`, muestra errores de tipo/tamaño validados también en el cliente antes de enviar). Único componente nuevo en `shared/` (no existía la carpeta).
 10. **`vehicles/vehicles.model.ts`** y **`vehicles/vehicles.service.ts`**: tipos (`CarBrand`, `CarModel`, `CarPart`, `CarModelPart`) y llamadas HTTP a los endpoints del paso 6, mismo estilo que `users.service.ts`.
 11. **`vehicles/vehicles.routes.ts`**, lazy-loaded desde `app.routes.ts` (mismo patrón que `users.routes.ts`).
-12. **Marcas**: `brands/list` (`ngx-datatable` + `search-box` + columna Nombre/Cantidad de modelos/Acciones) y un modal reutilizado para Ver/Crear/Editar (un solo campo).
+12. **Marcas**: `brands/list` (`ngx-datatable` + búsqueda estilo `advance-table` (paso 8) + columna Nombre/Cantidad de modelos/Acciones) y un modal reutilizado para Ver/Crear/Editar (un solo campo).
 13. **Items**: `parts/list` (mismo patrón que Marcas) y su modal Ver/Crear/Editar.
-14. **Modelos**: `models/list` (`ngx-datatable` + `search-box` con búsqueda por nombre de modelo y de marca + columna Imagen-thumbnail/Marca/Modelo/Cantidad de items/Acciones), `models/create` y `models/edit` (página propia: `ng-select` o `<select>` de Marca activa, nombre, `image-upload`), `models/view` (imagen grande o placeholder, marca, nombre, lista simple de items asociados con su `width`/`length`/`quantity`/`installation_price`, botón "Agregar item" y acción "Quitar" por fila).
-15. **Modal "Agregar item"** (desde `models/view`): toggle "Crear nuevo item" (nombre) vs. "Buscar item existente" (`search-box` + lista de items activos no ya asociados a ese modelo), y en ambos casos los campos `width`/`length`/`quantity`/`installation_price` antes de confirmar (ver ADR relacion-modelo-item).
+14. **Modelos**: `models/list` (`ngx-datatable` + búsqueda estilo `advance-table` filtrando por nombre de modelo y de marca + columna Imagen-thumbnail/Marca/Modelo/Cantidad de items/Acciones), `models/create` y `models/edit` (página propia: `ng-select` o `<select>` de Marca activa, nombre, `image-upload`), `models/view` (imagen grande o placeholder, marca, nombre, lista simple de items asociados con su `width`/`length`/`quantity`/`installation_price`, botón "Agregar item" y acción "Quitar" por fila).
+15. **Modal "Agregar item"** (desde `models/view`): toggle "Crear nuevo item" (nombre) vs. "Buscar item existente" (mismo patrón de búsqueda + lista de items activos no ya asociados a ese modelo), y en ambos casos los campos `width`/`length`/`quantity`/`installation_price` antes de confirmar (ver ADR relacion-modelo-item).
 16. **Menú**: agregar el grupo "Vehículos" (Marcas/Modelos/Items, ícono `truck`) a `panel_admin/src/assets/data/routes.json`, mismo formato que el bloque "Usuarios" (`routes.json:14-58`).
 17. **Tests Angular** (`.spec.ts` por componente/servicio, `TestBed` + `HttpTestingController`, mismo patrón que `users-list.component.spec.ts`): ver `## Test strategy`.
 
@@ -90,7 +91,6 @@ Ya resueltas en los 3 ADR listados arriba — este plan las traduce a pasos de i
 - `praxsa_manager/product/tests/test_vehicles_module.py` (nuevo)
 
 **Frontend:**
-- `panel_admin/src/app/shared/search-box/` (nuevo)
 - `panel_admin/src/app/shared/image-upload/` (nuevo)
 - `panel_admin/src/app/vehicles/` (nuevo: `brands/`, `models/`, `parts/`, `vehicles.routes.ts`, `vehicles.service.ts`, `vehicles.model.ts`)
 - `panel_admin/src/assets/data/routes.json` (nueva entrada de menú)
@@ -110,9 +110,8 @@ Ya resueltas en los 3 ADR listados arriba — este plan las traduce a pasos de i
 
 **Frontend** (`.spec.ts`, `TestBed` + `HttpTestingController`, mismo patrón que `users-list.component.spec.ts`):
 - `vehicles.service.ts`: cada método hace la llamada HTTP esperada con los query params correctos (búsqueda, `include_inactive`, `car_brand_id`).
-- `search-box.component.ts`: emite el término con debounce, no en cada tecla.
 - `image-upload.component.ts`: `ControlValueAccessor` (escribe/lee el valor del form correctamente), muestra error de validación de tipo/tamaño cuando corresponde, botón "Quitar" limpia el valor.
-- `brands-list`/`parts-list`: filtra por búsqueda, pagina, dispara el modal de confirmación (`Swal`) al eliminar, no muestra inactivos.
+- `brands-list`/`parts-list`: `filterDatatable()` filtra correctamente por substring y resetea a la página 1 (mismo caso que ya cubriría, si existiera, un test de `advance-table.component.spec.ts` — no existe hoy, así que este test es la primera cobertura real de ese método, aunque copiado), dispara el modal de confirmación (`Swal`) al eliminar, no muestra inactivos.
 - `models-create`/`models-edit`: formulario inválido sin marca seleccionada, envío con y sin imagen, reemplazo de imagen dispara el nuevo `FormData`.
 - `models-view`: modal "Agregar item" en sus dos modos (crear nuevo / buscar existente), validación de los campos numéricos antes de confirmar.
 
@@ -150,3 +149,7 @@ Ya resueltas en los 3 ADR listados arriba — este plan las traduce a pasos de i
 ## Dependencias nuevas
 
 Ninguna — `Pillow==10.0.1` (necesario para `ImageField`) ya está en `praxsa_manager/requirements-3.8.10.txt:21`.
+
+## Changelog
+
+- **v2** (2026-09-26): corrige la investigación/diseño original, que había afirmado que no existía ningún patrón de búsqueda reutilizable en `panel_admin/`. El usuario señaló que `panel_admin/src/app/advance-table/advance-table.component.html:29-35` (markup) y `.ts:231-257` (`filterDatatable()`) ya resuelven la búsqueda sobre `ngx-datatable`, con reset de página incluido. Se elimina el componente `shared/search-box/` de v1 y se reemplaza en todos los pasos/criterios por reutilizar ese patrón existente, copiado y adaptado a las columnas de cada lista. No cambia ningún otro aspecto del plan (backend, imágenes, soft delete, relación Modelo-Item). Ver DDR-modulo-vehiculos-listado-y-flujo-vehiculos.md, sección "Corrección".

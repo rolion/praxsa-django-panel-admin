@@ -13,6 +13,7 @@
 | 2026-09-26 01:20 UTC | INVESTIGATION → ARCHITECTURE (via DESIGN) | Diseño de UI (listados, formularios, upload, búsqueda/paginación) resuelto en DDR; veredicto de complejidad exige definir modelo de datos, soft delete y almacenamiento de imágenes | delivery-design |
 | 2026-09-26 01:45 UTC | ARCHITECTURE → PLANNING | Decisiones de arquitectura tomadas: reutilizar `Car_Model_Part` para la relación Modelo↔Item, soft delete con `is_active` filtrado por defecto, almacenamiento de imágenes en filesystem local con `MEDIA_ROOT`/`MEDIA_URL` nuevos servidos por nginx | delivery-architect |
 | 2026-09-26 02:05 UTC | PLANNING → ENGINEERING | Plan v1 escrito y PR por abrir; queda pendiente de aprobación humana antes de implementar | delivery-plan |
+| 2026-09-26 02:20 UTC | ENGINEERING → ENGINEERING | Corrección post-diseño: sí existe patrón de búsqueda reutilizable en `advance-table.component.html/.ts` (usuario lo señaló); se actualiza DDR/TASK/Plan a v2 para reutilizarlo en vez de construir `shared/search-box/` | usuario |
 
 ## Investigación
 
@@ -42,7 +43,7 @@ Agregar al panel administrativo (`panel_admin/`) un nuevo grupo de menú "Vehíc
 
 **No existe un componente de "tabla avanzada" genérico reutilizable.** Existe `panel_admin/src/app/advance-table/` pero es la página de demo de la plantilla comercial (confirmado en `docs/frontend/panel_admin/reference.md:26,85`), sin ningún otro consumidor en el proyecto (única referencia externa: la ruta lazy en `panel_admin/src/app/app.routes.ts:20-25`). No existe carpeta `shared/` en `panel_admin/src/app/` (confirmado explícitamente en `docs/frontend/panel_admin/reference.md:22,49`, y por búsqueda directa en el filesystem).
 
-**No existe componente de búsqueda reutilizable.** `users-list.component.html` no tiene ningún `<input>` de búsqueda (solo un checkbox "Mostrar inactivos", líneas 16-25).
+**No existe búsqueda en "Credenciales"** (`users-list.component.html` no tiene ningún `<input>` de búsqueda, solo un checkbox "Mostrar inactivos", líneas 16-25), **pero sí existe un patrón de búsqueda funcional en la plantilla, corrección post-diseño (2026-09-26)**: `panel_admin/src/app/advance-table/advance-table.component.html:29-35` (markup `table-search-area`, ícono `search` de Material Icons, input `search-field`, `(keyup)='filterDatatable($event)'`) + `advance-table.component.ts:231-257` (`filterDatatable()`: filtra `this.data` por substring en cualquier columna y resetea `this.table.offset = 0`, resolviendo ya el requisito de volver a la página 1 al buscar). La investigación inicial citó este componente solo como referencia de tabla y no notó que también resuelve la búsqueda — ver DDR de diseño, sección "Corrección".
 
 **No existe componente de paginación reutilizable.** La única paginación disponible en `panel_admin/` es el footer nativo de `ngx-datatable` (client-side, `[limit]="10"`), sin query params de paginación en `UsersService.listUsers()` (`panel_admin/src/app/users/users.service.ts:16-48`, único query param real es `include_inactive`).
 
@@ -133,8 +134,8 @@ Ver [DDR-modulo-vehiculos-listado-y-flujo-vehiculos.md](../design/DDR-modulo-veh
 
 Resumen de decisiones:
 - Tablas de Marcas/Modelos/Items: `ngx-datatable`, mismo componente y look que "Credenciales" (columna de acciones circular con íconos `eye`/`edit-2`/`trash-2` de `FeatherModule`, confirmación de borrado con SweetAlert2). No se introduce ninguna librería de tabla nueva.
-- Búsqueda: no existe componente reutilizable hoy; se construye uno pequeño (`shared/search-box/`) usado en las 3 listas. Paginación: se mantiene client-side nativa de `ngx-datatable`, igual que Credenciales (no hay paginación DRF configurada ni precedente server-side en `panel_admin/`) — queda como pregunta abierta para arquitectura si el volumen real de estos catálogos lo justifica.
-- Upload de imagen del Modelo: no existe componente ni patrón previo; se construye uno reutilizable (`shared/image-upload/`, `ControlValueAccessor`) con preview, reemplazo, eliminación y placeholder con ícono `image`.
+- Búsqueda: **corregido tras revisión del usuario** — se reutiliza el patrón ya existente en `advance-table.component.html:29-35`/`.ts:231-257` (markup + `filterDatatable()`), copiado y adaptado por lista (no se crea `shared/search-box/`). Paginación: se mantiene client-side nativa de `ngx-datatable`, igual que Credenciales (no hay paginación DRF configurada ni precedente server-side en `panel_admin/`) — queda como pregunta abierta para arquitectura si el volumen real de estos catálogos lo justifica.
+- Upload de imagen del Modelo: no existe componente ni patrón previo; se construye uno reutilizable (`shared/image-upload/`, `ControlValueAccessor`) con preview, reemplazo, eliminación y placeholder con ícono `image`. Es ahora el único componente nuevo en `shared/`.
 - Marca e Item: modal (`NgbModal`) para ver/crear/editar (formulario de un solo campo). Modelo: página propia (selección de marca + imagen). Detalle de Modelo: página propia con lista simple de items + modal "Agregar item" (crear nuevo o buscar y asociar existente).
 - Sin diferenciación de privilegios específica pedida para este módulo; mismo nivel de acceso que Credenciales hoy.
 - Pendiente para `delivery-architect`: qué es realmente la relación Modelo↔Item por debajo (dado que `Car_Model_Part` ya existe con datos de precio/instalación usados en facturación), estrategia de soft delete a elegir (hay 3 patrones convivientes hoy) y estrategia de almacenamiento de imágenes (no hay `MEDIA_ROOT`/`MEDIA_URL` configurado).
@@ -149,7 +150,7 @@ Patrón de API/CRUD (serializers, vistas, urls, permisos) para las 3 entidades: 
 
 ## Plan
 
-[PLAN-2026-09-26-modulo-vehiculos.md](../plans/PLAN-2026-09-26-modulo-vehiculos.md) (v1).
+[PLAN-2026-09-26-modulo-vehiculos.md](../plans/PLAN-2026-09-26-modulo-vehiculos.md) (v2 — corrige búsqueda para reutilizar el patrón de `advance-table`, ver Changelog del plan).
 
 ## Implementación
 _Pendiente_
