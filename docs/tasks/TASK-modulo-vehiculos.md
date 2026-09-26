@@ -1,6 +1,6 @@
 # TASK-modulo-vehiculos: Módulo de Vehículos (Marcas, Modelos, Items) en el panel admin
 
-**Etapa actual:** REVIEW
+**Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** claude/modulo-vehiculos-2168ac
@@ -15,6 +15,7 @@
 | 2026-09-26 02:05 UTC | PLANNING → ENGINEERING | Plan v1 escrito y PR por abrir; queda pendiente de aprobación humana antes de implementar | delivery-plan |
 | 2026-09-26 02:20 UTC | ENGINEERING → ENGINEERING | Corrección post-diseño: sí existe patrón de búsqueda reutilizable en `advance-table.component.html/.ts` (usuario lo señaló); se actualiza DDR/TASK/Plan a v2 para reutilizarlo en vez de construir `shared/search-box/` | usuario |
 | 2026-09-26 10:30 UTC | ENGINEERING → REVIEW | Implementación completa (backend + frontend + infra) según Plan v2, empujada al PR #48 | delivery-engineer |
+| 2026-09-26 11:15 UTC | REVIEW → ENGINEERING | Quality Gate: **FAIL**. REV-01 (Critical, IMPLEMENTATION): crear un Modelo vía la UI real deja `is_active=False` (multipart + BooleanField sin default explícito en el serializer) y desaparece del listado al instante. REV-02 (Medium, IMPLEMENTATION): faltan specs de `model-create`/`model-edit`/`model-view` definidos en el plan. Ambos issues son de implementación, no de plan/arquitectura | delivery-review |
 
 ## Investigación
 
@@ -169,7 +170,19 @@ Deuda técnica y desviaciones señaladas explícitamente (ninguna bloqueante):
 - El volumen Docker `media` debe crearse manualmente (`docker volume create media`) antes del primer despliegue en `stg`/`prod` — no se pudo verificar en este entorno de desarrollo (sin Docker/nginx real).
 
 ## Review
-_Pendiente_
+
+**Veredicto: FAIL** (2026-09-26). Nota de aislamiento: esta revisión corrió en la misma sesión de Claude Code que acaba de implementar el código con `delivery-engineer` — no hay aislamiento real de contexto, solo procedimental (se reconstruyó el veredicto desde artefactos y comandos ejecutados de nuevo, no desde memoria de la implementación).
+
+Verificaciones ejecutadas (evidencia completa en `## Review`/`## Testing` del [PR #48](https://github.com/rolion/praxsa-django-panel-admin/pull/48)):
+- Backend: `manage.py test` → 142/142 OK. `makemigrations --check` → sin cambios pendientes. `flake8`/`bandit` no instalados/configurados — verificación no realizada.
+- Frontend: `ng build` limpio, `ng lint` limpio, `ng test --code-coverage` → 54/69 (mismas 15 fallas preexistentes de la plantilla, ninguna nueva). `npm audit` → 3 vulnerabilidades preexistentes de la plantilla, no introducidas por este PR.
+- Verificación manual en vivo contra `manage.py runserver` real: confirmó que las imágenes se sirven correctamente en `/media/`, y en el proceso encontró el bug de REV-01.
+
+Issues abiertos:
+- [REV-2026-09-26-modulo-vehiculos-01.md](../reviews/REV-2026-09-26-modulo-vehiculos-01.md) — **Critical**, IMPLEMENTATION. Crear un Modelo desde la UI real (siempre envía `FormData`) lo deja `is_active=False` por cómo DRF interpreta un `BooleanField` ausente en payloads tipo formulario; el modelo desaparece del listado inmediatamente. Reproducido en vivo con `curl`. No detectado por los tests existentes porque los tests que crean vía multipart nunca verifican `is_active` en la respuesta.
+- [REV-2026-09-26-modulo-vehiculos-02.md](../reviews/REV-2026-09-26-modulo-vehiculos-02.md) — Medium, IMPLEMENTATION. Faltan los specs de `model-create`/`model-edit`/`model-view` que el plan definió en su Test strategy (ya reconocido como deuda pendiente en `## Implementación`).
+
+Plan compliance: sin scope creep (diff coincide con los archivos declarados en el plan v2), ADRs respetados en el diseño de datos/API. Ambos issues son de calidad de implementación, no de plan ni de arquitectura.
 
 ## Publicación
 _Pendiente_
