@@ -12,6 +12,8 @@ interface PanelAdminLoginResponse {
   username: string;
   name: string;
   lastname: string;
+  is_staff: boolean;
+  groups: string[];
 }
 
 @Injectable({
@@ -50,12 +52,23 @@ export class AuthService {
             firstName: res.name || res.username,
             lastName: res.lastname,
             token: res.token,
+            isStaff: res.is_staff,
+            groups: res.groups,
           };
           this.storageService.set('currentUser', user);
           this.currentUserSubject.next(user);
           return user;
         })
       );
+  }
+
+  /** Compara contra los grupos del usuario logueado, igual criterio que
+   * `User_Helper.to_lowercase` del backend. Solo capa de UX (ocultar
+   * botones) -- la barrera real es el permiso Django del endpoint, ver
+   * ADR-modulo-almacen-permisos-rol-frontend. */
+  hasGroup(name: string): boolean {
+    const groups = this.currentUserValue.groups || [];
+    return groups.map((g) => g.toLowerCase()).includes(name.toLowerCase());
   }
 
   logout() {

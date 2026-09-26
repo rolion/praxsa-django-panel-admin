@@ -100,6 +100,51 @@
           "submenu": []
         }
       ]
+    },
+    {
+      "path": "",
+      "title": "Almacén",
+      "iconType": "feather",
+      "icon": "package",
+      "class": "menu-toggle",
+      "groupTitle": false,
+      "badge": "",
+      "badgeClass": "",
+      "submenu": [
+        {
+          "path": "/almacen/laminas",
+          "title": "Láminas",
+          "iconType": "",
+          "icon": "",
+          "class": "ml-menu",
+          "groupTitle": false,
+          "badge": "",
+          "badgeClass": "",
+          "submenu": []
+        },
+        {
+          "path": "/almacen/bobinas",
+          "title": "Bobinas",
+          "iconType": "",
+          "icon": "",
+          "class": "ml-menu",
+          "groupTitle": false,
+          "badge": "",
+          "badgeClass": "",
+          "submenu": []
+        },
+        {
+          "path": "/almacen/inventario",
+          "title": "Inventario",
+          "iconType": "",
+          "icon": "",
+          "class": "ml-menu",
+          "groupTitle": false,
+          "badge": "",
+          "badgeClass": "",
+          "submenu": []
+        }
+      ]
     }
   ]
 }

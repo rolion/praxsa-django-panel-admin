@@ -47,6 +47,11 @@ export const APP_ROUTE: Route[] = [
                 loadChildren: () =>
                     import('./vehicles/vehicles.routes').then((m) => m.VEHICLES_ROUTE),
             },
+            {
+                path: 'almacen',
+                loadChildren: () =>
+                    import('./almacen/almacen.routes').then((m) => m.ALMACEN_ROUTE),
+            },
         ],
     },
     {

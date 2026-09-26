@@ -1,0 +1,117 @@
+<section class="main-content">
+  <ul class="breadcrumb breadcrumb-style">
+    <li class="breadcrumb-item">
+      <h5 class="page-title m-b-0">Inventario</h5>
+    </li>
+    <li class="breadcrumb-item bcrumb-1">
+      <a routerLink="/dashboard/main"><i class="fas fa-home font-17"></i></a>
+    </li>
+    <li class="breadcrumb-item">Inventario</li>
+  </ul>
+  <div class="section-body">
+    <div class="row clearfix">
+      <div class="col-12">
+        <div class="card">
+          <div class="p-10">
+            <div class="row">
+              <div class="col-lg-6">
+                <div class="row m-0">
+                  <div class="col-auto p-0">
+                    <div class="ngxTableHeader">
+                      <div class="table-title">
+                        <h2><strong>Inventario</strong></h2>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-lg-8 p-0">
+                    <div class="ngxTableHeader">
+                      <div class="table-search-area">
+                        <div>
+                          <label for="search-input"><i class="material-icons search-icon">search</i></label>
+                          <input placeholder="Buscar por lámina, sucursal o lote" type="text" class="browser-default search-field"
+                            (keyup)="filterDatatable($event)" aria-label="Search box" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            @if (errorMessage) {
+              <div class="alert alert-danger m-3">{{ errorMessage }}</div>
+            }
+            @if (!loadingIndicator && rows.length === 0 && !errorMessage) {
+              <div class="alert alert-info m-3">No hay inventario para mostrar.</div>
+            }
+            <ngx-datatable
+              class="material"
+              [rows]="rows"
+              [loadingIndicator]="loadingIndicator"
+              columnMode="force"
+              [headerHeight]="50"
+              [footerHeight]="50"
+              rowHeight="auto"
+              [limit]="10"
+            >
+              <ngx-datatable-column name="Sucursal" prop="sucursal_name"></ngx-datatable-column>
+              <ngx-datatable-column name="Lámina" prop="window_film_name"></ngx-datatable-column>
+              <ngx-datatable-column name="Ancho" prop="bobina_width" [width]="80"></ngx-datatable-column>
+              <ngx-datatable-column name="Disponible" prop="to_install" [width]="100"></ngx-datatable-column>
+              <ngx-datatable-column name="Instalado" prop="installed" [width]="100"></ngx-datatable-column>
+              <ngx-datatable-column name="Lote" prop="nro_lote" [width]="100"></ngx-datatable-column>
+              @if (canManage) {
+                <ngx-datatable-column name="Acciones" [sortable]="false" [width]="120">
+                  <ng-template let-row="row" ngx-datatable-cell-template>
+                    <button type="button" class="btn btn-tbl-edit h-auto" title="Gestionar" (click)="openManage(row, manageModal)">
+                      <i class="fas fa-pen"></i>
+                    </button>
+                  </ng-template>
+                </ngx-datatable-column>
+              }
+            </ngx-datatable>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #manageModal let-modal>
+    <div class="modal-header">
+      <h4 class="modal-title">Gestionar inventario</h4>
+      <button type="button" class="close" aria-label="Close" (click)="modal.dismiss()">
+        <span aria-hidden="true"><i class="material-icons">close</i></span>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form [formGroup]="form" (ngSubmit)="save()">
+        <div class="mb-2">
+          <label>Metros disponibles para instalar <span class="text-danger">*</span></label>
+          <input type="number" step="0.01" class="form-control" formControlName="to_install" required />
+        </div>
+        <div class="mb-2">
+          <label>Metros instalados <span class="text-danger">*</span></label>
+          <input type="number" step="0.01" class="form-control" formControlName="installed" required />
+        </div>
+        <div class="mb-2">
+          <label>Precio compra metro lineal <span class="text-danger">*</span></label>
+          <input type="number" step="0.01" class="form-control" formControlName="precio_compra_mtr_lineal" required />
+        </div>
+        <div class="mb-2">
+          <label>Precio venta metro lineal <span class="text-danger">*</span></label>
+          <input type="number" step="0.01" class="form-control" formControlName="precio_venta_mtr_lineal" required />
+        </div>
+        <div class="mb-2">
+          <label>Nro. lote</label>
+          <input type="text" class="form-control" formControlName="nro_lote" />
+        </div>
+        @if (formError) {
+          <div class="alert alert-danger">{{ formError }}</div>
+        }
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary" [disabled]="form.invalid || saving">Guardar</button>
+          <button type="button" class="btn btn-light" (click)="modal.dismiss()">Cerrar</button>
+        </div>
+      </form>
+    </div>
+  </ng-template>
+</section>
