@@ -1,4 +1,4 @@
-# PLAN-2026-09-25-modulo-usuarios-perfiles-grupos-roles-sucursales (v1)
+# PLAN-2026-09-25-modulo-usuarios-perfiles-grupos-roles-sucursales (v2)
 
 **Task:** TASK-modulo-usuarios-perfiles-grupos-roles-sucursales
 **DDRs relacionados:** [DDR-modulo-usuarios-perfiles-grupos-roles-sucursales-listado-y-flujo-usuarios](../design/DDR-modulo-usuarios-perfiles-grupos-roles-sucursales-listado-y-flujo-usuarios.md)
@@ -8,159 +8,108 @@
 
 Agregar al panel `panel_admin/` un módulo de gestión de Usuarios (con Perfiles, Grupos, Roles y Sucursales) construido sobre `django.contrib.auth` estándar, reemplazando el login/mock actual del panel por una integración HTTP real contra `praxsa_manager`, para que el personal administrativo pueda crear/ver/editar/desactivar usuarios y administrar sus grupos, permisos y sucursales desde una superficie propia distinta al admin de Django.
 
+**Nota (v2):** el backend y el frontend de este módulo ya están implementados (ver `## Implementación` del TASK) y pasaron por un Quality Gate (`delivery-review`, PR #47) que encontró 4 issues — 3 de implementación (uno de ellos un bug real confirmado ejecutando el endpoint) y 1 de plan (este mismo documento, desactualizado). Este v2 no vuelve a plantear el módulo desde cero: reconcilia lo que ya cambió por fuera de este plan (login, menú) y agrega los pasos puntuales para resolver los issues abiertos.
+
 ## Context
 
-Ver `docs/tasks/TASK-modulo-usuarios-perfiles-grupos-roles-sucursales.md` (`## Investigación`) para el detalle completo. Resumen de lo que ya está decidido y no se reabre en este plan:
+Ver `docs/tasks/TASK-modulo-usuarios-perfiles-grupos-roles-sucursales.md` (`## Investigación`, `## Implementación`, `## Review`) para el detalle completo. Resumen de lo que ya está decidido y no se reabre en este plan:
 
 - **Modelo de datos** (ADR modelo-datos-permisos): `Profile` nuevo 1:1 con `User` (solo `phone_number`); "Roles" = `Group`+`Permission` nativos, sin tabla `Rol` paralela; `Sucursal.empleado` (ya existente) es la única fuente de verdad usuario↔sucursal; soft delete = `User.is_active=False`.
-- **Auth/API** (ADR api-autenticacion-admin): Token auth de DRF (no JWT); endpoint de login nuevo para staff, aislado de `CustomAuthToken` (que rompería porque asume `Client`); endpoints REST nuevos bajo `DjangoModelPermissions` + `is_staff`; creación de usuario = un solo POST atómico.
-- **UI** (DDR listado-y-flujo-usuarios): `ngx-datatable` (no `angular-datatables`), páginas propias para Ver/Editar (no modal), wizard de 4 pasos para crear, `ng-select` para selección múltiple de grupos/sucursales, menú editado en `routes.json` siguiendo el patrón de "Multi level Menu", "Perfiles" sin tabla propia separada de "Usuarios".
+- **Auth/API** (ADR api-autenticacion-admin, actualizado tras el merge con `master`): Token auth de DRF (no JWT); el login real de `panel_admin/` terminó siendo `PanelAdminAuthToken` (`/product/api-panel-admin-token-auth/`) de `TASK-login-panel-admin-backend` (PR #46, mergeado antes que este) — **no** el `StaffAuthToken`/`admin-token-auth/` que proponía v1 de este plan, ver "Reconciliación" abajo. Endpoints REST de gestión (`/product/users`, `/groups`, `/sucursales`, etc.) siguen bajo `DjangoModelPermissions` + `IsStaffUser`, sin cambios.
+- **UI** (DDR listado-y-flujo-usuarios, con su propia actualización post-implementación): `ngx-datatable` (no `angular-datatables`), páginas propias para Ver/Editar (no modal), wizard de 4 pasos para crear, `ng-select` para selección múltiple de grupos/sucursales. El menú final quedó en **3 submenús** (Credenciales, Grupos, Sucursales) tras pedido explícito del usuario en vivo — "Usuarios"+"Perfiles" se consolidaron en "Credenciales" y "Roles" se eliminó (los permisos ya se asignan directo en el formulario de Grupos, con `groupBy="app_label"`).
+
+### Reconciliación con `TASK-login-panel-admin-backend` (por qué el plan v1 quedó desactualizado)
+
+Mientras se implementaba este módulo, se mergeó `master`, que ya traía mergeado un task paralelo (`TASK-login-panel-admin-backend`, PR #46) resolviendo el mismo problema de login de `panel_admin/` con su propio endpoint (`PanelAdminAuthToken`, sin verificación de `is_staff` — decisión de negocio explícita de ese task) y su propio rediseño de sidebar/login (branding PRAXSA, menú reducido a solo Dashboard). Al resolver el conflicto se adoptó ese login (se descartó el `StaffAuthToken` propio de este plan) y se concilió el menú (Dashboard + Usuarios, en vez de que uno pisara al otro). Esto ya está documentado en el ADR y el DDR de este task, pero nunca se reflejó aquí — es exactamente el hallazgo `REV-2026-09-26-modulo-usuarios-perfiles-grupos-roles-sucursales-04` que motiva este v2.
 
 ## Current behavior
 
-- `panel_admin/src/app/core/service/auth.service.ts:15-76` — login 100% mock en memoria, sin HTTP.
-- `panel_admin/src/app/core/models/user.ts:1-7` — sin campos de rol/permiso.
-- `panel_admin/src/app/core/guard/auth.guard.ts` — solo verifica sesión, no privilegio.
-- `praxsa_manager/product/custom_views/auth_token.py` (`CustomAuthToken`) — asume `Client.objects.get(user_id=user)`, rompería (500) para un usuario de staff sin `Client`.
-- `praxsa_manager/product/urls.py` — sin ningún endpoint de gestión de usuarios/grupos/permisos/sucursales.
-- `praxsa_manager/product/models.py:101-109` — `Sucursal` ya existe con M2M `empleado` a `User`; no hay `Profile`.
-- `praxsa_manager/product/migrations/` — última migración real: `0106_proforma_header_status.py`.
-- `panel_admin/src/assets/data/routes.json` — sin entrada de menú "Usuarios".
+- `praxsa_manager/product/custom_views/auth_token.py` — tiene `CustomAuthToken` (para `proforma/`, sin cambios) y `PanelAdminAuthToken` (login real de `panel_admin/`, ya implementado y en producción de código — no requiere trabajo nuevo).
+- `praxsa_manager/product/custom_views/user_admin.py` — `UserListCreateView`, `UserDetailView`, `UserSetPasswordView`, `UserToggleActiveView`, `GroupListCreateView`, `GroupDetailView`, `PermissionListView`, `SucursalListCreateView`, `SucursalDetailView` — todas implementadas y con tests, **excepto `UserDetailView`** (sin ningún test, ver `REV-02`).
+- `praxsa_manager/product/serializer/user_admin_serializer.py:29-45` (`UserAdminSerializer.update()`) — actualiza `Profile` con `Profile.objects.update_or_create(user=instance, defaults=profile_data)`, pero `instance` llega desde `UserDetailView.queryset` con `select_related('profile')` ya resuelto — la respuesta serializada después de `update()` lee el `instance.profile` cacheado (viejo), no el que acaba de guardarse. **Bug confirmado** ejecutando un `PATCH` real (`REV-2026-09-26-modulo-usuarios-perfiles-grupos-roles-sucursales-01`): la base de datos queda bien, la respuesta HTTP no.
+- `panel_admin/src/app/users/` — módulo completo implementado: `list/`, `view/`, `edit/`, `create/` (wizard), `groups/`, `sucursales/` (no hay `roles/`, se eliminó).
+- `panel_admin/src/assets/data/routes.json` — menú con 2 entradas de primer nivel (Dashboard, Usuarios) y el submenú de Usuarios con 3 ítems (Credenciales, Grupos, Sucursales).
+- `ng lint` (`panel_admin/`) falla con 2 errores `@typescript-eslint/no-explicit-any` en `core/guard/auth.guard.spec.ts:31` y `users/list/users-list.component.spec.ts:69` (`REV-2026-09-26-modulo-usuarios-perfiles-grupos-roles-sucursales-03`).
 
 ## Expected behavior
 
-- El personal de staff inicia sesión en `panel_admin/` con sus credenciales reales de `praxsa_manager` (Token auth), no con el mock.
-- El menú lateral muestra "Usuarios" con submenús Usuarios, Perfiles, Grupos, Roles, Sucursales.
-- La tabla de Usuarios lista usuario/correo/nombre/apellido/teléfono con acciones Ver/Editar/Cambiar contraseña/Activar-Desactivar/Eliminar (soft).
-- El wizard de creación valida credenciales, perfil, grupos y sucursales, muestra un resumen, y al confirmar crea todo atómicamente en el backend (o no crea nada si algo falla).
-- Grupos/Roles(permisos)/Sucursales tienen sus propias pantallas CRUD simples.
+- El personal de staff inicia sesión en `panel_admin/` con sus credenciales reales de `praxsa_manager` (ya funciona vía `PanelAdminAuthToken`, sin cambios en este plan).
+- El menú lateral muestra "Usuarios" con submenús Credenciales, Grupos, Sucursales (ya implementado, sin cambios en este plan).
+- La tabla de Credenciales lista usuario/correo/nombre/apellido/teléfono con acciones Ver/Editar/Eliminar/Activar (ya implementado; "Cambiar contraseña" vive como sección propia dentro de Editar, no como botón de fila — decisión de implementación ya tomada, no se reabre).
+- El wizard de creación ya funciona atómicamente (sin cambios en este plan).
+- **Nuevo en este plan**: `PATCH /product/users/<id>/` devuelve en su respuesta los datos realmente guardados (incluido `phone_number`), sin depender de una relación cacheada obsoleta.
+- **Nuevo en este plan**: `UserDetailView` (GET y PATCH) tiene cobertura de test que hubiera atrapado el bug anterior.
+- **Nuevo en este plan**: `ng lint` pasa sin errores en `panel_admin/`.
 
 ## Architecture considerations
 
-Ver ADRs enlazados arriba — ya cubren contrato API, autenticación, permisos y estrategia de rollback. Puntos operativos adicionales propios de este plan:
-
-- **Orden de dependencia dura**: el frontend no puede probarse contra datos reales hasta que exista el endpoint de login de staff y al menos el endpoint de listado/creación de usuarios — el plan ordena backend antes que frontend por esta razón, no por preferencia estética.
-- **Migraciones**: una sola migración nueva (`Profile`), aditiva, no debe tocar `0106_proforma_header_status.py` ni ninguna anterior (regla de `docs/CLAUDE.md`).
-- **Dinero/Decimal**: no aplica — este módulo no maneja precios ni pagos.
-- **Rendimiento**: el listado de usuarios debe usar `select_related('profile')` y `prefetch_related('groups', 'sucursal_set')` (o el `related_name` que se defina) para evitar N+1 al mostrar grupos/sucursales por fila si se muestran en la tabla — no se pidió explícitamente mostrarlos en la tabla (solo en Ver/Editar), así que el listado principal no necesita el prefetch de grupos/sucursales, solo de `profile` (para `phone_number`).
-- **Seguridad**: los endpoints nuevos son el área más sensible de este cambio (crean usuarios, tocan contraseñas, exponen grupos/permisos). Cambiar contraseña y activar/desactivar deben, además del permiso Django, impedir que un usuario se desactive a sí mismo por error (validación explícita en el serializer/vista, no solo en el frontend).
-- **Acoplamiento**: `product/helper/user.py::User_Helper` se reusa tal cual para resolver "admin" en el chequeo de acceso al módulo — no se modifica su lógica existente (usada hoy por reportes/pagos), solo se llama desde el nuevo código.
+Sin cambios de arquitectura en este v2 — los ADR siguen vigentes tal como están. El fix de `REV-01` es una corrección de implementación (manejo de caché de Django en una relación 1:1), no una decisión arquitectónica nueva.
 
 ## Proposed solution
 
-Implementación en dos fases dentro del mismo PR (backend primero, para que el frontend tenga contra qué integrarse; frontend después), con pasos pequeños y verificables en cada una.
+Todo lo de v1 (backend completo, frontend completo, menú, wizard) **ya está implementado y no se re-explica aquí** — ver `docs/tasks/TASK-modulo-usuarios-perfiles-grupos-roles-sucursales.md` `## Implementación` para el resumen de lo hecho. Este v2 agrega solo los pasos puntuales para cerrar los 3 issues de implementación abiertos:
 
-### Fase 1 — Backend (`praxsa_manager/product/`)
+16. **Fix `REV-01`** — en `UserAdminSerializer.update()` (`praxsa_manager/product/serializer/user_admin_serializer.py:29-45`), después de aplicar `Profile.objects.update_or_create(...)`, refrescar la relación cacheada antes de que DRF serialice la respuesta. Opción más simple y menos invasiva: en `UserDetailView.update()`/`partial_update()` (o sobrescribiendo `get_object()`), volver a resolver el objeto con una query fresca antes de devolver la respuesta — por ejemplo, que la vista, tras `serializer.save()`, haga `instance = self.get_queryset().get(pk=instance.pk)` y devuelva `Response(self.get_serializer(instance).data)` en vez de reusar `serializer.data` directamente. Alternativa dentro del propio serializer: en `update()`, tras el `update_or_create`, hacer `instance.refresh_from_db()` y reasignar explícitamente `instance.profile = Profile.objects.get(user=instance)` antes de `return instance` (más acoplado al detalle de implementación de Django, pero no requiere tocar la vista). Cualquiera de las dos es aceptable — decisión de implementación, no de arquitectura.
+17. **Fix `REV-02`** — agregar una clase de test nueva en `praxsa_manager/product/tests/test_user_admin_module.py` (p. ej. `UserDetailViewTest`) cubriendo: `GET` de detalle (200, shape correcto); `PATCH` feliz verificando que **la respuesta** (no solo la base de datos) refleje `first_name`, `phone_number`, `groups` y `sucursales` actualizados (este caso es el que hubiera atrapado `REV-01` antes de mergear); `PATCH` sin permiso `change_user` → 403.
+18. **Fix `REV-03`** — en `panel_admin/src/app/core/guard/auth.guard.spec.ts:31`, tipar el acceso a `currentUserSubject` sin `as any` (por ejemplo, un tipo local `AuthServiceWithInternals` o exponer un método de test-only); en `panel_admin/src/app/users/list/users-list.component.spec.ts:69`, tipar el valor de `spyOn(Swal, 'fire').and.returnValue(...)` según el tipo real que expone `sweetalert2` (`SweetAlertResult`) en vez de `as any`.
 
-1. Modelo `Profile` (`models.py`): `user = OneToOneField(User, on_delete=CASCADE, related_name='profile')`, `phone_number = CharField(validators=[RegexValidator('(\+)*\d{7,11}')], null=True)` — mismo validador de teléfono que ya usa `Sucursal.phone_number` y `Client.phone_number`, por consistencia.
-2. Migración nueva (parte de `0106_proforma_header_status.py`).
-3. Serializers nuevos en `product/serializer/`:
-   - `ProfileSerializer` (solo `phone_number`).
-   - `UserAdminSerializer` (lectura: `id, username, email, first_name, last_name, is_active, profile.phone_number, groups[], sucursales[]`; escritura restringida a los campos editables, sin `password` — password va por endpoint separado).
-   - `UserCreateSerializer` (escritura, campos del wizard completo: `username, password, password_confirm, is_active, first_name, last_name, email, phone_number, sucursales(ids), groups(ids)`), con:
-     - `validate_username`: unicidad (ya la garantiza `User.username` con `unique=True`, pero se valida explícito para devolver un error de campo claro, no un `IntegrityError` de 500).
-     - `validate`: `password == password_confirm`; `django.contrib.auth.password_validation.validate_password(password)`.
-     - `create()`: dentro de `transaction.atomic()` — `User.objects.create_user(...)`, crear `Profile`, `user.groups.set(groups)`, `sucursal.empleado.add(user)` por cada sucursal seleccionada (o el patrón M2M inverso equivalente).
-   - `GroupSerializer` (nombre + `permissions` ids).
-   - `SucursalSerializer` (nuevo — no existía ninguno).
-4. Vista de login para staff: `StaffAuthToken(ObtainAuthToken)` en `product/custom_views/auth_token.py` (junto a `CustomAuthToken`), que valida `user.is_staff` antes de emitir el token; si no es staff, `403`.
-5. Vistas nuevas (patrón de clase, consistente con `InvoiceView`/`BobinaView`) en `product/custom_views/user_admin.py` (archivo nuevo):
-   - `UserListCreateView` (GET lista con paginación, POST crea con `UserCreateSerializer`).
-   - `UserDetailView` (GET detalle, PATCH edición de perfil/grupos/sucursales, sin tocar password).
-   - `UserSetPasswordView` (POST, valida `validate_password`, `user.set_password(...)`).
-   - `UserToggleActiveView` (POST/PATCH, setea `is_active`; rechaza si `request.user == target_user`).
-   - `GroupListCreateView`, `GroupDetailView` (incluye asignar `permissions`).
-   - `PermissionListView` (solo lectura — lista `Permission.objects.all()` para poblar el selector de "Roles").
-   - `SucursalListCreateView`, `SucursalDetailView`.
-   - Todas con `permission_classes = [IsAuthenticated, DjangoModelPermissions]` + un chequeo adicional `request.user.is_staff` (mixin o chequeo explícito en cada vista, según se decida al implementar).
-6. `product/urls.py`: registrar las rutas nuevas (`admin-token-auth/`, `users/`, `users/<id>/`, `users/<id>/set-password/`, `users/<id>/toggle-active/`, `groups/`, `groups/<id>/`, `permissions/`, `sucursales/`, `sucursales/<id>/`).
-7. Tests backend (`product/tests/`, reusando `helpers.py` para fixtures de usuario/sucursal ya existentes):
-   - Creación de usuario: caso feliz (crea `User`+`Profile`+grupos+sucursales), username duplicado (400, no 500), password que no cumple validadores (400), password/confirmación no coinciden (400).
-   - Atomicidad: forzar un fallo a mitad de la creación (p. ej. sucursal inexistente) y verificar que no queda un `User` huérfano sin perfil/grupos.
-   - Login de staff: usuario `is_staff=True` obtiene token; usuario `is_staff=False` (ej. un `Client`) recibe 403; `/product/api-token-auth/` (endpoint existente) sigue funcionando igual para clientes (test de no-regresión).
-   - Permisos: usuario sin `Permission` correspondiente recibe 403 en cada endpoint nuevo.
-   - Activar/desactivar: un usuario no puede desactivarse a sí mismo.
-   - Cambiar contraseña: valida contra `AUTH_PASSWORD_VALIDATORS`, nunca guarda en texto plano (verificar `user.password` no es igual al valor enviado).
-
-### Fase 2 — Frontend (`panel_admin/src/app/`)
-
-8. `environments/environment.ts` y `environment.development.ts`: `apiUrl` = `http://localhost:8000` (confirmado por el usuario — puerto por defecto de `python manage.py runserver`).
-9. `core/models/user.ts`: agregar `email, isStaff, groups: string[]` (lo que el nuevo endpoint de login devuelve).
-10. `core/service/auth.service.ts`: reemplazar el array mock por `HttpClient.post(apiUrl + '/product/admin-token-auth/', {username, password})`; guardar token+datos vía `LocalStorageService` ya existente.
-11. `core/interceptor/jwt.interceptor.ts`: adaptar el header de `Bearer <token>` a `Token <token>` (esquema de DRF `TokenAuthentication`).
-12. `core/guard/auth.guard.ts`: mantiene el chequeo de sesión existente; se evalúa si agregar chequeo de `isStaff` aquí o dejarlo a nivel de componente (decisión menor, no bloqueante, a resolver al implementar).
-13. Nuevo módulo `panel_admin/src/app/users/` con `users.routes.ts` (lazy-loaded desde `app.routes.ts`, mismo patrón que `dashboard`/`multilevel`):
-    - `list/` (tabla `ngx-datatable`, columnas usuario/correo/nombre/apellido/teléfono/acciones). Por defecto muestra solo usuarios activos (`is_active=True`); incluye un filtro/toggle "mostrar inactivos" para revelar los dados de baja (confirmado por el usuario) — el backend debe soportar el parámetro de query correspondiente (p. ej. `?include_inactive=true`) en `UserListCreateView` (paso 5).
-    - `view/:id` (solo lectura).
-    - `edit/:id` (Reactive Form).
-    - `create/` (wizard de 4 pasos: `create-step1-credentials`, `create-step2-profile`, `create-step3-groups`, `create-step4-confirm`, o un solo componente con estado de paso interno — decisión de implementación, no de diseño).
-    - `groups/` (listado simple + asignación de permisos).
-    - `roles/` (vista de permisos disponibles, según lo que defina el DDR — lectura+asignación desde Grupos).
-    - `sucursales/` (listado simple CRUD).
-14. `assets/data/routes.json`: agregar el bloque de menú "Usuarios" con sus 5 submenús, siguiendo el patrón de `routes.json:171-250` ("Multi level Menu").
-15. Tests frontend (`TestBed` + `HttpTestingController`, patrón ya usado en `proforma/` según `docs/integration-and-backlog.md` backlog #8):
-    - `AuthService`: login exitoso guarda token; login fallido no guarda nada; header `Token` se envía en requests subsiguientes.
-    - `UsersListComponent`: renderiza filas desde la respuesta HTTP mockeada; botones de acción llaman al servicio correcto.
-    - Wizard de creación: cada paso valida antes de avanzar; el resumen final refleja lo ingresado; el submit dispara un único POST con el payload completo.
-    - Guard: sin sesión redirige a login (comportamiento ya existente, test de no-regresión tras el cambio de modelo `User`).
+No hay paso 19 — el issue `REV-04` (este plan desactualizado) se resuelve con la publicación de este mismo v2, no con un paso de código adicional.
 
 ## Files/components affected
 
-**Backend:**
-- `praxsa_manager/product/models.py` (nuevo `Profile`)
-- `praxsa_manager/product/migrations/` (nueva migración)
-- `praxsa_manager/product/serializer/` (`profile_serializer.py`, `user_admin_serializer.py`, `group_serializer.py`, `sucursal_serializer.py` — nuevos)
-- `praxsa_manager/product/custom_views/auth_token.py` (agregar `StaffAuthToken`)
-- `praxsa_manager/product/custom_views/user_admin.py` (nuevo)
-- `praxsa_manager/product/urls.py` (rutas nuevas)
-- `praxsa_manager/product/tests/` (tests nuevos, reusando `helpers.py`)
+**Backend (nuevo en v2):**
+- `praxsa_manager/product/serializer/user_admin_serializer.py` (fix `REV-01`) **o** `praxsa_manager/product/custom_views/user_admin.py` (`UserDetailView`, si el fix se hace en la vista en vez del serializer)
+- `praxsa_manager/product/tests/test_user_admin_module.py` (clase de test nueva, `REV-02`)
 
-**Frontend:**
-- `panel_admin/src/environments/environment.ts`, `environment.development.ts`
-- `panel_admin/src/app/core/models/user.ts`
-- `panel_admin/src/app/core/service/auth.service.ts`
-- `panel_admin/src/app/core/interceptor/jwt.interceptor.ts`
-- `panel_admin/src/app/core/guard/auth.guard.ts` (posible)
-- `panel_admin/src/app/users/**` (módulo nuevo completo)
-- `panel_admin/src/assets/data/routes.json`
-- `panel_admin/src/app/app.routes.ts` (registrar `loadChildren` de `users`)
+**Frontend (nuevo en v2):**
+- `panel_admin/src/app/core/guard/auth.guard.spec.ts` (fix de tipo, `REV-03`)
+- `panel_admin/src/app/users/list/users-list.component.spec.ts` (fix de tipo, `REV-03`)
+
+Todo lo demás (modelos, serializers, vistas, migraciones, módulo `users/` completo, menú, wizard) ya está implementado — ver v1 de este mismo documento (historial de git) para el detalle original, o `## Implementación` del TASK para el resumen de lo que se construyó.
 
 ## Test strategy
 
-- **Unitario/integración backend**: sí, obligatorio — todo lo listado en el paso 7 (creación, atomicidad, login staff vs. cliente, permisos, auto-desactivación bloqueada, cambio de contraseña). Sigue el patrón ya usado en `product/tests/` con `helpers.py` (visto en `TASK-005`/`TASK-007`/`TASK-008`/`TASK-010`).
-- **Unitario/integración frontend**: sí — `TestBed`+`HttpTestingController` para `AuthService`, componente de listado, y el wizard completo (validación por paso + payload final).
-- **E2E (Playwright): NO corresponde para este plan.** Justificación explícita: aunque el wizard es un flujo multi-paso, el requerimiento y el DDR ya lo cubren con tests de integración de componente (`TestBed` puede simular navegación entre pasos y verificar el payload final sin un navegador real) y tests de integración backend que verifican la creación atómica end-to-end a nivel HTTP. `proforma/package.json` no tiene Playwright instalado hoy, e instalarlo sería una dependencia nueva que requiere confirmación explícita (regla de `docs/CLAUDE.md`) para un beneficio marginal sobre lo que los tests de integración ya cubren en este caso. Si más adelante aparece un bug real que solo un E2E real hubiera detectado (p. ej. un problema de integración entre el interceptor HTTP real y el guard), se puede reconsiderar en una revisión posterior — no se decide preventivamente ahora.
-- **Manual**: se recomienda una prueba manual en vivo en el admin (login real de staff → crear usuario con grupos y sucursales → verificar en el Django admin que el `User`/`Profile`/`Group`/`Sucursal.empleado` quedaron consistentes), siguiendo el patrón ya usado en `TASK-007`/`TASK-008`/`TASK-010` de este mismo proyecto.
+- **Backend**: el nuevo test de `UserDetailView` (paso 17) es obligatorio y debe fallar contra el código actual (reproduce `REV-01`) y pasar una vez aplicado el fix del paso 16 — es la prueba de que el fix es real, no solo una corrección "a ojo".
+- **Frontend**: no se agregan tests nuevos de comportamiento en v2 — el paso 18 es una corrección de tipos que no cambia comportamiento, solo debe seguir pasando la suite existente (30/45, con las mismas 15 fallas preexistentes de la plantilla ya documentadas en el PR).
+- **E2E**: sigue sin corresponder, mismo razonamiento que v1 — ninguno de los 3 fixes de este v2 es un caso que solo un E2E real detectaría; el bug de `REV-01` ya se detectó y se reproduce con un test de integración normal (`self.client.patch(...)` contra Postgres real).
+- **Manual**: repetir la verificación manual del wizard/edición en vivo (ya hecha una vez para v1) específicamente sobre el flujo de edición, confirmando que el teléfono mostrado tras guardar coincide con lo ingresado (antes del fix se veía el valor viejo si algo llegara a leer la respuesta del PATCH directamente, aunque hoy el frontend no lo hace).
 
 ## Acceptance criteria
 
-- [ ] `Profile` existe, migración aplicada sin tocar migraciones previas.
-- [ ] Login de staff (`is_staff=True`) obtiene token vía el endpoint nuevo; un `Client` sin `is_staff` recibe 403 ahí, y sigue pudiendo loguearse sin cambios por `/product/api-token-auth/` (no-regresión verificada con test).
-- [ ] Crear usuario vía el wizard completo (con 0, 1 y varios grupos; 0, 1 y varias sucursales) crea `User`+`Profile`+relaciones atómicamente; un fallo a mitad de camino no deja datos huérfanos.
-- [ ] Username duplicado, password que no cumple validadores, y confirmación de password no coincidente devuelven error 400 con mensaje de campo, no 500.
-- [ ] La contraseña nunca se persiste ni se loguea en texto plano (verificado en test).
-- [ ] Un usuario no puede desactivarse a sí mismo.
-- [ ] Endpoints nuevos rechazan (403) a un usuario sin el `Permission` Django correspondiente, y a un usuario sin `is_staff`.
-- [ ] Menú "Usuarios" visible en `panel_admin/` con sus 5 submenús, siguiendo el patrón visual ya usado por "Multi level Menu".
-- [ ] Tabla de Usuarios muestra usuario/correo/nombre/apellido/teléfono y acciones Ver/Editar/Cambiar contraseña/Activar-Desactivar/Eliminar.
-- [ ] Eliminar = `is_active=False` (verificado que la fila no desaparece de la base de datos); el usuario desactivado queda oculto del listado por defecto y aparece al activar el filtro "mostrar inactivos".
-- [ ] Suite de tests backend y frontend en verde.
-- [ ] Verificación manual en vivo documentada (login real, creación real, chequeo en Django admin).
+Los criterios de v1 ya cumplidos (verificados en el Quality Gate del PR #47) se mantienen sin cambios y no se repiten acá salvo que este v2 los modifique explícitamente:
+
+- [x] `Profile` existe, migración aplicada sin tocar migraciones previas.
+- [x] ~~Login de staff (`is_staff=True`) obtiene token vía el endpoint nuevo...~~ **Reemplazado**: el login real es `PanelAdminAuthToken` (`/product/api-panel-admin-token-auth/`), sin verificación de `is_staff` (decisión de `TASK-login-panel-admin-backend`); los endpoints de gestión de usuarios siguen exigiendo `is_staff` + permiso Django independientemente de cómo se logueó.
+- [x] Crear usuario vía el wizard completo crea `User`+`Profile`+relaciones atómicamente.
+- [x] Username duplicado, password inválido, confirmación no coincidente → 400.
+- [x] La contraseña nunca se persiste en texto plano.
+- [x] Un usuario no puede desactivarse a sí mismo.
+- [x] Endpoints nuevos rechazan sin `Permission` ni sin `is_staff`.
+- [x] ~~Menú "Usuarios" con sus 5 submenús~~ **Reemplazado**: menú con 3 submenús (Credenciales, Grupos, Sucursales), por pedido explícito del usuario.
+- [x] Tabla de Credenciales con las columnas pedidas y acciones Ver/Editar/Eliminar/Activar (botones circulares con FontAwesome); "Cambiar contraseña" vive en la página de Editar, no en la fila de la tabla.
+- [x] Eliminar = `is_active=False`, oculto por defecto con filtro "mostrar inactivos".
+- [ ] **Nuevo (v2)**: `PATCH /product/users/<id>/` devuelve en su respuesta el `phone_number` (y el resto de los campos de `Profile`) realmente guardado, verificado con un test que falla contra el código pre-fix.
+- [ ] **Nuevo (v2)**: existe al menos un test para `UserDetailView` (GET y PATCH, incluido el caso sin permiso).
+- [ ] **Nuevo (v2)**: `npx ng lint` en `panel_admin/` termina sin errores.
+- [ ] Suite de tests backend y frontend en verde (backend: 100% + los nuevos de `UserDetailView`; frontend: mismas 30/45 de siempre, sin nuevas fallas).
 
 ## Risks
 
-- **Tamaño del cambio**: el propio task ya señaló este riesgo en la investigación. Mitigación: dentro de este único PR (regla del skill: un PR por task), los commits se ordenan por los pasos numerados arriba (backend completo y en verde primero, frontend después) para que el diff sea revisable por fases aunque se mergee de una sola vez.
-- **`StaffAuthToken` nuevo introduce una segunda forma de autenticarse**: mitigado por el test de no-regresión explícito sobre `/product/api-token-auth/` (paso 7) y por que ambos endpoints coexisten sin compartir lógica modificada.
-- **`ng-select` sin ejemplo de uso previo en `panel_admin/src/app/`**: riesgo bajo (ya está en `package.json`), pero su integración exacta (multi-select con chips para grupos/sucursales) no tiene precedente en el código — se prueba con un test de componente simple antes de dar por buena la UX.
-- **Ambigüedad menor no bloqueante**: si el chequeo de `isStaff` va en el guard global o en cada componente del módulo — no cambia el resultado funcional, se decide al implementar sin volver a esta etapa.
+- **El fix de `REV-01` toca código ya cubierto por otros tests** (`UserAdminSerializer`, usado también por `UserListCreateView`/creación): mitigado corriendo la suite completa de `test_user_admin_module.py` (no solo el test nuevo) después del fix, para confirmar que no rompe la creación ni el resto de los casos ya verificados.
+- **Elegir dónde aplicar el fix (serializer vs. vista) puede no ser obvio**: se deja como decisión de implementación (ver paso 16), ambas opciones son igualmente válidas y de bajo riesgo — no bloquea el plan.
 
 ## Out of scope
 
-- Migrar `proforma/` a Angular 21 o fusionar código con `panel_admin/` (pregunta abierta ya señalada en `docs/frontend/panel_admin/reference.md:18`, fuera del alcance de este task).
-- Migrar el token a cookie `httpOnly` (deuda ya documentada como épica separada en `docs/integration-and-backlog.md` backlog #6).
-- Una vista de "Perfil" separada de "Usuarios" para autoedición (el DDR ya decidió no incluirla; si negocio la pide, es un task nuevo).
-- Desplegar `panel_admin/` a producción (`docker-compose*.yml`/`nginx/`) — no está conectado hoy y este task no lo conecta.
+- Migrar `proforma/` a Angular 21 o fusionar código con `panel_admin/`.
+- Migrar el token a cookie `httpOnly`.
+- Una vista de "Perfil" separada de "Credenciales" para autoedición.
+- Desplegar `panel_admin/` a producción.
+- Revisar si `PanelAdminAuthToken` debería exigir `is_staff` (decisión de negocio de `TASK-login-panel-admin-backend`, explícitamente pospuesta por ese task — no se reabre acá).
 
 ## Dependencias nuevas
 
-Ninguna. `ng-select` ya está en `panel_admin/package.json`; no se requiere instalar Playwright (ver justificación de E2E arriba) ni ninguna librería backend nueva (`rest_framework.authtoken` ya está instalado).
+Ninguna.
+
+## Changelog
+
+- **v2** (2026-09-26): Reconcilia el plan con la implementación real (login `PanelAdminAuthToken` en vez de `StaffAuthToken` propio, menú de 3 submenús en vez de 5) y agrega 3 pasos nuevos (16, 17, 18) para cerrar los issues del Quality Gate. Solicitado por `delivery-review`, referenciando `REV-2026-09-26-modulo-usuarios-perfiles-grupos-roles-sucursales-01` (bug de caché en `PATCH`, High), `-02` (falta de test para `UserDetailView`, Medium), `-03` (2 errores de `ng lint`, Low) y `-04` (este plan desactualizado, Low — resuelto por la existencia misma de este v2).
