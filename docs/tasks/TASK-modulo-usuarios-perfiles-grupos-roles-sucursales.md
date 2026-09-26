@@ -1,6 +1,6 @@
 # TASK-modulo-usuarios-perfiles-grupos-roles-sucursales: Módulo de Usuarios, Perfiles, Grupos, Roles y Sucursales en `panel_admin/`
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** PLANNING
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** `claude/admin-panel-user-module-bd8fd2`
@@ -13,6 +13,8 @@
 | 2026-09-25 | INVESTIGATION → ARCHITECTURE | Diseño de UI completado (menú, tabla, wizard, componentes de plantilla); veredicto de complejidad del task exige decisión arquitectónica (modelo de datos, permisos, auth) antes de planificar | delivery-design |
 | 2026-09-25 | ARCHITECTURE → PLANNING | Decisiones de modelo de datos (Profile, Group/Permission como Roles, Sucursal.empleado único, soft delete vía is_active) y de autenticación/API admin (Token auth, endpoint de login staff nuevo, permisos Django nativos) registradas en ADR | delivery-architect |
 | 2026-09-25 | PLANNING → ENGINEERING | Plan v1 escrito (backend primero, frontend después), PR #47 abierto sobre la rama ya asignada a este task por el entorno de trabajo | delivery-plan |
+| 2026-09-25 | ENGINEERING (implícito) | Backend y frontend implementados en la misma sesión que planificó (backend: Profile/serializers/endpoints/login staff, 15 tests; frontend: auth real + módulo `users/` completo, 8 tests); conflictos de merge con `master` (que ya traía `TASK-login-panel-admin-backend`) resueltos adoptando su login/branding y conciliando el menú; varios ajustes de UI (consolidar menú a "Credenciales", quitar "Roles", iconos redondos, quitar numeración del wizard) aplicados en vivo por pedido directo del usuario | delivery-engineer (conversacional, sin transición formal registrada en su momento) |
+| 2026-09-26 | ENGINEERING → REVIEW → PLANNING | Quality Gate corrido (backend 100/100, frontend build limpio, 30/45 tests con las mismas 15 fallas preexistentes de la plantilla, `ng lint` con 2 errores nuevos, `npm audit` solo con deuda preexistente). Verificación funcional real encontró un bug confirmado (PATCH de usuario devuelve `phone_number` desactualizado en la respuesta, sin test que lo hubiera atrapado) más una brecha de trazabilidad (plan v1 nunca versionado pese a que ADR/DDR ya registran cambios post-merge). FAIL — 4 issues (1 PLAN, 3 IMPLEMENTATION) | delivery-review |
 
 ## Investigación
 
@@ -104,10 +106,25 @@ Agregar al nuevo panel de administración (`panel_admin/`, plantilla Angular) un
 [PLAN-2026-09-25-modulo-usuarios-perfiles-grupos-roles-sucursales](../plans/PLAN-2026-09-25-modulo-usuarios-perfiles-grupos-roles-sucursales.md) (v1) — backend primero (modelo `Profile`, serializers, endpoint de login staff, endpoints CRUD de User/Group/Permission/Sucursal, tests) y frontend después (auth real, módulo `users/` con listado/ver/editar/wizard de 4 pasos, menú). E2E explícitamente descartado (justificación en el plan); dos preguntas abiertas para el usuario antes de implementar: `apiUrl` real de desarrollo y si los usuarios inactivos se ocultan por defecto en el listado.
 
 ## Implementación
-_Pendiente_
+**Backend** (`praxsa_manager/product/`): modelo `Profile` (migración `0107_profile.py`, aditiva); serializers nuevos (`profile_serializer.py`, `user_admin_serializer.py`, `group_serializer.py`, `sucursal_serializer.py`); `permissions.py::IsStaffUser`; vistas nuevas en `custom_views/user_admin.py` (User list/create/detail/set-password/toggle-active, Group list/detail, Permission list, Sucursal list/detail); rutas nuevas en `urls.py`. 18 tests propios (luego 15 tras la reconciliación del merge, ver abajo) en `tests/test_user_admin_module.py`, más helpers nuevos en `tests/helpers.py`.
+
+**Frontend** (`panel_admin/`): módulo `src/app/users/` completo (list con `ngx-datatable`, view, edit, create con wizard de 4 pasos, groups, sucursales — `roles/` se agregó y luego se eliminó, ver ajustes post-implementación); `AuthService`/`jwt.interceptor`/`auth.guard` conectados a HTTP real; fix de un bug preexistente de la plantilla (`provideHttpClient()` sin `withInterceptorsFromDi()`, que hacía que los interceptors nunca corrieran).
+
+**Merge con `master`**: mientras se implementaba, se mergeó `TASK-login-panel-admin-backend` (PR #46) — mismo problema de login resuelto en paralelo con su propio endpoint (`PanelAdminAuthToken`) y su propio rediseño de sidebar/login (branding PRAXSA, menú reducido a solo Dashboard). Se resolvieron los conflictos adoptando ese login (se descartó el `StaffAuthToken` propio) y conciliando el menú (Dashboard + Usuarios, en vez de que uno pisara al otro) — detalle completo en `ADR-modulo-usuarios-perfiles-grupos-roles-sucursales-api-autenticacion-admin.md` (sección "Actualización").
+
+**Ajustes post-implementación** (pedidos en vivo por el usuario, aplicados directamente sin pasar por `delivery-plan`/`delivery-engineer` formalmente en el momento): consolidar "Usuarios"+"Perfiles" en un submenú único "Credenciales"; eliminar el submenú "Roles" (permisos ahora se asignan directo en el formulario de Grupos, con `groupBy="app_label"` para conservar el agrupamiento); botones de acción circulares con FontAwesome (`.btn-tbl-edit`/`.btn-tbl-delete`/`.btn-tbl-view`/`.btn-tbl-activate`, mismo patrón que `advance-table.component.html`) en Credenciales, Grupos y Sucursales; quitar la numeración de las pestañas del wizard. Todo documentado en `DDR-modulo-usuarios-perfiles-grupos-roles-sucursales-listado-y-flujo-usuarios.md` (sección "Actualización").
+
+**Deuda/hallazgos abiertos**: ver `## Review` — el plan v1 nunca se versionó a v2 para reflejar el merge ni estos ajustes (REV-04).
 
 ## Review
-_Pendiente_
+**Veredicto: FAIL** (Quality Gate corrido 2026-09-26 — ver PR #47 para el detalle completo de comandos/salidas).
+
+- [REV-2026-09-26-modulo-usuarios-perfiles-grupos-roles-sucursales-01](../reviews/REV-2026-09-26-modulo-usuarios-perfiles-grupos-roles-sucursales-01.md) — High, IMPLEMENTATION. `PATCH /product/users/<id>/` responde con `phone_number` desactualizado (persistencia real sí es correcta).
+- [REV-2026-09-26-modulo-usuarios-perfiles-grupos-roles-sucursales-02](../reviews/REV-2026-09-26-modulo-usuarios-perfiles-grupos-roles-sucursales-02.md) — Medium, IMPLEMENTATION. Sin tests para `UserDetailView` (GET/PATCH).
+- [REV-2026-09-26-modulo-usuarios-perfiles-grupos-roles-sucursales-03](../reviews/REV-2026-09-26-modulo-usuarios-perfiles-grupos-roles-sucursales-03.md) — Low, IMPLEMENTATION. 2 errores de `ng lint` (`no-explicit-any`) en specs nuevos.
+- [REV-2026-09-26-modulo-usuarios-perfiles-grupos-roles-sucursales-04](../reviews/REV-2026-09-26-modulo-usuarios-perfiles-grupos-roles-sucursales-04.md) — Low, PLAN. Plan v1 desactualizado (login endpoint y menú finales no coinciden con lo escrito, aunque ADR/DDR ya lo documentan).
+
+Backend 100/100 tests, frontend build limpio, 30/45 tests frontend (15 fallas preexistentes de la plantilla, sin relación). Por tener issues PLAN + IMPLEMENTATION, la etapa vuelve a **PLANNING** (la más temprana de las dos).
 
 ## Publicación
 _Pendiente_
