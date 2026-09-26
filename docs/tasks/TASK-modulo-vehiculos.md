@@ -4,7 +4,7 @@
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** claude/modulo-vehiculos-2168ac
-**Pull Request:** _pendiente de abrir_
+**Pull Request:** [#48](https://github.com/rolion/praxsa-django-panel-admin/pull/48)
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
