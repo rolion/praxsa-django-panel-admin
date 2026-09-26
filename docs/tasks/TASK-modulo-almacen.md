@@ -1,6 +1,6 @@
 # TASK-modulo-almacen: Módulo Almacén (Láminas, Bobinas, Inventario) en `panel_admin/`
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** `claude/modulo-almacen-0ca2eb`
@@ -13,6 +13,7 @@
 | 2026-09-26 | INVESTIGATION → ARCHITECTURE | Diseño de UI completado (menú Almacén, listados Láminas/Bobinas/Inventario, componente de imagen compartido reutilizado, comportamiento por rol admin/almacen); veredicto de complejidad del task exige decisión arquitectónica (modelo de datos, permisos por rol, cómo el frontend conoce el rol) antes de planificar | delivery-design |
 | 2026-09-26 | ARCHITECTURE → PLANNING | Decisiones de modelo de datos (`image`/`is_active` en `Window_Film`, `is_active` en `Window_Film_Reel`, sin cambios en `inventario`, contrato API bajo `almacen/`, alcance acotado de "gestionar Inventario") y de permisos/rol (mismo patrón `IsStaffUser`+`DjangoModelPermissions` de Usuarios/Vehículos, grupo `almacen` creado manualmente, `PanelAdminAuthToken` extendido con `groups`/`is_staff` para cerrar la brecha de rol en el frontend) registradas en ADR | delivery-architect |
 | 2026-09-26 | PLANNING → ENGINEERING | Plan v1 escrito (backend primero, frontend después, un solo PR sobre la rama ya asignada por el entorno), PR abierto con el plan como contenido inicial para aprobación humana antes de implementar | delivery-plan |
+| 2026-09-26 | ENGINEERING → REVIEW | Backend y frontend implementados siguiendo el plan v1 sin desvíos de alcance. Backend: 183/183 tests (incluye `test_almacen_module.py` nuevo). Frontend: `ng build`/`ng lint` limpios, 88/103 tests (15 fallas preexistentes de la plantilla, 0 nuevas). Verificación manual end-to-end en navegador contra la BD de desarrollo real (login admin y almacen, creación de Lámina con imagen, Bobinas, Gestionar Inventario, 403 confirmado en un intento directo de escritura como almacen) — durante esta verificación se detectó y corrigió que la migración 0109 no estaba aplicada en el entorno de desarrollo | delivery-engineer |
 
 ## Investigación
 
@@ -116,7 +117,14 @@ Este task resuelve, para otro conjunto de modelos (`Car_Brand`/`Car_Model`/`Car_
 [PLAN-2026-09-26-modulo-almacen](../plans/PLAN-2026-09-26-modulo-almacen.md) (v1) — backend primero (modelos + migración, serializers, vistas bajo `almacen/`, extensión de `PanelAdminAuthToken`), luego frontend (módulo `almacen/` en `panel_admin/`, extensión de `AuthService`). Sin E2E (justificado: no es un flujo crítico de punta a punta, y Playwright no está instalado); tests unitarios/integración backend obligatorios por `docs/CLAUDE.md`, specs Angular por componente. Pregunta abierta para el usuario: ¿un solo PR (como Usuarios/Vehículos) o partir backend/frontend en dos?
 
 ## Implementación
-_Pendiente_
+
+**Backend** (`praxsa_manager/product/`): `Window_Film.image`/`is_active`, `Window_Film_Reel.is_active` (migración `0109`, aditiva); validación de imagen compartida extraída a `serializer/image_validation.py` (reutilizada por Vehículos sin cambiar su comportamiento); `serializer/almacen_serializer.py` nuevo; 8 vistas nuevas en `custom_views/almacen_admin.py` (list/create/detail/toggle-active de Lámina y Bobina; list/update de Inventario) bajo `almacen/laminas`, `almacen/bobinas`, `almacen/inventario`; `Inventario_Business.get_inventario_queryset_by_role` adaptada a devolver queryset vacío en vez de `None` (sin otros consumidores, verificado con `Grep`); `User_Helper.is_request_user_almacen` agregado; `PanelAdminAuthToken` extendido con `is_staff`/`groups`. Tests nuevos en `tests/test_almacen_module.py` (CRUD, imagen, soft delete, filtro por sucursal, permisos diferenciados admin/almacen), más ajustes en `tests/test_panel_admin_auth.py` y `tests/test_sucursal_scope_admin.py` (este último tenía un test que esperaba `None` del comportamiento viejo de `get_inventario_queryset_by_role`, actualizado a la nueva decisión de la ADR).
+
+**Frontend** (`panel_admin/`): grupo de menú "Almacén" en `routes.json` (3 submenús); módulo `src/app/almacen/` completo — Láminas con páginas separadas list/create/edit/view reutilizando el componente compartido `app-image-upload` tal cual; Bobinas e Inventario con listado + modal inline (mismo patrón que Marca/Item de Vehículos); `core/models/user.ts`/`core/service/auth.service.ts` extendidos con `groups`/`isStaff` y `AuthService.hasGroup()`, usado en los templates para ocultar Crear/Editar/Eliminar/Gestionar al rol `almacen`.
+
+**Verificación manual end-to-end**: con dos usuarios de prueba reales (`almacen_admin` en el grupo `admin` con los permisos de escritura asignados, `almacen_readonly` en el grupo `almacen` sin ellos) se navegó el panel completo — login, menú Almacén con sus 3 submenús, creación de una Lámina con imagen (miniatura y vista previa correctas), listado de Bobinas con modal de creación, "Gestionar" de una fila de Inventario con los 5 campos precargados — y se confirmó que el rol `almacen` no ve ninguna acción de escritura en la UI y que el backend responde `403` a un `POST` directo con ese usuario. Durante esta verificación se detectó que la migración `0109` estaba generada pero no aplicada en la base de datos de desarrollo (`manage.py migrate` pendiente no es parte del código, es un paso de despliegue) — corregido aplicándola.
+
+**Deuda/decisiones deliberadas** (ninguna nueva más allá de lo ya declarado en los ADR): grupo `almacen` y permisos del grupo `admin` sobre los 3 modelos son configuración manual por ambiente, no automatizada; sin guard de ruta por permiso en el frontend (ver ADR-modulo-almacen-permisos-rol-frontend).
 
 ## Review
 _Pendiente_
