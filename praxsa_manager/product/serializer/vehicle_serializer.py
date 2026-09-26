@@ -9,8 +9,22 @@ ALLOWED_IMAGE_FORMATS = {'JPEG', 'PNG', 'WEBP'}
 
 class CarBrandSerializer(serializers.ModelSerializer):
     """CRUD de Marca (Car_Brand). `models_count` viene de una anotacion
-    Count('car_model') en el queryset del listado, no se calcula aqui."""
+    Count('car_model') en el queryset del listado, no se calcula aqui.
 
+    `is_active` es de solo lectura aqui a proposito (REV-2026-09-26-modulo-
+    vehiculos-01): dejarlo como campo escribible auto-generado por
+    ModelSerializer, sin un `default` explicito, hacia que DRF lo
+    interpretara como un checkbox HTML sin marcar en cualquier request
+    multipart/form-data (Field.get_value(), via html.is_html_input()) y lo
+    validara como False en vez de respetar el default=True del modelo --
+    un Modelo/Marca/Item creado desde el panel real (que siempre manda
+    FormData para Modelo) quedaba inactivo e invisible al instante. El
+    ADR-modulo-vehiculos-soft-delete ya decia que "eliminar"/"activar" solo
+    debe pasar por el endpoint dedicado toggle-active, nunca por el
+    create/update normal -- read_only=True lo hace cumplir en el contrato,
+    no solo en la convencion."""
+
+    is_active = serializers.BooleanField(read_only=True)
     models_count = serializers.IntegerField(read_only=True, default=0)
 
     class Meta:
@@ -27,7 +41,10 @@ class CarBrandSerializer(serializers.ModelSerializer):
 
 
 class CarPartSerializer(serializers.ModelSerializer):
-    """CRUD de Item (Car_Part)."""
+    """CRUD de Item (Car_Part). `is_active` de solo lectura -- ver
+    REV-2026-09-26-modulo-vehiculos-01 en CarBrandSerializer."""
+
+    is_active = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Car_Part
@@ -54,12 +71,14 @@ def validate_car_model_image(image):
 class CarModelSerializer(serializers.ModelSerializer):
     """CRUD de Modelo (Car_Model). `car_brand_id` solo acepta marcas activas.
     `items_count` viene de una anotacion Count('car_model_part') en el
-    queryset del listado, no se calcula aqui."""
+    queryset del listado, no se calcula aqui. `is_active` de solo lectura --
+    ver REV-2026-09-26-modulo-vehiculos-01 en CarBrandSerializer."""
 
     car_brand_id = serializers.PrimaryKeyRelatedField(
         queryset=Car_Brand.objects.filter(is_active=True)
     )
     car_brand_name = serializers.CharField(source='car_brand_id.name', read_only=True)
+    is_active = serializers.BooleanField(read_only=True)
     items_count = serializers.IntegerField(read_only=True, default=0)
 
     class Meta:

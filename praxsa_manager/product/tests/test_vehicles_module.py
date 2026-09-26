@@ -51,6 +51,26 @@ class CarBrandTest(TestCase):
         self.assertEqual(response.status_code, 201, response.content)
         self.assertTrue(Car_Brand.objects.filter(name='Toyota').exists())
 
+    def test_create_via_multipart_defaults_to_active(self):
+        """Reproduce REV-2026-09-26-modulo-vehiculos-01: is_active es de solo
+        lectura, asi que un request multipart/form-data (donde DRF trataria
+        un BooleanField ausente como 'checkbox sin marcar' -> False) no
+        puede dejar el registro inactivo -- siempre usa el default=True del
+        modelo, sin importar el content-type del request."""
+        admin, token, _ = helpers.create_staff_user_with_token()
+        helpers.grant_permission(admin, 'product', 'add_car_brand')
+
+        response = self.client.post(
+            '/product/vehicles/brands',
+            {'name': 'ToyotaMultipart'},
+            **_auth_headers(token),
+        )
+
+        self.assertEqual(response.status_code, 201, response.content)
+        self.assertTrue(response.json()['is_active'])
+        created = Car_Brand.objects.get(name='ToyotaMultipart')
+        self.assertTrue(created.is_active)
+
     def test_create_duplicate_name_returns_400(self):
         admin, token, _ = helpers.create_staff_user_with_token()
         helpers.grant_permission(admin, 'product', 'add_car_brand')
@@ -196,6 +216,21 @@ class CarPartTest(TestCase):
         self.assertEqual(response.status_code, 201, response.content)
         self.assertTrue(Car_Part.objects.filter(name='Parabrisas delantero').exists())
 
+    def test_create_via_multipart_defaults_to_active(self):
+        """Ver REV-2026-09-26-modulo-vehiculos-01 (CarBrandTest tiene el
+        detalle completo del bug reproducido)."""
+        admin, token, _ = helpers.create_staff_user_with_token()
+        helpers.grant_permission(admin, 'product', 'add_car_part')
+
+        response = self.client.post(
+            '/product/vehicles/parts',
+            {'name': 'ItemMultipart'},
+            **_auth_headers(token),
+        )
+
+        self.assertEqual(response.status_code, 201, response.content)
+        self.assertTrue(response.json()['is_active'])
+
     def test_edit_part(self):
         admin, token, _ = helpers.create_staff_user_with_token()
         helpers.grant_permission(admin, 'product', 'change_car_part')
@@ -277,6 +312,32 @@ class CarModelTest(TestCase):
         self.assertEqual(response.status_code, 201, response.content)
         created = Car_Model.objects.get(name='Corolla')
         self.assertEqual(created.car_brand_id_id, brand.id)
+
+    def test_create_via_multipart_defaults_to_active(self):
+        """Reproduce REV-2026-09-26-modulo-vehiculos-01 exactamente como lo
+        hace el frontend real: `vehicles.service.ts#createModel()` siempre
+        construye un FormData para crear un Modelo (con o sin imagen), asi
+        que este es el caso que de verdad importa arreglar -- antes del fix,
+        esta creacion quedaba is_active=False y el modelo desaparecia del
+        listado apenas se creaba."""
+        admin, token, _ = helpers.create_staff_user_with_token()
+        helpers.grant_permission(admin, 'product', 'add_car_model')
+        brand = helpers.create_brand()
+
+        response = self.client.post(
+            '/product/vehicles/models',
+            {'name': 'CorollaMultipart', 'car_brand_id': brand.id},
+            **_auth_headers(token),
+        )
+
+        self.assertEqual(response.status_code, 201, response.content)
+        self.assertTrue(response.json()['is_active'])
+        created = Car_Model.objects.get(name='CorollaMultipart')
+        self.assertTrue(created.is_active)
+        self.assertTrue(
+            Car_Model.objects.filter(name='CorollaMultipart', is_active=True).exists(),
+            'el modelo recien creado debe aparecer en el listado por defecto (is_active=True)',
+        )
 
     def test_brand_is_required(self):
         admin, token, _ = helpers.create_staff_user_with_token()
