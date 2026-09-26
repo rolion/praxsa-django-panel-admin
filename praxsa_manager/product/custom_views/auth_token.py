@@ -50,5 +50,7 @@ class PanelAdminAuthToken(ObtainAuthToken):
             'username': user.username,
             'name': user.first_name,
             'lastname': user.last_name,
+            'is_staff': user.is_staff,
+            'groups': list(user.groups.values_list('name', flat=True)),
         }
         return Response(response)

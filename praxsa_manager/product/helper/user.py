@@ -21,5 +21,9 @@ class User_Helper():
         user_groups = self.to_lowercase(list(user.groups.values_list('name',flat = True)))
         return 'caja' in list(user_groups)
 
+    def is_request_user_almacen(self, user):
+        user_groups = self.to_lowercase(list(user.groups.values_list('name',flat = True)))
+        return 'almacen' in list(user_groups)
+
     def can_view_all_sucursales(self, user):
         return self.is_request_user_admin(user)

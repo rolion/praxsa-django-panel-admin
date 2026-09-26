@@ -144,12 +144,17 @@ class InventarioBusinessQuerysetByRoleTest(TestCase):
         ids = set(result.values_list('id', flat=True))
         self.assertEqual(ids, {inv_a.id})
 
-    def test_sin_sucursal_y_sin_rol_devuelve_none(self):
+    def test_sin_sucursal_y_sin_rol_devuelve_queryset_vacio(self):
+        """Antes de TASK-modulo-almacen devolvia None en este caso; se
+        cambia a queryset vacio (ver ADR-modulo-almacen-modelo-datos-imagen-
+        soft-delete punto 9) para que InventarioListView pueda serializarlo
+        directamente sin un chequeo especial de None."""
         user, _ = helpers.create_user_with_token()
 
         result = self.business.get_inventario_queryset_by_role(user=user, qs=inventario_proxy.objects.all())
 
-        self.assertIsNone(result)
+        self.assertIsNotNone(result)
+        self.assertEqual(list(result), [])
 
 
 class OrdenTrabajoBusinessFinishNotaQuerysetTest(TestCase):

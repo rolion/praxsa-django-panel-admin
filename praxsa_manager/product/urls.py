@@ -30,6 +30,16 @@ from .custom_views.vehicle_admin import (
     CarPartListCreateView,
     CarPartToggleActiveView,
 )
+from .custom_views.almacen_admin import (
+    InventarioListView,
+    InventarioUpdateView,
+    WindowFilmDetailView,
+    WindowFilmListCreateView,
+    WindowFilmReelDetailView,
+    WindowFilmReelListCreateView,
+    WindowFilmReelToggleActiveView,
+    WindowFilmToggleActiveView,
+)
 app_name = 'product'
 urlpatterns = [
     path('get_car_part_info/<int:car_model_id>/<int:sucursal_id>', views.get_car_part_info, name= 'get_car_part_info'),
@@ -70,5 +80,14 @@ urlpatterns = [
     path('vehicles/parts', CarPartListCreateView.as_view()),
     path('vehicles/parts/<int:pk>/', CarPartDetailView.as_view()),
     path('vehicles/parts/<int:pk>/toggle-active/', CarPartToggleActiveView.as_view()),
+    # Modulo Almacen: Laminas, Bobinas, Inventario (panel_admin/)
+    path('almacen/laminas', WindowFilmListCreateView.as_view()),
+    path('almacen/laminas/<int:pk>/', WindowFilmDetailView.as_view()),
+    path('almacen/laminas/<int:pk>/toggle-active/', WindowFilmToggleActiveView.as_view()),
+    path('almacen/bobinas', WindowFilmReelListCreateView.as_view()),
+    path('almacen/bobinas/<int:pk>/', WindowFilmReelDetailView.as_view()),
+    path('almacen/bobinas/<int:pk>/toggle-active/', WindowFilmReelToggleActiveView.as_view()),
+    path('almacen/inventario', InventarioListView.as_view()),
+    path('almacen/inventario/<int:pk>/', InventarioUpdateView.as_view()),
 ]
 urlpatterns = format_suffix_patterns(urlpatterns)
