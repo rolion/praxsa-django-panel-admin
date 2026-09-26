@@ -1,10 +1,14 @@
 # REV-2026-09-26-modulo-vehiculos-02: Faltan los specs Angular de `models-create`/`models-edit`/`models-view` definidos en el plan
 
-**Status:** Open
-**Severity:** Medium
+**Status:** Open (parcialmente resuelto)
+**Severity:** Medium → Low (solo falta `model-create`)
 **Category:** IMPLEMENTATION
 **Related plan:** docs/plans/PLAN-2026-09-26-modulo-vehiculos.md (v2)
 **Suggested owner:** delivery-engineer
+
+## Actualización (2026-09-26, post-fixes de UX pedidos por el usuario)
+
+Al implementar el fix del bug de imagen en edición (commit `2bc6ad7`) y la funcionalidad de editar item asociado (commit `2ab222a`), se agregaron `model-edit.component.spec.ts` y `model-view.component.spec.ts` como parte de esos cambios (no como respuesta directa a este REV, pero cierran la brecha igual). Verificado con `git diff --stat origin/master...HEAD`: ambos archivos existen ahora. Solo sigue faltando `model-create.component.spec.ts`. Severidad bajada de Medium a Low porque la superficie más riesgosa (edición con `FormData`, que es donde vivía el patrón que hubiera podido atrapar algo parecido a REV-01) ya tiene cobertura.
 
 ## Description
 

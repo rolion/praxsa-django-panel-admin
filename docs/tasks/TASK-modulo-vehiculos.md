@@ -16,6 +16,7 @@
 | 2026-09-26 02:20 UTC | ENGINEERING → ENGINEERING | Corrección post-diseño: sí existe patrón de búsqueda reutilizable en `advance-table.component.html/.ts` (usuario lo señaló); se actualiza DDR/TASK/Plan a v2 para reutilizarlo en vez de construir `shared/search-box/` | usuario |
 | 2026-09-26 10:30 UTC | ENGINEERING → REVIEW | Implementación completa (backend + frontend + infra) según Plan v2, empujada al PR #48 | delivery-engineer |
 | 2026-09-26 11:15 UTC | REVIEW → ENGINEERING | Quality Gate: **FAIL**. REV-01 (Critical, IMPLEMENTATION): crear un Modelo vía la UI real deja `is_active=False` (multipart + BooleanField sin default explícito en el serializer) y desaparece del listado al instante. REV-02 (Medium, IMPLEMENTATION): faltan specs de `model-create`/`model-edit`/`model-view` definidos en el plan. Ambos issues son de implementación, no de plan/arquitectura | delivery-review |
+| 2026-09-26 12:00 UTC | ENGINEERING → ENGINEERING | Fixes y feature pedidos directamente por el usuario fuera del ciclo `delivery-plan` (no ameritaban replanificar): alinear imagen con datos del modelo en `model-view`; corregir bug real (no relacionado con REV-01) por el cual editar un Modelo con imagen existente no la mostraba y la borraba al guardar; agregar edición de ancho/largo/cantidad de un item ya asociado; ocultar el campo de precio de instalación del formulario. REV-01 sigue abierto (no tocado por estos cambios); REV-02 bajó a Low (ya existen specs de `model-edit`/`model-view`, solo falta `model-create`) | usuario |
 
 ## Investigación
 
@@ -163,11 +164,19 @@ Implementado íntegramente según [PLAN-2026-09-26-modulo-vehiculos.md](../plans
 - **Infraestructura**: `docker-compose.prod.yml`/`.stg.yml` y `nginx/nginx.conf.prod`/`.stg` actualizados con el volumen `media` y el bloque `location /media/`, sin tocar `docker-compose.dev.yml` (no aplica, dev corre el backend local).
 
 Deuda técnica y desviaciones señaladas explícitamente (ninguna bloqueante):
-- El formulario de "agregar item a un modelo" (`model-view.component`) quedó con 4 campos numéricos obligatorios además del item, más complejo que lo que el DDR de diseño había previsto originalmente (solo nombre/selección) — decisión tomada en `delivery-architect` (ver ADR-modulo-vehiculos-relacion-modelo-item) para no crear asociaciones con costo de instalación $0 silencioso.
 - Las acciones de tabla (Ver/Editar/Eliminar) replican el estilo **real** de Credenciales hoy (`btn-tbl-view`/`btn-tbl-edit`/`btn-tbl-delete` con iconos FontAwesome) — el DDR de diseño citaba una actualización a íconos `FeatherModule` circulares que no está presente en el código actual de `users-list.component.html`; se siguió el código real, no la descripción del DDR (ver nota en DDR de usuarios vs. código verificado durante esta implementación).
-- No se implementó edición de `width`/`length`/`installation_price` de una asociación Modelo-Item ya creada (explícitamente fuera de alcance del plan).
-- Cobertura de tests Angular: se priorizaron `vehicles.service`, `image-upload`, y las 3 listas (`brands-list`, `parts-list`, `models-list`); no se agregaron specs dedicados para `model-create`/`model-edit`/`model-view` (formularios más complejos, cubiertos indirectamente por los tests de integración del backend y la verificación manual de build/lint) — si `delivery-review` lo considera necesario, es una extensión acotada.
+- Cobertura de tests Angular: no se agregó spec dedicado para `model-create` (sí existen ahora `model-edit.component.spec.ts` y `model-view.component.spec.ts`, agregados en los fixes post-review — ver abajo). Ver REV-02, bajado a Low.
 - El volumen Docker `media` debe crearse manualmente (`docker volume create media`) antes del primer despliegue en `stg`/`prod` — no se pudo verificar en este entorno de desarrollo (sin Docker/nginx real).
+
+### Cambios post-review pedidos directamente por el usuario (2026-09-26, fuera del ciclo `delivery-plan`)
+
+No ameritaban replanificar (ajustes de UX acotados y un bug real encontrado en uso, no desviaciones de arquitectura/plan):
+
+1. **Alineación imagen/datos en `model-view`** (commit `6b3e176`): la imagen y el bloque Marca/Modelo/Estado estaban apilados con desalineación visual; ahora van lado a lado en una fila con `align-items-center`.
+2. **Fix: editar un Modelo con imagen existente no la mostraba y la borraba al guardar** (commit `2bc6ad7`, bug real reportado por el usuario, no relacionado con REV-01). Causa raíz: `FormControl` normaliza un valor inicial `undefined` a `null` (parámetro por defecto de su propio constructor), así que `ImageUploadComponent.writeValue(null)` interpretaba la carga inicial como "el usuario quitó la imagen", y `model-edit.component.save()` leía ese mismo `null` como intención real de borrar. Fix: `writeValue()` ya no apaga la imagen existente por `null`/`undefined` (solo `removeImage()` lo hace), y `save()` usa `FormControl.dirty` en vez del valor crudo para decidir si manda la imagen. Agrega `model-edit.component.spec.ts`, que reproduce el bug original antes del fix.
+3. **Editar item asociado + ocultar precio de instalación** (commit `2ab222a`, pedido explícito del usuario): nueva acción "Editar" en cada item de `model-view` para ajustar ancho/largo/cantidad de la asociación sin cambiar el item. Backend: `CarModelItemDetailView` pasa a `RetrieveUpdateDestroyAPIView`; el serializer ignora `car_part_id`/`new_car_part_name` en `update()` (defensa en profundidad). `installation_price` se oculta del formulario (crear y editar) y se relaja a opcional en el serializer (usa el default del modelo, 0) — es exactamente el camino de rollback que `ADR-modulo-vehiculos-relacion-modelo-item` ya había previsto para este campo si resultaba fricción excesiva, así que no contradice esa decisión. Agrega `model-view.component.spec.ts`.
+
+Verificación de cada uno: `manage.py test` (146 tests, suite completa en verde) y `ng build`/`ng lint`/`ng test` (77 tests, mismas 15 fallas preexistentes de la plantilla) tras cada cambio. **REV-01 sigue abierto** — ninguno de estos cambios lo toca.
 
 ## Review
 
@@ -180,7 +189,7 @@ Verificaciones ejecutadas (evidencia completa en `## Review`/`## Testing` del [P
 
 Issues abiertos:
 - [REV-2026-09-26-modulo-vehiculos-01.md](../reviews/REV-2026-09-26-modulo-vehiculos-01.md) — **Critical**, IMPLEMENTATION. Crear un Modelo desde la UI real (siempre envía `FormData`) lo deja `is_active=False` por cómo DRF interpreta un `BooleanField` ausente en payloads tipo formulario; el modelo desaparece del listado inmediatamente. Reproducido en vivo con `curl`. No detectado por los tests existentes porque los tests que crean vía multipart nunca verifican `is_active` en la respuesta.
-- [REV-2026-09-26-modulo-vehiculos-02.md](../reviews/REV-2026-09-26-modulo-vehiculos-02.md) — Medium, IMPLEMENTATION. Faltan los specs de `model-create`/`model-edit`/`model-view` que el plan definió en su Test strategy (ya reconocido como deuda pendiente en `## Implementación`).
+- [REV-2026-09-26-modulo-vehiculos-02.md](../reviews/REV-2026-09-26-modulo-vehiculos-02.md) — Medium → **Low** (actualizado 2026-09-26: `model-edit`/`model-view` ya tienen spec, agregados en los cambios post-review; solo falta `model-create`).
 
 Plan compliance: sin scope creep (diff coincide con los archivos declarados en el plan v2), ADRs respetados en el diseño de datos/API. Ambos issues son de calidad de implementación, no de plan ni de arquitectura.
 
