@@ -1,7 +1,7 @@
 """Fábricas mínimas con el ORM para armar datos de prueba del app product."""
 from decimal import Decimal
 
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.models import Group, Permission, User
 from django.utils import timezone
 from rest_framework.authtoken.models import Token
 
@@ -43,6 +43,22 @@ def create_staff_user(username=None, password='testpass123'):
     username = username or f'{_unique("staff")}@test.com'
     user = User.objects.create_user(username=username, email=username, password=password, is_staff=True)
     return user, password
+
+
+def create_staff_user_with_token(username=None, password='testpass123', is_staff=True):
+    """Usuario staff autenticable por Token DRF, para los endpoints nuevos del
+    modulo de Usuarios (TASK-modulo-usuarios-perfiles-grupos-roles-sucursales),
+    que usan authentication.TokenAuthentication + IsStaffUser."""
+    username = username or f'{_unique("staffuser")}@test.com'
+    user = User.objects.create_user(username=username, email=username, password=password, is_staff=is_staff)
+    token = Token.objects.create(user=user)
+    return user, token, password
+
+
+def grant_permission(user, app_label, codename):
+    permission = Permission.objects.get(content_type__app_label=app_label, codename=codename)
+    user.user_permissions.add(permission)
+    return permission
 
 
 def add_user_to_group(user, group_name):

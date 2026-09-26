@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "praxsa-backend",
+      "runtimeExecutable": "E:\\praxsa\\praxsa-django-panel-admin\\praxsa_manager\\.venv\\Scripts\\python.exe",
+      "runtimeArgs": ["praxsa_manager/manage.py", "runserver", "0.0.0.0:8000"],
+      "port": 8000
+    },
+    {
+      "name": "panel_admin",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "panel_admin", "start"],
+      "port": 4200
+    }
+  ]
+}

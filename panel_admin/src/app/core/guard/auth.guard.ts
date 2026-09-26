@@ -11,7 +11,8 @@ export class AuthGuard {
   private router = inject(Router);
 
   canActivate() {
-    if (this.authService.currentUserValue) {
+    const currentUser = this.authService.currentUserValue;
+    if (currentUser && currentUser.token) {
       return true;
     }
     this.router.navigate(['/authentication/signin']);

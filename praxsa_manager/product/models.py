@@ -107,7 +107,19 @@ class Sucursal(models.Model):
     # administrador = models.ManyToManyField(User, verbose_name='Admin Sucursal')
     def __str__(self):
         return f'{self.name}'
-    
+
+class Profile(models.Model):
+    """Datos personales del personal administrativo (panel_admin/), separados
+    de las credenciales de User, siguiendo el patron User/Profile de Django
+    (ver ADR-modulo-usuarios-perfiles-grupos-roles-sucursales-modelo-datos-permisos).
+    Nombre/apellido/correo ya viven en User; aca solo se agrega lo que User no tiene."""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile', verbose_name='Usuario')
+    phone_number = models.CharField(validators=[RegexValidator('(\+)*\d{7,11}')], max_length=20, null=True, blank=True, verbose_name="Numero Telefónico")
+    class Meta:
+        verbose_name = 'Perfil'
+    def __str__(self):
+        return f'Perfil de {self.user.username}'
+
 class instalador(models.Model):
     name = models.CharField(max_length=20, default=" ", null=False, verbose_name="Nombre")
     address = models.CharField(max_length=400, default=" ", null=False, verbose_name="Dirección")

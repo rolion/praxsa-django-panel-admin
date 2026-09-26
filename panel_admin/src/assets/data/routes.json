@@ -10,6 +10,51 @@
       "badge": "",
       "badgeClass": "",
       "submenu": []
+    },
+    {
+      "path": "",
+      "title": "Usuarios",
+      "iconType": "feather",
+      "icon": "users",
+      "class": "menu-toggle",
+      "groupTitle": false,
+      "badge": "",
+      "badgeClass": "",
+      "submenu": [
+        {
+          "path": "/users",
+          "title": "Credenciales",
+          "iconType": "",
+          "icon": "",
+          "class": "ml-menu",
+          "groupTitle": false,
+          "badge": "",
+          "badgeClass": "",
+          "submenu": []
+        },
+        {
+          "path": "/users/groups",
+          "title": "Grupos",
+          "iconType": "",
+          "icon": "",
+          "class": "ml-menu",
+          "groupTitle": false,
+          "badge": "",
+          "badgeClass": "",
+          "submenu": []
+        },
+        {
+          "path": "/users/sucursales",
+          "title": "Sucursales",
+          "iconType": "",
+          "icon": "",
+          "class": "ml-menu",
+          "groupTitle": false,
+          "badge": "",
+          "badgeClass": "",
+          "submenu": []
+        }
+      ]
     }
   ]
 }

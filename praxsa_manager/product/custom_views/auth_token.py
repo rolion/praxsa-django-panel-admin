@@ -32,7 +32,11 @@ class CustomAuthToken(ObtainAuthToken):
 class PanelAdminAuthToken(ObtainAuthToken):
     """Login para panel_admin/: no depende de Client (los usuarios de este panel
     no pasan por el registro de cliente de proforma/) y no verifica rol/is_staff
-    (decisión de negocio explícita: por ahora cualquier usuario válido entra)."""
+    (decisión de negocio explícita: por ahora cualquier usuario válido entra).
+
+    Los endpoints de gestión de usuarios/grupos/sucursales (custom_views/user_admin.py)
+    igual exigen is_staff + permisos Django en cada vista -- este endpoint solo
+    decide quién puede autenticarse, no qué puede hacer una vez autenticado."""
 
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data,

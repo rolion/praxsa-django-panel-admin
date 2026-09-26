@@ -1,0 +1,56 @@
+<section class="main-content">
+  <ul class="breadcrumb breadcrumb-style">
+    <li class="breadcrumb-item">
+      <h5 class="page-title m-b-0">Ver credencial</h5>
+    </li>
+    <li class="breadcrumb-item bcrumb-1"><a routerLink="/users"><i class="fas fa-users font-17"></i></a></li>
+    <li class="breadcrumb-item">Credenciales</li>
+  </ul>
+  <div class="section-body">
+    <div class="row clearfix">
+      <div class="col-lg-8 col-md-12">
+        <div class="card">
+          <div class="card-body">
+            @if (loading) {
+              <p>Cargando...</p>
+            } @else if (errorMessage) {
+              <div class="alert alert-danger">{{ errorMessage }}</div>
+            } @else if (user) {
+              <dl class="row mb-0">
+                <dt class="col-sm-4">Usuario</dt>
+                <dd class="col-sm-8">{{ user.username }}</dd>
+                <dt class="col-sm-4">Correo</dt>
+                <dd class="col-sm-8">{{ user.email }}</dd>
+                <dt class="col-sm-4">Nombre</dt>
+                <dd class="col-sm-8">{{ user.first_name }}</dd>
+                <dt class="col-sm-4">Apellido</dt>
+                <dd class="col-sm-8">{{ user.last_name }}</dd>
+                <dt class="col-sm-4">Teléfono</dt>
+                <dd class="col-sm-8">{{ user.phone_number || '—' }}</dd>
+                <dt class="col-sm-4">Estado</dt>
+                <dd class="col-sm-8">{{ user.is_active ? 'Activo' : 'Inactivo' }}</dd>
+                <dt class="col-sm-4">Grupos</dt>
+                <dd class="col-sm-8">
+                  @if (groupNames.length) {
+                    {{ groupNames.join(', ') }}
+                  } @else {
+                    <span class="text-muted">Sin grupos</span>
+                  }
+                </dd>
+                <dt class="col-sm-4">Sucursales</dt>
+                <dd class="col-sm-8">
+                  @if (sucursalNames.length) {
+                    {{ sucursalNames.join(', ') }}
+                  } @else {
+                    <span class="text-muted">Sin sucursales</span>
+                  }
+                </dd>
+              </dl>
+              <a [routerLink]="['/users/edit', user.id]" class="btn btn-primary mt-3">Editar</a>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

@@ -11,7 +11,9 @@ export class JwtInterceptor implements HttpInterceptor {
     request: HttpRequest<unknown>,
     next: HttpHandler
   ): Observable<HttpEvent<unknown>> {
-    // add authorization header with jwt token if available
+    // add authorization header with the DRF Token auth scheme if available
+    // (praxsa_manager usa rest_framework.authtoken, no JWT -- ver ADR
+    // modulo-usuarios-perfiles-grupos-roles-sucursales-api-autenticacion-admin)
     const currentUser = this.authenticationService.currentUserValue;
     if (currentUser && currentUser.token) {
       request = request.clone({
