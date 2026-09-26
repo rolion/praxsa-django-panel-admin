@@ -4,7 +4,7 @@
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** `claude/modulo-almacen-0ca2eb`
-**Pull Request:** _sin abrir todavía_
+**Pull Request:** [#49](https://github.com/rolion/praxsa-django-panel-admin/pull/49)
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
