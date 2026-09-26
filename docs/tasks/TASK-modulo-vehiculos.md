@@ -1,6 +1,6 @@
 # TASK-modulo-vehiculos: Módulo de Vehículos (Marcas, Modelos, Items) en el panel admin
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** claude/modulo-vehiculos-2168ac
@@ -17,6 +17,7 @@
 | 2026-09-26 10:30 UTC | ENGINEERING → REVIEW | Implementación completa (backend + frontend + infra) según Plan v2, empujada al PR #48 | delivery-engineer |
 | 2026-09-26 11:15 UTC | REVIEW → ENGINEERING | Quality Gate: **FAIL**. REV-01 (Critical, IMPLEMENTATION): crear un Modelo vía la UI real deja `is_active=False` (multipart + BooleanField sin default explícito en el serializer) y desaparece del listado al instante. REV-02 (Medium, IMPLEMENTATION): faltan specs de `model-create`/`model-edit`/`model-view` definidos en el plan. Ambos issues son de implementación, no de plan/arquitectura | delivery-review |
 | 2026-09-26 12:00 UTC | ENGINEERING → ENGINEERING | Fixes y feature pedidos directamente por el usuario fuera del ciclo `delivery-plan` (no ameritaban replanificar): alinear imagen con datos del modelo en `model-view`; corregir bug real (no relacionado con REV-01) por el cual editar un Modelo con imagen existente no la mostraba y la borraba al guardar; agregar edición de ancho/largo/cantidad de un item ya asociado; ocultar el campo de precio de instalación del formulario. REV-01 sigue abierto (no tocado por estos cambios); REV-02 bajó a Low (ya existen specs de `model-edit`/`model-view`, solo falta `model-create`) | usuario |
+| 2026-09-26 12:30 UTC | ENGINEERING → REVIEW | Fix de REV-01: `is_active` pasa a `read_only=True` en los 3 serializers (causa raíz: DRF interpretaba el campo ausente en `multipart/form-data` como checkbox sin marcar → `False`, en vez de respetar el `default=True` del modelo). 3 tests de regresión nuevos + verificación en vivo contra `manage.py runserver`. También cierra el resto de REV-02 (`model-create.component.spec.ts`). Suite completa (149 backend, 81 frontend) en verde | delivery-engineer |
 
 ## Investigación
 
@@ -177,6 +178,13 @@ No ameritaban replanificar (ajustes de UX acotados y un bug real encontrado en u
 3. **Editar item asociado + ocultar precio de instalación** (commit `2ab222a`, pedido explícito del usuario): nueva acción "Editar" en cada item de `model-view` para ajustar ancho/largo/cantidad de la asociación sin cambiar el item. Backend: `CarModelItemDetailView` pasa a `RetrieveUpdateDestroyAPIView`; el serializer ignora `car_part_id`/`new_car_part_name` en `update()` (defensa en profundidad). `installation_price` se oculta del formulario (crear y editar) y se relaja a opcional en el serializer (usa el default del modelo, 0) — es exactamente el camino de rollback que `ADR-modulo-vehiculos-relacion-modelo-item` ya había previsto para este campo si resultaba fricción excesiva, así que no contradice esa decisión. Agrega `model-view.component.spec.ts`.
 
 Verificación de cada uno: `manage.py test` (146 tests, suite completa en verde) y `ng build`/`ng lint`/`ng test` (77 tests, mismas 15 fallas preexistentes de la plantilla) tras cada cambio. **REV-01 sigue abierto** — ninguno de estos cambios lo toca.
+
+### Fix de REV-01 y cierre de REV-02 (2026-09-26, commit `3ee0d28`)
+
+- **REV-01 (Critical) resuelto**: `is_active` pasa a `read_only=True` en `CarBrandSerializer`/`CarModelSerializer`/`CarPartSerializer`. Causa raíz confirmada: al ser un campo escribible auto-generado por `ModelSerializer` sin `default` explícito, DRF trataba cualquier request `multipart/form-data` como un formulario HTML (`Field.get_value()`, vía `html.is_html_input()`) y, al no encontrar el campo en el payload, lo validaba como `False` en vez de respetar el `default=True` del modelo — el frontend real siempre manda `FormData` para crear un Modelo (con o sin imagen), así que todo Modelo creado desde el panel quedaba inactivo e invisible al instante. `read_only=True` es consistente con el propio `ADR-modulo-vehiculos-soft-delete` (activar/desactivar solo debe pasar por el endpoint `toggle-active` dedicado, nunca por el create/update normal) — no es un parche puntual, es hacer cumplir en el contrato lo que el ADR ya pedía por convención.
+- Agrega 3 tests de regresión (uno por entidad) que reproducen la creación vía multipart exactamente como lo hace el frontend real, y verificado además en vivo contra `manage.py runserver` + `curl` (`is_active: true` en ambos casos; antes daba `false`).
+- **REV-02 cerrado del todo**: agrega `model-create.component.spec.ts` (ya existían los de `model-edit`/`model-view`, agregados en los cambios de la sección anterior).
+- Suite completa: 149 tests backend, 81 frontend, ambos en verde (mismas 15 fallas preexistentes de la plantilla). `ng build`/`ng lint` limpios.
 
 ## Review
 
