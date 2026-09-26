@@ -1,6 +1,6 @@
 # REV-2026-09-26-modulo-usuarios-perfiles-grupos-roles-sucursales-01: `PATCH /product/users/<id>/` devuelve `phone_number` desactualizado en la respuesta (dato real sí se guarda)
 
-**Status:** Open
+**Status:** Resolved — verificado independientemente en la segunda corrida de `delivery-review` (2026-09-26) sobre el PR #47: se revirtió el fix temporalmente y se confirmó que el test nuevo falla con el mismo error (`'11111111' != '99999999'`), luego se restauró y todo pasa. Ver `## Review` de `docs/tasks/TASK-modulo-usuarios-perfiles-grupos-roles-sucursales.md`.
 **Severity:** High
 **Category:** IMPLEMENTATION
 **Related plan:** docs/plans/PLAN-2026-09-25-modulo-usuarios-perfiles-grupos-roles-sucursales.md (v1)

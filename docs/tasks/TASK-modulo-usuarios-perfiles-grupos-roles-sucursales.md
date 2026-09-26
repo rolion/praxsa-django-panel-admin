@@ -1,6 +1,6 @@
 # TASK-modulo-usuarios-perfiles-grupos-roles-sucursales: Módulo de Usuarios, Perfiles, Grupos, Roles y Sucursales en `panel_admin/`
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** `claude/admin-panel-user-module-bd8fd2`
@@ -17,6 +17,7 @@
 | 2026-09-26 | ENGINEERING → REVIEW → PLANNING | Quality Gate corrido (backend 100/100, frontend build limpio, 30/45 tests con las mismas 15 fallas preexistentes de la plantilla, `ng lint` con 2 errores nuevos, `npm audit` solo con deuda preexistente). Verificación funcional real encontró un bug confirmado (PATCH de usuario devuelve `phone_number` desactualizado en la respuesta, sin test que lo hubiera atrapado) más una brecha de trazabilidad (plan v1 nunca versionado pese a que ADR/DDR ya registran cambios post-merge). FAIL — 4 issues (1 PLAN, 3 IMPLEMENTATION) | delivery-review |
 | 2026-09-26 | PLANNING → ENGINEERING | Plan versionado a v2: reconciliado con la implementación real (login `PanelAdminAuthToken`, menú de 3 submenús) y con 3 pasos nuevos (16-18) para cerrar REV-01/02/03 | delivery-plan |
 | 2026-09-26 | ENGINEERING → REVIEW | Pasos 16-18 del plan v2 implementados: fix del bug de caché en `PATCH /users/<id>/` (REV-01, verificado revirtiéndolo temporalmente y confirmando que el test nuevo falla como se esperaba), `UserDetailViewTest` nuevo (REV-02), `ng lint` limpio (REV-03). Backend 103/103, frontend build+lint limpios, 30/45 tests (mismas 15 fallas preexistentes, 0 nuevas) | delivery-engineer |
+| 2026-09-26 | REVIEW → PUBLISH | Quality Gate corrido de nuevo, verificación independiente de cada fix (incluida una reversión manual del fix de REV-01 para confirmar que el test lo detecta). Backend 103/103, `ng lint` limpio, `ng build` sin errores, frontend 30/45 (mismas 15 fallas preexistentes, 0 nuevas), `npm audit` solo con deuda preexistente. Los 4 issues de la revisión anterior quedaron Resolved. PASS — 0 issues nuevos | delivery-review |
 
 ## Investigación
 
@@ -121,14 +122,24 @@ Agregar al nuevo panel de administración (`panel_admin/`, plantilla Angular) un
 **Fixes del Quality Gate (plan v2, pasos 16-18)**: `UserAdminSerializer.update()` (`praxsa_manager/product/serializer/user_admin_serializer.py`) reasigna `instance.profile` tras `Profile.objects.update_or_create()`, corrigiendo que `PATCH /product/users/<id>/` devolviera `phone_number` desactualizado en la respuesta (REV-01, verificado revirtiendo el fix temporalmente y confirmando que el test nuevo falla exactamente como se esperaba antes de restaurarlo); `UserDetailViewTest` nuevo en `test_user_admin_module.py` cubre GET, el PATCH que reproduce REV-01, y PATCH sin permiso (REV-02); 2 `as any` reemplazados por tipos explícitos en `auth.guard.spec.ts`/`users-list.component.spec.ts`, `ng lint` limpio (REV-03). Backend 103/103 tests, frontend build+lint limpios, 30/45 tests (mismas 15 fallas preexistentes de la plantilla, 0 nuevas).
 
 ## Review
-**Veredicto: FAIL** (Quality Gate corrido 2026-09-26 — ver PR #47 para el detalle completo de comandos/salidas).
+
+### Corrida 1 (2026-09-26) — FAIL
+4 issues encontrados (detalle abajo, todos marcados `Resolved` tras la corrida 2). Backend 100/100 tests, frontend build limpio, 30/45 tests frontend (15 fallas preexistentes de la plantilla, sin relación). Por tener issues PLAN + IMPLEMENTATION, la etapa volvió a **PLANNING**.
 
 - [REV-2026-09-26-modulo-usuarios-perfiles-grupos-roles-sucursales-01](../reviews/REV-2026-09-26-modulo-usuarios-perfiles-grupos-roles-sucursales-01.md) — High, IMPLEMENTATION. `PATCH /product/users/<id>/` responde con `phone_number` desactualizado (persistencia real sí es correcta).
 - [REV-2026-09-26-modulo-usuarios-perfiles-grupos-roles-sucursales-02](../reviews/REV-2026-09-26-modulo-usuarios-perfiles-grupos-roles-sucursales-02.md) — Medium, IMPLEMENTATION. Sin tests para `UserDetailView` (GET/PATCH).
 - [REV-2026-09-26-modulo-usuarios-perfiles-grupos-roles-sucursales-03](../reviews/REV-2026-09-26-modulo-usuarios-perfiles-grupos-roles-sucursales-03.md) — Low, IMPLEMENTATION. 2 errores de `ng lint` (`no-explicit-any`) en specs nuevos.
 - [REV-2026-09-26-modulo-usuarios-perfiles-grupos-roles-sucursales-04](../reviews/REV-2026-09-26-modulo-usuarios-perfiles-grupos-roles-sucursales-04.md) — Low, PLAN. Plan v1 desactualizado (login endpoint y menú finales no coinciden con lo escrito, aunque ADR/DDR ya lo documentan).
 
-Backend 100/100 tests, frontend build limpio, 30/45 tests frontend (15 fallas preexistentes de la plantilla, sin relación). Por tener issues PLAN + IMPLEMENTATION, la etapa vuelve a **PLANNING** (la más temprana de las dos).
+### Corrida 2 (2026-09-26, tras plan v2 + fixes) — PASS
+Los 4 issues de la corrida 1 se verificaron de forma independiente y quedaron `Resolved` (incluida una reversión manual del fix de REV-01 para confirmar que el test nuevo realmente lo detecta — falló con `'11111111' != '99999999'` como se esperaba, luego se restauró el fix). 0 issues nuevos.
+
+- Backend: 103/103 tests, `makemigrations --check` sin cambios pendientes.
+- Frontend: `ng build` sin errores, `ng lint` limpio (0 errores), 30/45 tests (mismas 15 fallas preexistentes de la plantilla, verificado que los componentes que fallan no tienen ningún cambio de este PR, 0 regresiones nuevas).
+- `npm audit`: 3 vulnerabilidades, todas preexistentes (echarts, lodash-es, xlsx), ninguna introducida por este PR.
+- Backend `bandit`/`safety`: no instalados en el entorno, no ejecutados (declarado explícitamente, no un PASS silencioso).
+
+Detalle completo de comandos/salidas en PR #47.
 
 ## Publicación
 _Pendiente_

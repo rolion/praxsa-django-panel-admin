@@ -1,6 +1,6 @@
 # REV-2026-09-26-modulo-usuarios-perfiles-grupos-roles-sucursales-03: `ng lint` falla en dos specs nuevos (`@typescript-eslint/no-explicit-any`)
 
-**Status:** Open
+**Status:** Resolved — tipos explícitos reemplazan los `as any`; `npx ng lint` corre limpio, verificado en la segunda corrida de `delivery-review` (2026-09-26) sobre el PR #47. Ver `## Review` de `docs/tasks/TASK-modulo-usuarios-perfiles-grupos-roles-sucursales.md`.
 **Severity:** Low
 **Category:** IMPLEMENTATION
 **Related plan:** docs/plans/PLAN-2026-09-25-modulo-usuarios-perfiles-grupos-roles-sucursales.md (v1)

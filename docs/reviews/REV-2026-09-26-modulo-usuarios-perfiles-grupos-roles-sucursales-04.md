@@ -1,6 +1,6 @@
 # REV-2026-09-26-modulo-usuarios-perfiles-grupos-roles-sucursales-04: El plan v1 quedó desactualizado por la fusión con `TASK-login-panel-admin-backend` (nunca se versionó a v2)
 
-**Status:** Open
+**Status:** Resolved — plan versionado a v2 con `## Changelog` (2026-09-26), reconciliando el login/menú reales y agregando los pasos 16-18. Ver `## Review` de `docs/tasks/TASK-modulo-usuarios-perfiles-grupos-roles-sucursales.md`.
 **Severity:** Low
 **Category:** PLAN
 **Related plan:** docs/plans/PLAN-2026-09-25-modulo-usuarios-perfiles-grupos-roles-sucursales.md (v1)
