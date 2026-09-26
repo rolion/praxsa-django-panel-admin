@@ -1,6 +1,6 @@
 # TASK-modulo-usuarios-perfiles-grupos-roles-sucursales: Módulo de Usuarios, Perfiles, Grupos, Roles y Sucursales en `panel_admin/`
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** `claude/admin-panel-user-module-bd8fd2`
@@ -16,6 +16,7 @@
 | 2026-09-25 | ENGINEERING (implícito) | Backend y frontend implementados en la misma sesión que planificó (backend: Profile/serializers/endpoints/login staff, 15 tests; frontend: auth real + módulo `users/` completo, 8 tests); conflictos de merge con `master` (que ya traía `TASK-login-panel-admin-backend`) resueltos adoptando su login/branding y conciliando el menú; varios ajustes de UI (consolidar menú a "Credenciales", quitar "Roles", iconos redondos, quitar numeración del wizard) aplicados en vivo por pedido directo del usuario | delivery-engineer (conversacional, sin transición formal registrada en su momento) |
 | 2026-09-26 | ENGINEERING → REVIEW → PLANNING | Quality Gate corrido (backend 100/100, frontend build limpio, 30/45 tests con las mismas 15 fallas preexistentes de la plantilla, `ng lint` con 2 errores nuevos, `npm audit` solo con deuda preexistente). Verificación funcional real encontró un bug confirmado (PATCH de usuario devuelve `phone_number` desactualizado en la respuesta, sin test que lo hubiera atrapado) más una brecha de trazabilidad (plan v1 nunca versionado pese a que ADR/DDR ya registran cambios post-merge). FAIL — 4 issues (1 PLAN, 3 IMPLEMENTATION) | delivery-review |
 | 2026-09-26 | PLANNING → ENGINEERING | Plan versionado a v2: reconciliado con la implementación real (login `PanelAdminAuthToken`, menú de 3 submenús) y con 3 pasos nuevos (16-18) para cerrar REV-01/02/03 | delivery-plan |
+| 2026-09-26 | ENGINEERING → REVIEW | Pasos 16-18 del plan v2 implementados: fix del bug de caché en `PATCH /users/<id>/` (REV-01, verificado revirtiéndolo temporalmente y confirmando que el test nuevo falla como se esperaba), `UserDetailViewTest` nuevo (REV-02), `ng lint` limpio (REV-03). Backend 103/103, frontend build+lint limpios, 30/45 tests (mismas 15 fallas preexistentes, 0 nuevas) | delivery-engineer |
 
 ## Investigación
 
@@ -115,7 +116,9 @@ Agregar al nuevo panel de administración (`panel_admin/`, plantilla Angular) un
 
 **Ajustes post-implementación** (pedidos en vivo por el usuario, aplicados directamente sin pasar por `delivery-plan`/`delivery-engineer` formalmente en el momento): consolidar "Usuarios"+"Perfiles" en un submenú único "Credenciales"; eliminar el submenú "Roles" (permisos ahora se asignan directo en el formulario de Grupos, con `groupBy="app_label"` para conservar el agrupamiento); botones de acción circulares con FontAwesome (`.btn-tbl-edit`/`.btn-tbl-delete`/`.btn-tbl-view`/`.btn-tbl-activate`, mismo patrón que `advance-table.component.html`) en Credenciales, Grupos y Sucursales; quitar la numeración de las pestañas del wizard. Todo documentado en `DDR-modulo-usuarios-perfiles-grupos-roles-sucursales-listado-y-flujo-usuarios.md` (sección "Actualización").
 
-**Deuda/hallazgos abiertos**: ver `## Review` — el plan v1 nunca se versionó a v2 para reflejar el merge ni estos ajustes (REV-04).
+**Deuda/hallazgos abiertos (previos)**: ver `## Review` — el plan v1 nunca se versionó a v2 para reflejar el merge ni estos ajustes (REV-04).
+
+**Fixes del Quality Gate (plan v2, pasos 16-18)**: `UserAdminSerializer.update()` (`praxsa_manager/product/serializer/user_admin_serializer.py`) reasigna `instance.profile` tras `Profile.objects.update_or_create()`, corrigiendo que `PATCH /product/users/<id>/` devolviera `phone_number` desactualizado en la respuesta (REV-01, verificado revirtiendo el fix temporalmente y confirmando que el test nuevo falla exactamente como se esperaba antes de restaurarlo); `UserDetailViewTest` nuevo en `test_user_admin_module.py` cubre GET, el PATCH que reproduce REV-01, y PATCH sin permiso (REV-02); 2 `as any` reemplazados por tipos explícitos en `auth.guard.spec.ts`/`users-list.component.spec.ts`, `ng lint` limpio (REV-03). Backend 103/103 tests, frontend build+lint limpios, 30/45 tests (mismas 15 fallas preexistentes de la plantilla, 0 nuevas).
 
 ## Review
 **Veredicto: FAIL** (Quality Gate corrido 2026-09-26 — ver PR #47 para el detalle completo de comandos/salidas).
