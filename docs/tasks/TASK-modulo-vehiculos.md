@@ -19,6 +19,7 @@
 | 2026-09-26 12:00 UTC | ENGINEERING → ENGINEERING | Fixes y feature pedidos directamente por el usuario fuera del ciclo `delivery-plan` (no ameritaban replanificar): alinear imagen con datos del modelo en `model-view`; corregir bug real (no relacionado con REV-01) por el cual editar un Modelo con imagen existente no la mostraba y la borraba al guardar; agregar edición de ancho/largo/cantidad de un item ya asociado; ocultar el campo de precio de instalación del formulario. REV-01 sigue abierto (no tocado por estos cambios); REV-02 bajó a Low (ya existen specs de `model-edit`/`model-view`, solo falta `model-create`) | usuario |
 | 2026-09-26 12:30 UTC | ENGINEERING → REVIEW | Fix de REV-01: `is_active` pasa a `read_only=True` en los 3 serializers (causa raíz: DRF interpretaba el campo ausente en `multipart/form-data` como checkbox sin marcar → `False`, en vez de respetar el `default=True` del modelo). 3 tests de regresión nuevos + verificación en vivo contra `manage.py runserver`. También cierra el resto de REV-02 (`model-create.component.spec.ts`). Suite completa (149 backend, 81 frontend) en verde | delivery-engineer |
 | 2026-09-26 13:00 UTC | REVIEW → PUBLISH | Quality Gate: **PASS**. REV-01 y REV-02 verificados como resueltos de forma independiente (código + tests de regresión + verificación en vivo repetida con proceso/usuario nuevos, incluyendo intento explícito de forzar `is_active=false` para confirmar que la protección es estructural). 149 tests backend, 81 frontend en verde, `ng build`/`ng lint` limpios, sin scope creep en todo el ciclo | delivery-review |
+| 2026-09-26 13:20 UTC | PUBLISH → PUBLISH | Descripción del PR completada con trazabilidad total (Architecture decisions, Plan/ADRs, Changes/Testing/Review ya llenados por etapas previas verificados vigentes). Cambio sensible (3 ADRs, infraestructura de imágenes) — queda pendiente de aprobación humana explícita antes de mergear, no se mergea en esta invocación | delivery-publish |
 
 ## Investigación
 
@@ -213,4 +214,9 @@ Issues encontrados (ambos resueltos en la segunda pasada, ver arriba):
 - REV-02 — Medium, IMPLEMENTATION. Faltaban specs de `model-create`/`model-edit`/`model-view`.
 
 ## Publicación
-_Pendiente_
+
+PR [#48](https://github.com/rolion/praxsa-django-panel-admin/pull/48) con trazabilidad completa (Summary, Task, Plan, Architecture decisions, DDRs/ADRs relacionados, Changes, Testing, Review, Known limitations) — **listo para aprobación humana**, no mergeado.
+
+**Cambio sensible — requiere aprobación humana explícita antes de cualquier merge**: este task tiene veredicto `NEEDS_ARCHITECTURE` con 3 ADRs (relación de datos Modelo-Item sobre `Car_Model_Part`, mecanismo de soft-delete nuevo, almacenamiento de imágenes con cambios de infraestructura en `docker-compose.prod.yml`/`.stg.yml` y `nginx/nginx.conf.prod`/`.stg`). No se mergea automáticamente bajo ninguna circunstancia — ver ADR-modulo-vehiculos-almacenamiento-imagenes para el paso manual pendiente (`docker volume create media`) antes de desplegar en `stg`/`prod` una vez aprobado el merge.
+
+Verificado antes de publicar: `git status` limpio, diff (48 archivos) sin secretos ni artefactos temporales, sin commits posteriores al último `delivery-review` (`HEAD` = `origin/claude/modulo-vehiculos-2168ac` = commit revisado).
