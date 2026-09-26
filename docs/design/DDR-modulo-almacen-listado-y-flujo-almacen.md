@@ -1,8 +1,26 @@
 # DDR-modulo-almacen-listado-y-flujo-almacen: Menú, listados y flujos de Láminas, Bobinas e Inventario en `panel_admin/`
 
-**Estado:** Propuesto
+**Estado:** Propuesto (ver "Actualización" — alcance de Inventario ampliado)
 **Task relacionado:** TASK-modulo-almacen
 **Fecha:** 2026-09-26
+
+## Actualización (2026-09-26, alcance de Inventario ampliado a Ver/Crear/Eliminar)
+
+La primera versión de este DDR (secciones originales sin tocar más abajo, salvo donde se indica) definió Inventario como listado + "Gestionar" (editar campos de una fila existente) para `admin`, siguiendo literalmente el pedido original ("Consultar" y "Editar/gestionar Inventario", sin "Crear" ni "Eliminar"). La verificación manual del task (usuario real `oleon`, grupos `admin`+`almacen`) encontró que el negocio sí necesita, al mismo nivel que Láminas/Bobinas:
+
+1. **Ver** el detalle completo de una fila de Inventario (acción de solo lectura, separada de "Gestionar").
+2. **Crear** una fila de Inventario nueva manualmente (hoy las filas solo se generan vía `Inventario_Business`, ligadas a instalaciones — no hay alta manual).
+3. **Eliminar** una fila de Inventario (hoy `inventario` no tiene ningún campo de estado; `Proforma_Detail.inventario` es FK nullable con `on_delete=DO_NOTHING` — el mecanismo de borrado, soft o físico, queda como decisión de `delivery-architect`, no de este DDR).
+
+Esta actualización **reemplaza** el punto 7 de "Pantallas/flujos afectados", la viñeta de Inventario en "Componentes/patrones elegidos", las filas de Inventario en "Comportamiento por privilegio/estado", y la alternativa descartada sobre el modal de Inventario (ver nota en esa sección) — el resto del documento (Láminas, Bobinas, menú) sigue vigente sin cambios.
+
+**Decisión ampliada — Inventario pasa del patrón "entidad simple" (modal) al patrón "entidad rica" (páginas separadas), igual que Lámina**: con 3 acciones nuevas (Ver/Crear/Eliminar) sumadas a "Gestionar", y ~10 campos relevantes (sucursal, bobina, cantidad, metros a instalar/instalados, longitud inicial, fecha, número de referencia, precios de compra/venta, lote), mantener todo en un modal sobre el listado (como se decidió originalmente para 5 campos) dejaría de ser consistente con el criterio ya usado por Vehículos y por este mismo DDR para decidir modal vs. página separada ("¿tiene más que unos pocos campos, o necesita una vista de detalle propia?" → sí en ambos casos ahora). Se convierte a:
+
+- **Inventario — listado** (`/almacen/inventario`): sin cambios en la tabla en sí, agrega botones Ver (ambos roles) y, para `admin`, Editar ("Gestionar") + Eliminar + "Nuevo" en el header (mismo patrón que Láminas).
+- **Inventario — crear** (`/almacen/inventario/create`, solo `admin`): formulario nuevo con selects de Sucursal y Bobina (bobinas activas únicamente, mismo criterio que el selector de Lámina en el formulario de Bobina), y los campos numéricos/fecha/lote del modelo. Ver a `delivery-architect` qué campos son obligatorios vs. opcionales, y si algunos (`original_length`, `numero_referencia`) tienen un default razonable que no haga falta pedir en el formulario.
+- **Inventario — ver** (`/almacen/inventario/view/:id`, ambos roles): detalle de solo lectura con todos los campos, mismo layout `dl`/`dt`/`dd` que `lamina-view.component.html`.
+- **Inventario — editar/"Gestionar"** (`/almacen/inventario/edit/:id`, solo `admin`): se mantiene como formulario separado (ya no modal) con los mismos 5 campos editables ya decididos (`to_install`, `installed`, `precio_compra_mtr_lineal`, `precio_venta_mtr_lineal`, `nro_lote`) — la ampliación de alcance es Ver/Crear/Eliminar, no la lista de campos editables en la edición, que no cambia.
+- **Eliminar**: mismo patrón visual que Lámina/Bobina (confirmación con SweetAlert2, botón `btn-tbl-delete`/`btn-tbl-activate` según estado) — el mecanismo real (soft vs. físico) y el campo a usar quedan para `delivery-architect`, dado el antecedente de `Proforma_Detail.inventario` (FK nullable, `on_delete=DO_NOTHING`) que ya motivó soft-delete en los otros 2 modelos de este mismo módulo.
 
 ## Contexto
 
@@ -21,7 +39,9 @@ Esta es la primera decisión de diseño del proyecto que necesita distinguir dos
 4. **Láminas — ver** (`/almacen/laminas/view/:id`, ambos roles): detalle de solo lectura con imagen grande o placeholder.
 5. **Láminas — editar** (`/almacen/laminas/edit/:id`, solo `admin`): mismo formulario que crear, con imagen actual precargada y reemplazable.
 6. **Bobinas — listado** (`/almacen/bobinas`): tabla con lámina asociada, ancho, largo, precio y acciones. `admin` ve Ver/Editar/Eliminar y "Nueva bobina" con modal inline (sin imagen, sin ruta separada); `almacen` solo ve Ver.
-7. **Inventario — listado** (`/almacen/inventario`): tabla de solo consulta para ambos roles (sucursal, lámina/bobina, cantidades, fechas). `admin` ve además una acción "Gestionar"/"Editar" (modal inline) sobre los campos editables de una fila existente; `almacen` no ve esa acción. No hay pantalla de "crear inventario" en esta iteración (ver Hipótesis/pregunta abierta abajo).
+7. **Inventario — listado** (`/almacen/inventario`): tabla de solo consulta para ambos roles (sucursal, lámina/bobina, cantidades, fechas). `admin` ve además Ver, Editar ("Gestionar"), Eliminar y "Nuevo inventario"; `almacen` solo ve Ver. **[Actualizado — ver sección "Actualización" arriba]**: Ver/Crear/Eliminar se agregan en esta revisión; Editar ("Gestionar") ya existía.
+8. **Inventario — crear** (`/almacen/inventario/create`, solo `admin`, agregado en esta revisión): formulario con Sucursal, Bobina (solo activas), cantidad, metros a instalar/instalados, longitud inicial, fecha, número de referencia, precios de compra/venta, lote.
+9. **Inventario — ver** (`/almacen/inventario/view/:id`, ambos roles, agregado en esta revisión): detalle de solo lectura con todos los campos.
 
 ## Componentes/patrones elegidos
 
@@ -32,7 +52,7 @@ Esta es la primera decisión de diseño del proyecto que necesita distinguir dos
 - **Formulario de Lámina (crear/editar)**: página propia con `ReactiveFormsModule`, mismo layout de card que `model-create.component.html`/`model-edit.component.html` (breadcrumb, `card-body`, `form-select`/`form-control` de Bootstrap). Se elige el patrón de **página separada** (no modal), igual que Modelo, porque Lámina también tiene imagen — la señal usada por Vehículos para decidir "página separada vs modal" es "¿tiene imagen o asociaciones?", y Lámina la cumple.
 - **Formulario de Bobina (crear/editar)**: modal inline sobre el propio listado, igual que Marca/Item (`brands-list.component.html:88-117`) — Bobina no tiene imagen ni pantalla de detalle propia con contenido adicional, así que no se justifica una página separada. Los campos (lámina asociada vía select, ancho, largo, precio) entran cómodos en un modal simple.
 - **Selector de Lámina dentro del formulario de Bobina**: `<select>` poblado con `listLaminas({includeInactive: false})` (o el equivalente del endpoint de Almacén), mismo patrón que el selector de Marca en `model-create.component.html:16-25` — solo laminas activas, para no poder asociar una bobina nueva a una lámina eliminada (mismo criterio que `ADR-modulo-vehiculos-soft-delete.md` punto 4: los selectores solo ofrecen registros activos).
-- **Inventario — listado + "Gestionar"**: listado igual a los anteriores (`ngx-datatable` + búsqueda client-side). La acción "Gestionar" (solo `admin`) abre un modal inline (patrón Marca/Item) con los campos editables que arquitectura confirme (candidatos, según la investigación: `to_install`, `installed`, `precio_compra_mtr_lineal`, `precio_venta_mtr_lineal`, `nro_lote`) — no un formulario de alta completo, porque el pedido no lista "Crear" para Inventario y el dato de investigación es que las filas de `inventario` se generan hoy principalmente vía lógica de negocio (`Inventario_Business`), no alta manual.
+- **Inventario — listado/crear/ver/editar** (actualizado en esta revisión): listado igual a los anteriores (`ngx-datatable` + búsqueda client-side). Se abandona el modal inline y se adopta el patrón "entidad rica" de Lámina (páginas separadas `list`/`create`/`view`/`edit`, mismo layout de card/breadcrumb/`ReactiveFormsModule`) — ver justificación en "Actualización" arriba. La página de edición ("Gestionar") sigue acotada a los mismos 5 campos ya decididos (`to_install`, `installed`, `precio_compra_mtr_lineal`, `precio_venta_mtr_lineal`, `nro_lote`); la página de creación sí es un formulario de alta completo, ahora que el negocio confirmó que lo necesita.
 
 ## Alternativas consideradas
 
@@ -40,6 +60,7 @@ Esta es la primera decisión de diseño del proyecto que necesita distinguir dos
 - **Página separada también para Bobina** (en vez de modal). Se descarta: Bobina no tiene imagen ni contenido adicional que justifique una vista de detalle propia — usar el patrón "rico" para una entidad simple sería sobreingeniería, y rompería la consistencia con Marca/Item, que son el precedente de forma más parecida (entidad de catálogo simple con 2-4 campos).
 - **Ocultar la miniatura de Lámina en el listado y mostrarla solo en el detalle.** Se descarta: el pedido exige explícitamente miniatura en el listado ("En el listado de láminas debe mostrarse una miniatura cuando exista una imagen"), y ya hay un patrón idéntico probado (`models-list.component.html:60-68`) sin costo adicional de construir algo nuevo.
 - **Modal para "Gestionar Inventario" con todos los campos del modelo editables.** Se descarta por ahora: sin confirmación de qué campos debe poder tocar `admin` desde el panel (pregunta abierta de la investigación), abrir todo el modelo a edición libre arriesga permitir sobrescribir campos que hoy solo cambian por lógica de negocio (`quantity`, `original_length`, `date`), rompiendo la consistencia de datos que alimenta proformas/instalaciones. Se deja explícitamente que la lista de campos editables es una decisión de `delivery-architect`/`delivery-plan`, no de este DDR.
+- **(Actualización) Mantener Inventario como modal inline al agregar Ver/Crear/Eliminar, en vez de convertirlo a páginas separadas.** Se descarta: un modal con ~10 campos de creación más una acción "Ver" separada ya no es "inline simple" — sería el primer caso del proyecto de un modal con esa densidad de campos, inconsistente con el propio criterio que este DDR usó para Lámina vs. Bobina. Migrar a páginas separadas (patrón ya probado) es más consistente que inventar una tercera variante.
 
 ## Comportamiento por privilegio/estado
 
@@ -51,8 +72,9 @@ Esta es la primera decisión de diseño del proyecto que necesita distinguir dos
 | Ver Lámina | Acceso | Acceso |
 | Listado Bobinas | Ve todas las acciones + "Nueva bobina" | Ve el listado y Ver; sin Crear/Editar/Eliminar |
 | Crear/Editar Bobina (modal) | Acceso completo | Sin acceso (modal/botones no se renderizan) |
-| Listado Inventario | Ve el listado + acción "Gestionar" | Ve solo el listado, sin acción "Gestionar" |
-| "Gestionar" Inventario (modal) | Acceso completo | Sin acceso |
+| Listado Inventario | Ve todas las acciones (Ver/Editar/Eliminar) + "Nuevo inventario" | Ve el listado y el botón Ver; sin Crear/Editar/Eliminar |
+| Crear/Editar ("Gestionar")/Eliminar Inventario | Acceso completo | Sin acceso (botones ocultos) |
+| Ver Inventario | Acceso | Acceso |
 
 Los botones **se ocultan**, no se deshabilitan con tooltip — mismo comportamiento visual que ya establecieron los toggles `is_active`/`is_staff` de Usuarios y Vehículos (aunque esos son por *estado*, no por *rol*; se elige ocultar en vez de deshabilitar porque un botón deshabilitado sin explicación es peor UX que no mostrarlo, y el pedido ya dice explícitamente "no deben estar disponibles en la UI", no "deshabilitados").
 
@@ -65,4 +87,5 @@ Los botones **se ocultan**, no se deshabilitan con tooltip — mismo comportamie
 - Almacén queda visualmente consistente con Usuarios y Vehículos: mismas clases de botón (`btn-tbl-view`/`btn-tbl-edit`/`btn-tbl-delete`/`btn-tbl-activate`), mismo patrón de búsqueda client-side, mismo componente de imagen compartido, mismos breadcrumbs/cards.
 - Se introduce el primer caso de ocultamiento de UI por *rol* (no por *estado*) del proyecto — si el mecanismo que arquitectura decida para exponer el rol al frontend termina siendo genérico (ej. un `AuthService.hasGroup(name)` o `currentUser.groups`), los módulos Usuarios y Vehículos podrían beneficiarse después del mismo mecanismo sin haberlo necesitado hoy; este DDR no les exige ningún cambio.
 - Bobina no gana pantalla de detalle propia — si el negocio pide más adelante ver el historial de inventario de una bobina puntual desde su propia ficha, sería una ampliación de este DDR, no algo ya cubierto.
-- La lista de campos editables de "Gestionar Inventario" queda pendiente de una decisión explícita fuera de este DDR — si `delivery-architect`/`delivery-plan` no la fijan, la pantalla de "Gestionar" no puede implementarse con precisión.
+- La lista de campos editables de "Gestionar Inventario" ya fue fijada (`to_install`, `installed`, `precio_compra_mtr_lineal`, `precio_venta_mtr_lineal`, `nro_lote`) y no cambia con esta actualización — sigue sin incluir `quantity`/`original_length`/`date`/`sucursal`/`bobina`.
+- **(Actualización)** Inventario deja de ser el único módulo de Almacén con un patrón de pantalla distinto (modal) — los 3 sub-módulos (Láminas, Bobinas, Inventario) ahora se dividen en 2 patrones consistentes (rico: Lámina e Inventario; simple: Bobina), no 3 variantes distintas. Queda pendiente y explícitamente fuera de este DDR: el mecanismo de "Eliminar" (soft vs. físico, qué campo) y qué campos del formulario de creación son obligatorios — ambos son decisión de `delivery-architect`.
