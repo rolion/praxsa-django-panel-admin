@@ -60,7 +60,14 @@ export class ModelEditComponent implements OnInit {
     }
     this.saving = true;
     this.errorMessage = '';
-    const { name, car_brand_id, image } = this.form.value;
+    const { name, car_brand_id } = this.form.value;
+    const imageControl = this.form.get('image')!;
+    // Solo se manda la imagen si el usuario realmente la tocó (seleccionó una
+    // nueva o hizo click en "Quitar imagen") -- `dirty` distingue eso de "el
+    // control nunca se tocó", que es indistinguible del valor crudo porque
+    // FormControl normaliza el `undefined` inicial a `null` (ver comentario
+    // de ImageUploadComponent).
+    const image = imageControl.dirty ? imageControl.value : undefined;
     this.vehiclesService.updateModel(this.modelId, name, car_brand_id, image).subscribe({
       next: () => this.router.navigate(['/vehicles/models/view', this.modelId]),
       error: (err) => {

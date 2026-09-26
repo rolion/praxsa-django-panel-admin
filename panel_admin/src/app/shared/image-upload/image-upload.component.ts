@@ -6,9 +6,17 @@ const MAX_SIZE_BYTES = 5 * 1024 * 1024;
 
 /** Upload de imagen con preview/reemplazo/eliminación, reutilizable via
  * ControlValueAccessor. El valor del control es:
- * - undefined/null al inicio (sin cambios, se conserva `currentImageUrl`)
+ * - null/undefined al inicio (sin cambios, se conserva `currentImageUrl`)
  * - un File cuando el usuario elige una imagen nueva
- * - null explícito cuando el usuario hace click en "Quitar imagen"
+ * - null cuando el usuario hace click en "Quitar imagen"
+ * `writeValue()` solo reacciona a un File real -- Angular siempre llama
+ * writeValue() una vez al armar el control con su valor inicial, y
+ * `FormControl` normaliza un valor inicial `undefined` a `null` (parametro
+ * por defecto de su constructor), asi que null/undefined en writeValue()
+ * nunca deben interpretarse como "el usuario quiso borrar la imagen" -- eso
+ * solo lo decide `removeImage()`. El consumidor (ver `model-edit.component`)
+ * distingue "nunca se tocó" de "se quitó" con `FormControl.dirty`, no con el
+ * valor crudo del control.
  * La validación de tipo/tamaño es solo de UX -- el backend revalida siempre
  * (ver ADR-modulo-vehiculos-almacenamiento-imagenes). */
 @Component({
@@ -40,15 +48,10 @@ export class ImageUploadComponent implements ControlValueAccessor {
     if (value instanceof File) {
       this.setPreviewFromFile(value);
       this.removed = false;
-    } else if (value === null) {
-      this.previewUrl = null;
-      this.fileName = null;
-      this.removed = true;
-    } else {
-      this.previewUrl = null;
-      this.fileName = null;
-      this.removed = false;
     }
+    // null/undefined llega siempre al menos una vez (valor inicial del
+    // control) y nunca debe apagar la imagen existente -- ver comentario
+    // de la clase. `removeImage()` es el unico lugar que pone `removed = true`.
   }
 
   registerOnChange(fn: (value: File | null | undefined) => void): void {
