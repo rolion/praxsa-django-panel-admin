@@ -32,8 +32,12 @@
                     <td>{{ sucursal.phone_number || '—' }}</td>
                     <td>{{ sucursal.enable_to_install_windows_film ? 'Sí' : 'No' }}</td>
                     <td class="text-end">
-                      <button type="button" class="btn btn-sm btn-outline-primary me-1" (click)="startEdit(sucursal)">Editar</button>
-                      <button type="button" class="btn btn-sm btn-outline-danger" (click)="remove(sucursal)">Eliminar</button>
+                      <button type="button" class="btn btn-tbl-edit h-auto" title="Editar" (click)="startEdit(sucursal)">
+                        <i class="fas fa-pen"></i>
+                      </button>
+                      <button type="button" class="btn btn-tbl-delete h-auto" title="Eliminar" (click)="remove(sucursal)">
+                        <i class="far fa-trash-alt"></i>
+                      </button>
                     </td>
                   </tr>
                 }
