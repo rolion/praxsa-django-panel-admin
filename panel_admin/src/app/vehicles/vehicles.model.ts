@@ -37,5 +37,15 @@ export interface CarModelItemPayload {
   width: string;
   length: string;
   quantity: number;
-  installation_price: string;
+  /** Oculto en el formulario del panel a pedido del usuario (2026-09-26).
+   * Si se omite, el backend usa el default del modelo (0). */
+  installation_price?: string;
+}
+
+/** Editar una asociación ya creada solo permite tocar estos 3 campos -- el
+ * item asociado (car_part_id) no se puede cambiar desde aquí. */
+export interface UpdateModelItemPayload {
+  width: string;
+  length: string;
+  quantity: number;
 }

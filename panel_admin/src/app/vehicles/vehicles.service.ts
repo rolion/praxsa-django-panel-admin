@@ -8,6 +8,7 @@ import {
   AppCarModelPart,
   AppCarPart,
   CarModelItemPayload,
+  UpdateModelItemPayload,
 } from './vehicles.model';
 
 interface ListParams {
@@ -134,6 +135,14 @@ export class VehiclesService {
 
   addModelItem(modelId: number, payload: CarModelItemPayload): Observable<AppCarModelPart> {
     return this.http.post<AppCarModelPart>(`${this.base}/models/${modelId}/items/`, payload);
+  }
+
+  updateModelItem(
+    modelId: number,
+    itemId: number,
+    payload: UpdateModelItemPayload
+  ): Observable<AppCarModelPart> {
+    return this.http.patch<AppCarModelPart>(`${this.base}/models/${modelId}/items/${itemId}/`, payload);
   }
 
   removeModelItem(modelId: number, itemId: number): Observable<void> {

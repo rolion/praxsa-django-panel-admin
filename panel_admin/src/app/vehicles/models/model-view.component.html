@@ -52,13 +52,17 @@
                       <div>
                         <strong>{{ item.car_part_name }}</strong>
                         <div class="text-muted small">
-                          Ancho: {{ item.width }} · Largo: {{ item.length }} · Cantidad: {{ item.quantity }} ·
-                          Precio instalación: {{ item.installation_price }}
+                          Ancho: {{ item.width }} · Largo: {{ item.length }} · Cantidad: {{ item.quantity }}
                         </div>
                       </div>
-                      <button type="button" class="btn btn-tbl-delete h-auto" title="Quitar" (click)="removeItem(item)">
-                        <i class="far fa-trash-alt"></i>
-                      </button>
+                      <div>
+                        <button type="button" class="btn btn-tbl-edit h-auto" title="Editar" (click)="openEditItem(item, editItemModal)">
+                          <i class="fas fa-pen"></i>
+                        </button>
+                        <button type="button" class="btn btn-tbl-delete h-auto" title="Quitar" (click)="removeItem(item)">
+                          <i class="far fa-trash-alt"></i>
+                        </button>
+                      </div>
                     </li>
                   }
                 </ul>
@@ -126,18 +130,48 @@
             <label>Cantidad <span class="text-danger">*</span></label>
             <input type="number" min="1" class="form-control" formControlName="quantity" required />
           </div>
-          <div class="col-6 mb-3">
-            <label>Precio de instalación <span class="text-danger">*</span></label>
-            <input type="number" step="0.01" class="form-control" formControlName="installation_price" required />
-          </div>
         </div>
-        <p class="text-muted small">Estos datos determinan el precio de instalación que se cobrará al generar una proforma con este item.</p>
 
         @if (addError) {
           <div class="alert alert-danger">{{ addError }}</div>
         }
         <div class="modal-footer">
           <button type="submit" class="btn btn-primary" [disabled]="addForm.invalid || saving">Asociar</button>
+          <button type="button" class="btn btn-light" (click)="modal.dismiss()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </ng-template>
+
+  <ng-template #editItemModal let-modal>
+    <div class="modal-header">
+      <h4 class="modal-title">Editar {{ editingItem?.car_part_name }}</h4>
+      <button type="button" class="close" aria-label="Close" (click)="modal.dismiss()">
+        <span aria-hidden="true"><i class="material-icons">close</i></span>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form [formGroup]="editForm" (ngSubmit)="saveEditItem()">
+        <div class="row">
+          <div class="col-6 mb-3">
+            <label>Ancho <span class="text-danger">*</span></label>
+            <input type="number" step="0.01" class="form-control" formControlName="width" required />
+          </div>
+          <div class="col-6 mb-3">
+            <label>Largo <span class="text-danger">*</span></label>
+            <input type="number" step="0.01" class="form-control" formControlName="length" required />
+          </div>
+          <div class="col-6 mb-3">
+            <label>Cantidad <span class="text-danger">*</span></label>
+            <input type="number" min="1" class="form-control" formControlName="quantity" required />
+          </div>
+        </div>
+
+        @if (editError) {
+          <div class="alert alert-danger">{{ editError }}</div>
+        }
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary" [disabled]="editForm.invalid || saving">Guardar</button>
           <button type="button" class="btn btn-light" (click)="modal.dismiss()">Cancelar</button>
         </div>
       </form>

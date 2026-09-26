@@ -10,10 +10,12 @@ type AddItemMode = 'existing' | 'new';
 
 /** Detalle de un Modelo: imagen, marca, nombre, y sus items asociados
  * (Car_Model_Part). "Agregar item" permite crear uno nuevo o buscar y
- * asociar uno existente, capturando ancho/largo/cantidad/precio de
- * instalación -- ver ADR-modulo-vehiculos-relacion-modelo-item: son
- * obligatorios porque la calculadora de precios de proformas los usa en
- * vivo, no son un detalle cosmético. */
+ * asociar uno existente, capturando ancho/largo/cantidad -- ver ADR-modulo-
+ * vehiculos-relacion-modelo-item. El precio de instalación existe en el
+ * modelo de datos pero quedó oculto en este formulario a pedido explícito
+ * del usuario (2026-09-26); el backend lo acepta como opcional (default 0)
+ * mientras esté oculto. "Editar item" permite ajustar ancho/largo/cantidad
+ * de una asociación ya creada, sin cambiar el item asociado. */
 @Component({
   selector: 'app-model-view',
   standalone: true,
@@ -39,6 +41,10 @@ export class ModelViewComponent implements OnInit {
   saving = false;
   addError = '';
 
+  editForm!: FormGroup;
+  editingItem: AppCarModelPart | null = null;
+  editError = '';
+
   ngOnInit(): void {
     this.modelId = Number(this.route.snapshot.paramMap.get('id'));
     this.addForm = this.fb.group({
@@ -47,7 +53,11 @@ export class ModelViewComponent implements OnInit {
       width: ['', Validators.required],
       length: ['', Validators.required],
       quantity: [1, [Validators.required, Validators.min(1)]],
-      installation_price: ['', Validators.required],
+    });
+    this.editForm = this.fb.group({
+      width: ['', Validators.required],
+      length: ['', Validators.required],
+      quantity: [1, [Validators.required, Validators.min(1)]],
     });
     this.load();
   }
@@ -111,8 +121,7 @@ export class ModelViewComponent implements OnInit {
     if (this.addForm.invalid) {
       return;
     }
-    const { car_part_id, new_car_part_name, width, length, quantity, installation_price } =
-      this.addForm.value;
+    const { car_part_id, new_car_part_name, width, length, quantity } = this.addForm.value;
     if (this.mode === 'existing' && !car_part_id) {
       this.addError = 'Seleccione un item de la lista.';
       return;
@@ -126,8 +135,8 @@ export class ModelViewComponent implements OnInit {
     this.addError = '';
     const payload =
       this.mode === 'existing'
-        ? { car_part_id, width, length, quantity, installation_price }
-        : { new_car_part_name, width, length, quantity, installation_price };
+        ? { car_part_id, width, length, quantity }
+        : { new_car_part_name, width, length, quantity };
 
     this.vehiclesService.addModelItem(this.modelId, payload).subscribe({
       next: () => {
@@ -141,6 +150,38 @@ export class ModelViewComponent implements OnInit {
           err?.error?.non_field_errors?.[0] || err?.error?.detail || 'No se pudo asociar el item.';
       },
     });
+  }
+
+  openEditItem(item: AppCarModelPart, content: TemplateRef<unknown>): void {
+    this.editingItem = item;
+    this.editError = '';
+    this.editForm.setValue({
+      width: item.width,
+      length: item.length,
+      quantity: item.quantity,
+    });
+    this.modalService.open(content, { ariaLabelledBy: 'modal-basic-title' });
+  }
+
+  saveEditItem(): void {
+    if (this.editForm.invalid || !this.editingItem) {
+      return;
+    }
+    this.saving = true;
+    this.editError = '';
+    this.vehiclesService
+      .updateModelItem(this.modelId, this.editingItem.id, this.editForm.value)
+      .subscribe({
+        next: () => {
+          this.saving = false;
+          this.modalService.dismissAll();
+          this.load();
+        },
+        error: () => {
+          this.saving = false;
+          this.editError = 'No se pudo guardar el item.';
+        },
+      });
   }
 
   removeItem(item: AppCarModelPart): void {

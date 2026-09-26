@@ -93,10 +93,17 @@ class CarModelSerializer(serializers.ModelSerializer):
 class CarModelPartSerializer(serializers.ModelSerializer):
     """Asociacion Modelo<->Item (Car_Model_Part). Acepta un item ya existente
     (`car_part_id`) o crea uno nuevo (`new_car_part_name`), pero exige uno de
-    los dos. width/length/quantity/installation_price son obligatorios aqui
-    (no se confia en los defaults del modelo) -- ver ADR-modulo-vehiculos-
-    relacion-modelo-item: omitirlos crearia una asociacion con costo de
-    instalacion $0 que la calculadora de precios aceptaria en silencio."""
+    los dos -- solo al crear (`self.instance is None`); al editar una
+    asociacion ya existente (PATCH) no se permite cambiar el item, solo
+    width/length/quantity/installation_price.
+
+    width/length/quantity son obligatorios al crear (no se confia en los
+    defaults del modelo) -- ver ADR-modulo-vehiculos-relacion-modelo-item.
+    `installation_price` quedo oculto en el formulario del panel a pedido
+    explicito del usuario (2026-09-26); se relaja aqui a opcional (usa el
+    default del modelo, 0) en vez de forzar un valor desde el frontend --
+    es exactamente el camino de rollback que el ADR ya habia previsto para
+    este campo."""
 
     car_part_id = serializers.PrimaryKeyRelatedField(
         queryset=Car_Part.objects.filter(is_active=True), required=False, allow_null=True
@@ -106,7 +113,7 @@ class CarModelPartSerializer(serializers.ModelSerializer):
     width = serializers.DecimalField(max_digits=10, decimal_places=2, required=True)
     length = serializers.DecimalField(max_digits=10, decimal_places=2, required=True)
     quantity = serializers.IntegerField(min_value=1, required=True)
-    installation_price = serializers.DecimalField(max_digits=10, decimal_places=2, required=True)
+    installation_price = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
 
     class Meta:
         model = Car_Model_Part
@@ -116,6 +123,8 @@ class CarModelPartSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, attrs):
+        if self.instance is not None:
+            return attrs
         car_part = attrs.get('car_part_id')
         new_name = attrs.get('new_car_part_name')
         if bool(car_part) == bool(new_name):
@@ -138,3 +147,12 @@ class CarModelPartSerializer(serializers.ModelSerializer):
             car_part_id=car_part,
             **validated_data,
         )
+
+    def update(self, instance, validated_data):
+        # Editar una asociacion nunca cambia el item asociado, aunque el
+        # cliente mande car_part_id/new_car_part_name -- se ignoran en vez
+        # de aplicarlos (defensa en profundidad, no depende solo de que el
+        # frontend no los mande).
+        validated_data.pop('car_part_id', None)
+        validated_data.pop('new_car_part_name', None)
+        return super().update(instance, validated_data)

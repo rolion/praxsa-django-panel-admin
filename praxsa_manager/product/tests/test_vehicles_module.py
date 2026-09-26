@@ -558,8 +558,28 @@ class CarModelItemsAssociationTest(TestCase):
         )
 
         self.assertEqual(response.status_code, 400)
-        for field in ('width', 'length', 'quantity', 'installation_price'):
+        for field in ('width', 'length', 'quantity'):
             self.assertIn(field, response.json())
+
+    def test_create_without_installation_price_defaults_to_zero(self):
+        """installation_price quedo oculto en el formulario del panel a
+        pedido del usuario (2026-09-26) -- omitirlo no debe rechazar la
+        creacion, y debe usar el default del modelo (0), no fallar."""
+        admin, token, _ = helpers.create_staff_user_with_token()
+        helpers.grant_permission(admin, 'product', 'add_car_model_part')
+        car_model = helpers.create_model()
+        car_part = helpers.create_car_part()
+
+        response = self.client.post(
+            f'/product/vehicles/models/{car_model.id}/items/',
+            {'car_part_id': car_part.id, 'width': '1.00', 'length': '1.00', 'quantity': 1},
+            content_type='application/json',
+            **_auth_headers(token),
+        )
+
+        self.assertEqual(response.status_code, 201, response.content)
+        association = Car_Model_Part.objects.get(car_model_id=car_model, car_part_id=car_part)
+        self.assertEqual(association.installation_price, Decimal('0'))
 
     def test_duplicate_association_returns_400_not_500(self):
         admin, token, _ = helpers.create_staff_user_with_token()
@@ -616,6 +636,61 @@ class CarModelItemsAssociationTest(TestCase):
         self.assertFalse(Car_Model_Part.objects.filter(pk=car_model_part.pk).exists())
         detail.refresh_from_db()
         self.assertEqual(detail.installation_price, Decimal('50.00'))
+
+    def test_edit_association_updates_width_length_quantity(self):
+        admin, token, _ = helpers.create_staff_user_with_token()
+        helpers.grant_permission(admin, 'product', 'change_car_model_part')
+        car_model_part = helpers.create_car_model_part(
+            width=Decimal('1.00'), length=Decimal('1.00'), quantity=1,
+            installation_price=Decimal('50.00'),
+        )
+
+        response = self.client.patch(
+            f'/product/vehicles/models/{car_model_part.car_model_id_id}/items/{car_model_part.id}/',
+            {'width': '2.50', 'length': '1.75', 'quantity': 3},
+            content_type='application/json',
+            **_auth_headers(token),
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        car_model_part.refresh_from_db()
+        self.assertEqual(car_model_part.width, Decimal('2.50'))
+        self.assertEqual(car_model_part.length, Decimal('1.75'))
+        self.assertEqual(car_model_part.quantity, 3)
+        # installation_price no se manda desde el formulario de edicion --
+        # debe quedar intacto, no resetearse a 0 ni a ningun otro valor.
+        self.assertEqual(car_model_part.installation_price, Decimal('50.00'))
+
+    def test_edit_association_does_not_change_the_associated_item(self):
+        admin, token, _ = helpers.create_staff_user_with_token()
+        helpers.grant_permission(admin, 'product', 'change_car_model_part')
+        original_part = helpers.create_car_part(name='Original')
+        other_part = helpers.create_car_part(name='Otro')
+        car_model_part = helpers.create_car_model_part(car_part=original_part)
+
+        response = self.client.patch(
+            f'/product/vehicles/models/{car_model_part.car_model_id_id}/items/{car_model_part.id}/',
+            {'width': '2.00', 'length': '2.00', 'quantity': 2, 'car_part_id': other_part.id},
+            content_type='application/json',
+            **_auth_headers(token),
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        car_model_part.refresh_from_db()
+        self.assertEqual(car_model_part.car_part_id_id, original_part.id)
+
+    def test_edit_association_without_permission_is_forbidden(self):
+        _, token, _ = helpers.create_staff_user_with_token()
+        car_model_part = helpers.create_car_model_part()
+
+        response = self.client.patch(
+            f'/product/vehicles/models/{car_model_part.car_model_id_id}/items/{car_model_part.id}/',
+            {'width': '2.00', 'length': '2.00', 'quantity': 2},
+            content_type='application/json',
+            **_auth_headers(token),
+        )
+
+        self.assertEqual(response.status_code, 403)
 
     def test_add_item_without_permission_is_forbidden(self):
         _, token, _ = helpers.create_staff_user_with_token()

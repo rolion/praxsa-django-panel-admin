@@ -192,14 +192,21 @@ class CarModelItemsView(generics.ListCreateAPIView):
         return context
 
 
-class CarModelItemDetailView(generics.DestroyAPIView):
-    """Quita una asociacion Modelo<->Item puntual (borrado fisico de la fila
-    Car_Model_Part, no del Car_Part ni del Car_Model -- ver ADR-modulo-
-    vehiculos-relacion-modelo-item: seguro para el historial de proformas ya
-    creadas, que copian sus propios valores)."""
+class CarModelItemDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Ver/editar/quitar una asociacion Modelo<->Item puntual. PATCH solo
+    permite tocar width/length/quantity/installation_price -- no cambia el
+    item asociado (car_part_id), ver CarModelPartSerializer.validate().
+    DELETE = borrado fisico de la fila Car_Model_Part, no del Car_Part ni
+    del Car_Model -- ver ADR-modulo-vehiculos-relacion-modelo-item: seguro
+    para el historial de proformas ya creadas, que copian sus propios
+    valores."""
 
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = _STANDARD_PERMISSIONS
+    serializer_class = CarModelPartSerializer
+    http_method_names = ['get', 'patch', 'delete', 'head', 'options']
 
     def get_queryset(self):
-        return Car_Model_Part.objects.filter(car_model_id=self.kwargs['model_id'])
+        return Car_Model_Part.objects.filter(
+            car_model_id=self.kwargs['model_id']
+        ).select_related('car_part_id')
