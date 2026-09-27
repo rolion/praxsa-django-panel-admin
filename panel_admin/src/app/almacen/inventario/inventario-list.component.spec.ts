@@ -5,7 +5,6 @@ import {
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/service/auth.service';
 import { AppInventario } from '../almacen.model';
@@ -17,6 +16,7 @@ const sampleRows: AppInventario[] = [
     bobina_width: '1.50', quantity: 1, to_install: '50.00', installed: '0.00',
     original_length: '50.00', date: '2026-09-01T00:00:00Z', numero_referencia: 1,
     precio_compra_mtr_lineal: '80.00', precio_venta_mtr_lineal: '120.00', nro_lote: 'L1',
+    is_active: true,
   },
 ];
 
@@ -37,7 +37,7 @@ describe('InventarioListComponent', () => {
     localStorage.clear();
     TestBed.configureTestingModule({
       imports: [InventarioListComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([]), NgbModal],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     });
     httpMock = TestBed.inject(HttpTestingController);
     authService = TestBed.inject(AuthService);
@@ -88,27 +88,5 @@ describe('InventarioListComponent', () => {
     httpMock.expectOne((r) => r.url === base).flush(sampleRows);
 
     expect(component.canManage).toBe(true);
-  });
-
-  it('save() sends only the allowed InventarioUpdatePayload fields', () => {
-    createComponent();
-    httpMock.expectOne((r) => r.url === base).flush(sampleRows);
-    component.managingId = 1;
-    component.form.setValue({
-      to_install: '25.00', installed: '25.00', precio_compra_mtr_lineal: '80.00',
-      precio_venta_mtr_lineal: '130.00', nro_lote: 'L2',
-    });
-
-    component.save();
-
-    const req = httpMock.expectOne(`${base}/1/`);
-    expect(req.request.body).toEqual({
-      to_install: '25.00', installed: '25.00', precio_compra_mtr_lineal: '80.00',
-      precio_venta_mtr_lineal: '130.00', nro_lote: 'L2',
-    });
-    req.flush(sampleRows[0]);
-    // save() recarga el listado al terminar (this.load() en el next del
-    // subscribe) -- flushear tambien ese GET, si no queda abierto.
-    httpMock.expectOne((r) => r.url === base).flush(sampleRows);
   });
 });

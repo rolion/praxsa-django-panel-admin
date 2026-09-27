@@ -1,27 +1,25 @@
-import { Component, OnInit, TemplateRef, ViewChild, inject } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, OnInit, ViewChild, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { DatatableComponent, NgxDatatableModule } from '@swimlane/ngx-datatable';
+import Swal from 'sweetalert2';
 import { AuthService } from '../../core/service/auth.service';
 import { AppInventario } from '../almacen.model';
 import { AlmacenService } from '../almacen.service';
 
-/** Listado de Inventario, de solo consulta para ambos roles. La accion
- * "Gestionar" (modal, solo admin) edita unicamente los campos permitidos
- * por InventarioUpdateSerializer -- ver ADR-modulo-almacen-modelo-datos-
- * imagen-soft-delete punto 8 y DDR-modulo-almacen-listado-y-flujo-almacen. */
+/** Listado de Inventario. Mismo patron de tabla/acciones/busqueda que
+ * Lamina -- Ver/Crear/Editar('Gestionar')/Eliminar para admin, solo Ver
+ * para almacen. Ver ADR-modulo-almacen-modelo-datos-imagen-soft-delete
+ * (seccion Actualizacion): "Eliminar" puede fallar con 400 si la fila
+ * todavia tiene metros disponibles para instalar. */
 @Component({
   selector: 'app-inventario-list',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink, NgxDatatableModule],
+  imports: [RouterLink, NgxDatatableModule],
   templateUrl: './inventario-list.component.html',
 })
 export class InventarioListComponent implements OnInit {
   @ViewChild(DatatableComponent) table!: DatatableComponent;
 
-  private fb = inject(FormBuilder);
-  private modalService = inject(NgbModal);
   private almacenService = inject(AlmacenService);
   authService = inject(AuthService);
 
@@ -30,19 +28,7 @@ export class InventarioListComponent implements OnInit {
   loadingIndicator = true;
   errorMessage = '';
 
-  form!: FormGroup;
-  formError = '';
-  saving = false;
-  managingId: number | null = null;
-
   ngOnInit(): void {
-    this.form = this.fb.group({
-      to_install: ['', Validators.required],
-      installed: ['', Validators.required],
-      precio_compra_mtr_lineal: ['', Validators.required],
-      precio_venta_mtr_lineal: ['', Validators.required],
-      nro_lote: [''],
-    });
     this.load();
   }
 
@@ -79,35 +65,28 @@ export class InventarioListComponent implements OnInit {
     }
   }
 
-  openManage(row: AppInventario, content: TemplateRef<unknown>): void {
-    this.managingId = row.id;
-    this.formError = '';
-    this.form.setValue({
-      to_install: row.to_install,
-      installed: row.installed,
-      precio_compra_mtr_lineal: row.precio_compra_mtr_lineal,
-      precio_venta_mtr_lineal: row.precio_venta_mtr_lineal,
-      nro_lote: row.nro_lote || '',
+  deactivate(row: AppInventario): void {
+    Swal.fire({
+      title: '¿Eliminar este inventario?',
+      text: 'El inventario quedará inactivo (no se borra físicamente).',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.almacenService.toggleInventarioActive(row.id, false).subscribe({
+          next: () => this.load(),
+          error: (err) => {
+            const message =
+              err?.error?.detail || 'No se pudo eliminar el inventario.';
+            Swal.fire({ title: 'No se pudo eliminar', text: message, icon: 'error' });
+          },
+        });
+      }
     });
-    this.modalService.open(content, { ariaLabelledBy: 'modal-basic-title' });
   }
 
-  save(): void {
-    if (this.form.invalid || this.managingId === null) {
-      return;
-    }
-    this.saving = true;
-    this.formError = '';
-    this.almacenService.updateInventario(this.managingId, this.form.value).subscribe({
-      next: () => {
-        this.saving = false;
-        this.modalService.dismissAll();
-        this.load();
-      },
-      error: (err) => {
-        this.saving = false;
-        this.formError = err?.error?.to_install?.[0] || err?.error?.nro_lote?.[0] || 'No se pudo actualizar el inventario.';
-      },
-    });
+  activate(row: AppInventario): void {
+    this.almacenService.toggleInventarioActive(row.id, true).subscribe(() => this.load());
   }
 }

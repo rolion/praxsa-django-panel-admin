@@ -2,7 +2,14 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { AppInventario, AppWindowFilm, AppWindowFilmReel, InventarioUpdatePayload } from './almacen.model';
+import {
+  AppInventario,
+  AppSucursal,
+  AppWindowFilm,
+  AppWindowFilmReel,
+  InventarioCreatePayload,
+  InventarioUpdatePayload,
+} from './almacen.model';
 
 interface ListParams {
   search?: string;
@@ -113,7 +120,26 @@ export class AlmacenService {
     return this.http.get<AppInventario[]>(`${this.base}/inventario`, { params: buildParams(params) });
   }
 
+  getInventario(id: number): Observable<AppInventario> {
+    return this.http.get<AppInventario>(`${this.base}/inventario/${id}/`);
+  }
+
+  createInventario(payload: InventarioCreatePayload): Observable<AppInventario> {
+    return this.http.post<AppInventario>(`${this.base}/inventario`, payload);
+  }
+
   updateInventario(id: number, payload: InventarioUpdatePayload): Observable<AppInventario> {
     return this.http.patch<AppInventario>(`${this.base}/inventario/${id}/`, payload);
+  }
+
+  toggleInventarioActive(id: number, isActive: boolean): Observable<AppInventario> {
+    return this.http.patch<AppInventario>(`${this.base}/inventario/${id}/toggle-active/`, {
+      is_active: isActive,
+    });
+  }
+
+  // Reutiliza el endpoint ya existente del modulo Usuarios -- no duplica su CRUD.
+  listSucursales(): Observable<AppSucursal[]> {
+    return this.http.get<AppSucursal[]>(`${environment.apiUrl}/product/sucursales`);
   }
 }
