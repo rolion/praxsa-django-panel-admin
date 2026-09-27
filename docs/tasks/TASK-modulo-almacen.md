@@ -1,6 +1,6 @@
 # TASK-modulo-almacen: Módulo Almacén (Láminas, Bobinas, Inventario) en `panel_admin/`
 
-**Etapa actual:** PLANNING
+**Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** `claude/modulo-almacen-0ca2eb`
@@ -16,6 +16,7 @@
 | 2026-09-26 | ENGINEERING → REVIEW | Backend y frontend implementados siguiendo el plan v1 sin desvíos de alcance. Backend: 183/183 tests (incluye `test_almacen_module.py` nuevo). Frontend: `ng build`/`ng lint` limpios, 88/103 tests (15 fallas preexistentes de la plantilla, 0 nuevas). Verificación manual end-to-end en navegador contra la BD de desarrollo real (login admin y almacen, creación de Lámina con imagen, Bobinas, Gestionar Inventario, 403 confirmado en un intento directo de escritura como almacen) — durante esta verificación se detectó y corrigió que la migración 0109 no estaba aplicada en el entorno de desarrollo | delivery-engineer |
 | 2026-09-26 | REVIEW → DESIGN → ARCHITECTURE | Verificación manual real (usuario `oleon`, admin+almacen) encontró que primero parecía un bug de permisos (resuelto: era sesión en `localStorage` cacheada de antes de esta implementación — el usuario confirmó que re-logueándose los botones de Láminas/Bobinas aparecen correctamente), pero destapó una ampliación de alcance real y confirmada por el usuario: Inventario necesita Ver/Crear/Eliminar además de "Gestionar", al mismo nivel que Láminas/Bobinas. DDR actualizado (Inventario pasa del patrón modal al patrón de páginas separadas de Lámina); veredicto de complejidad exige decisión arquitectónica (mecanismo de eliminación dado que `Proforma_Detail.inventario` es FK con `on_delete=DO_NOTHING`, campos obligatorios de creación) antes de replanificar | delivery-design |
 | 2026-09-27 | ARCHITECTURE → PLANNING | ADR actualizado: `inventario` gana `is_active` con eliminación restringida a filas con `to_install == 0` (garantiza que "eliminar" nunca oculta stock que `Inventario_Business` todavía pudiera vender, sin tocar esa lógica de negocio); tabla de campos obligatorios/opcionales para la creación manual (`sucursal`/`bobina`/`quantity`/`to_install`/precios obligatorios; `installed`/`original_length`/`date`/`numero_referencia`/`nro_lote` con default de servidor); contrato API ampliado (`POST almacen/inventario`, `PATCH .../toggle-active/`, reutilizando `change_inventario` ya asignado al grupo `admin`, con `add_inventario` como único permiso operativo nuevo a asignar) | delivery-architect |
+| 2026-09-27 | PLANNING → ENGINEERING | Plan versionado a v2 (pasos 20-34 nuevos, continuando la numeración de v1 ya implementado): serializers/vistas/rutas nuevas para `POST almacen/inventario` y `toggle-active` de Inventario, migración de `inventario.is_active`, y migración del frontend de Inventario del patrón modal al patrón de páginas separadas (create/view/edit) — mismo PR #49, sin cambios de rama | delivery-plan |
 
 ## Investigación
 
@@ -119,7 +120,7 @@ Este task resuelve, para otro conjunto de modelos (`Car_Brand`/`Car_Model`/`Car_
 - [ADR-modulo-almacen-permisos-rol-frontend](../adr/ADR-modulo-almacen-permisos-rol-frontend.md) — mismo patrón de permisos que Usuarios/Vehículos (`IsStaffUser` + `DjangoModelPermissions`, `has_perm` explícito en toggle-active/gestionar); grupo `almacen` creado manualmente (sin permisos de escritura sobre los 3 modelos); `User_Helper.is_request_user_almacen` agregado por simetría. Cierra la brecha transversal identificada en diseño: `PanelAdminAuthToken` se extiende (aditivamente) con `groups`/`is_staff`, y el frontend gana `AuthService.hasGroup()` para ocultar Crear/Editar/Eliminar/Gestionar — dejando explícito que el backend es la barrera de seguridad real, no el ocultamiento de botones.
 
 ## Plan
-[PLAN-2026-09-26-modulo-almacen](../plans/PLAN-2026-09-26-modulo-almacen.md) (v1) — backend primero (modelos + migración, serializers, vistas bajo `almacen/`, extensión de `PanelAdminAuthToken`), luego frontend (módulo `almacen/` en `panel_admin/`, extensión de `AuthService`). Sin E2E (justificado: no es un flujo crítico de punta a punta, y Playwright no está instalado); tests unitarios/integración backend obligatorios por `docs/CLAUDE.md`, specs Angular por componente. Pregunta abierta para el usuario: ¿un solo PR (como Usuarios/Vehículos) o partir backend/frontend en dos?
+[PLAN-2026-09-26-modulo-almacen](../plans/PLAN-2026-09-26-modulo-almacen.md) (v2) — v1 (Láminas, Bobinas, Inventario con listado+"Gestionar") ya implementado en el PR #49. v2 agrega pasos 20-34: migración `inventario.is_active`, `InventarioCreateSerializer`, `InventarioListView`→`ListCreateAPIView`, `InventarioToggleActiveView` (bloqueado si `to_install > 0`), y migración del frontend de Inventario del modal al patrón de páginas separadas (create/view/edit) igual que Lámina. Sin E2E (mismo motivo que v1). Ver `## Changelog` del plan.
 
 ## Implementación
 
