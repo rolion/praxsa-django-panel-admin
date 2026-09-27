@@ -1,6 +1,6 @@
 # TASK-modulo-almacen: Módulo Almacén (Láminas, Bobinas, Inventario) en `panel_admin/`
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PLANNING
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** `claude/modulo-almacen-0ca2eb`
@@ -18,6 +18,7 @@
 | 2026-09-27 | ARCHITECTURE → PLANNING | ADR actualizado: `inventario` gana `is_active` con eliminación restringida a filas con `to_install == 0` (garantiza que "eliminar" nunca oculta stock que `Inventario_Business` todavía pudiera vender, sin tocar esa lógica de negocio); tabla de campos obligatorios/opcionales para la creación manual (`sucursal`/`bobina`/`quantity`/`to_install`/precios obligatorios; `installed`/`original_length`/`date`/`numero_referencia`/`nro_lote` con default de servidor); contrato API ampliado (`POST almacen/inventario`, `PATCH .../toggle-active/`, reutilizando `change_inventario` ya asignado al grupo `admin`, con `add_inventario` como único permiso operativo nuevo a asignar) | delivery-architect |
 | 2026-09-27 | PLANNING → ENGINEERING | Plan versionado a v2 (pasos 20-34 nuevos, continuando la numeración de v1 ya implementado): serializers/vistas/rutas nuevas para `POST almacen/inventario` y `toggle-active` de Inventario, migración de `inventario.is_active`, y migración del frontend de Inventario del patrón modal al patrón de páginas separadas (create/view/edit) — mismo PR #49, sin cambios de rama | delivery-plan |
 | 2026-09-27 | ENGINEERING → REVIEW | Pasos 20-34 del plan v2 implementados sin desvíos de alcance. Backend: 189/189 tests (incluye creación de Inventario con defaults de servidor y bloqueo/permiso de eliminación). Frontend: `ng build`/`ng lint` limpios, 95/110 tests (mismas 15 fallas preexistentes, 0 nuevas). Verificación manual end-to-end en navegador contra la BD de desarrollo real: crear Inventario (defaults correctos), intentar eliminar con stock disponible (bloqueado con el mensaje del backend), reducir a 0 vía Gestionar y eliminar con éxito, confirmado 403 para `almacen` en `POST`/`toggle-active` de los 3 recursos — durante esta verificación se detectó y corrigió que la migración 0110 no estaba aplicada en el entorno de desarrollo | delivery-engineer |
+| 2026-09-27 | REVIEW → PLANNING | Quality Gate corrido de forma independiente (mismos comandos re-ejecutados, no solo releídos): backend 189/189, `makemigrations --check` limpio, frontend `ng build`/`ng lint` limpios, 95/110 tests (mismas 15 fallas preexistentes). Verificación adicional ejecutando código real encontró 2 issues: `InventarioCreateSerializer` pierde los validadores del modelo en `nro_lote`/`numero_referencia` y puede causar un `500` no controlado con un lote demasiado largo (High, IMPLEMENTATION); la investigación había declarado "sin otros consumidores" para `get_inventario_queryset_by_role` sin encontrar 2 consumidores reales (`ReportStorageAdmin`, `ReportUtilidadAdmin`) cuyo mensaje de error queda silenciado (Medium, PLAN). FAIL — etapa vuelve a la categoría más temprana (PLAN) | delivery-review |
 
 ## Investigación
 
@@ -144,7 +145,15 @@ Este task resuelve, para otro conjunto de modelos (`Car_Brand`/`Car_Model`/`Car_
 **Deuda/decisiones deliberadas (v2)**: `add_inventario` es un permiso operativo nuevo a asignar manualmente al grupo `admin` en cada ambiente (no automatizado); la restricción `to_install == 0` para eliminar es una decisión explícita del ADR, no un descuido, y queda documentada como ajustable si el negocio la encuentra demasiado estricta en el uso real.
 
 ## Review
-_Pendiente_
+
+### Corrida 1 (2026-09-27) — FAIL
+Verificación independiente (mismos comandos re-ejecutados: `python manage.py test`, `makemigrations --check --dry-run`, `ng build`, `ng lint`, `ng test --code-coverage`, `npm audit`) confirmó los números ya reportados por `delivery-engineer` (backend 189/189; frontend 95/110, mismas 15 fallas preexistentes de la plantilla; `npm audit` 79 vulnerabilidades, todas preexistentes, sin cambios en `package.json`). `bandit`/`safety`/`flake8` no instalados, no ejecutados (declarado, no un PASS silencioso).
+
+Verificación adicional ejecutando código real (no solo lectura) encontró 2 issues:
+- [REV-2026-09-27-modulo-almacen-01](../reviews/REV-2026-09-27-modulo-almacen-01.md) — High, IMPLEMENTATION. `InventarioCreateSerializer` redeclara `nro_lote`/`numero_referencia` sin los `validators`/`max_length` del modelo — un `nro_lote` demasiado largo pasa la validación del serializer y causa una excepción de base de datos no controlada (`500` en vez de `400`), reproducible desde el formulario real de creación (sin restricción de longitud en el input).
+- [REV-2026-09-27-modulo-almacen-02](../reviews/REV-2026-09-27-modulo-almacen-02.md) — Medium, PLAN. La investigación declaró "sin otros consumidores, verificado con Grep" para `get_inventario_queryset_by_role`, pero existen 2 consumidores reales no detectados (`ReportStorageAdmin`, `ReportUtilidadAdmin`) cuyo mensaje "Asigne una sucursal al usuario" queda silenciado tras el cambio de contrato (`None` → `qs.none()`), sin ningún test que lo cubra.
+
+**FAIL** — 1 issue High + 1 issue Medium abiertos. Por tener issues de categoría PLAN e IMPLEMENTATION, la etapa vuelve a la más temprana (PLANNING).
 
 ## Publicación
 _Pendiente_
