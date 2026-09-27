@@ -52,7 +52,7 @@ describe('InventarioCreateComponent', () => {
     const component = fixture.componentInstance;
     component.form.patchValue({
       sucursal: 1, bobina: 1, quantity: 3, to_install: '50.00',
-      precio_compra_mtr_lineal: '80.00', precio_venta_mtr_lineal: '120.00',
+      precio_compra_mtr_lineal: '80.00', precio_venta_mtr_lineal: '120.00', nro_lote: 'L001',
     });
 
     component.save();
@@ -61,13 +61,56 @@ describe('InventarioCreateComponent', () => {
     expect(req.request.method).toBe('POST');
     expect(req.request.body.sucursal).toBe(1);
     expect(req.request.body.bobina).toBe(1);
+    expect(req.request.body.nro_lote).toBe('L001');
     req.flush({
       id: 5, sucursal: 1, sucursal_name: 'Central', bobina: 1, window_film_name: 'Carbon 20%',
       bobina_width: '1.50', quantity: 3, to_install: '50.00', installed: '0.00',
       original_length: '50.00', date: '2026-09-27T00:00:00Z', numero_referencia: 0,
-      precio_compra_mtr_lineal: '80.00', precio_venta_mtr_lineal: '120.00', nro_lote: null,
+      precio_compra_mtr_lineal: '80.00', precio_venta_mtr_lineal: '120.00', nro_lote: 'L001',
       is_active: true,
     });
+  });
+
+  it('no envia el formulario sin nro_lote (obligatorio)', () => {
+    const fixture = createAndLoad();
+    const component = fixture.componentInstance;
+    component.form.patchValue({
+      sucursal: 1, bobina: 1, quantity: 3, to_install: '50.00',
+      precio_compra_mtr_lineal: '80.00', precio_venta_mtr_lineal: '120.00', nro_lote: '',
+    });
+
+    component.save();
+
+    httpMock.expectNone(`${base}/inventario`);
+    expect(component.form.get('nro_lote')?.hasError('required')).toBe(true);
+  });
+
+  it('no envia el formulario con un nro_lote no alfanumerico', () => {
+    const fixture = createAndLoad();
+    const component = fixture.componentInstance;
+    component.form.patchValue({
+      sucursal: 1, bobina: 1, quantity: 3, to_install: '50.00',
+      precio_compra_mtr_lineal: '80.00', precio_venta_mtr_lineal: '120.00', nro_lote: 'L-999',
+    });
+
+    component.save();
+
+    httpMock.expectNone(`${base}/inventario`);
+    expect(component.form.get('nro_lote')?.hasError('pattern')).toBe(true);
+  });
+
+  it('no envia el formulario con un nro_lote de mas de 15 caracteres', () => {
+    const fixture = createAndLoad();
+    const component = fixture.componentInstance;
+    component.form.patchValue({
+      sucursal: 1, bobina: 1, quantity: 3, to_install: '50.00',
+      precio_compra_mtr_lineal: '80.00', precio_venta_mtr_lineal: '120.00', nro_lote: 'X'.repeat(20),
+    });
+
+    component.save();
+
+    httpMock.expectNone(`${base}/inventario`);
+    expect(component.form.get('nro_lote')?.hasError('maxlength')).toBe(true);
   });
 
   it('muestra el error del backend cuando la creacion falla', () => {
@@ -75,7 +118,7 @@ describe('InventarioCreateComponent', () => {
     const component = fixture.componentInstance;
     component.form.patchValue({
       sucursal: 1, bobina: 1, quantity: 3, to_install: '50.00',
-      precio_compra_mtr_lineal: '80.00', precio_venta_mtr_lineal: '120.00',
+      precio_compra_mtr_lineal: '80.00', precio_venta_mtr_lineal: '120.00', nro_lote: 'L001',
     });
 
     component.save();

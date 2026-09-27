@@ -480,7 +480,7 @@ class InventarioCreateTest(TestCase):
             {
                 'sucursal': sucursal.id, 'bobina': reel.id, 'quantity': 3,
                 'to_install': '50.00', 'precio_compra_mtr_lineal': '80.00',
-                'precio_venta_mtr_lineal': '120.00',
+                'precio_venta_mtr_lineal': '120.00', 'nro_lote': 'L001',
             },
             content_type='application/json',
             **_auth_headers(token),
@@ -494,6 +494,9 @@ class InventarioCreateTest(TestCase):
         self.assertTrue(created.is_active)
 
     def test_create_missing_required_field_returns_400(self):
+        """nro_lote es obligatorio (corregido tras feedback del usuario en
+        REV-2026-09-27-modulo-almacen-01 -- el panel anterior ya lo exigia
+        en la practica, pese a que el modelo lo declara null=True)."""
         admin, token, _ = helpers.create_staff_user_with_token()
         helpers.grant_permission(admin, 'product', 'add_inventario')
         sucursal = helpers.create_sucursal(admin)
@@ -506,8 +509,77 @@ class InventarioCreateTest(TestCase):
         )
 
         self.assertEqual(response.status_code, 400)
-        for field in ('bobina', 'precio_compra_mtr_lineal', 'precio_venta_mtr_lineal'):
+        for field in ('bobina', 'precio_compra_mtr_lineal', 'precio_venta_mtr_lineal', 'nro_lote'):
             self.assertIn(field, response.json())
+
+    def test_create_with_invalid_nro_lote_format_returns_400(self):
+        """REV-2026-09-27-modulo-almacen-01: antes de este fix, un nro_lote
+        no alfanumerico pasaba la validacion del serializer."""
+        admin, token, _ = helpers.create_staff_user_with_token()
+        helpers.grant_permission(admin, 'product', 'add_inventario')
+        sucursal = helpers.create_sucursal(admin)
+        reel = helpers.create_window_film_reel()
+
+        response = self.client.post(
+            '/product/almacen/inventario',
+            {
+                'sucursal': sucursal.id, 'bobina': reel.id, 'quantity': 1,
+                'to_install': '10.00', 'precio_compra_mtr_lineal': '80.00',
+                'precio_venta_mtr_lineal': '120.00', 'nro_lote': 'L-999',
+            },
+            content_type='application/json',
+            **_auth_headers(token),
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('nro_lote', response.json())
+        self.assertFalse(inventario.objects.filter(nro_lote='L-999').exists())
+
+    def test_create_with_nro_lote_too_long_returns_400_not_500(self):
+        """REV-2026-09-27-modulo-almacen-01: antes de este fix, un nro_lote
+        de mas de 15 caracteres pasaba la validacion del serializer y fallaba
+        al guardar con una excepcion de base de datos no controlada."""
+        admin, token, _ = helpers.create_staff_user_with_token()
+        helpers.grant_permission(admin, 'product', 'add_inventario')
+        sucursal = helpers.create_sucursal(admin)
+        reel = helpers.create_window_film_reel()
+
+        response = self.client.post(
+            '/product/almacen/inventario',
+            {
+                'sucursal': sucursal.id, 'bobina': reel.id, 'quantity': 1,
+                'to_install': '10.00', 'precio_compra_mtr_lineal': '80.00',
+                'precio_venta_mtr_lineal': '120.00', 'nro_lote': 'X' * 20,
+            },
+            content_type='application/json',
+            **_auth_headers(token),
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('nro_lote', response.json())
+
+    def test_create_with_numero_referencia_too_large_returns_400(self):
+        """REV-2026-09-27-modulo-almacen-01: numero_referencia tambien
+        perdia su MaxValueValidator al redeclararse explicitamente."""
+        admin, token, _ = helpers.create_staff_user_with_token()
+        helpers.grant_permission(admin, 'product', 'add_inventario')
+        sucursal = helpers.create_sucursal(admin)
+        reel = helpers.create_window_film_reel()
+
+        response = self.client.post(
+            '/product/almacen/inventario',
+            {
+                'sucursal': sucursal.id, 'bobina': reel.id, 'quantity': 1,
+                'to_install': '10.00', 'precio_compra_mtr_lineal': '80.00',
+                'precio_venta_mtr_lineal': '120.00', 'nro_lote': 'L001',
+                'numero_referencia': 99999999999,
+            },
+            content_type='application/json',
+            **_auth_headers(token),
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('numero_referencia', response.json())
 
     def test_create_with_inactive_bobina_is_rejected(self):
         admin, token, _ = helpers.create_staff_user_with_token()
@@ -522,7 +594,7 @@ class InventarioCreateTest(TestCase):
             {
                 'sucursal': sucursal.id, 'bobina': reel.id, 'quantity': 1,
                 'to_install': '10.00', 'precio_compra_mtr_lineal': '80.00',
-                'precio_venta_mtr_lineal': '120.00',
+                'precio_venta_mtr_lineal': '120.00', 'nro_lote': 'L001',
             },
             content_type='application/json',
             **_auth_headers(token),
@@ -541,7 +613,7 @@ class InventarioCreateTest(TestCase):
             {
                 'sucursal': sucursal.id, 'bobina': reel.id, 'quantity': 1,
                 'to_install': '10.00', 'precio_compra_mtr_lineal': '80.00',
-                'precio_venta_mtr_lineal': '120.00',
+                'precio_venta_mtr_lineal': '120.00', 'nro_lote': 'L001',
             },
             content_type='application/json',
             **_auth_headers(token),
@@ -666,7 +738,7 @@ class AlmacenRolePermissionTest(TestCase):
             {
                 'sucursal': inv.sucursal_id, 'bobina': reel.id, 'quantity': 1,
                 'to_install': '10.00', 'precio_compra_mtr_lineal': '80.00',
-                'precio_venta_mtr_lineal': '120.00',
+                'precio_venta_mtr_lineal': '120.00', 'nro_lote': 'L001',
             },
             content_type='application/json', **_auth_headers(token),
         )
@@ -717,7 +789,7 @@ class AlmacenRolePermissionTest(TestCase):
             {
                 'sucursal': inv.sucursal_id, 'bobina': active_reel.id, 'quantity': 1,
                 'to_install': '10.00', 'precio_compra_mtr_lineal': '80.00',
-                'precio_venta_mtr_lineal': '120.00',
+                'precio_venta_mtr_lineal': '120.00', 'nro_lote': 'L001',
             },
             content_type='application/json', **_auth_headers(token),
         )

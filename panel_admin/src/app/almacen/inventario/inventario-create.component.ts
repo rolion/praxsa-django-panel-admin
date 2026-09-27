@@ -29,7 +29,12 @@ export class InventarioCreateComponent implements OnInit {
       to_install: ['', Validators.required],
       precio_compra_mtr_lineal: ['', Validators.required],
       precio_venta_mtr_lineal: ['', Validators.required],
-      nro_lote: [''],
+      // nro_lote es obligatorio (corregido tras feedback directo del
+      // usuario -- el panel anterior ya lo exigia en la practica) y
+      // espeja las mismas reglas que el modelo backend: alfanumerico,
+      // maximo 15 caracteres (ver ADR-modulo-almacen-modelo-datos-imagen-
+      // soft-delete, "Correccion (2026-09-27)").
+      nro_lote: ['', [Validators.required, Validators.pattern(/^[0-9a-zA-Z]*$/), Validators.maxLength(15)]],
     });
     this.almacenService.listSucursales().subscribe((sucursales) => (this.sucursales = sucursales));
     this.almacenService.listBobinas().subscribe((bobinas) => (this.bobinas = bobinas));
@@ -48,7 +53,8 @@ export class InventarioCreateComponent implements OnInit {
         this.errorMessage =
           err?.error?.sucursal?.[0] || err?.error?.bobina?.[0] || err?.error?.quantity?.[0] ||
           err?.error?.to_install?.[0] || err?.error?.precio_compra_mtr_lineal?.[0] ||
-          err?.error?.precio_venta_mtr_lineal?.[0] || 'No se pudo crear el inventario.';
+          err?.error?.precio_venta_mtr_lineal?.[0] || err?.error?.nro_lote?.[0] ||
+          err?.error?.numero_referencia?.[0] || 'No se pudo crear el inventario.';
       },
     });
   }

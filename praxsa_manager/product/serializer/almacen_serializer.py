@@ -1,7 +1,8 @@
+from django.core.validators import MaxValueValidator
 from django.utils import timezone
 from rest_framework import serializers
 
-from ..models import Sucursal, Window_Film, Window_Film_Reel, inventario
+from ..models import Sucursal, Window_Film, Window_Film_Reel, alphanumeric, inventario
 from .image_validation import validate_uploaded_image
 
 
@@ -94,13 +95,22 @@ class InventarioUpdateSerializer(serializers.ModelSerializer):
 
 class InventarioCreateSerializer(serializers.ModelSerializer):
     """Alta manual de una fila de Inventario (solo admin) -- ver ADR-modulo-
-    almacen-modelo-datos-imagen-soft-delete, seccion "Actualizacion" (tabla de
-    campos obligatorios/opcionales). `bobina` solo acepta bobinas activas,
-    mismo criterio que `WindowFilmReelSerializer.window_film`. Los campos
-    opcionales (`installed`, `original_length`, `date`, `numero_referencia`,
-    `nro_lote`) tienen default de servidor en `create()` cuando no se
-    proveen -- nunca en el modelo, para no afectar otras vias de creacion
-    (p. ej. `Inventario_Business`, que siempre los provee explicitamente)."""
+    almacen-modelo-datos-imagen-soft-delete, seccion "Actualizacion" y su
+    "Correccion (2026-09-27)" (tabla de campos obligatorios/opcionales,
+    corregida tras REV-2026-09-27-modulo-almacen-01). `bobina` solo acepta
+    bobinas activas, mismo criterio que `WindowFilmReelSerializer.window_film`.
+    Los campos opcionales (`installed`, `original_length`, `date`,
+    `numero_referencia`) tienen default de servidor en `create()` cuando no
+    se proveen -- nunca en el modelo, para no afectar otras vias de creacion
+    (p. ej. `Inventario_Business`, que siempre los provee explicitamente).
+
+    `nro_lote` y `numero_referencia` se declaran explicitamente con los
+    mismos `validators`/`max_length` que el campo del modelo (`alphanumeric`,
+    `max_length=15`, `MaxValueValidator(9999999999)`) -- REV-2026-09-27-
+    modulo-almacen-01 encontro que redeclarar un campo sin copiar esas
+    restricciones deja pasar valores que el modelo rechazaria (o, peor,
+    causa una excepcion de base de datos no controlada al guardar en vez de
+    un 400 limpio)."""
 
     bobina = serializers.PrimaryKeyRelatedField(
         queryset=Window_Film_Reel.objects.filter(is_active=True)
@@ -116,8 +126,14 @@ class InventarioCreateSerializer(serializers.ModelSerializer):
     installed = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
     original_length = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
     date = serializers.DateTimeField(required=False)
-    numero_referencia = serializers.IntegerField(required=False)
-    nro_lote = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    # nro_lote es obligatorio (corregido tras feedback directo del usuario:
+    # el panel anterior ya lo exigia en la practica, aunque el modelo lo
+    # declare null=True) -- mismos validators/max_length que el modelo.
+    nro_lote = serializers.CharField(max_length=15, validators=[alphanumeric])
+    numero_referencia = serializers.IntegerField(
+        required=False,
+        validators=[MaxValueValidator(limit_value=9999999999, message='solo se aceptan valores con 10 digitos')],
+    )
 
     class Meta:
         model = inventario

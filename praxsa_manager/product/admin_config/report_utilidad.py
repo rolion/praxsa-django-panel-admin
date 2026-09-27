@@ -6,6 +6,7 @@ from django.db.models.query import QuerySet
 from django.http.request import HttpRequest
 
 from product.helper.proforma import Proforma_Helper
+from product.helper.user import User_Helper
 from ..business.inventario import Inventario_Business
 
 import io
@@ -44,12 +45,17 @@ class ReportUtilidadAdmin(admin.ModelAdmin):
     
     helper = Proforma_Helper()
     inventario_business = Inventario_Business()
+    user_helper = User_Helper()
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
 
         base_qs = super().get_queryset(request)
         base_qs = self.inventario_business.get_inventario_queryset_by_role(user = request.user, qs=base_qs)
-        if base_qs is None:
+        # get_inventario_queryset_by_role ya no devuelve None (ver REV-2026-09-27-
+        # modulo-almacen-02) -- se replica aca la misma condicion de sucursal
+        # que ese metodo usa, para no confundir "sin sucursal asignada" con
+        # "el reporte da 0 filas legitimamente" (ambos casos dan un queryset vacio).
+        if not self.user_helper.can_view_all_sucursales(request.user) and not self.user_helper.has_assigned_sucursal(request.user):
             self.message_user(request=request,  message=str('Asigne una sucursal al usuario'), level= messages.ERROR)
             base_qs = super().get_queryset(request).filter(sucursal = -1)
 

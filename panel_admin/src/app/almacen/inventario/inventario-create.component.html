@@ -51,8 +51,17 @@
                 </div>
               </div>
               <div class="mb-3">
-                <label>Nro. lote</label>
-                <input type="text" class="form-control" formControlName="nro_lote" />
+                <label>Nro. lote <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="nro_lote" maxlength="15" required />
+                @if (form.get('nro_lote')?.invalid && form.get('nro_lote')?.touched) {
+                  <small class="form-text text-danger">
+                    @if (form.get('nro_lote')?.errors?.['required']) {
+                      El número de lote es obligatorio
+                    } @else {
+                      Solo se permiten letras y números, máximo 15 caracteres
+                    }
+                  </small>
+                }
               </div>
               @if (errorMessage) {
                 <div class="alert alert-danger">{{ errorMessage }}</div>
