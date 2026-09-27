@@ -43,7 +43,7 @@ def _grant_almacen_write_permissions(user):
     for codename in (
         'add_window_film', 'change_window_film', 'delete_window_film',
         'add_window_film_reel', 'change_window_film_reel', 'delete_window_film_reel',
-        'change_inventario',
+        'add_inventario', 'change_inventario',
     ):
         helpers.grant_permission(user, 'product', codename)
 
@@ -441,6 +441,179 @@ class InventarioTest(TestCase):
         inv.refresh_from_db()
         self.assertNotEqual(inv.to_install, Decimal('25.00'))
 
+    def test_list_hides_inactive_by_default(self):
+        admin, token, _ = helpers.create_staff_user_with_token()
+        helpers.add_user_to_group(admin, 'admin')
+        active = helpers.create_inventario()
+        inactive = helpers.create_inventario(to_install=Decimal('0.00'))
+        inactive.is_active = False
+        inactive.save(update_fields=['is_active'])
+
+        response = self.client.get('/product/almacen/inventario', **_auth_headers(token))
+
+        ids = [row['id'] for row in response.json()]
+        self.assertIn(active.id, ids)
+        self.assertNotIn(inactive.id, ids)
+
+    def test_list_include_inactive_shows_them(self):
+        admin, token, _ = helpers.create_staff_user_with_token()
+        helpers.add_user_to_group(admin, 'admin')
+        inactive = helpers.create_inventario(to_install=Decimal('0.00'))
+        inactive.is_active = False
+        inactive.save(update_fields=['is_active'])
+
+        response = self.client.get('/product/almacen/inventario?include_inactive=true', **_auth_headers(token))
+
+        ids = [row['id'] for row in response.json()]
+        self.assertIn(inactive.id, ids)
+
+
+class InventarioCreateTest(TestCase):
+    def test_create_with_required_fields_applies_server_defaults(self):
+        admin, token, _ = helpers.create_staff_user_with_token()
+        helpers.grant_permission(admin, 'product', 'add_inventario')
+        sucursal = helpers.create_sucursal(admin)
+        reel = helpers.create_window_film_reel()
+
+        response = self.client.post(
+            '/product/almacen/inventario',
+            {
+                'sucursal': sucursal.id, 'bobina': reel.id, 'quantity': 3,
+                'to_install': '50.00', 'precio_compra_mtr_lineal': '80.00',
+                'precio_venta_mtr_lineal': '120.00',
+            },
+            content_type='application/json',
+            **_auth_headers(token),
+        )
+
+        self.assertEqual(response.status_code, 201, response.content)
+        created = inventario.objects.get(pk=response.json()['id'])
+        self.assertEqual(created.installed, Decimal('0.00'))
+        self.assertEqual(created.original_length, Decimal('50.00'))
+        self.assertIsNotNone(created.date)
+        self.assertTrue(created.is_active)
+
+    def test_create_missing_required_field_returns_400(self):
+        admin, token, _ = helpers.create_staff_user_with_token()
+        helpers.grant_permission(admin, 'product', 'add_inventario')
+        sucursal = helpers.create_sucursal(admin)
+
+        response = self.client.post(
+            '/product/almacen/inventario',
+            {'sucursal': sucursal.id, 'quantity': 1, 'to_install': '10.00'},
+            content_type='application/json',
+            **_auth_headers(token),
+        )
+
+        self.assertEqual(response.status_code, 400)
+        for field in ('bobina', 'precio_compra_mtr_lineal', 'precio_venta_mtr_lineal'):
+            self.assertIn(field, response.json())
+
+    def test_create_with_inactive_bobina_is_rejected(self):
+        admin, token, _ = helpers.create_staff_user_with_token()
+        helpers.grant_permission(admin, 'product', 'add_inventario')
+        sucursal = helpers.create_sucursal(admin)
+        reel = helpers.create_window_film_reel()
+        reel.is_active = False
+        reel.save(update_fields=['is_active'])
+
+        response = self.client.post(
+            '/product/almacen/inventario',
+            {
+                'sucursal': sucursal.id, 'bobina': reel.id, 'quantity': 1,
+                'to_install': '10.00', 'precio_compra_mtr_lineal': '80.00',
+                'precio_venta_mtr_lineal': '120.00',
+            },
+            content_type='application/json',
+            **_auth_headers(token),
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('bobina', response.json())
+
+    def test_create_without_permission_is_forbidden(self):
+        _, token, _ = helpers.create_staff_user_with_token()
+        sucursal = helpers.create_sucursal(helpers.create_user_with_token()[0])
+        reel = helpers.create_window_film_reel()
+
+        response = self.client.post(
+            '/product/almacen/inventario',
+            {
+                'sucursal': sucursal.id, 'bobina': reel.id, 'quantity': 1,
+                'to_install': '10.00', 'precio_compra_mtr_lineal': '80.00',
+                'precio_venta_mtr_lineal': '120.00',
+            },
+            content_type='application/json',
+            **_auth_headers(token),
+        )
+
+        self.assertEqual(response.status_code, 403)
+
+
+class InventarioToggleActiveTest(TestCase):
+    def test_delete_blocked_when_to_install_greater_than_zero(self):
+        admin, token, _ = helpers.create_staff_user_with_token()
+        helpers.grant_permission(admin, 'product', 'change_inventario')
+        inv = helpers.create_inventario(to_install=Decimal('10.00'))
+
+        response = self.client.patch(
+            f'/product/almacen/inventario/{inv.id}/toggle-active/',
+            {'is_active': False},
+            content_type='application/json',
+            **_auth_headers(token),
+        )
+
+        self.assertEqual(response.status_code, 400)
+        inv.refresh_from_db()
+        self.assertTrue(inv.is_active)
+
+    def test_delete_allowed_when_to_install_is_zero(self):
+        admin, token, _ = helpers.create_staff_user_with_token()
+        helpers.grant_permission(admin, 'product', 'change_inventario')
+        inv = helpers.create_inventario(to_install=Decimal('0.00'))
+
+        response = self.client.patch(
+            f'/product/almacen/inventario/{inv.id}/toggle-active/',
+            {'is_active': False},
+            content_type='application/json',
+            **_auth_headers(token),
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        inv.refresh_from_db()
+        self.assertFalse(inv.is_active)
+
+    def test_reactivate_has_no_to_install_restriction(self):
+        admin, token, _ = helpers.create_staff_user_with_token()
+        helpers.grant_permission(admin, 'product', 'change_inventario')
+        inv = helpers.create_inventario(to_install=Decimal('10.00'))
+        inv.is_active = False
+        inv.save(update_fields=['is_active'])
+
+        response = self.client.patch(
+            f'/product/almacen/inventario/{inv.id}/toggle-active/',
+            {'is_active': True},
+            content_type='application/json',
+            **_auth_headers(token),
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        inv.refresh_from_db()
+        self.assertTrue(inv.is_active)
+
+    def test_toggle_active_without_permission_is_forbidden(self):
+        _, token, _ = helpers.create_staff_user_with_token()
+        inv = helpers.create_inventario(to_install=Decimal('0.00'))
+
+        response = self.client.patch(
+            f'/product/almacen/inventario/{inv.id}/toggle-active/',
+            {'is_active': False},
+            content_type='application/json',
+            **_auth_headers(token),
+        )
+
+        self.assertEqual(response.status_code, 403)
+
 
 class AlmacenRolePermissionTest(TestCase):
     """El requerimiento exige que `almacen` solo pueda leer los 3 recursos,
@@ -488,6 +661,19 @@ class AlmacenRolePermissionTest(TestCase):
             f'/product/almacen/inventario/{inv.id}/', {'to_install': '99.00'},
             content_type='application/json', **_auth_headers(token),
         )
+        post_inventario = self.client.post(
+            '/product/almacen/inventario',
+            {
+                'sucursal': inv.sucursal_id, 'bobina': reel.id, 'quantity': 1,
+                'to_install': '10.00', 'precio_compra_mtr_lineal': '80.00',
+                'precio_venta_mtr_lineal': '120.00',
+            },
+            content_type='application/json', **_auth_headers(token),
+        )
+        toggle_inventario = self.client.patch(
+            f'/product/almacen/inventario/{inv.id}/toggle-active/', {'is_active': False},
+            content_type='application/json', **_auth_headers(token),
+        )
 
         self.assertEqual(post_lamina.status_code, 403)
         self.assertEqual(patch_lamina.status_code, 403)
@@ -495,6 +681,8 @@ class AlmacenRolePermissionTest(TestCase):
         self.assertEqual(post_bobina.status_code, 403)
         self.assertEqual(toggle_bobina.status_code, 403)
         self.assertEqual(manage_inventario.status_code, 403)
+        self.assertEqual(post_inventario.status_code, 403)
+        self.assertEqual(toggle_inventario.status_code, 403)
 
     def test_admin_role_has_full_access(self):
         admin_user, token, _ = helpers.create_staff_user_with_token()
@@ -503,6 +691,7 @@ class AlmacenRolePermissionTest(TestCase):
         lamina = helpers.create_window_film()
         reel = helpers.create_window_film_reel()
         inv = helpers.create_inventario()
+        empty_inv = helpers.create_inventario(to_install=Decimal('0.00'))
 
         post_lamina = self.client.post(
             '/product/almacen/laminas', {'name': 'Nueva', 'description': 'x'},
@@ -520,8 +709,26 @@ class AlmacenRolePermissionTest(TestCase):
             f'/product/almacen/inventario/{inv.id}/', {'to_install': '99.00'},
             content_type='application/json', **_auth_headers(token),
         )
+        # reel se desactivo arriba (toggle_bobina) -- usar una bobina activa
+        # distinta para no chocar con la restriccion de selector del serializer.
+        active_reel = helpers.create_window_film_reel()
+        post_inventario = self.client.post(
+            '/product/almacen/inventario',
+            {
+                'sucursal': inv.sucursal_id, 'bobina': active_reel.id, 'quantity': 1,
+                'to_install': '10.00', 'precio_compra_mtr_lineal': '80.00',
+                'precio_venta_mtr_lineal': '120.00',
+            },
+            content_type='application/json', **_auth_headers(token),
+        )
+        toggle_inventario = self.client.patch(
+            f'/product/almacen/inventario/{empty_inv.id}/toggle-active/', {'is_active': False},
+            content_type='application/json', **_auth_headers(token),
+        )
 
         self.assertEqual(post_lamina.status_code, 201, post_lamina.content)
         self.assertEqual(toggle_lamina.status_code, 200)
         self.assertEqual(toggle_bobina.status_code, 200)
         self.assertEqual(manage_inventario.status_code, 200, manage_inventario.content)
+        self.assertEqual(post_inventario.status_code, 201, post_inventario.content)
+        self.assertEqual(toggle_inventario.status_code, 200, toggle_inventario.content)

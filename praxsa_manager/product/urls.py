@@ -32,6 +32,7 @@ from .custom_views.vehicle_admin import (
 )
 from .custom_views.almacen_admin import (
     InventarioListView,
+    InventarioToggleActiveView,
     InventarioUpdateView,
     WindowFilmDetailView,
     WindowFilmListCreateView,
@@ -89,5 +90,6 @@ urlpatterns = [
     path('almacen/bobinas/<int:pk>/toggle-active/', WindowFilmReelToggleActiveView.as_view()),
     path('almacen/inventario', InventarioListView.as_view()),
     path('almacen/inventario/<int:pk>/', InventarioUpdateView.as_view()),
+    path('almacen/inventario/<int:pk>/toggle-active/', InventarioToggleActiveView.as_view()),
 ]
 urlpatterns = format_suffix_patterns(urlpatterns)

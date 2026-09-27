@@ -147,6 +147,7 @@ class inventario(models.Model):
     precio_compra_mtr_lineal = models.DecimalField( max_digits=10, decimal_places=2, default=0.0, verbose_name="Precio Compra Metro Lineal")
     precio_venta_mtr_lineal = models.DecimalField( max_digits=10, decimal_places=2, default=0.0, verbose_name="Precio Venta Metro Lineal")
     nro_lote = models.CharField(max_length=15,validators=[alphanumeric], null=True, verbose_name='Nro. Lote')
+    is_active = models.BooleanField(default=True, verbose_name="Activo")
     def __str__(self):
         return f'{self.sucursal.name}-{self.bobina.window_film.name}'
     
