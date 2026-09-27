@@ -1,9 +1,9 @@
 # REV-2026-09-27-modulo-almacen-02: El cambio de `get_inventario_queryset_by_role` (None → queryset vacío) silencia el mensaje "Asigne una sucursal al usuario" en dos admins de Django no contemplados en la investigación
 
-**Status:** Open
+**Status:** Resolved
 **Severity:** Medium
 **Category:** PLAN
-**Related plan:** docs/plans/PLAN-2026-09-26-modulo-almacen.md (v1, arquitectura sin cambios en v2)
+**Related plan:** docs/plans/PLAN-2026-09-26-modulo-almacen.md (v3)
 **Suggested owner:** delivery-plan
 
 ## Description
@@ -59,3 +59,7 @@ Ejecución directa (ver arriba): `qs.count() == 0`, sin excepción, pero la rama
 Dos caminos razonables, ninguno implementado en esta revisión:
 1. Actualizar `ReportStorageAdmin.get_queryset`/`ReportUtilidadAdmin.get_queryset` para chequear `not base_qs.exists()` (o simplemente quitar la rama muerta y aceptar que el reporte quede vacío sin mensaje, si el negocio decide que no vale la pena mantenerlo).
 2. Revertir el cambio de contrato de `get_inventario_queryset_by_role` y en su lugar envolver la lógica de "sin sucursal → queryset vacío" únicamente dentro de `InventarioListView` (la opción que el propio plan v1 ya había dejado como alternativa preferida si aparecían más consumidores).
+
+## Resolution (verificado en corrida 2, 2026-09-27)
+
+El usuario eligió explícitamente la opción 1 (mantener el contrato de `get_inventario_queryset_by_role`, actualizar los 2 admins). El plan v3 sugería literalmente `if not base_qs.exists():`, pero `delivery-engineer` detectó que esa condición es imprecisa — confunde "sin sucursal asignada" con "sucursal asignada pero reporte legítimamente vacío" (mostraría el mensaje de error a un admin cuya sucursal simplemente no tiene inventario) — y en su lugar implementó `User_Helper.has_assigned_sucursal`, que replica exactamente la condición de sucursal que ya usa `get_inventario_queryset_by_role`. Verificado de forma independiente (no solo leyendo el test): ejecutando `ReportStorageAdmin.get_queryset()` con un usuario sin sucursal, el mensaje "Asigne una sucursal al usuario" aparece; con un usuario que sí tiene sucursal asignada pero cuyo inventario está vacío, el queryset es vacío y el mensaje **no** aparece — confirma que el fix es más preciso que la sugerencia literal del plan, sin introducir el falso positivo que esa sugerencia hubiera causado. Los 3 tests nuevos (`AdminReportsSinSucursalMessageTest`) pasan.

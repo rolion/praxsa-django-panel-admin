@@ -1,9 +1,9 @@
 # REV-2026-09-27-modulo-almacen-01: `InventarioCreateSerializer` pierde los validadores del modelo en `nro_lote` y `numero_referencia`, causa un `500` no controlado
 
-**Status:** Open
+**Status:** Resolved
 **Severity:** High
 **Category:** IMPLEMENTATION
-**Related plan:** docs/plans/PLAN-2026-09-26-modulo-almacen.md (v2)
+**Related plan:** docs/plans/PLAN-2026-09-26-modulo-almacen.md (v3)
 **Suggested owner:** delivery-engineer
 
 ## Description
@@ -65,3 +65,7 @@ print('errors:', s.errors)          # -> {'nro_lote': ['Solo se permiten letras 
 ```
 
 Ningún test de `tests/test_almacen_module.py::InventarioCreateTest` ejercita `nro_lote` con un valor inválido o largo — por eso la suite completa (189/189) pasa sin detectar esto.
+
+## Resolution (verificado en corrida 2, 2026-09-27)
+
+`InventarioCreateSerializer.nro_lote` recupera `max_length=15`/`validators=[alphanumeric]` (y pasa a obligatorio, corrección de regla de negocio pedida por el usuario); `numero_referencia` recupera `validators=[MaxValueValidator(9999999999)]`. Verificado de forma independiente ejecutando el serializer directamente (no solo leyendo el diff ni los tests): un `nro_lote` de 50 caracteres, uno con guion, uno vacío, y un `numero_referencia` de 11 dígitos ahora devuelven `is_valid() == False` con el error correspondiente — ninguno llega a `.save()`, por lo que el `500` no controlado ya no es alcanzable. Los 4 tests nuevos (`test_create_with_invalid_nro_lote_format_returns_400`, `test_create_with_nro_lote_too_long_returns_400_not_500`, `test_create_with_numero_referencia_too_large_returns_400`, y el ajuste de `test_create_missing_required_field_returns_400`) pasan.

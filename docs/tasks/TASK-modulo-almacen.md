@@ -1,6 +1,6 @@
 # TASK-modulo-almacen: Módulo Almacén (Láminas, Bobinas, Inventario) en `panel_admin/`
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** `claude/modulo-almacen-0ca2eb`
@@ -22,6 +22,7 @@
 | 2026-09-27 | PLANNING (sin cambio de etapa) | Corrección de ADR a partir de feedback directo del usuario sobre REV-2026-09-27-modulo-almacen-01: `nro_lote` es obligatorio en la creación de Inventario (el panel anterior ya lo exigía en la práctica, pese a que el modelo lo declara `null=True`), y el frontend debe replicar las reglas de validación que el modelo ya define en el backend (no solo `Validators.required`) — principio general, no solo para `nro_lote`. `numero_referencia` sigue opcional (confirmado por el usuario), pero recupera su `MaxValueValidator` perdido | delivery-architect (conversacional) |
 | 2026-09-27 | PLANNING → ENGINEERING | Plan versionado a v3 (pasos 35-43): corrige `InventarioCreateSerializer` (`nro_lote` obligatorio con `validators=[alphanumeric]`/`max_length=15`, `numero_referencia` recupera `MaxValueValidator`), y actualiza `ReportStorageAdmin`/`ReportUtilidadAdmin` (`if base_qs is None` → `if not base_qs.exists()`) — resolución de REV-02 elegida explícitamente por el usuario. Mismo PR #49, sin cambios de rama | delivery-plan |
 | 2026-09-27 | ENGINEERING → REVIEW | Pasos 35-43 del plan v3 implementados sin desvíos de alcance (con una corrección: se implementó `User_Helper.has_assigned_sucursal` en vez del `if not base_qs.exists()` literal del plan para REV-02, ver nota en Implementación). Backend: 195/195 tests. Frontend: `ng build`/`ng lint` limpios, 98/113 tests (mismas 15 fallas preexistentes, 0 nuevas). Verificación manual end-to-end confirmó los 3 casos de REV-01 (bloqueo de formato/longitud en el formulario, `400` no `500` en el backend) y el mensaje de "Asigne una sucursal" restaurado en ambos admins de reportes. Commit `e7c156d`, pushed | delivery-engineer |
+| 2026-09-27 | REVIEW → PUBLISH | Quality Gate corrida 2, independiente (backend 195/195, `makemigrations --check` limpio, frontend `ng build`/`ng lint` limpios, 98/113 tests con las mismas 15 fallas preexistentes, `npm audit` sin cambios). REV-01 y REV-02 verificados **Resolved** ejecutando código real (no solo tests): `InventarioCreateSerializer` rechaza los 4 valores inválidos que antes rompían; `ReportStorageAdmin.get_queryset()` muestra el mensaje sin sucursal y confirmadamente NO lo muestra con sucursal+reporte vacío (descarta el falso positivo que el `base_qs.exists()` literal del plan hubiera introducido). Sin issues nuevos. **PASS** | delivery-review |
 
 ## Investigación
 
@@ -170,6 +171,20 @@ Verificación adicional ejecutando código real (no solo lectura) encontró 2 is
 - [REV-2026-09-27-modulo-almacen-02](../reviews/REV-2026-09-27-modulo-almacen-02.md) — Medium, PLAN. La investigación declaró "sin otros consumidores, verificado con Grep" para `get_inventario_queryset_by_role`, pero existen 2 consumidores reales no detectados (`ReportStorageAdmin`, `ReportUtilidadAdmin`) cuyo mensaje "Asigne una sucursal al usuario" queda silenciado tras el cambio de contrato (`None` → `qs.none()`), sin ningún test que lo cubra.
 
 **FAIL** — 1 issue High + 1 issue Medium abiertos. Por tener issues de categoría PLAN e IMPLEMENTATION, la etapa vuelve a la más temprana (PLANNING).
+
+### Corrida 2 (2026-09-27) — PASS
+
+Verificación independiente ejecutada de nuevo sobre `origin/master...HEAD` (57 archivos, 4467 inserciones — PR completo): `python manage.py test` 195/195; `makemigrations --check --dry-run` sin cambios pendientes; `ng build` sin errores; `ng lint` "All files pass linting."; `ng test --code-coverage` 98/113 (mismas 15 fallas preexistentes de la plantilla, confirmadas nombre por nombre, ninguna de Almacén); `npm audit` 79 vulnerabilidades, sin cambios en `package.json`/`package-lock.json`. `bandit`/`safety`/`flake8` no instalados, no ejecutados (declarado).
+
+**Verificación de REV-01 y REV-02 ejecutando código real** (no solo releyendo el diff ni confiando en los tests nuevos):
+- `InventarioCreateSerializer` ejecutado directamente en shell con `nro_lote` de 50 caracteres, con guion, vacío, y `numero_referencia` de 11 dígitos → los 4 casos devuelven `is_valid() == False` con el error esperado, ninguno llega a `.save()`. **REV-01 Resolved.**
+- `ReportStorageAdmin.get_queryset()` ejecutado directamente con `RequestFactory`+`FallbackStorage`: usuario sin sucursal → mensaje "Asigne una sucursal al usuario" presente; usuario **con** sucursal asignada pero inventario vacío → queryset vacío y mensaje **ausente** (confirma que `User_Helper.has_assigned_sucursal`, la implementación real, evita el falso positivo que el `base_qs.exists()` sugerido literalmente por el plan v3 hubiera causado). **REV-02 Resolved.**
+
+**Plan compliance**: el diff de v3 (12 archivos) coincide exactamente con los archivos declarados en los pasos 35-43 del plan — sin scope creep. Único desvío: la implementación de REV-02 usa `has_assigned_sucursal` en vez del `base_qs.exists()` literal del plan — desvío documentado en `## Implementación` con su justificación (evita un falso positivo real) y cubierto por un test dedicado; se considera una mejora sobre el plan, no un defecto.
+
+Sin issues nuevos encontrados en esta corrida.
+
+**PASS** — 0 issues abiertos. Los 2 issues de la corrida 1 (REV-01, REV-02) quedan **Resolved**. Etapa avanza a PUBLISH.
 
 ## Publicación
 _Pendiente_
