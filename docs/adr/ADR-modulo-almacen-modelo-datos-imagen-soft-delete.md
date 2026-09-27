@@ -1,6 +1,6 @@
 # ADR-modulo-almacen-modelo-datos-imagen-soft-delete: Campos nuevos en `Window_Film`/`Window_Film_Reel`, imagen vía `MEDIA_ROOT` existente, contrato API bajo `almacen/`
 
-**Estado:** Propuesto (ver "Actualización" — CRUD completo de Inventario)
+**Estado:** Propuesto (ver "Actualización" — CRUD completo de Inventario; ver también corrección de `nro_lote` más abajo)
 **Task relacionado:** TASK-modulo-almacen
 **Fecha:** 2026-09-26
 
@@ -30,7 +30,16 @@ La verificación manual del task (usuario real, grupos `admin`+`almacen`) confir
 | `original_length` | Opcional, default `= to_install` (servidor) | Semántica del campo es "longitud inicial antes de instalar nada" — si `installed` arranca en 0, es razonablemente igual a `to_install` al momento de la alta. Si el admin conoce un valor distinto (p. ej. ya se instaló algo de este lote antes de registrarlo en el panel), puede pisarlo. |
 | `date` | Opcional, default `timezone.now()` (servidor) | Mismo criterio que otros modelos del proyecto con `auto_now_add`-like semantics; el admin puede indicar una fecha distinta si el lote corresponde a un ingreso pasado. |
 | `numero_referencia` | Opcional, default `0` (modelo) | Ya tiene default en el modelo; no hay evidencia de que sea un dato crítico para la alta manual. |
-| `nro_lote` | Opcional | Ya es `null=True` en el modelo. |
+| `nro_lote` | ~~Opcional~~ **Obligatorio** (ver corrección abajo) | El panel anterior ya lo trataba como obligatorio en la práctica de negocio, pese a que el modelo lo declara `null=True` — corregido tras feedback directo del usuario durante la revisión del PR (`REV-2026-09-27-modulo-almacen-01`). |
+
+## Corrección (2026-09-27, tras REV-2026-09-27-modulo-almacen-01): `nro_lote` es obligatorio, y el frontend debe replicar las reglas del modelo
+
+`REV-2026-09-27-modulo-almacen-01` encontró que `InventarioCreateSerializer` redeclaraba `nro_lote`/`numero_referencia` sin los `validators`/`max_length` del modelo, permitiendo que un valor inválido pasara la validación del serializer y recién fallara al guardar con una excepción de base de datos no controlada. Al reportar ese hallazgo, el usuario aportó dos correcciones de negocio que no estaban en la decisión original de este ADR:
+
+1. **`nro_lote` es obligatorio, no opcional** — el panel de administración anterior ("panel viejo") ya lo exigía en la práctica, aunque el modelo Django lo declare `null=True` (ese `null=True` histórico no refleja la regla de negocio real). Se corrige la tabla de "Decisión 2" arriba: `nro_lote` pasa a la lista de campos obligatorios del formulario de creación, con el mismo criterio que `sucursal`/`bobina`/`quantity`/`to_install`/precios.
+2. **El frontend debe replicar las reglas de validación que el modelo ya define en el backend** — no solo confiar en que el backend rechace un valor inválido después de que el usuario ya llenó el formulario. Esto aplica en particular a `nro_lote` (alfanumérico, `RegexValidator(r'^[0-9a-zA-Z]*$')`, `max_length=15`) pero es un principio general para cualquier campo del formulario de creación/edición de Inventario que tenga una regla de negocio ya codificada en `models.py` — el frontend no debe limitarse a `Validators.required`, debe espejar el patrón/longitud/rango que el modelo exige, para que el usuario vea el error antes de enviar el formulario, no después de un rechazo del servidor (y, en el caso de `numero_referencia`, no depender únicamente de la validación del backend para el límite de `MaxValueValidator(9999999999)`).
+
+**Decisión**: `nro_lote` pasa a obligatorio en `InventarioCreateSerializer` (con los mismos `validators`/`max_length` que el modelo, no una redeclaración plana) y en el formulario de Angular (`Validators.required` + `Validators.pattern(/^[0-9a-zA-Z]*$/)` + `Validators.maxLength(15)`, con el atributo `maxlength="15"` en el `<input>`). `numero_referencia` no cambia su obligatoriedad (sigue opcional, con default `0` del modelo, tal como confirmó el usuario — "ese es valor por defecto"), pero su serializer debe recuperar el `MaxValueValidator(9999999999)` que también se había perdido, y el detalle de implementación (`delivery-plan`/`delivery-engineer`) debe decidir si también espeja ese límite en el frontend (dado que ya no es obligatorio, el riesgo de UX es menor, pero la regla de negocio sigue existiendo).
 
 **Contrato API actualizado**:
 - `POST almacen/inventario` (nuevo) — mismo `_STANDARD_PERMISSIONS` (`IsStaffUser` + `DjangoModelPermissions`, exige `add_inventario`) que el resto del módulo. `InventarioListView` pasa de `ListAPIView` a `ListCreateAPIView`, con `InventarioCreateSerializer` nuevo (los campos de la tabla de arriba) para `POST` e `InventarioSerializer` (ya existente) para `GET` — mismo patrón que `UserListCreateView`/`WindowFilmListCreateView` (serializer distinto según el método).
