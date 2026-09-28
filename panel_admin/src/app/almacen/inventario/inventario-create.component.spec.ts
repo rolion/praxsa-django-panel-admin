@@ -62,10 +62,33 @@ describe('InventarioCreateComponent', () => {
     expect(req.request.body.sucursal).toBe(1);
     expect(req.request.body.bobina).toBe(1);
     expect(req.request.body.nro_lote).toBe('L001');
+    expect(req.request.body.date).toBeUndefined();
     req.flush({
       id: 5, sucursal: 1, sucursal_name: 'Central', bobina: 1, window_film_name: 'Carbon 20%',
       bobina_width: '1.50', quantity: 3, to_install: '50.00', installed: '0.00',
       original_length: '50.00', date: '2026-09-27T00:00:00Z', numero_referencia: 0,
+      precio_compra_mtr_lineal: '80.00', precio_venta_mtr_lineal: '120.00', nro_lote: 'L001',
+      is_active: true,
+    });
+  });
+
+  it('envia la fecha cuando se completa el campo', () => {
+    const fixture = createAndLoad();
+    const component = fixture.componentInstance;
+    component.form.patchValue({
+      sucursal: 1, bobina: 1, quantity: 3, to_install: '50.00',
+      precio_compra_mtr_lineal: '80.00', precio_venta_mtr_lineal: '120.00', nro_lote: 'L001',
+      date: '2026-09-20',
+    });
+
+    component.save();
+
+    const req = httpMock.expectOne(`${base}/inventario`);
+    expect(req.request.body.date).toBe('2026-09-20');
+    req.flush({
+      id: 6, sucursal: 1, sucursal_name: 'Central', bobina: 1, window_film_name: 'Carbon 20%',
+      bobina_width: '1.50', quantity: 3, to_install: '50.00', installed: '0.00',
+      original_length: '50.00', date: '2026-09-20T00:00:00Z', numero_referencia: 0,
       precio_compra_mtr_lineal: '80.00', precio_venta_mtr_lineal: '120.00', nro_lote: 'L001',
       is_active: true,
     });

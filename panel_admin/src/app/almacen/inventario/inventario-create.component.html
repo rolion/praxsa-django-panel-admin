@@ -63,6 +63,11 @@
                   </small>
                 }
               </div>
+              <div class="mb-3">
+                <label>Fecha</label>
+                <input type="date" class="form-control" formControlName="date" />
+                <small class="form-text text-muted">Si se deja vacío, se usa la fecha actual.</small>
+              </div>
               @if (errorMessage) {
                 <div class="alert alert-danger">{{ errorMessage }}</div>
               }

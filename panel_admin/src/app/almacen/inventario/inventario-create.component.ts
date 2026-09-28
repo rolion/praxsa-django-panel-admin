@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { AppSucursal, AppWindowFilmReel } from '../almacen.model';
+import { AppSucursal, AppWindowFilmReel, InventarioCreatePayload } from '../almacen.model';
 import { AlmacenService } from '../almacen.service';
 
 @Component({
@@ -35,6 +35,7 @@ export class InventarioCreateComponent implements OnInit {
       // maximo 15 caracteres (ver ADR-modulo-almacen-modelo-datos-imagen-
       // soft-delete, "Correccion (2026-09-27)").
       nro_lote: ['', [Validators.required, Validators.pattern(/^[0-9a-zA-Z]*$/), Validators.maxLength(15)]],
+      date: [''],
     });
     this.almacenService.listSucursales().subscribe((sucursales) => (this.sucursales = sucursales));
     this.almacenService.listBobinas().subscribe((bobinas) => (this.bobinas = bobinas));
@@ -46,7 +47,11 @@ export class InventarioCreateComponent implements OnInit {
     }
     this.saving = true;
     this.errorMessage = '';
-    this.almacenService.createInventario(this.form.value).subscribe({
+    const payload: InventarioCreatePayload = { ...this.form.value };
+    if (!payload.date) {
+      delete payload.date;
+    }
+    this.almacenService.createInventario(payload).subscribe({
       next: (inv) => this.router.navigate(['/almacen/inventario/view', inv.id]),
       error: (err) => {
         this.saving = false;
@@ -54,7 +59,7 @@ export class InventarioCreateComponent implements OnInit {
           err?.error?.sucursal?.[0] || err?.error?.bobina?.[0] || err?.error?.quantity?.[0] ||
           err?.error?.to_install?.[0] || err?.error?.precio_compra_mtr_lineal?.[0] ||
           err?.error?.precio_venta_mtr_lineal?.[0] || err?.error?.nro_lote?.[0] ||
-          err?.error?.numero_referencia?.[0] || 'No se pudo crear el inventario.';
+          err?.error?.numero_referencia?.[0] || err?.error?.date?.[0] || 'No se pudo crear el inventario.';
       },
     });
   }
