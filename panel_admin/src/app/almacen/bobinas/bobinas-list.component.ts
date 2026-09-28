@@ -34,6 +34,7 @@ export class BobinasListComponent implements OnInit {
   form!: FormGroup;
   formError = '';
   saving = false;
+  submitted = false;
   editingId: number | null = null;
   viewMode = false;
 
@@ -79,6 +80,7 @@ export class BobinasListComponent implements OnInit {
   openCreate(content: TemplateRef<unknown>): void {
     this.editingId = null;
     this.viewMode = false;
+    this.submitted = false;
     this.formError = '';
     this.form.reset();
     this.almacenService.listLaminas().subscribe((laminas) => (this.laminas = laminas));
@@ -88,6 +90,7 @@ export class BobinasListComponent implements OnInit {
   openEdit(row: AppWindowFilmReel, content: TemplateRef<unknown>): void {
     this.editingId = row.id;
     this.viewMode = false;
+    this.submitted = false;
     this.formError = '';
     this.almacenService.listLaminas().subscribe((laminas) => (this.laminas = laminas));
     this.form.setValue({
@@ -102,6 +105,7 @@ export class BobinasListComponent implements OnInit {
   openView(row: AppWindowFilmReel, content: TemplateRef<unknown>): void {
     this.editingId = row.id;
     this.viewMode = true;
+    this.submitted = false;
     this.formError = '';
     this.almacenService.listLaminas().subscribe((laminas) => (this.laminas = laminas));
     this.form.setValue({
@@ -114,7 +118,9 @@ export class BobinasListComponent implements OnInit {
   }
 
   save(): void {
+    this.submitted = true;
     if (this.form.invalid) {
+      this.form.markAllAsTouched();
       return;
     }
     this.saving = true;

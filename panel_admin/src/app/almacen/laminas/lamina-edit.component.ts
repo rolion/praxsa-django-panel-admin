@@ -21,6 +21,7 @@ export class LaminaEditComponent implements OnInit {
   currentImageUrl: string | null = null;
   loading = true;
   saving = false;
+  submitted = false;
   errorMessage = '';
 
   ngOnInit(): void {
@@ -45,7 +46,9 @@ export class LaminaEditComponent implements OnInit {
   }
 
   save(): void {
+    this.submitted = true;
     if (this.form.invalid) {
+      this.form.markAllAsTouched();
       return;
     }
     this.saving = true;

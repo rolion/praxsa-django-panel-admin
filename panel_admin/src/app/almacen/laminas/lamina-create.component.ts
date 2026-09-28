@@ -17,6 +17,7 @@ export class LaminaCreateComponent implements OnInit {
 
   form!: FormGroup;
   saving = false;
+  submitted = false;
   errorMessage = '';
 
   ngOnInit(): void {
@@ -28,7 +29,9 @@ export class LaminaCreateComponent implements OnInit {
   }
 
   save(): void {
+    this.submitted = true;
     if (this.form.invalid) {
+      this.form.markAllAsTouched();
       return;
     }
     this.saving = true;

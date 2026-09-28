@@ -16,27 +16,27 @@
             } @else {
               <form [formGroup]="form" (ngSubmit)="save()">
                 <div class="mb-3">
-                  <label>Nombre <span class="text-danger">*</span></label>
-                  <input type="text" class="form-control" formControlName="name" required />
-                  @if (form.get('name')?.invalid && form.get('name')?.touched) {
+                  <label class="fw-bold">Nombre</label>
+                  <input type="text" class="form-control" formControlName="name" />
+                  @if (form.get('name')?.invalid && submitted) {
                     <small class="form-text text-danger">El nombre es obligatorio</small>
                   }
                 </div>
                 <div class="mb-3">
-                  <label>Descripción <span class="text-danger">*</span></label>
-                  <textarea class="form-control" formControlName="description" required rows="3"></textarea>
-                  @if (form.get('description')?.invalid && form.get('description')?.touched) {
+                  <label class="fw-bold">Descripción</label>
+                  <textarea class="form-control" formControlName="description" rows="3"></textarea>
+                  @if (form.get('description')?.invalid && submitted) {
                     <small class="form-text text-danger">La descripción es obligatoria</small>
                   }
                 </div>
                 <div class="mb-3">
-                  <label>Imagen de la lámina</label>
+                  <label class="fw-bold">Imagen de la lámina</label>
                   <app-image-upload formControlName="image" [currentImageUrl]="currentImageUrl"></app-image-upload>
                 </div>
                 @if (errorMessage) {
                   <div class="alert alert-danger">{{ errorMessage }}</div>
                 }
-                <button type="submit" class="btn btn-primary" [disabled]="form.invalid || saving">Guardar</button>
+                <button type="submit" class="btn btn-primary" [disabled]="saving">Guardar</button>
                 <a routerLink="/almacen/laminas" class="btn btn-light">Cancelar</a>
               </form>
             }
