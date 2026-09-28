@@ -1,10 +1,7 @@
-from PIL import Image, UnidentifiedImageError
 from rest_framework import serializers
 
 from ..models import Car_Brand, Car_Model, Car_Model_Part, Car_Part
-
-MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024
-ALLOWED_IMAGE_FORMATS = {'JPEG', 'PNG', 'WEBP'}
+from .image_validation import validate_uploaded_image
 
 
 class CarBrandSerializer(serializers.ModelSerializer):
@@ -51,23 +48,6 @@ class CarPartSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'is_active']
 
 
-def validate_car_model_image(image):
-    """Valida tipo (jpg/png/webp, verificado con Pillow, no por extension) y
-    tamaño (<= 5 MB). Ver ADR-modulo-vehiculos-almacenamiento-imagenes."""
-    if image.size > MAX_IMAGE_SIZE_BYTES:
-        raise serializers.ValidationError('La imagen no puede superar los 5 MB.')
-    try:
-        with Image.open(image) as img:
-            img.verify()
-            image_format = img.format
-    except (UnidentifiedImageError, OSError):
-        raise serializers.ValidationError('El archivo no es una imagen valida.')
-    if image_format not in ALLOWED_IMAGE_FORMATS:
-        raise serializers.ValidationError('Formato de imagen no permitido. Use JPG, PNG o WEBP.')
-    image.seek(0)
-    return image
-
-
 class CarModelSerializer(serializers.ModelSerializer):
     """CRUD de Modelo (Car_Model). `car_brand_id` solo acepta marcas activas.
     `items_count` viene de una anotacion Count('car_model_part') en el
@@ -99,7 +79,7 @@ class CarModelSerializer(serializers.ModelSerializer):
     def validate_image(self, value):
         if value is None:
             return value
-        return validate_car_model_image(value)
+        return validate_uploaded_image(value)
 
     def update(self, instance, validated_data):
         removing_image = 'image' in validated_data and validated_data['image'] is None

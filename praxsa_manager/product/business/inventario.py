@@ -20,11 +20,11 @@ class Inventario_Business:
             if len(sucursales) > 0:
                 qs_result = qs.filter(sucursal__id = sucursales[0].id)
             else:
-                qs_result = None
+                qs_result = qs.none()
             return qs_result
         except Exception as e:
             self.log_errors.error(f'algo salio mal, Inventario_Business - get_inventario_queryset_by_role {e}')
-            return None
+            return qs.none()
 
     def get_inventory_by_sucursal(self, sucursal):
         q = inventario.objects.select_related("bobina","bobina__window_film", "sucursal")

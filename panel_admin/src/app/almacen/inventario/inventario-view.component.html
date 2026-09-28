@@ -1,0 +1,56 @@
+<section class="main-content">
+  <ul class="breadcrumb breadcrumb-style">
+    <li class="breadcrumb-item">
+      <h5 class="page-title m-b-0">Ver inventario</h5>
+    </li>
+    <li class="breadcrumb-item bcrumb-1"><a routerLink="/almacen/inventario"><i class="fas fa-boxes font-17"></i></a></li>
+    <li class="breadcrumb-item">Inventario</li>
+  </ul>
+  <div class="section-body">
+    <div class="row clearfix">
+      <div class="col-lg-8 col-md-12">
+        <div class="card">
+          <div class="card-body">
+            @if (loading) {
+              <p>Cargando...</p>
+            } @else if (errorMessage) {
+              <div class="alert alert-danger">{{ errorMessage }}</div>
+            } @else if (inventario) {
+              <dl class="row mb-0">
+                <dt class="col-sm-3">Sucursal</dt>
+                <dd class="col-sm-9">{{ inventario.sucursal_name }}</dd>
+                <dt class="col-sm-3">Lámina</dt>
+                <dd class="col-sm-9">{{ inventario.window_film_name }}</dd>
+                <dt class="col-sm-3">Ancho</dt>
+                <dd class="col-sm-9">{{ inventario.bobina_width }}</dd>
+                <dt class="col-sm-3">Cantidad</dt>
+                <dd class="col-sm-9">{{ inventario.quantity }}</dd>
+                <dt class="col-sm-3">Disponible</dt>
+                <dd class="col-sm-9">{{ inventario.to_install }}</dd>
+                <dt class="col-sm-3">Instalado</dt>
+                <dd class="col-sm-9">{{ inventario.installed }}</dd>
+                <dt class="col-sm-3">Longitud inicial</dt>
+                <dd class="col-sm-9">{{ inventario.original_length }}</dd>
+                <dt class="col-sm-3">Fecha</dt>
+                <dd class="col-sm-9">{{ inventario.date }}</dd>
+                <dt class="col-sm-3">Nro. referencia</dt>
+                <dd class="col-sm-9">{{ inventario.numero_referencia }}</dd>
+                <dt class="col-sm-3">Precio compra</dt>
+                <dd class="col-sm-9">{{ inventario.precio_compra_mtr_lineal }}</dd>
+                <dt class="col-sm-3">Precio venta</dt>
+                <dd class="col-sm-9">{{ inventario.precio_venta_mtr_lineal }}</dd>
+                <dt class="col-sm-3">Nro. lote</dt>
+                <dd class="col-sm-9">{{ inventario.nro_lote || '—' }}</dd>
+                <dt class="col-sm-3">Estado</dt>
+                <dd class="col-sm-9">{{ inventario.is_active ? 'Activo' : 'Inactivo' }}</dd>
+              </dl>
+              @if (canManage) {
+                <a [routerLink]="['/almacen/inventario/edit', inventario.id]" class="btn btn-primary">Gestionar</a>
+              }
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

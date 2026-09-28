@@ -62,23 +62,26 @@ class Window_Film(models.Model):
     name = models.CharField(max_length=200, verbose_name="Nombre")
     description= models.TextField()
     content = HTMLField(null=True)
+    image = models.ImageField(upload_to='window_films/', null=True, blank=True, verbose_name="Imagen")
+    is_active = models.BooleanField(default=True, verbose_name="Activo")
     class Meta:
         ordering = ['name']
         verbose_name = 'Lamina'
     def __str__(self):
         return self.name
-    
+
 class Window_Film_Reel(models.Model):
     window_film = models.ForeignKey(Window_Film,
                                        related_name="bobina_lamina",
-                                       on_delete=models.DO_NOTHING, 
+                                       on_delete=models.DO_NOTHING,
                                        verbose_name="Lamina")
     width = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Ancho")
     length = models.DecimalField(max_digits=10, decimal_places=2,  verbose_name="Largo")
     price = models.DecimalField(max_digits=10, decimal_places=2,  verbose_name="Precio")
+    is_active = models.BooleanField(default=True, verbose_name="Activo")
     class Meta:
         ordering = ['window_film']
-        verbose_name = 'Bobina'  
+        verbose_name = 'Bobina'
     
     def __str__(self):
         return f'{self.window_film.name} - {self.width}'
@@ -144,6 +147,7 @@ class inventario(models.Model):
     precio_compra_mtr_lineal = models.DecimalField( max_digits=10, decimal_places=2, default=0.0, verbose_name="Precio Compra Metro Lineal")
     precio_venta_mtr_lineal = models.DecimalField( max_digits=10, decimal_places=2, default=0.0, verbose_name="Precio Venta Metro Lineal")
     nro_lote = models.CharField(max_length=15,validators=[alphanumeric], null=True, verbose_name='Nro. Lote')
+    is_active = models.BooleanField(default=True, verbose_name="Activo")
     def __str__(self):
         return f'{self.sucursal.name}-{self.bobina.window_film.name}'
     

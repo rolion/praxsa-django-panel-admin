@@ -36,7 +36,10 @@ describe('AuthService', () => {
     const req = httpMock.expectOne(loginUrl);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({ username: 'admin', password: 'secret123' });
-    req.flush({ token: 'abc123', user_id: 1, username: 'admin', name: 'Ana', lastname: 'Gomez' });
+    req.flush({
+      token: 'abc123', user_id: 1, username: 'admin', name: 'Ana', lastname: 'Gomez',
+      is_staff: true, groups: ['admin'],
+    });
   });
 
   it('maps the response to a User and persists/emits it on success', () => {
@@ -45,7 +48,10 @@ describe('AuthService', () => {
 
     httpMock
       .expectOne(loginUrl)
-      .flush({ token: 'abc123', user_id: 1, username: 'admin', name: 'Ana', lastname: 'Gomez' });
+      .flush({
+        token: 'abc123', user_id: 1, username: 'admin', name: 'Ana', lastname: 'Gomez',
+        is_staff: true, groups: ['admin'],
+      });
 
     expect(emitted).toEqual({
       id: 1,
@@ -53,6 +59,8 @@ describe('AuthService', () => {
       firstName: 'Ana',
       lastName: 'Gomez',
       token: 'abc123',
+      isStaff: true,
+      groups: ['admin'],
     });
     expect(service.currentUserValue.token).toBe('abc123');
   });
@@ -63,9 +71,29 @@ describe('AuthService', () => {
 
     httpMock
       .expectOne(loginUrl)
-      .flush({ token: 'abc123', user_id: 1, username: 'admin', name: '', lastname: '' });
+      .flush({
+        token: 'abc123', user_id: 1, username: 'admin', name: '', lastname: '',
+        is_staff: true, groups: [],
+      });
 
     expect(emitted?.firstName).toBe('admin');
+  });
+
+  it('hasGroup matches case-insensitively against the logged-in user groups', () => {
+    service.login('almacen', 'secret123').subscribe();
+    httpMock
+      .expectOne(loginUrl)
+      .flush({
+        token: 'abc123', user_id: 2, username: 'almacen', name: 'Al', lastname: 'Macen',
+        is_staff: true, groups: ['Almacen'],
+      });
+
+    expect(service.hasGroup('almacen')).toBe(true);
+    expect(service.hasGroup('admin')).toBe(false);
+  });
+
+  it('hasGroup is false when there is no logged-in user', () => {
+    expect(service.hasGroup('admin')).toBe(false);
   });
 
   it('propagates the error without persisting a user on invalid credentials', () => {

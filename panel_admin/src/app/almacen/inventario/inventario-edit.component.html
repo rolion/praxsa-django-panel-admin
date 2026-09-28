@@ -1,0 +1,62 @@
+<section class="main-content">
+  <ul class="breadcrumb breadcrumb-style">
+    <li class="breadcrumb-item">
+      <h5 class="page-title m-b-0">Gestionar inventario</h5>
+    </li>
+    <li class="breadcrumb-item bcrumb-1"><a routerLink="/almacen/inventario"><i class="fas fa-boxes font-17"></i></a></li>
+    <li class="breadcrumb-item">Inventario</li>
+  </ul>
+  <div class="section-body">
+    <div class="row clearfix">
+      <div class="col-lg-8 col-md-12">
+        <div class="card">
+          <div class="card-body">
+            @if (loading) {
+              <p>Cargando...</p>
+            } @else {
+              <form [formGroup]="form" (ngSubmit)="save()">
+                <div class="mb-3">
+                  <label class="fw-bold">Metros disponibles para instalar</label>
+                  <input type="number" step="0.01" class="form-control" formControlName="to_install" />
+                  @if (form.get('to_install')?.invalid && submitted) {
+                    <small class="form-text text-danger">Los metros disponibles son obligatorios</small>
+                  }
+                </div>
+                <div class="mb-3">
+                  <label class="fw-bold">Metros instalados</label>
+                  <input type="number" step="0.01" class="form-control" formControlName="installed" />
+                  @if (form.get('installed')?.invalid && submitted) {
+                    <small class="form-text text-danger">Los metros instalados son obligatorios</small>
+                  }
+                </div>
+                <div class="mb-3">
+                  <label class="fw-bold">Precio compra metro lineal</label>
+                  <input type="number" step="0.01" class="form-control" formControlName="precio_compra_mtr_lineal" />
+                  @if (form.get('precio_compra_mtr_lineal')?.invalid && submitted) {
+                    <small class="form-text text-danger">El precio de compra es obligatorio</small>
+                  }
+                </div>
+                <div class="mb-3">
+                  <label class="fw-bold">Precio venta metro lineal</label>
+                  <input type="number" step="0.01" class="form-control" formControlName="precio_venta_mtr_lineal" />
+                  @if (form.get('precio_venta_mtr_lineal')?.invalid && submitted) {
+                    <small class="form-text text-danger">El precio de venta es obligatorio</small>
+                  }
+                </div>
+                <div class="mb-3">
+                  <label class="fw-bold">Nro. lote</label>
+                  <input type="text" class="form-control" formControlName="nro_lote" />
+                </div>
+                @if (errorMessage) {
+                  <div class="alert alert-danger">{{ errorMessage }}</div>
+                }
+                <button type="submit" class="btn btn-primary" [disabled]="saving">Guardar</button>
+                <a routerLink="/almacen/inventario" class="btn btn-light">Cancelar</a>
+              </form>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

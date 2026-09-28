@@ -1,0 +1,49 @@
+<section class="main-content">
+  <ul class="breadcrumb breadcrumb-style">
+    <li class="breadcrumb-item">
+      <h5 class="page-title m-b-0">Ver lámina</h5>
+    </li>
+    <li class="breadcrumb-item bcrumb-1"><a routerLink="/almacen/laminas"><i class="fas fa-layer-group font-17"></i></a></li>
+    <li class="breadcrumb-item">Láminas</li>
+  </ul>
+  <div class="section-body">
+    <div class="row clearfix">
+      <div class="col-lg-8 col-md-12">
+        <div class="card">
+          <div class="card-body">
+            @if (loading) {
+              <p>Cargando...</p>
+            } @else if (errorMessage) {
+              <div class="alert alert-danger">{{ errorMessage }}</div>
+            } @else if (lamina) {
+              <div class="row align-items-center mb-3">
+                <div class="col-md-4 text-center mb-3 mb-md-0">
+                  @if (lamina.image) {
+                    <img [src]="lamina.image" alt="Imagen de la lámina" style="max-width: 320px; max-height: 320px; object-fit: cover;" />
+                  } @else {
+                    <div class="d-inline-flex align-items-center justify-content-center" style="width:200px;height:200px;border:1px solid #dee2e6;border-radius:6px;">
+                      <i class="fas fa-image fa-3x text-muted"></i>
+                    </div>
+                  }
+                </div>
+                <div class="col-md-8">
+                  <dl class="row mb-0">
+                    <dt class="col-sm-3">Nombre</dt>
+                    <dd class="col-sm-9">{{ lamina.name }}</dd>
+                    <dt class="col-sm-3">Descripción</dt>
+                    <dd class="col-sm-9">{{ lamina.description }}</dd>
+                    <dt class="col-sm-3">Estado</dt>
+                    <dd class="col-sm-9">{{ lamina.is_active ? 'Activa' : 'Inactiva' }}</dd>
+                  </dl>
+                </div>
+              </div>
+              @if (canManage) {
+                <a [routerLink]="['/almacen/laminas/edit', lamina.id]" class="btn btn-primary">Editar</a>
+              }
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

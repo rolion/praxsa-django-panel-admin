@@ -43,6 +43,29 @@ class PanelAdminAuthTokenTest(TestCase):
         self.assertIn('token', data)
         self.assertEqual(data['user_id'], user.pk)
 
+    def test_login_response_includes_is_staff_and_groups(self):
+        """TASK-modulo-almacen: el frontend necesita saber el rol del
+        usuario logueado para diferenciar admin/almacen -- ver
+        ADR-modulo-almacen-permisos-rol-frontend."""
+        user, password = helpers.create_staff_user()
+        helpers.add_user_to_group(user, 'almacen')
+
+        response = self._post(user.username, password)
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['is_staff'])
+        self.assertEqual(data['groups'], ['almacen'])
+
+    def test_login_response_groups_empty_for_user_without_groups(self):
+        password = 'testpass123'
+        user, _token = helpers.create_user_with_token(password=password)
+
+        response = self._post(user.username, password)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['groups'], [])
+
     def test_login_with_wrong_password_returns_400(self):
         user, _token = helpers.create_user_with_token(password='testpass123')
 

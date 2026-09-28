@@ -2,6 +2,8 @@
 del admin. Cubre la capa business/helper (unitarios) y el wiring de cada
 ModelAdmin.get_queryset afectado (integración)."""
 from django.contrib.admin.sites import AdminSite
+from django.contrib.messages import get_messages
+from django.contrib.messages.storage.fallback import FallbackStorage
 from django.test import RequestFactory, TestCase
 
 from . import helpers
@@ -144,12 +146,17 @@ class InventarioBusinessQuerysetByRoleTest(TestCase):
         ids = set(result.values_list('id', flat=True))
         self.assertEqual(ids, {inv_a.id})
 
-    def test_sin_sucursal_y_sin_rol_devuelve_none(self):
+    def test_sin_sucursal_y_sin_rol_devuelve_queryset_vacio(self):
+        """Antes de TASK-modulo-almacen devolvia None en este caso; se
+        cambia a queryset vacio (ver ADR-modulo-almacen-modelo-datos-imagen-
+        soft-delete punto 9) para que InventarioListView pueda serializarlo
+        directamente sin un chequeo especial de None."""
         user, _ = helpers.create_user_with_token()
 
         result = self.business.get_inventario_queryset_by_role(user=user, qs=inventario_proxy.objects.all())
 
-        self.assertIsNone(result)
+        self.assertIsNotNone(result)
+        self.assertEqual(list(result), [])
 
 
 class OrdenTrabajoBusinessFinishNotaQuerysetTest(TestCase):
@@ -296,3 +303,60 @@ class AdminGetQuerysetWiringTest(TestCase):
 
         ids = set(result.values_list('id', flat=True))
         self.assertEqual(ids, {chain_a['nota_trabajo'].id})
+
+
+class AdminReportsSinSucursalMessageTest(TestCase):
+    """REV-2026-09-27-modulo-almacen-02: get_inventario_queryset_by_role dejo
+    de devolver None (ver InventarioBusinessQuerysetByRoleTest arriba), lo que
+    dejaba inalcanzable la rama de ReportStorageAdmin/ReportUtilidadAdmin que
+    mostraba 'Asigne una sucursal al usuario'. Estos tests verifican que el
+    mensaje se siga mostrando para un usuario sin sucursal, sin confundirse
+    con un reporte legitimamente vacio (usuario con sucursal pero sin datos)."""
+
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.site = AdminSite()
+
+    def _request_with_messages(self, user):
+        request = self.factory.get('/admin/')
+        request.user = user
+        request.session = {}
+        request._messages = FallbackStorage(request)
+        return request
+
+    def test_report_storage_admin_muestra_mensaje_sin_sucursal(self):
+        user, _ = helpers.create_user_with_token()
+        request = self._request_with_messages(user)
+
+        model_admin = ReportStorageAdmin(model=inventario_proxy, admin_site=self.site)
+        result = model_admin.get_queryset(request)
+
+        self.assertEqual(list(result), [])
+        messages = [str(m) for m in get_messages(request)]
+        self.assertIn('Asigne una sucursal al usuario', messages)
+
+    def test_report_utilidad_admin_muestra_mensaje_sin_sucursal(self):
+        user, _ = helpers.create_user_with_token()
+        request = self._request_with_messages(user)
+
+        model_admin = ReportUtilidadAdmin(model=utilidades, admin_site=self.site)
+        result = model_admin.get_queryset(request)
+
+        self.assertEqual(list(result), [])
+        messages = [str(m) for m in get_messages(request)]
+        self.assertIn('Asigne una sucursal al usuario', messages)
+
+    def test_report_storage_admin_no_muestra_mensaje_con_sucursal_vacia(self):
+        """Un usuario CON sucursal asignada pero sin inventario todavia debe
+        ver un reporte vacio sin el mensaje de error -- distingue el caso
+        real (sin sucursal) del caso de un reporte legitimamente vacio."""
+        user, _ = helpers.create_user_with_token()
+        helpers.create_sucursal(user)
+        request = self._request_with_messages(user)
+
+        model_admin = ReportStorageAdmin(model=inventario_proxy, admin_site=self.site)
+        result = model_admin.get_queryset(request)
+
+        self.assertEqual(list(result), [])
+        messages = [str(m) for m in get_messages(request)]
+        self.assertNotIn('Asigne una sucursal al usuario', messages)
