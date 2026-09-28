@@ -13,47 +13,65 @@
           <div class="card-body">
             <form [formGroup]="form" (ngSubmit)="save()">
               <div class="mb-3">
-                <label>Sucursal <span class="text-danger">*</span></label>
-                <select class="form-select form-control" formControlName="sucursal" required>
+                <label class="fw-bold">Sucursal</label>
+                <select class="form-select form-control" formControlName="sucursal">
                   <option [ngValue]="null" disabled>Seleccione una sucursal</option>
                   @for (sucursal of sucursales; track sucursal.id) {
                     <option [ngValue]="sucursal.id">{{ sucursal.name }}</option>
                   }
                 </select>
+                @if (form.get('sucursal')?.invalid && submitted) {
+                  <small class="form-text text-danger">La sucursal es obligatoria</small>
+                }
               </div>
               <div class="mb-3">
-                <label>Bobina <span class="text-danger">*</span></label>
-                <select class="form-select form-control" formControlName="bobina" required>
+                <label class="fw-bold">Bobina</label>
+                <select class="form-select form-control" formControlName="bobina">
                   <option [ngValue]="null" disabled>Seleccione una bobina</option>
                   @for (bobina of bobinas; track bobina.id) {
                     <option [ngValue]="bobina.id">{{ bobina.window_film_name }} - {{ bobina.width }}</option>
                   }
                 </select>
+                @if (form.get('bobina')?.invalid && submitted) {
+                  <small class="form-text text-danger">La bobina es obligatoria</small>
+                }
               </div>
               <div class="row">
                 <div class="col-6 mb-3">
-                  <label>Cantidad <span class="text-danger">*</span></label>
-                  <input type="number" min="1" class="form-control" formControlName="quantity" required />
+                  <label class="fw-bold">Cantidad</label>
+                  <input type="number" min="1" class="form-control" formControlName="quantity" />
+                  @if (form.get('quantity')?.invalid && submitted) {
+                    <small class="form-text text-danger">La cantidad es obligatoria</small>
+                  }
                 </div>
                 <div class="col-6 mb-3">
-                  <label>Metros disponibles para instalar <span class="text-danger">*</span></label>
-                  <input type="number" step="0.01" class="form-control" formControlName="to_install" required />
+                  <label class="fw-bold">Metros disponibles para instalar</label>
+                  <input type="number" step="0.01" class="form-control" formControlName="to_install" />
+                  @if (form.get('to_install')?.invalid && submitted) {
+                    <small class="form-text text-danger">Los metros disponibles son obligatorios</small>
+                  }
                 </div>
               </div>
               <div class="row">
                 <div class="col-6 mb-3">
-                  <label>Precio compra metro lineal <span class="text-danger">*</span></label>
-                  <input type="number" step="0.01" class="form-control" formControlName="precio_compra_mtr_lineal" required />
+                  <label class="fw-bold">Precio compra metro lineal</label>
+                  <input type="number" step="0.01" class="form-control" formControlName="precio_compra_mtr_lineal" />
+                  @if (form.get('precio_compra_mtr_lineal')?.invalid && submitted) {
+                    <small class="form-text text-danger">El precio de compra es obligatorio</small>
+                  }
                 </div>
                 <div class="col-6 mb-3">
-                  <label>Precio venta metro lineal <span class="text-danger">*</span></label>
-                  <input type="number" step="0.01" class="form-control" formControlName="precio_venta_mtr_lineal" required />
+                  <label class="fw-bold">Precio venta metro lineal</label>
+                  <input type="number" step="0.01" class="form-control" formControlName="precio_venta_mtr_lineal" />
+                  @if (form.get('precio_venta_mtr_lineal')?.invalid && submitted) {
+                    <small class="form-text text-danger">El precio de venta es obligatorio</small>
+                  }
                 </div>
               </div>
               <div class="mb-3">
-                <label>Nro. lote <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" formControlName="nro_lote" maxlength="15" required />
-                @if (form.get('nro_lote')?.invalid && form.get('nro_lote')?.touched) {
+                <label class="fw-bold">Nro. lote</label>
+                <input type="text" class="form-control" formControlName="nro_lote" maxlength="15" />
+                @if (form.get('nro_lote')?.invalid && submitted) {
                   <small class="form-text text-danger">
                     @if (form.get('nro_lote')?.errors?.['required']) {
                       El número de lote es obligatorio
@@ -64,14 +82,14 @@
                 }
               </div>
               <div class="mb-3">
-                <label>Fecha</label>
+                <label class="fw-bold">Fecha</label>
                 <input type="date" class="form-control" formControlName="date" />
                 <small class="form-text text-muted">Si se deja vacío, se usa la fecha actual.</small>
               </div>
               @if (errorMessage) {
                 <div class="alert alert-danger">{{ errorMessage }}</div>
               }
-              <button type="submit" class="btn btn-primary" [disabled]="form.invalid || saving">Crear inventario</button>
+              <button type="submit" class="btn btn-primary" [disabled]="saving">Crear inventario</button>
               <a routerLink="/almacen/inventario" class="btn btn-light">Cancelar</a>
             </form>
           </div>

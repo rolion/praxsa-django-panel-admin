@@ -19,6 +19,7 @@ export class InventarioCreateComponent implements OnInit {
   sucursales: AppSucursal[] = [];
   bobinas: AppWindowFilmReel[] = [];
   saving = false;
+  submitted = false;
   errorMessage = '';
 
   ngOnInit(): void {
@@ -42,7 +43,9 @@ export class InventarioCreateComponent implements OnInit {
   }
 
   save(): void {
+    this.submitted = true;
     if (this.form.invalid) {
+      this.form.markAllAsTouched();
       return;
     }
     this.saving = true;

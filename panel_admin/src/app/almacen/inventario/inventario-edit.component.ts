@@ -24,6 +24,7 @@ export class InventarioEditComponent implements OnInit {
   form!: FormGroup;
   loading = true;
   saving = false;
+  submitted = false;
   errorMessage = '';
 
   ngOnInit(): void {
@@ -55,7 +56,9 @@ export class InventarioEditComponent implements OnInit {
   }
 
   save(): void {
+    this.submitted = true;
     if (this.form.invalid) {
+      this.form.markAllAsTouched();
       return;
     }
     this.saving = true;
