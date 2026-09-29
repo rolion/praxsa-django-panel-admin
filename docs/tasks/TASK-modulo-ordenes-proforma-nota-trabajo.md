@@ -16,6 +16,7 @@
 | 2026-09-29 | ENGINEERING → REVIEW | Implementación completa (backend + frontend) según Plan v1; suite backend y specs propios en verde, `ng build`/`ng lint` limpios. Verificación manual en vivo (V2) pendiente | delivery-engineer |
 | 2026-09-29 | REVIEW → REVIEW | Ajuste pedido por el usuario tras ver el formulario: detalle de proforma como tabla de una fila por línea con el total alineado bajo Subtotal (DDR actualizado). Solo template/TS del formulario y su spec | usuario |
 | 2026-09-29 | REVIEW → REVIEW | Rediseño visual del formulario de proforma pedido por el usuario (tarjetas por sección, íconos, campos bloqueados en gris, alertas amarilla/roja por línea, resumen de totales a la derecha). Solo presentación (HTML/SCSS y texto del aviso de ancho); DDR actualizado | usuario |
+| 2026-09-29 | REVIEW → REVIEW | Vista de proforma: el detalle pasa a `ngx-datatable` con Total, Descuento y Total a pagar en la fila de resumen bajo Subtotal (pedido del usuario; DDR actualizado). Solo presentación de `proforma-view` | usuario |
 
 ## Investigación
 

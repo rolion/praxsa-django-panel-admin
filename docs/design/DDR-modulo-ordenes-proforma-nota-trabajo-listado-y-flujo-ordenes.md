@@ -15,6 +15,10 @@ Tras ver el formulario implementado, el usuario pidió que cada línea del detal
 
 El usuario pidió mejorar UX/UI del formulario: secciones en tarjetas (Venta, Cliente, Vehículo, Detalle de items, Descuento y totales) con encabezado e ícono, sombras suaves y bordes redondeados; íconos en los campos (usuario, correo, teléfono, CI/NIT, vehículo, placa); campos bloqueados/solo lectura en gris con candado (tipo de venta y sucursal al editar; ancho, precios y subtotal); alertas por línea (amarillo = stock insuficiente, rojo = "Ancho insuficiente: mínimo requerido X m"); resumen destacado a la derecha con Total, Descuento y Total a pagar; botones primario (Crear proforma) y secundarios (Cancelar, Agregar item) con hover. Se mantiene la tabla de una fila por línea con el total bajo Subtotal. Solo cambia presentación (`proforma-form.component.html/.scss`); no cambia contrato de API ni reglas.
 
+## Actualización 3 (2026-09-29, detalle de la vista con ngx-datatable)
+
+En "Ver proforma" el detalle deja de ser una tabla Bootstrap simple y pasa a `ngx-datatable` (mismo componente que los listados). Las columnas con importes van alineadas a la derecha y el **resumen (Total, Descuento, Total a pagar)** se muestra en la fila de resumen de la propia tabla: los importes quedan justo debajo de la columna Subtotal y las etiquetas en la columna anterior. El formulario de crear/editar mantiene su tabla editable (los controles de entrada no encajan en `ngx-datatable`).
+
 ## Contexto
 
 La investigación del task confirmó que Proformas y Notas de Trabajo solo se gestionan hoy desde Django Admin (`ProformaAdmin`, `NotaTrabajoAdmin`) y que `panel_admin/` no tiene pantallas ni API para ellas. Las reglas de negocio ya existen (dos tipos de venta con fórmulas distintas, pipeline proforma → nota de trabajo → nota de venta → pago); este DDR solo define **qué ve y hace la persona**, no cómo se expone.

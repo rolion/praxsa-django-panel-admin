@@ -1,0 +1,67 @@
+// Detalle de la proforma con ngx-datatable: el resumen (Total / Descuento /
+// Total a pagar) va en la fila de resumen, con las cantidades justo debajo de
+// la columna Subtotal y las etiquetas en la columna anterior.
+:host ::ng-deep .proforma-detail {
+  box-shadow: none;
+  border: 1px solid rgba(128, 128, 128, 0.2);
+  border-radius: 8px;
+
+  // Cabecera y celdas numericas alineadas a la derecha (ngx-datatable las deja inline).
+  .datatable-header-cell.text-end .datatable-header-cell-template-wrap,
+  .datatable-body-cell.text-end .datatable-body-cell-label {
+    display: block;
+    width: 100%;
+    text-align: right;
+  }
+
+  .datatable-summary-row .datatable-body-cell .datatable-body-cell-label {
+    display: block;
+    width: 100%;
+  }
+
+  .datatable-header-cell,
+  .datatable-body-cell {
+    padding-right: 12px;
+    white-space: nowrap;
+  }
+
+  .datatable-summary-row {
+    .datatable-body-row {
+      border-top: 2px solid rgba(128, 128, 128, 0.35);
+      background: rgba(79, 107, 237, 0.06);
+    }
+
+    // Sin scroll interno ni saltos de linea en las etiquetas/importes.
+    .datatable-body-cell,
+    .datatable-body-cell-label {
+      overflow: hidden;
+      white-space: nowrap;
+    }
+  }
+
+  .summary-stack {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    height: 100%;
+    text-align: right;
+    width: 100%;
+    line-height: 1.5;
+    white-space: nowrap;
+  }
+
+  .summary-labels {
+    color: #6c757d;
+  }
+
+  .summary-amounts {
+    font-weight: 600;
+  }
+
+  .summary-final {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #2f43b5;
+  }
+}

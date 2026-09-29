@@ -51,58 +51,54 @@
               </dl>
 
               <h6 class="mt-4">Detalle</h6>
-              <div class="table-responsive">
-                <table class="table table-sm">
-                  <thead>
-                    <tr>
-                      @if (isInstalacion) {
-                        <th>Item</th>
-                      }
-                      <th>Lámina</th>
-                      <th>Ancho</th>
-                      <th>{{ isInstalacion ? 'Largo' : 'Metros' }}</th>
-                      @if (isInstalacion) {
-                        <th>Cantidad</th>
-                        <th>Instalación</th>
-                      }
-                      <th>Precio lámina</th>
-                      <th>Subtotal</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (item of proforma.items; track item.id) {
-                      <tr>
-                        @if (isInstalacion) {
-                          <td>{{ item.car_part_name }}</td>
-                        }
-                        <td>{{ item.window_film_name }}</td>
-                        <td>{{ item.width }}</td>
-                        <td>{{ item.length }}</td>
-                        @if (isInstalacion) {
-                          <td>{{ item.quantity }}</td>
-                          <td>{{ item.installation_price }}</td>
-                        }
-                        <td>{{ item.window_film_price }}</td>
-                        <td>{{ item.sub_total }}</td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
+              <ngx-datatable
+                class="material proforma-detail"
+                [rows]="proforma.items"
+                columnMode="force"
+                [headerHeight]="45"
+                [footerHeight]="0"
+                rowHeight="auto"
+                [scrollbarH]="true"
+                [summaryRow]="true"
+                summaryPosition="bottom"
+                [summaryHeight]="100"
+                [limit]="proforma.items.length || 1"
+              >
+                @if (isInstalacion) {
+                  <ngx-datatable-column name="Item" prop="car_part_name" [width]="130" [minWidth]="130" [sortable]="false" [summaryFunc]="noSummary"></ngx-datatable-column>
+                }
+                <ngx-datatable-column name="Lámina" prop="window_film_name" [width]="150" [minWidth]="150" [sortable]="false" [summaryFunc]="noSummary"></ngx-datatable-column>
+                <ngx-datatable-column name="Ancho" prop="width" [width]="70" [minWidth]="70" [sortable]="false" headerClass="text-end" cellClass="text-end" [summaryFunc]="noSummary"></ngx-datatable-column>
+                <ngx-datatable-column [name]="isInstalacion ? 'Largo' : 'Metros'" prop="length" [width]="80" [minWidth]="80" [sortable]="false" headerClass="text-end" cellClass="text-end" [summaryFunc]="noSummary"></ngx-datatable-column>
+                @if (isInstalacion) {
+                  <ngx-datatable-column name="Cantidad" prop="quantity" [width]="80" [minWidth]="80" [sortable]="false" headerClass="text-end" cellClass="text-end" [summaryFunc]="noSummary"></ngx-datatable-column>
+                }
+                @if (isInstalacion) {
+                  <ngx-datatable-column name="Precio lámina" prop="window_film_price" [width]="110" [minWidth]="110" [sortable]="false" headerClass="text-end" cellClass="text-end" [summaryFunc]="noSummary"></ngx-datatable-column>
+                  <ngx-datatable-column name="Instalación" prop="installation_price" [width]="140" [minWidth]="140" [sortable]="false" headerClass="text-end" cellClass="text-end" [summaryFunc]="noSummary" [summaryTemplate]="summaryLabels"></ngx-datatable-column>
+                } @else {
+                  <ngx-datatable-column name="Precio lámina" prop="window_film_price" [width]="140" [minWidth]="140" [sortable]="false" headerClass="text-end" cellClass="text-end" [summaryFunc]="noSummary" [summaryTemplate]="summaryLabels"></ngx-datatable-column>
+                }
+                <ngx-datatable-column name="Subtotal" prop="sub_total" [width]="130" [minWidth]="130" [sortable]="false" headerClass="text-end" cellClass="text-end fw-bold" [summaryFunc]="noSummary" [summaryTemplate]="summaryAmounts"></ngx-datatable-column>
+              </ngx-datatable>
 
-              <dl class="row mb-3">
-                <dt class="col-sm-3">Total</dt>
-                <dd class="col-sm-9">{{ proforma.total_price }} Bs</dd>
-                <dt class="col-sm-3">Descuento</dt>
-                <dd class="col-sm-9">
-                  {{ proforma.discount }} Bs
-                  @if (proforma.discount_reason) {
-                    <span class="text-muted">({{ proforma.discount_reason }})</span>
-                  }
-                </dd>
-                <dt class="col-sm-3">Total a pagar</dt>
-                <dd class="col-sm-9"><strong>{{ proforma.total_a_pagar }} Bs</strong></dd>
-              </dl>
+              <ng-template #summaryLabels>
+                <div class="summary-stack summary-labels">
+                  <div>Total</div>
+                  <div>Descuento</div>
+                  <div class="summary-final">Total a pagar</div>
+                </div>
+              </ng-template>
+              <ng-template #summaryAmounts>
+                <div class="summary-stack summary-amounts">
+                  <div>{{ proforma.total_price }}</div>
+                  <div>− {{ proforma.discount }}</div>
+                  <div class="summary-final">{{ proforma.total_a_pagar }} Bs</div>
+                </div>
+              </ng-template>
+              @if (proforma.discount_reason) {
+                <p class="text-muted small mt-2 mb-3">Motivo del descuento: {{ proforma.discount_reason }}</p>
+              }
 
               @if (canEdit) {
                 <a [routerLink]="['/ordenes/proformas/edit', proforma.id]" class="btn btn-primary">Editar</a>

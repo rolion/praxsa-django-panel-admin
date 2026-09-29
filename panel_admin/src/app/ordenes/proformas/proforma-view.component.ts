@@ -1,5 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { NgxDatatableModule } from '@swimlane/ngx-datatable';
 import { AuthService } from '../../core/service/auth.service';
 import { extractApiError } from '../ordenes.errors';
 import { AppProformaDetail, SALES_TYPE_INSTALACION } from '../ordenes.model';
@@ -9,8 +10,9 @@ import { confirmGenerateNota, saveBlob, showErrorAlert } from '../proforma-actio
 @Component({
   selector: 'app-proforma-view',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, NgxDatatableModule],
   templateUrl: './proforma-view.component.html',
+  styleUrl: './proforma-view.component.scss',
 })
 export class ProformaViewComponent implements OnInit {
   private route = inject(ActivatedRoute);
@@ -20,6 +22,9 @@ export class ProformaViewComponent implements OnInit {
   proforma: AppProformaDetail | null = null;
   loading = true;
   errorMessage = '';
+
+  /** Las columnas no numericas no llevan resumen (el pie solo muestra totales bajo Subtotal). */
+  noSummary = (): string => '';
 
   get isInstalacion(): boolean {
     return this.proforma?.sales_type === SALES_TYPE_INSTALACION;

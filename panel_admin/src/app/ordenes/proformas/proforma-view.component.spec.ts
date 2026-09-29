@@ -63,6 +63,28 @@ describe('ProformaViewComponent', () => {
     expect(component.isInstalacion).toBe(false);
   });
 
+  it('renders the detail in an ngx-datatable with a totals summary row', () => {
+    const data = detail({
+      sales_type: 'venta_instalacion',
+      discount: '50.00', total_price: '728.00', total_a_pagar: '678.00',
+      items: [{
+        id: 1, car_part: 5, car_part_name: 'Parabrisas', window_film: 3, window_film_name: 'Carbon',
+        width: '1.50', length: '1.20', quantity: 2, window_film_price: '120.00',
+        installation_price: '50.00', sub_total: '388.00',
+      }],
+    });
+    const fixture = create(data);
+    fixture.detectChanges(); // dispara el ngOnInit del ciclo de vida: segunda carga
+    httpMock.match(url).forEach((req) => req.flush(data));
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('ngx-datatable')).not.toBeNull();
+    expect(element.querySelector('table')).toBeNull();
+    expect(component.isInstalacion).toBe(true);
+    expect(component.noSummary()).toBe('');
+  });
+
   it('shows an error when the proforma cannot be loaded (e.g. out of scope)', () => {
     const fixture = TestBed.createComponent(ProformaViewComponent);
     component = fixture.componentInstance;
