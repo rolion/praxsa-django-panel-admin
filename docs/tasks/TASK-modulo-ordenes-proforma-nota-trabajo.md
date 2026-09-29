@@ -17,6 +17,7 @@
 | 2026-09-29 | REVIEW → REVIEW | Ajuste pedido por el usuario tras ver el formulario: detalle de proforma como tabla de una fila por línea con el total alineado bajo Subtotal (DDR actualizado). Solo template/TS del formulario y su spec | usuario |
 | 2026-09-29 | REVIEW → REVIEW | Rediseño visual del formulario de proforma pedido por el usuario (tarjetas por sección, íconos, campos bloqueados en gris, alertas amarilla/roja por línea, resumen de totales a la derecha). Solo presentación (HTML/SCSS y texto del aviso de ancho); DDR actualizado | usuario |
 | 2026-09-29 | REVIEW → REVIEW | Vista de proforma: el detalle pasa a `ngx-datatable` con Total, Descuento y Total a pagar en la fila de resumen bajo Subtotal (pedido del usuario; DDR actualizado). Solo presentación de `proforma-view` | usuario |
+| 2026-09-29 | REVIEW → REVIEW | Rediseño de "Ver proforma" pedido por el usuario: tarjetas (venta, cliente, vehículo, detalle), grid etiqueta/valor, fecha `dd/MM/yyyy - HH:mm h`, badge de estado, totales con Total a pagar destacado y barra de acciones jerarquizada (DDR actualizado). Solo presentación | usuario |
 
 ## Investigación
 

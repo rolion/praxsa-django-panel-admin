@@ -85,6 +85,21 @@ describe('ProformaViewComponent', () => {
     expect(component.noSummary()).toBe('');
   });
 
+  it('maps the status to the badge text and class', () => {
+    create(detail());
+    const cases: [string, string, string][] = [
+      ['proforma', 'Proforma', 'status-proforma'],
+      ['nota_trabajo', 'Nota de trabajo generada', 'status-nota'],
+      ['por_cobrar', 'Por cobrar', 'status-cobrar'],
+      ['finalizado', 'Finalizado', 'status-final'],
+    ];
+    for (const [status, text, cssClass] of cases) {
+      component.proforma = detail({ status: status as never });
+      expect(component.statusText).toBe(text);
+      expect(component.statusClass).toBe(cssClass);
+    }
+  });
+
   it('shows an error when the proforma cannot be loaded (e.g. out of scope)', () => {
     const fixture = TestBed.createComponent(ProformaViewComponent);
     component = fixture.componentInstance;

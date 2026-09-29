@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { NgxDatatableModule } from '@swimlane/ngx-datatable';
@@ -10,7 +11,7 @@ import { confirmGenerateNota, saveBlob, showErrorAlert } from '../proforma-actio
 @Component({
   selector: 'app-proforma-view',
   standalone: true,
-  imports: [RouterLink, NgxDatatableModule],
+  imports: [RouterLink, NgxDatatableModule, DatePipe],
   templateUrl: './proforma-view.component.html',
   styleUrl: './proforma-view.component.scss',
 })
@@ -25,6 +26,33 @@ export class ProformaViewComponent implements OnInit {
 
   /** Las columnas no numericas no llevan resumen (el pie solo muestra totales bajo Subtotal). */
   noSummary = (): string => '';
+
+  /** Texto y color del badge de estado: azul = proforma, verde = nota de trabajo generada. */
+  get statusText(): string {
+    switch (this.proforma?.status) {
+      case 'nota_trabajo':
+        return 'Nota de trabajo generada';
+      case 'por_cobrar':
+        return 'Por cobrar';
+      case 'finalizado':
+        return 'Finalizado';
+      default:
+        return 'Proforma';
+    }
+  }
+
+  get statusClass(): string {
+    switch (this.proforma?.status) {
+      case 'nota_trabajo':
+        return 'status-nota';
+      case 'por_cobrar':
+        return 'status-cobrar';
+      case 'finalizado':
+        return 'status-final';
+      default:
+        return 'status-proforma';
+    }
+  }
 
   get isInstalacion(): boolean {
     return this.proforma?.sales_type === SALES_TYPE_INSTALACION;

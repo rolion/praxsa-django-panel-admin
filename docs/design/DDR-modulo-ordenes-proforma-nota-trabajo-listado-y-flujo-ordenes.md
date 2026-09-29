@@ -19,6 +19,10 @@ El usuario pidió mejorar UX/UI del formulario: secciones en tarjetas (Venta, Cl
 
 En "Ver proforma" el detalle deja de ser una tabla Bootstrap simple y pasa a `ngx-datatable` (mismo componente que los listados). Las columnas con importes van alineadas a la derecha y el **resumen (Total, Descuento, Total a pagar)** se muestra en la fila de resumen de la propia tabla: los importes quedan justo debajo de la columna Subtotal y las etiquetas en la columna anterior. El formulario de crear/editar mantiene su tabla editable (los controles de entrada no encajan en `ngx-datatable`).
 
+## Actualización 4 (2026-09-29, rediseño de "Ver proforma")
+
+La vista de consulta se alinea con el formulario: tarjetas independientes **Datos de venta**, **Datos del cliente**, **Datos del vehículo** y **Detalle de items**; los datos van en grid de 2 a 4 columnas (etiqueta pequeña gris en mayúsculas, valor en negrita). La fecha se muestra como `27/02/2026 - 00:55 h`. El estado es un badge: azul "Proforma", verde "Nota de trabajo generada", ámbar "Por cobrar", verde oscuro "Finalizado". El detalle sigue en `ngx-datatable` (Actualización 3) y el bloque de totales queda abajo a la derecha, bajo Subtotal, con **Total a pagar** en un recuadro de fondo diferenciado. Barra de acciones al pie: "Editar" (secundario con borde), "Generar nota de trabajo" (verde, primario de éxito) y "Descargar PDF" (neutro con ícono), más un enlace "Volver al listado". En metro lineal se omiten Marca y Modelo con una nota aclaratoria.
+
 ## Contexto
 
 La investigación del task confirmó que Proformas y Notas de Trabajo solo se gestionan hoy desde Django Admin (`ProformaAdmin`, `NotaTrabajoAdmin`) y que `panel_admin/` no tiene pantallas ni API para ellas. Las reglas de negocio ya existen (dos tipos de venta con fórmulas distintas, pipeline proforma → nota de trabajo → nota de venta → pago); este DDR solo define **qué ve y hace la persona**, no cómo se expone.
