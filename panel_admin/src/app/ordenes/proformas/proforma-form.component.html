@@ -110,88 +110,110 @@
                 @if (infoMessage) {
                   <div class="alert alert-warning">{{ infoMessage }}</div>
                 }
-                <div formArrayName="items">
-                  @for (line of lines.controls; track line; let i = $index) {
-                    <div class="border rounded p-3 mb-3" [formGroupName]="i">
-                      <div class="row">
+                <div class="table-responsive mb-2">
+                  <table class="table table-sm table-bordered align-middle proforma-lines">
+                    <thead class="table-light">
+                      <tr>
                         @if (isInstalacion) {
-                          <div class="col-md-4 mb-3">
-                            <label class="fw-bold">Item</label>
-                            <select class="form-select form-control" formControlName="car_part" (change)="onItemChange(i)">
-                              <option [ngValue]="null" disabled>Seleccione un item</option>
-                              @for (item of items; track item.id) {
-                                <option [ngValue]="item.car_part_id">{{ item.car_part_name }}</option>
+                          <th style="min-width: 150px">Item</th>
+                        }
+                        <th style="min-width: 210px">Lámina (bobina)</th>
+                        <th class="text-end" style="width: 80px">Ancho</th>
+                        <th class="text-end" style="width: 110px">{{ isInstalacion ? 'Largo (m)' : 'Metros' }}</th>
+                        @if (isInstalacion) {
+                          <th class="text-end" style="width: 100px">Cantidad</th>
+                        }
+                        <th class="text-end" style="width: 110px">Precio lámina</th>
+                        @if (isInstalacion) {
+                          <th class="text-end" style="width: 110px">Precio instalación</th>
+                        }
+                        <th class="text-end" style="width: 110px">Subtotal</th>
+                        <th style="width: 50px"></th>
+                      </tr>
+                    </thead>
+                    <tbody formArrayName="items">
+                      @for (line of lines.controls; track line; let i = $index) {
+                        <tr [formGroupName]="i">
+                          @if (isInstalacion) {
+                            <td>
+                              <select class="form-select form-control form-control-sm" formControlName="car_part" (change)="onItemChange(i)" aria-label="Item">
+                                <option [ngValue]="null" disabled>Seleccione</option>
+                                @for (item of items; track item.id) {
+                                  <option [ngValue]="item.car_part_id">{{ item.car_part_name }}</option>
+                                }
+                              </select>
+                              @if (line.get('car_part')?.invalid && submitted) {
+                                <small class="text-danger">Seleccione un item</small>
+                              }
+                            </td>
+                          }
+                          <td>
+                            <select class="form-select form-control form-control-sm" formControlName="reel" aria-label="Lámina (bobina)">
+                              <option [ngValue]="null" disabled>Seleccione</option>
+                              @for (reel of reels; track reelKey(reel.window_film, reel.width)) {
+                                <option [ngValue]="reelKey(reel.window_film, reel.width)">
+                                  {{ reel.window_film_name }} - {{ reel.width }} m ({{ reel.available_meters }} m disp.)
+                                </option>
                               }
                             </select>
-                            @if (line.get('car_part')?.invalid && submitted) {
-                              <small class="form-text text-danger">Seleccione un item</small>
+                            @if (line.get('reel')?.invalid && submitted) {
+                              <small class="text-danger">Seleccione una bobina</small>
                             }
-                          </div>
+                          </td>
+                          <td class="text-end">{{ reelOf(i)?.width || '—' }}</td>
+                          <td>
+                            <input type="number" step="0.01" min="0" class="form-control form-control-sm text-end" formControlName="length" aria-label="Largo" />
+                            @if (line.get('length')?.invalid && submitted) {
+                              <small class="text-danger">Mayor a 0</small>
+                            }
+                          </td>
+                          @if (isInstalacion) {
+                            <td>
+                              <input type="number" step="1" min="1" class="form-control form-control-sm text-end" formControlName="quantity" aria-label="Cantidad" />
+                              @if (line.get('quantity')?.invalid && submitted) {
+                                <small class="text-danger">Mínimo 1</small>
+                              }
+                            </td>
+                          }
+                          <td class="text-end">{{ reelOf(i) ? reelOf(i)!.unit_price : '—' }}</td>
+                          @if (isInstalacion) {
+                            <td class="text-end">{{ itemOf(i) ? itemOf(i)!.installation_price : '—' }}</td>
+                          }
+                          <td class="text-end fw-bold">{{ lineSubtotal(i).toFixed(2) }}</td>
+                          <td class="text-center">
+                            @if (lines.length > 1) {
+                              <button type="button" class="btn btn-tbl-delete h-auto" title="Quitar línea" (click)="removeLine(i)">
+                                <i class="far fa-trash-alt"></i>
+                              </button>
+                            }
+                          </td>
+                        </tr>
+                        @if (widthWarning(i) || stockWarning(i)) {
+                          <tr>
+                            <td [attr.colspan]="columnCount" class="py-1">
+                              @if (widthWarning(i); as warning) {
+                                <div class="text-danger small">{{ warning }}</div>
+                              }
+                              @if (stockWarning(i); as warning) {
+                                <div class="text-warning small">{{ warning }}</div>
+                              }
+                            </td>
+                          </tr>
                         }
-                        <div [class]="isInstalacion ? 'col-md-4 mb-3' : 'col-md-6 mb-3'">
-                          <label class="fw-bold">Bobina (lámina y ancho)</label>
-                          <select class="form-select form-control" formControlName="reel">
-                            <option [ngValue]="null" disabled>Seleccione una bobina</option>
-                            @for (reel of reels; track reelKey(reel.window_film, reel.width)) {
-                              <option [ngValue]="reelKey(reel.window_film, reel.width)">
-                                {{ reel.window_film_name }} - {{ reel.width }} m ({{ reel.available_meters }} m disp.)
-                              </option>
-                            }
-                          </select>
-                          @if (line.get('reel')?.invalid && submitted) {
-                            <small class="form-text text-danger">Seleccione una bobina</small>
-                          }
-                        </div>
-                        <div class="col-md-2 mb-3">
-                          <label class="fw-bold">Ancho</label>
-                          <input type="text" class="form-control" [value]="reelOf(i)?.width || ''" readonly />
-                        </div>
-                        <div class="col-md-2 mb-3 text-end">
-                          @if (lines.length > 1) {
-                            <button type="button" class="btn btn-tbl-delete h-auto mt-4" title="Quitar línea" (click)="removeLine(i)">
-                              <i class="far fa-trash-alt"></i>
-                            </button>
-                          }
-                        </div>
-                      </div>
-                      <div class="row">
-                        <div class="col-md-3 mb-3">
-                          <label class="fw-bold">{{ isInstalacion ? 'Largo (m)' : 'Metros' }}</label>
-                          <input type="number" step="0.01" min="0" class="form-control" formControlName="length" />
-                          @if (line.get('length')?.invalid && submitted) {
-                            <small class="form-text text-danger">Debe ser mayor a 0</small>
-                          }
-                        </div>
-                        @if (isInstalacion) {
-                          <div class="col-md-3 mb-3">
-                            <label class="fw-bold">Cantidad</label>
-                            <input type="number" step="1" min="1" class="form-control" formControlName="quantity" />
-                            @if (line.get('quantity')?.invalid && submitted) {
-                              <small class="form-text text-danger">Mínimo 1</small>
-                            }
-                          </div>
-                        }
-                        <div class="col-md-3 mb-3">
-                          <label class="fw-bold">Precio lámina (m)</label>
-                          <input type="text" class="form-control" [value]="reelOf(i)?.unit_price || ''" readonly />
-                        </div>
-                        <div class="col-md-3 mb-3">
-                          <label class="fw-bold">Subtotal (vista previa)</label>
-                          <input type="text" class="form-control" [value]="lineSubtotal(i).toFixed(2)" readonly />
-                        </div>
-                      </div>
-                      @if (widthWarning(i); as warning) {
-                        <div class="alert alert-danger py-2 mb-2">{{ warning }}</div>
                       }
-                      @if (stockWarning(i); as warning) {
-                        <div class="alert alert-warning py-2 mb-0">{{ warning }}</div>
-                      }
-                    </div>
-                  }
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td [attr.colspan]="columnCount - 2" class="text-end fw-bold">Total</td>
+                        <td class="text-end fw-bold">{{ total.toFixed(2) }}</td>
+                        <td></td>
+                      </tr>
+                    </tfoot>
+                  </table>
                 </div>
                 <button type="button" class="btn btn-light mb-4" (click)="addLine()">Agregar línea</button>
 
-                <h6 class="mb-3">Descuento y total</h6>
+                <h6 class="mb-3">Descuento</h6>
                 <div class="row">
                   <div class="col-md-4 mb-3">
                     <label class="fw-bold">Descuento (Bs)</label>
@@ -205,12 +227,7 @@
                 @if (discountError && submitted) {
                   <div class="alert alert-danger">{{ discountError }}</div>
                 }
-                <dl class="row mb-3">
-                  <dt class="col-sm-3">Total</dt>
-                  <dd class="col-sm-9">{{ total.toFixed(2) }} Bs</dd>
-                  <dt class="col-sm-3">Total a pagar</dt>
-                  <dd class="col-sm-9"><strong>{{ totalAPagar.toFixed(2) }} Bs</strong></dd>
-                </dl>
+                <p class="fs-5 mb-1">Total a pagar: <strong>{{ totalAPagar.toFixed(2) }} Bs</strong></p>
                 <small class="form-text text-muted d-block mb-3">
                   Los importes son una vista previa: el servidor los recalcula al guardar y puede ajustarlos.
                 </small>

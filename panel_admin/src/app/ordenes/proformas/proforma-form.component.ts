@@ -69,6 +69,11 @@ export class ProformaFormComponent implements OnInit {
     return this.form.get('sales_type')?.value as SalesType;
   }
 
+  /** Columnas de la tabla de detalle (instalacion muestra item, cantidad y precio de instalacion). */
+  get columnCount(): number {
+    return this.isInstalacion ? 9 : 6;
+  }
+
   get isInstalacion(): boolean {
     return this.salesType === SALES_TYPE_INSTALACION;
   }

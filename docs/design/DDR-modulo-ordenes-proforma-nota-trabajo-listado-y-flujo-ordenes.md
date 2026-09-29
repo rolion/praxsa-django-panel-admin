@@ -4,6 +4,13 @@
 **Task relacionado:** TASK-modulo-ordenes-proforma-nota-trabajo
 **Fecha:** 2026-09-29
 
+## Actualización (2026-09-29, layout del detalle)
+
+Tras ver el formulario implementado, el usuario pidió que cada línea del detalle ocupe **una sola fila** de una **tabla**, con el **total al final alineado con la columna Subtotal**. Reemplaza lo descrito antes como "recuadros repetibles por línea":
+- Columnas con instalación: Item, Lámina (bobina), Ancho, Largo, Cantidad, Precio lámina, Precio instalación, Subtotal y quitar. Metro lineal omite Item, Cantidad y Precio instalación.
+- Ancho, precios y subtotal son de solo lectura (texto); Item, bobina, largo y cantidad son controles compactos.
+- Los avisos de ancho/stock van en una fila debajo de la línea afectada; el pie de la tabla muestra el Total bajo Subtotal. Descuento y "Total a pagar" quedan debajo de la tabla.
+
 ## Contexto
 
 La investigación del task confirmó que Proformas y Notas de Trabajo solo se gestionan hoy desde Django Admin (`ProformaAdmin`, `NotaTrabajoAdmin`) y que `panel_admin/` no tiene pantallas ni API para ellas. Las reglas de negocio ya existen (dos tipos de venta con fórmulas distintas, pipeline proforma → nota de trabajo → nota de venta → pago); este DDR solo define **qué ve y hace la persona**, no cómo se expone.

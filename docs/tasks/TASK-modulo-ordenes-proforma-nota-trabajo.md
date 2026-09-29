@@ -14,6 +14,7 @@
 | 2026-09-29 | ARCHITECTURE → PLANNING | Decisiones tomadas en 2 ADR: API `ordenes/*` nueva con cálculo server-side reutilizando `Pricing_Business` (form del admin intacto, tests de paridad), y alcance por sucursal + permisos Django por acción con `permissions` en el login del panel | delivery-architect |
 | 2026-09-29 | PLANNING → ENGINEERING | Plan v1 escrito y PR abierto; queda pendiente de aprobación humana antes de implementar | delivery-plan |
 | 2026-09-29 | ENGINEERING → REVIEW | Implementación completa (backend + frontend) según Plan v1; suite backend y specs propios en verde, `ng build`/`ng lint` limpios. Verificación manual en vivo (V2) pendiente | delivery-engineer |
+| 2026-09-29 | REVIEW → REVIEW | Ajuste pedido por el usuario tras ver el formulario: detalle de proforma como tabla de una fila por línea con el total alineado bajo Subtotal (DDR actualizado). Solo template/TS del formulario y su spec | usuario |
 
 ## Investigación
 

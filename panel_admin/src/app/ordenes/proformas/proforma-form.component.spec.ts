@@ -89,6 +89,13 @@ describe('ProformaFormComponent', () => {
     expect(component.lines.at(0).get('quantity')?.valid).toBe(true);
   });
 
+  it('the detail table has 9 columns for instalacion and 6 for metro lineal', () => {
+    setupCreate();
+    expect(component.columnCount).toBe(9);
+    component.form.get('sales_type')?.setValue('venta_metro_lineal');
+    expect(component.columnCount).toBe(6);
+  });
+
   it('picking an item preloads length and quantity, picking a reel gives width and price', () => {
     setupCreate();
     component.form.patchValue({ car_model_id: 9 });
