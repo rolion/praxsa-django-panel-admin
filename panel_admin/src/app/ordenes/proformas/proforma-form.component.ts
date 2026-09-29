@@ -34,6 +34,7 @@ import { OrdenesService } from '../ordenes.service';
   standalone: true,
   imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './proforma-form.component.html',
+  styleUrl: './proforma-form.component.scss',
 })
 export class ProformaFormComponent implements OnInit {
   private fb = inject(FormBuilder);
@@ -367,7 +368,7 @@ export class ProformaFormComponent implements OnInit {
     const reel = this.reelOf(index);
     const item = this.itemOf(index);
     if (this.isInstalacion && reel && item && Number(reel.width) < Number(item.width)) {
-      return `El item requiere un ancho de lámina de al menos ${item.width}.`;
+      return `Ancho insuficiente: mínimo requerido ${item.width} m.`;
     }
     return null;
   }

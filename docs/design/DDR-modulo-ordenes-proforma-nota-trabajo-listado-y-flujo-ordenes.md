@@ -11,6 +11,10 @@ Tras ver el formulario implementado, el usuario pidió que cada línea del detal
 - Ancho, precios y subtotal son de solo lectura (texto); Item, bobina, largo y cantidad son controles compactos.
 - Los avisos de ancho/stock van en una fila debajo de la línea afectada; el pie de la tabla muestra el Total bajo Subtotal. Descuento y "Total a pagar" quedan debajo de la tabla.
 
+## Actualización 2 (2026-09-29, rediseño visual del formulario)
+
+El usuario pidió mejorar UX/UI del formulario: secciones en tarjetas (Venta, Cliente, Vehículo, Detalle de items, Descuento y totales) con encabezado e ícono, sombras suaves y bordes redondeados; íconos en los campos (usuario, correo, teléfono, CI/NIT, vehículo, placa); campos bloqueados/solo lectura en gris con candado (tipo de venta y sucursal al editar; ancho, precios y subtotal); alertas por línea (amarillo = stock insuficiente, rojo = "Ancho insuficiente: mínimo requerido X m"); resumen destacado a la derecha con Total, Descuento y Total a pagar; botones primario (Crear proforma) y secundarios (Cancelar, Agregar item) con hover. Se mantiene la tabla de una fila por línea con el total bajo Subtotal. Solo cambia presentación (`proforma-form.component.html/.scss`); no cambia contrato de API ni reglas.
+
 ## Contexto
 
 La investigación del task confirmó que Proformas y Notas de Trabajo solo se gestionan hoy desde Django Admin (`ProformaAdmin`, `NotaTrabajoAdmin`) y que `panel_admin/` no tiene pantallas ni API para ellas. Las reglas de negocio ya existen (dos tipos de venta con fórmulas distintas, pipeline proforma → nota de trabajo → nota de venta → pago); este DDR solo define **qué ve y hace la persona**, no cómo se expone.
