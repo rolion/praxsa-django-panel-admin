@@ -4,7 +4,7 @@
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** task/TASK-modulo-ordenes-proforma-nota-trabajo
-**Pull Request:** _sin abrir todavía_
+**Pull Request:** [#50](https://github.com/rolion/praxsa-django-panel-admin/pull/50)
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
