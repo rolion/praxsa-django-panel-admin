@@ -1,0 +1,232 @@
+<section class="main-content">
+  <ul class="breadcrumb breadcrumb-style">
+    <li class="breadcrumb-item">
+      <h5 class="page-title m-b-0">{{ isEdit ? 'Editar proforma ' + editId : 'Nueva proforma' }}</h5>
+    </li>
+    <li class="breadcrumb-item bcrumb-1"><a routerLink="/ordenes/proformas"><i class="fas fa-file-invoice font-17"></i></a></li>
+    <li class="breadcrumb-item">Órdenes</li>
+    <li class="breadcrumb-item">Proforma</li>
+  </ul>
+  <div class="section-body">
+    <div class="row clearfix">
+      <div class="col-lg-10 col-md-12">
+        <div class="card">
+          <div class="card-body">
+            @if (loading) {
+              <p>Cargando...</p>
+            } @else {
+              <form [formGroup]="form" (ngSubmit)="save()">
+                <h6 class="mb-3">Venta</h6>
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label class="fw-bold">Tipo de venta</label>
+                    <select class="form-select form-control" formControlName="sales_type" id="sales-type">
+                      <option [ngValue]="SALES_TYPE_INSTALACION">Venta con instalación</option>
+                      <option [ngValue]="SALES_TYPE_METRO_LINEAL">Venta por metro lineal</option>
+                    </select>
+                    @if (isEdit) {
+                      <small class="form-text text-muted">El tipo de venta no se puede cambiar al editar.</small>
+                    }
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label class="fw-bold">Sucursal</label>
+                    <select class="form-select form-control" formControlName="sucursal" id="sucursal" (change)="onSucursalChange()">
+                      <option [ngValue]="null" disabled>Seleccione una sucursal</option>
+                      @for (sucursal of sucursales; track sucursal.id) {
+                        <option [ngValue]="sucursal.id">{{ sucursal.name }}</option>
+                      }
+                    </select>
+                    @if (form.get('sucursal')?.invalid && submitted) {
+                      <small class="form-text text-danger">La sucursal es obligatoria</small>
+                    }
+                  </div>
+                </div>
+
+                <h6 class="mb-3">Cliente</h6>
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label class="fw-bold">Nombre completo</label>
+                    <input type="text" class="form-control" formControlName="name" maxlength="400" />
+                    @if (form.get('name')?.invalid && submitted) {
+                      <small class="form-text text-danger">El nombre es obligatorio</small>
+                    }
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label class="fw-bold">Email</label>
+                    <input type="email" class="form-control" formControlName="email" />
+                    @if (form.get('email')?.invalid && submitted) {
+                      <small class="form-text text-danger">Ingrese un email válido</small>
+                    }
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label class="fw-bold">CI/NIT</label>
+                    <input type="text" class="form-control" formControlName="ci_nit" />
+                    @if (form.get('ci_nit')?.invalid && submitted) {
+                      <small class="form-text text-danger">El CI/NIT es obligatorio</small>
+                    }
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label class="fw-bold">Teléfono</label>
+                    <input type="text" class="form-control" formControlName="phone_number" />
+                    @if (form.get('phone_number')?.invalid && submitted) {
+                      <small class="form-text text-danger">Ingrese un teléfono válido (7 a 11 dígitos, puede llevar +)</small>
+                    }
+                  </div>
+                </div>
+
+                @if (isInstalacion) {
+                  <h6 class="mb-3">Vehículo</h6>
+                  <div class="row">
+                    <div class="col-md-6 mb-3">
+                      <label class="fw-bold">Modelo</label>
+                      <select class="form-select form-control" formControlName="car_model_id" id="car-model" (change)="onModelChange()">
+                        <option [ngValue]="null" disabled>Seleccione un modelo</option>
+                        @for (model of models; track model.id) {
+                          <option [ngValue]="model.id">{{ model.car_brand_name }} - {{ model.name }}</option>
+                        }
+                      </select>
+                      @if (form.get('car_model_id')?.invalid && submitted) {
+                        <small class="form-text text-danger">El modelo es obligatorio</small>
+                      }
+                    </div>
+                    <div class="col-md-6 mb-3">
+                      <label class="fw-bold">Placa</label>
+                      <input type="text" class="form-control" formControlName="car_plate" maxlength="10" />
+                      @if (form.get('car_plate')?.invalid && submitted) {
+                        <small class="form-text text-danger">La placa es obligatoria (máximo 10 caracteres)</small>
+                      }
+                    </div>
+                  </div>
+                } @else {
+                  <div class="row">
+                    <div class="col-md-6 mb-3">
+                      <label class="fw-bold">Placa (opcional)</label>
+                      <input type="text" class="form-control" formControlName="car_plate" maxlength="10" />
+                    </div>
+                  </div>
+                }
+
+                <h6 class="mb-3">Detalle</h6>
+                @if (infoMessage) {
+                  <div class="alert alert-warning">{{ infoMessage }}</div>
+                }
+                <div formArrayName="items">
+                  @for (line of lines.controls; track line; let i = $index) {
+                    <div class="border rounded p-3 mb-3" [formGroupName]="i">
+                      <div class="row">
+                        @if (isInstalacion) {
+                          <div class="col-md-4 mb-3">
+                            <label class="fw-bold">Item</label>
+                            <select class="form-select form-control" formControlName="car_part" (change)="onItemChange(i)">
+                              <option [ngValue]="null" disabled>Seleccione un item</option>
+                              @for (item of items; track item.id) {
+                                <option [ngValue]="item.car_part_id">{{ item.car_part_name }}</option>
+                              }
+                            </select>
+                            @if (line.get('car_part')?.invalid && submitted) {
+                              <small class="form-text text-danger">Seleccione un item</small>
+                            }
+                          </div>
+                        }
+                        <div [class]="isInstalacion ? 'col-md-4 mb-3' : 'col-md-6 mb-3'">
+                          <label class="fw-bold">Bobina (lámina y ancho)</label>
+                          <select class="form-select form-control" formControlName="reel">
+                            <option [ngValue]="null" disabled>Seleccione una bobina</option>
+                            @for (reel of reels; track reelKey(reel.window_film, reel.width)) {
+                              <option [ngValue]="reelKey(reel.window_film, reel.width)">
+                                {{ reel.window_film_name }} - {{ reel.width }} m ({{ reel.available_meters }} m disp.)
+                              </option>
+                            }
+                          </select>
+                          @if (line.get('reel')?.invalid && submitted) {
+                            <small class="form-text text-danger">Seleccione una bobina</small>
+                          }
+                        </div>
+                        <div class="col-md-2 mb-3">
+                          <label class="fw-bold">Ancho</label>
+                          <input type="text" class="form-control" [value]="reelOf(i)?.width || ''" readonly />
+                        </div>
+                        <div class="col-md-2 mb-3 text-end">
+                          @if (lines.length > 1) {
+                            <button type="button" class="btn btn-tbl-delete h-auto mt-4" title="Quitar línea" (click)="removeLine(i)">
+                              <i class="far fa-trash-alt"></i>
+                            </button>
+                          }
+                        </div>
+                      </div>
+                      <div class="row">
+                        <div class="col-md-3 mb-3">
+                          <label class="fw-bold">{{ isInstalacion ? 'Largo (m)' : 'Metros' }}</label>
+                          <input type="number" step="0.01" min="0" class="form-control" formControlName="length" />
+                          @if (line.get('length')?.invalid && submitted) {
+                            <small class="form-text text-danger">Debe ser mayor a 0</small>
+                          }
+                        </div>
+                        @if (isInstalacion) {
+                          <div class="col-md-3 mb-3">
+                            <label class="fw-bold">Cantidad</label>
+                            <input type="number" step="1" min="1" class="form-control" formControlName="quantity" />
+                            @if (line.get('quantity')?.invalid && submitted) {
+                              <small class="form-text text-danger">Mínimo 1</small>
+                            }
+                          </div>
+                        }
+                        <div class="col-md-3 mb-3">
+                          <label class="fw-bold">Precio lámina (m)</label>
+                          <input type="text" class="form-control" [value]="reelOf(i)?.unit_price || ''" readonly />
+                        </div>
+                        <div class="col-md-3 mb-3">
+                          <label class="fw-bold">Subtotal (vista previa)</label>
+                          <input type="text" class="form-control" [value]="lineSubtotal(i).toFixed(2)" readonly />
+                        </div>
+                      </div>
+                      @if (widthWarning(i); as warning) {
+                        <div class="alert alert-danger py-2 mb-2">{{ warning }}</div>
+                      }
+                      @if (stockWarning(i); as warning) {
+                        <div class="alert alert-warning py-2 mb-0">{{ warning }}</div>
+                      }
+                    </div>
+                  }
+                </div>
+                <button type="button" class="btn btn-light mb-4" (click)="addLine()">Agregar línea</button>
+
+                <h6 class="mb-3">Descuento y total</h6>
+                <div class="row">
+                  <div class="col-md-4 mb-3">
+                    <label class="fw-bold">Descuento (Bs)</label>
+                    <input type="number" step="0.01" min="0" class="form-control" formControlName="discount" />
+                  </div>
+                  <div class="col-md-8 mb-3">
+                    <label class="fw-bold">Motivo del descuento</label>
+                    <input type="text" class="form-control" formControlName="discount_reason" />
+                  </div>
+                </div>
+                @if (discountError && submitted) {
+                  <div class="alert alert-danger">{{ discountError }}</div>
+                }
+                <dl class="row mb-3">
+                  <dt class="col-sm-3">Total</dt>
+                  <dd class="col-sm-9">{{ total.toFixed(2) }} Bs</dd>
+                  <dt class="col-sm-3">Total a pagar</dt>
+                  <dd class="col-sm-9"><strong>{{ totalAPagar.toFixed(2) }} Bs</strong></dd>
+                </dl>
+                <small class="form-text text-muted d-block mb-3">
+                  Los importes son una vista previa: el servidor los recalcula al guardar y puede ajustarlos.
+                </small>
+
+                @if (errorMessage) {
+                  <div class="alert alert-danger">{{ errorMessage }}</div>
+                }
+                <button type="submit" class="btn btn-primary" [disabled]="saving">
+                  {{ isEdit ? 'Guardar cambios' : 'Crear proforma' }}
+                </button>
+                <a routerLink="/ordenes/proformas" class="btn btn-light">Cancelar</a>
+              </form>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

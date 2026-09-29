@@ -29,6 +29,19 @@ class Orden_Trabajo_Business:
             print('algo salio mal, Orden_Trabajo_Business - get_nota_queryset_by_role', str(e))
             return None
         
+    def get_panel_nota_queryset(self, user, qs):
+        """Alcance de notas de trabajo para el panel (API `ordenes/notas-trabajo`).
+        Metodo nuevo, sin tocar los legados: admin ve todas las de proformas no
+        borradas; el resto, las de todas sus sucursales habilitadas; sin
+        sucursal, ninguna. Ver ADR-modulo-ordenes-proforma-nota-trabajo-alcance-permisos."""
+        qs = qs.filter(proforma__is_delete=False).select_related(
+            'proforma', 'proforma__sucursal', 'proforma__car_model_id',
+            'instaladar', 'car_model', 'responsable', 'nota_venta',
+        )
+        if self.user_helper.can_view_all_sucursales(user):
+            return qs
+        return qs.filter(proforma__sucursal_id__in=self.user_helper.get_enabled_sucursal_ids(user))
+
     def get_finish_nota_queryset(self, user, qs):
         try:
             qs_result = qs.select_related('proforma','proforma__sucursal','instaladar', 'proforma__car_model_id','proforma__car_model_id__car_brand_id')

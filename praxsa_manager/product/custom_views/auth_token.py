@@ -52,5 +52,9 @@ class PanelAdminAuthToken(ObtainAuthToken):
             'lastname': user.last_name,
             'is_staff': user.is_staff,
             'groups': list(user.groups.values_list('name', flat=True)),
+            # Permisos efectivos (grupos + directos + superusuario) para que la UI
+            # oculte acciones; la barrera real sigue siendo el permiso en cada
+            # endpoint (ADR-modulo-ordenes-proforma-nota-trabajo-alcance-permisos).
+            'permissions': sorted(user.get_all_permissions()),
         }
         return Response(response)

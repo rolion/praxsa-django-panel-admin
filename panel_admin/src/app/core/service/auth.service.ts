@@ -14,6 +14,7 @@ interface PanelAdminLoginResponse {
   lastname: string;
   is_staff: boolean;
   groups: string[];
+  permissions?: string[];
 }
 
 @Injectable({
@@ -54,6 +55,7 @@ export class AuthService {
             token: res.token,
             isStaff: res.is_staff,
             groups: res.groups,
+            permissions: res.permissions ?? [],
           };
           this.storageService.set('currentUser', user);
           this.currentUserSubject.next(user);
@@ -69,6 +71,17 @@ export class AuthService {
   hasGroup(name: string): boolean {
     const groups = this.currentUserValue.groups || [];
     return groups.map((g) => g.toLowerCase()).includes(name.toLowerCase());
+  }
+
+  /** Permiso Django efectivo del usuario logueado (`add_proforma_header` o
+   * `product.add_proforma_header`). Solo capa de UX (ocultar botones): la
+   * barrera real es el permiso de cada endpoint, ver ADR-modulo-ordenes-
+   * proforma-nota-trabajo-alcance-permisos. Sesiones antiguas sin
+   * `permissions` devuelven false hasta volver a iniciar sesion. */
+  hasPermission(codename: string): boolean {
+    const permissions = this.currentUserValue.permissions || [];
+    const full = codename.includes('.') ? codename : `product.${codename}`;
+    return permissions.includes(full);
   }
 
   logout() {

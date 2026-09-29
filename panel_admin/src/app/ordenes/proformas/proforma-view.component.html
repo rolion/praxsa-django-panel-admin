@@ -1,0 +1,122 @@
+<section class="main-content">
+  <ul class="breadcrumb breadcrumb-style">
+    <li class="breadcrumb-item">
+      <h5 class="page-title m-b-0">Ver proforma</h5>
+    </li>
+    <li class="breadcrumb-item bcrumb-1"><a routerLink="/ordenes/proformas"><i class="fas fa-file-invoice font-17"></i></a></li>
+    <li class="breadcrumb-item">Órdenes</li>
+    <li class="breadcrumb-item">Proforma</li>
+  </ul>
+  <div class="section-body">
+    <div class="row clearfix">
+      <div class="col-lg-10 col-md-12">
+        <div class="card">
+          <div class="card-body">
+            @if (loading) {
+              <p>Cargando...</p>
+            } @else if (errorMessage) {
+              <div class="alert alert-danger">{{ errorMessage }}</div>
+            } @else if (proforma) {
+              <dl class="row mb-0">
+                <dt class="col-sm-3">Proforma Nº</dt>
+                <dd class="col-sm-9">{{ proforma.id }}</dd>
+                <dt class="col-sm-3">Tipo de venta</dt>
+                <dd class="col-sm-9">{{ proforma.sales_type_label }}</dd>
+                <dt class="col-sm-3">Estado</dt>
+                <dd class="col-sm-9">{{ proforma.status_label }}</dd>
+                <dt class="col-sm-3">Sucursal</dt>
+                <dd class="col-sm-9">{{ proforma.sucursal_name || '—' }}</dd>
+                <dt class="col-sm-3">Fecha</dt>
+                <dd class="col-sm-9">{{ proforma.proforma_created_on }}</dd>
+                <dt class="col-sm-3">Cliente</dt>
+                <dd class="col-sm-9">{{ proforma.name }}</dd>
+                <dt class="col-sm-3">Email</dt>
+                <dd class="col-sm-9">{{ proforma.email || '—' }}</dd>
+                <dt class="col-sm-3">CI/NIT</dt>
+                <dd class="col-sm-9">{{ proforma.ci_nit || '—' }}</dd>
+                <dt class="col-sm-3">Teléfono</dt>
+                <dd class="col-sm-9">{{ proforma.phone_number }}</dd>
+                @if (isInstalacion) {
+                  <dt class="col-sm-3">Vehículo</dt>
+                  <dd class="col-sm-9">{{ proforma.car_brand_name }} {{ proforma.car_model_name }}</dd>
+                }
+                <dt class="col-sm-3">Placa</dt>
+                <dd class="col-sm-9">{{ proforma.car_plate || '—' }}</dd>
+                @if (proforma.nota_trabajo_id) {
+                  <dt class="col-sm-3">Nota de trabajo</dt>
+                  <dd class="col-sm-9">
+                    <a [routerLink]="['/ordenes/notas-trabajo/view', proforma.nota_trabajo_id]">Ver nota de trabajo</a>
+                  </dd>
+                }
+              </dl>
+
+              <h6 class="mt-4">Detalle</h6>
+              <div class="table-responsive">
+                <table class="table table-sm">
+                  <thead>
+                    <tr>
+                      @if (isInstalacion) {
+                        <th>Item</th>
+                      }
+                      <th>Lámina</th>
+                      <th>Ancho</th>
+                      <th>{{ isInstalacion ? 'Largo' : 'Metros' }}</th>
+                      @if (isInstalacion) {
+                        <th>Cantidad</th>
+                        <th>Instalación</th>
+                      }
+                      <th>Precio lámina</th>
+                      <th>Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of proforma.items; track item.id) {
+                      <tr>
+                        @if (isInstalacion) {
+                          <td>{{ item.car_part_name }}</td>
+                        }
+                        <td>{{ item.window_film_name }}</td>
+                        <td>{{ item.width }}</td>
+                        <td>{{ item.length }}</td>
+                        @if (isInstalacion) {
+                          <td>{{ item.quantity }}</td>
+                          <td>{{ item.installation_price }}</td>
+                        }
+                        <td>{{ item.window_film_price }}</td>
+                        <td>{{ item.sub_total }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+
+              <dl class="row mb-3">
+                <dt class="col-sm-3">Total</dt>
+                <dd class="col-sm-9">{{ proforma.total_price }} Bs</dd>
+                <dt class="col-sm-3">Descuento</dt>
+                <dd class="col-sm-9">
+                  {{ proforma.discount }} Bs
+                  @if (proforma.discount_reason) {
+                    <span class="text-muted">({{ proforma.discount_reason }})</span>
+                  }
+                </dd>
+                <dt class="col-sm-3">Total a pagar</dt>
+                <dd class="col-sm-9"><strong>{{ proforma.total_a_pagar }} Bs</strong></dd>
+              </dl>
+
+              @if (canEdit) {
+                <a [routerLink]="['/ordenes/proformas/edit', proforma.id]" class="btn btn-primary">Editar</a>
+              }
+              @if (canGenerateNota) {
+                <button type="button" class="btn btn-success ms-2" (click)="generateNota()">Generar nota de trabajo</button>
+              }
+              <button type="button" class="btn btn-light ms-2" (click)="downloadPdf()">
+                <i class="fas fa-file-pdf"></i> PDF
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

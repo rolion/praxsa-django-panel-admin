@@ -145,6 +145,40 @@
           "submenu": []
         }
       ]
+    },
+    {
+      "path": "",
+      "title": "Órdenes",
+      "iconType": "feather",
+      "icon": "clipboard",
+      "class": "menu-toggle",
+      "groupTitle": false,
+      "badge": "",
+      "badgeClass": "",
+      "submenu": [
+        {
+          "path": "/ordenes/proformas",
+          "title": "Proforma",
+          "iconType": "",
+          "icon": "",
+          "class": "ml-menu",
+          "groupTitle": false,
+          "badge": "",
+          "badgeClass": "",
+          "submenu": []
+        },
+        {
+          "path": "/ordenes/notas-trabajo",
+          "title": "Nota de Trabajo",
+          "iconType": "",
+          "icon": "",
+          "class": "ml-menu",
+          "groupTitle": false,
+          "badge": "",
+          "badgeClass": "",
+          "submenu": []
+        }
+      ]
     }
   ]
 }

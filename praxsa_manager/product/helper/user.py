@@ -28,6 +28,24 @@ class User_Helper():
     def can_view_all_sucursales(self, user):
         return self.is_request_user_admin(user)
 
+    def get_enabled_sucursal_ids(self, user):
+        """Ids de las sucursales habilitadas de las que el usuario es empleado
+        (alcance del modulo Ordenes del panel, ver ADR-modulo-ordenes-proforma-
+        nota-trabajo-alcance-permisos). A diferencia de los metodos legados
+        que usan `sucursales[0]`, incluye todas."""
+        return list(
+            Sucursal.objects.filter(empleado__id=user.id, enable_to_install_windows_film=True)
+            .values_list('id', flat=True)
+        )
+
+    def get_sucursales_in_scope(self, user):
+        """Sucursales habilitadas que el usuario puede usar en Ordenes: todas
+        para quien ve todas las sucursales (admin), si no las suyas."""
+        sucursales = Sucursal.objects.filter(enable_to_install_windows_film=True)
+        if self.can_view_all_sucursales(user):
+            return sucursales.order_by('name')
+        return sucursales.filter(empleado__id=user.id).distinct().order_by('name')
+
     def has_assigned_sucursal(self, user):
         """Replica la condicion de sucursal que ya usa
         Inventario_Business.get_inventario_queryset_by_role, para que los

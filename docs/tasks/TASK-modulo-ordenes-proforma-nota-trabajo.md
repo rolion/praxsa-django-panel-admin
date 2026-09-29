@@ -1,6 +1,6 @@
 # TASK-modulo-ordenes-proforma-nota-trabajo: Módulo Órdenes (Proformas y Notas de Trabajo) en el panel admin
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** task/TASK-modulo-ordenes-proforma-nota-trabajo
@@ -13,6 +13,7 @@
 | 2026-09-29 | INVESTIGATION → ARCHITECTURE (via DESIGN) | Diseño de UI resuelto en DDR (listados, formularios por tipo de venta, acciones Generar nota de trabajo y PDF); veredicto de complejidad exige decisiones de API, lógica de precios y alcance por rol | delivery-design |
 | 2026-09-29 | ARCHITECTURE → PLANNING | Decisiones tomadas en 2 ADR: API `ordenes/*` nueva con cálculo server-side reutilizando `Pricing_Business` (form del admin intacto, tests de paridad), y alcance por sucursal + permisos Django por acción con `permissions` en el login del panel | delivery-architect |
 | 2026-09-29 | PLANNING → ENGINEERING | Plan v1 escrito y PR abierto; queda pendiente de aprobación humana antes de implementar | delivery-plan |
+| 2026-09-29 | ENGINEERING → REVIEW | Implementación completa (backend + frontend) según Plan v1; suite backend y specs propios en verde, `ng build`/`ng lint` limpios. Verificación manual en vivo (V2) pendiente | delivery-engineer |
 
 ## Investigación
 
@@ -168,7 +169,29 @@ Sin migraciones. Sin cambios en `proforma/`. Cambio aditivo, reversible por `git
 [PLAN-2026-09-29-modulo-ordenes-proforma-nota-trabajo](../plans/PLAN-2026-09-29-modulo-ordenes-proforma-nota-trabajo.md) — **v1**. Backend (negocio, serializers, vistas, login con `permissions`) → frontend (auth, menú, servicio, pantallas) → verificación manual en vivo. Sin migraciones, sin dependencias nuevas, sin E2E automatizado (justificado en el plan). Pendiente de aprobación humana; preguntas abiertas: grupos que reciben cada permiso, `origen` de las proformas del panel, stock no bloqueante al guardar.
 
 ## Implementación
-_Pendiente_
+
+Implementado según el plan v1, sin desvíos de alcance ni arquitectura. Sin migraciones, sin dependencias nuevas.
+
+**Backend** (`praxsa_manager/product/`)
+- `business/pricing.py`: `Pricing_Business.get_reel_catalog`, `has_stock_for_reel` y `build_line_pricing` (reutiliza `resolve_unit_price` y las dos `calculate_subtotal_*`; `CarModelPartForm` intacto).
+- Alcance: `Proforma_Business.get_panel_proforma_queryset`, `Orden_Trabajo_Business.get_panel_nota_queryset`, `User_Helper.get_enabled_sucursal_ids` / `get_sucursales_in_scope` (métodos legados intactos).
+- `serializer/ordenes_serializer.py` y `custom_views/ordenes_admin.py`, rutas `ordenes/*` en `urls.py`; `permissions` en el login del panel.
+- Tests: `test_ordenes_proformas.py`, `test_ordenes_notas_trabajo.py`, `test_ordenes_scope_permissions.py`, `test_ordenes_price_parity.py` (+ `ordenes_helpers.py`): 61 tests nuevos.
+
+**Frontend** (`panel_admin/src/`)
+- Menú "Órdenes" (`routes.json`), ruta lazy, `AuthService.hasPermission`, módulo `app/ordenes/` (servicio, modelos, cálculo de vista previa, listado/formulario único/vista de proformas, listado/vista/edición de notas) con specs.
+
+**Detalles de implementación a tener en cuenta**
+- El indicador de "sin sucursal" del listado es el catálogo `ordenes/catalogo/sucursales` vacío (el listado llega vacío y la UI lo consulta); el ADR hablaba de un "indicador" sin fijar el mecanismo.
+- `NotaTrabajoListSerializer` expone además `sucursal_id` (la edición lo necesita para el catálogo de instaladores).
+- `DELETE` sobre proforma/nota responde 403 (lo corta `DjangoModelPermissions`) o 405; no borra en ningún caso.
+- Preguntas abiertas del plan tomadas con su valor por defecto: `origen` queda en `port`; el stock no bloquea el guardado; los permisos a grupos reales siguen pendientes (paso operativo V3).
+
+**Deuda / observaciones (sin resolver aquí)**
+- Orquestación de validación duplicada entre `CarModelPartForm` y `build_line_pricing` (tests de paridad como red).
+- Un `Car_Model_Part.installation_price` en 0 (el formulario de Vehículos lo oculta y el default es 0) se acepta en la API con instalación 0; el `CarModelPartForm` del admin pedía `installation_price >= 1` sobre el valor enviado por el navegador. Conviene confirmar con negocio si un item con instalación 0 es válido.
+- 15 specs de la plantilla (`should create` de Blank, Dashboard2, Sidebar, Footer, etc.) fallan por falta de provider de `ActivatedRoute`; no tocan archivos de este task.
+- **No ejecutado**: la verificación manual en vivo (paso V2 del plan) contra backend real con usuarios de distintas sucursales/permisos; queda pendiente antes de dar el task por bueno.
 
 ## Review
 _Pendiente_

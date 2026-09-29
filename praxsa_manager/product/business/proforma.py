@@ -1,6 +1,7 @@
 from typing import Union
 from ..models import Car_Model_Part, Proforma_Header, Sucursal, Proforma_Detail, Nota_trabajo, Detalle_Nota_Trabajo, pago, Nota_Venta
 from ..helper.proforma import Proforma_Helper
+from ..helper.user import User_Helper
 from .inventario import Inventario_Business
 from ..utils.exception.nohaylaminas import NoHayLaminasDisponibles
 from ..utils.exception.proforma import ProformaException, NotaVentaException
@@ -18,6 +19,7 @@ class Proforma_Business:
         self.helper = Proforma_Helper()
         self.inv_bussiness = Inventario_Business()
         self.orden_trabajo_bussiness = Orden_Trabajo_Business()
+        self.user_helper = User_Helper()
         self.log_errors = logging.getLogger('django_admin')
         self.log_debug= logging.getLogger('debug')
         self.helper = Proforma_Helper()
@@ -253,6 +255,19 @@ class Proforma_Business:
             self.log_errors.error(f'algo salio mal, Proforma_Business - get_proforma_queryset_by_role {e}')
             return None
         
+    def get_panel_proforma_queryset(self, user, qs):
+        """Alcance de proformas para el panel (API `ordenes/proformas`). Metodo
+        nuevo, sin tocar get_proforma_queryset_by_role (que sigue alimentando
+        Django Admin): admin (case-insensitive) ve todas las no borradas; el
+        resto, las de todas sus sucursales habilitadas; sin sucursal, ninguna.
+        Ver ADR-modulo-ordenes-proforma-nota-trabajo-alcance-permisos."""
+        qs = qs.filter(is_delete=False).select_related(
+            'sucursal', 'car_model_id', 'car_model_id__car_brand_id', 'nota_trabajo'
+        )
+        if self.user_helper.can_view_all_sucursales(user):
+            return qs
+        return qs.filter(sucursal_id__in=self.user_helper.get_enabled_sucursal_ids(user))
+
     def get_nota_venta_queryset_by_role(self, user, qs):
         try:
             sucursales = Sucursal.objects.prefetch_related('empleado').filter(empleado__id = user.id, enable_to_install_windows_film = True)
