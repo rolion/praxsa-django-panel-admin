@@ -1,8 +1,8 @@
 # TASK-filtros-busqueda-reportes: Filtros de búsqueda en reportes Proforma, Nota Trabajo y Nota Venta
 
-**Etapa actual:** REVIEW
+**Etapa actual:** DESIGN
 **Veredicto de complejidad:** NEEDS_PLAN
-**Diseño requerido:** NO
+**Diseño requerido:** SI
 **Rama:** `task/TASK-filtros-busqueda-reportes`
 **Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/55
 
@@ -14,6 +14,7 @@
 | 2026-09-30 | INVESTIGATION → PLANNING | Plan v1 escrito y PR abierto | delivery-plan |
 | 2026-09-30 | PLANNING → ENGINEERING | Plan listo para implementar (pendiente de aprobación humana) | delivery-plan |
 | 2026-09-30 | ENGINEERING → REVIEW | Implementación completa según plan v1 | delivery-engineer |
+| 2026-09-30 | REVIEW → DESIGN | DESIGN_REVIEW_REQUIRED: el solicitante indica que las pantallas objetivo son las listas del panel Angular (Órdenes), no el Django Admin | delivery-engineer |
 
 ## Investigación
 
@@ -137,3 +138,14 @@ _Pendiente_
 
 ## Publicación
 _Pendiente_
+
+## Hallazgo post-implementación (DESIGN_REVIEW_REQUIRED / PLAN_UPDATE_REQUIRED)
+Al probar, el solicitante confirmó que **no ve los filtros porque las pantallas que quería filtrar son las listas del panel Angular** (`panel_admin/src/app/ordenes/proformas`, `notas-trabajo`, `notas-venta`), no los reportes del Django Admin. La investigación asumió el Django Admin (hipótesis sin confirmar: "el alcance es solo el Django Admin", ver Hipótesis) y el plan v1 se construyó sobre eso.
+
+Hechos relevantes para replanificar:
+- Las listas Angular filtran en el cliente: texto + estado (`proformas-list.component.ts:64-110`), texto (notas de trabajo y venta); el servicio ya envía `search`, `sales_type`, `status` en proformas y `search`, `status` en notas de venta (`ordenes.service.ts:35-46`, `93-95`, `119-127`). No hay filtros de sucursal, marca, modelo, fecha, instalador ni cobro.
+- Ya existe `OrdenesService.listSucursales()` (usado en `proformas-list.component.ts`, `checkSucursal`) con alcance por usuario (`get_sucursales_in_scope`).
+- Habrá que revisar los endpoints y serializers de listas (`custom_views/`, `serializer/`) para ver qué campos (marca, instalador, estado de cobro) exponen.
+- Los cambios ya hechos en Django Admin (PR #55, commits de implementación) siguen vigentes y probados; queda por decidir si se conservan en este mismo PR.
+
+Siguiente paso: `/delivery-design TASK-filtros-busqueda-reportes` (UI de filtros en listas) y luego `/delivery-plan` (plan v2, incluye ajuste de alcance, contrato API y tests Angular).
