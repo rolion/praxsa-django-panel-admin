@@ -60,6 +60,24 @@ describe('ModelViewComponent', () => {
 
   afterEach(() => httpMock.verify());
 
+  it('muestra el placeholder si la imagen del modelo no carga', () => {
+    const fixture = TestBed.createComponent(ModelViewComponent);
+    fixture.detectChanges();
+    httpMock
+      .expectOne(`${base}/models/5/`)
+      .flush({ ...sampleModel, image: 'http://localhost:8000/media/car_models/x.jpg' });
+    httpMock.expectOne(`${base}/models/5/items/`).flush([sampleItem]);
+    fixture.detectChanges();
+    const img = fixture.nativeElement.querySelector('img') as HTMLImageElement;
+    expect(img).withContext('con imagen debe renderizar <img>').toBeTruthy();
+
+    img.dispatchEvent(new Event('error'));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('img')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.fa-image')).toBeTruthy();
+  });
+
   it('carga el modelo y sus items', () => {
     const fixture = createAndLoad();
     const component = fixture.componentInstance;

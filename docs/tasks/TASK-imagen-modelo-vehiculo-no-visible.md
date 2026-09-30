@@ -1,6 +1,6 @@
 # TASK-imagen-modelo-vehiculo-no-visible: La imagen del vehículo no se visualiza en el listado ni en la vista de Modelo
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** NO
 **Rama:** task/TASK-imagen-modelo-vehiculo-no-visible
@@ -12,6 +12,7 @@
 | 2026-09-30 20:11 UTC | (nuevo) → INVESTIGATION | Task creado | delivery-investigate |
 | 2026-09-30 20:40 UTC | INVESTIGATION → PLANNING | Investigación completa, veredicto NEEDS_PLAN, sin diseño | delivery-plan |
 | 2026-09-30 20:40 UTC | PLANNING → ENGINEERING | Plan v1 listo, pendiente de confirmación humana | delivery-plan |
+| 2026-09-30 21:00 UTC | ENGINEERING → REVIEW | Implementación completa según plan v1 | delivery-engineer |
 
 ## Investigación
 
@@ -79,7 +80,18 @@ _Pendiente / No aplica según veredicto_
 [PLAN-2026-09-30-imagen-modelo-vehiculo-no-visible.md](../plans/PLAN-2026-09-30-imagen-modelo-vehiculo-no-visible.md) — versión vigente: v1
 
 ## Implementación
-_Pendiente_
+Según plan v1, sin desvíos. (Las preguntas abiertas del plan —dev vs. stg/prod, placeholder como indicador— no se respondieron; se siguió el plan tal cual.)
+
+- **Backend**: `SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')` en `praxsa_manager/praxsa_manager/settings.py`. Verificado que `docker-compose.prod.yml:15` y `.stg.yml:13` solo hacen `expose` de `web:5000` (no publican puerto), y que `nginx.conf.prod` fija `X-Forwarded-Proto`.
+- **Frontend**: fallback al placeholder existente cuando el `<img>` dispara `error`, en `model-view` (`imageFailed`), `models-list` (`failedImageIds: Set<number>`) e `image-upload` (`onImageError()`; compara contra `failedUrl`, así una URL nueva vuelve a intentarse y el preview local de un `File` no se ve afectado).
+- **Tests**: 2 de integración backend (URL `https` con `X-Forwarded-Proto: https`, `http` sin header; usan `HTTP_HOST` real y no escriben archivos en `MEDIA_ROOT`); 4 specs Angular (fallback en view, list, image-upload ×2).
+- Autoverificación (no es el Quality Gate): `test_vehicles_module` 48 OK; specs de `vehicles/models` + `shared/image-upload` 24 OK; `ng lint` y `ng build` limpios.
+
+**Notas / deuda técnica**
+- El fallback oculta el síntoma: los archivos faltantes (CR-V, A1) siguen sin existir; hay que re-subirlos manualmente. Con la imagen remota rota, `image-upload` oculta "Quitar imagen" (solo permite reemplazar).
+- Sigue pendiente el task aparte para que los tests backend usen un `MEDIA_ROOT` temporal (ver Out of scope del plan).
+- No verificado: comportamiento en stg/prod ni bloqueo por contenido mixto en un navegador real.
+
 
 ## Review
 _Pendiente_

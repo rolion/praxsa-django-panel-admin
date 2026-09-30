@@ -18,8 +18,8 @@
             } @else if (model) {
               <div class="row align-items-center mb-3">
                 <div class="col-md-4 text-center mb-3 mb-md-0">
-                  @if (model.image) {
-                    <img [src]="model.image" alt="Imagen del vehículo" style="max-width: 320px; max-height: 320px; object-fit: cover;" />
+                  @if (model.image && !imageFailed) {
+                    <img [src]="model.image" (error)="imageFailed = true" alt="Imagen del vehículo" style="max-width: 320px; max-height: 320px; object-fit: cover;" />
                   } @else {
                     <div class="d-inline-flex align-items-center justify-content-center" style="width:200px;height:200px;border:1px solid #dee2e6;border-radius:6px;">
                       <i class="fas fa-image fa-3x text-muted"></i>

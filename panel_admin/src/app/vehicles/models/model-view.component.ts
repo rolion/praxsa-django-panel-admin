@@ -33,6 +33,7 @@ export class ModelViewComponent implements OnInit {
   items: AppCarModelPart[] = [];
   loading = true;
   errorMessage = '';
+  imageFailed = false;
 
   addForm!: FormGroup;
   mode: AddItemMode = 'existing';
