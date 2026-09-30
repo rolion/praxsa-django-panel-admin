@@ -1,6 +1,6 @@
 # TASK-credencial-detalle-layout: Rediseño de la vista de detalle de credencial (grupos y sucursales como chips)
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** SI
 **Rama:** `claude/credential-detail-layout-248c24` (asignada por el entorno)
@@ -12,6 +12,7 @@
 | 2026-09-30 | (nuevo) → INVESTIGATION | Task creado | delivery-investigate |
 | 2026-09-30 | INVESTIGATION → PLANNING | Diseño decidido: Bootstrap 5 en lugar de Tailwind, card de 2 columnas, chips diferenciados con límite de 3 y toggle `+N más`; veredicto NEEDS_PLAN, no requiere arquitectura | delivery-design |
 | 2026-09-30 | PLANNING → ENGINEERING | Plan v1 escrito (3 archivos frontend, spec nuevo, sin E2E ni dependencias); PR abierto sobre la rama asignada por el entorno | delivery-plan |
+| 2026-09-30 | ENGINEERING → REVIEW | Implementación completa según plan v1 (componente, plantilla y spec nuevo) | delivery-engineer |
 
 ## Investigación
 
@@ -84,7 +85,15 @@ _Pendiente / No aplica según veredicto_
 - [PLAN-2026-09-30-credencial-detalle-layout](../plans/PLAN-2026-09-30-credencial-detalle-layout.md) — v1
 
 ## Implementación
-_Pendiente_
+Implementado según plan v1, sin desvíos, solo en `panel_admin/src/app/users/view/`:
+- `user-view.component.ts`: `MAX_CHIPS = 3`, getter `fullName` (fallback a `username`), getters de chips visibles y de restantes para grupos y sucursales, y toggles de expansión.
+- `user-view.component.html`: card `col-12` de dos columnas (`col-md-6`), título con nombre, badge de estado (`bg-success` / `bg-secondary`), datos personales, chips de grupos (`bg-primary-subtle`) y sucursales (`bg-info-subtle` + `fa-store`), botón `+N más` / `Ver menos`, estados vacíos, "Editar" abajo a la izquierda. Sin Tailwind ni SCSS nuevo.
+- `user-view.component.spec.ts` (nuevo, 8 casos): título y fallback, badge activo/inactivo, teléfono vacío, estados vacíos, 2 y 3 chips sin contador, 5 y 6 con `+N más` y expandir/contraer. Nivel unitario con `TestBed` + `HttpTestingController`; sin E2E, como pidió el plan.
+
+Verificación propia (no es el Quality Gate): `ng test` 271 OK y 15 fallas, todas en componentes demo de la plantilla (AdvanceTable, Sidebar, Footer, etc.), ninguna en `UserViewComponent`; `ng lint` limpio; `ng build` sin errores. Se corrió `npm ci` en el worktree para restaurar `node_modules` desde el lockfile; no se agregaron dependencias.
+
+Pendiente para review: la verificación visual manual (móvil, tema oscuro, contraste de chips `*-subtle`) del paso 5 del plan no se hizo.
+
 
 ## Review
 _Pendiente_

@@ -8,45 +8,71 @@
   </ul>
   <div class="section-body">
     <div class="row clearfix">
-      <div class="col-lg-8 col-md-12">
-        <div class="card">
+      <div class="col-12">
+        <div class="card shadow-sm rounded-3">
           <div class="card-body">
             @if (loading) {
               <p>Cargando...</p>
             } @else if (errorMessage) {
               <div class="alert alert-danger">{{ errorMessage }}</div>
             } @else if (user) {
-              <dl class="row mb-0">
-                <dt class="col-sm-4">Usuario</dt>
-                <dd class="col-sm-8">{{ user.username }}</dd>
-                <dt class="col-sm-4">Correo</dt>
-                <dd class="col-sm-8">{{ user.email }}</dd>
-                <dt class="col-sm-4">Nombre</dt>
-                <dd class="col-sm-8">{{ user.first_name }}</dd>
-                <dt class="col-sm-4">Apellido</dt>
-                <dd class="col-sm-8">{{ user.last_name }}</dd>
-                <dt class="col-sm-4">Teléfono</dt>
-                <dd class="col-sm-8">{{ user.phone_number || '—' }}</dd>
-                <dt class="col-sm-4">Estado</dt>
-                <dd class="col-sm-8">{{ user.is_active ? 'Activo' : 'Inactivo' }}</dd>
-                <dt class="col-sm-4">Grupos</dt>
-                <dd class="col-sm-8">
-                  @if (groupNames.length) {
-                    {{ groupNames.join(', ') }}
+              <div class="row g-4">
+                <div class="col-md-6">
+                  <h4 class="mb-2" data-test="full-name">{{ fullName }}</h4>
+                  @if (user.is_active) {
+                    <span class="badge bg-success" data-test="status">Activo</span>
                   } @else {
-                    <span class="text-muted">Sin grupos</span>
+                    <span class="badge bg-secondary" data-test="status">Inactivo</span>
                   }
-                </dd>
-                <dt class="col-sm-4">Sucursales</dt>
-                <dd class="col-sm-8">
-                  @if (sucursalNames.length) {
-                    {{ sucursalNames.join(', ') }}
-                  } @else {
-                    <span class="text-muted">Sin sucursales</span>
-                  }
-                </dd>
-              </dl>
-              <a [routerLink]="['/users/edit', user.id]" class="btn btn-primary mt-3">Editar</a>
+                  <dl class="row mt-4 mb-0">
+                    <dt class="col-sm-4">Usuario</dt>
+                    <dd class="col-sm-8">{{ user.username }}</dd>
+                    <dt class="col-sm-4">Correo electrónico</dt>
+                    <dd class="col-sm-8">{{ user.email }}</dd>
+                    <dt class="col-sm-4">Teléfono</dt>
+                    <dd class="col-sm-8">{{ user.phone_number || '—' }}</dd>
+                  </dl>
+                </div>
+                <div class="col-md-6">
+                  <div class="mb-4" data-test="groups">
+                    <div class="text-muted text-uppercase small mb-2">Grupos</div>
+                    @if (groupNames.length) {
+                      <div class="d-flex flex-wrap gap-2">
+                        @for (name of visibleGroups; track name) {
+                          <span class="badge bg-primary-subtle text-primary-emphasis" data-test="group-chip">{{ name }}</span>
+                        }
+                        @if (hiddenGroupCount) {
+                          <button type="button" class="badge bg-light text-dark border" data-test="groups-toggle" (click)="toggleGroups()">
+                            {{ showAllGroups ? 'Ver menos' : '+' + hiddenGroupCount + ' más' }}
+                          </button>
+                        }
+                      </div>
+                    } @else {
+                      <span class="text-muted">Sin grupos</span>
+                    }
+                  </div>
+                  <div data-test="sucursales">
+                    <div class="text-muted text-uppercase small mb-2">Sucursales</div>
+                    @if (sucursalNames.length) {
+                      <div class="d-flex flex-wrap gap-2">
+                        @for (name of visibleSucursales; track name) {
+                          <span class="badge bg-info-subtle text-info-emphasis" data-test="sucursal-chip"><i class="fas fa-store me-1"></i>{{ name }}</span>
+                        }
+                        @if (hiddenSucursalCount) {
+                          <button type="button" class="badge bg-light text-dark border" data-test="sucursales-toggle" (click)="toggleSucursales()">
+                            {{ showAllSucursales ? 'Ver menos' : '+' + hiddenSucursalCount + ' más' }}
+                          </button>
+                        }
+                      </div>
+                    } @else {
+                      <span class="text-muted">Sin sucursales</span>
+                    }
+                  </div>
+                </div>
+              </div>
+              <div class="border-top mt-4 pt-3">
+                <a [routerLink]="['/users/edit', user.id]" class="btn btn-primary">Editar</a>
+              </div>
             }
           </div>
         </div>
