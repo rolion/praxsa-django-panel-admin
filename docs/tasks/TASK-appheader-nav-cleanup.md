@@ -1,6 +1,6 @@
 # TASK-appheader-nav-cleanup: Quitar del header de panel_admin nombre de usuario, buscador, selector de idioma, mensajes y alertas
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** NO
 **Rama:** `claude/appheader-nav-cleanup-650d44` (asignada por el entorno)
@@ -13,6 +13,7 @@
 | 2026-09-30 | INVESTIGATION → PLANNING | Veredicto NEEDS_PLAN, diseño NO; sin arquitectura requerida | delivery-plan |
 | 2026-09-30 | PLANNING → ENGINEERING | Plan v1 escrito (4 archivos frontend + i18n, spec actualizado, sin E2E ni dependencias); PR abierto sobre la rama asignada por el entorno | delivery-plan |
 | 2026-09-30 | ENGINEERING → REVIEW | Implementación completa según plan v1 | delivery-engineer |
+| 2026-09-30 | REVIEW → PUBLISH | Quality Gate PASS (1 issue Low abierto, no bloqueante) | delivery-review |
 
 ## Investigación
 
@@ -84,7 +85,10 @@ Desvío menor respecto al plan: se **mantuvo** la inyección de `LanguageService
 Autoverificación del engineer (no sustituye el Quality Gate): `ng lint` limpio, `ng build` OK, spec del header 7/7 SUCCESS.
 
 ## Review
-_Pendiente_
+**Resultado: PASS** (2026-09-30) — ver PR #59, secciones Testing y Review.
+- Issue abierto (Low, no bloqueante): [REV-2026-09-30-appheader-nav-cleanup-01](../reviews/REV-2026-09-30-appheader-nav-cleanup-01.md) — indentación del HTML.
+- Desvío del plan aceptado: se mantiene la inyección de `LanguageService` en el header (justificado; deuda técnica registrada en Implementación).
+- Limitación: revisión ejecutada en una sesión nueva, sin aislamiento real de memoria entre skills.
 
 ## Publicación
 _Pendiente_
