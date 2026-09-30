@@ -21,6 +21,7 @@
 | 2026-09-30 | REVIEW → PUBLISH | Quality Gate PASS en el re-review sobre `02e9153`: REV-01 y REV-02 resueltos; queda abierto REV-03 (Low) | delivery-review |
 | 2026-09-30 | PUBLISH → ENGINEERING → REVIEW | A pedido del usuario se corrige REV-03 (`.text-muted` en tema claro) antes de publicar | delivery-engineer |
 | 2026-09-30 | REVIEW → PUBLISH | Quality Gate PASS sobre `1c830f6`: REV-01, REV-02 y REV-03 resueltos; sin issues abiertos | delivery-review |
+| 2026-09-30 | PUBLISH (sin cambio) | PR #56 con descripción completa; cambio sensible (ADRs + autorización): pendiente de aprobación humana para el merge | delivery-publish |
 
 ## Investigación
 
@@ -195,4 +196,4 @@ Implementado el plan v1 (fases 0 a 5) con los valores por defecto de las pregunt
 - No verificado: la app con login (se usó la página de prueba), "Convertir a venta" de extremo a extremo, usuario sin permiso de ventas, empleado con dos sucursales, herramientas de lint/seguridad de backend (no instaladas).
 
 ## Publicación
-_Pendiente_
+**Estado:** Listo para aprobación humana (no mergeado). PR: [#56](https://github.com/rolion/praxsa-django-panel-admin/pull/56). Sensible por arquitectura (2 ADR) y autorización (`product.view_proxy_pagos`): el merge requiere aprobación explícita. Quality Gate PASS sobre `1c830f6`; los commits posteriores son solo documentación.
