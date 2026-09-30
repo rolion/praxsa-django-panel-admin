@@ -1,6 +1,6 @@
 # TASK-reportes-utilidad-ventas-diarias: Investigar y mejorar los reportes "Reporte Utilidades" y "Reporte Ventas Diaria" (solo lectura)
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** task/TASK-reportes-utilidad-ventas-diarias
@@ -17,6 +17,7 @@
 | 2026-09-30 | PLANNING (plan v1 escrito) | Plan v1 y PR abiertos; pendiente aprobación humana del plan. Se detectó que la base estaba desactualizada respecto de `origin/master` (#52) y se corrigió la fuente del costo en el ADR | delivery-plan |
 | 2026-09-30 | PLANNING → ENGINEERING | Plan aprobado por el usuario al invocar la implementación | delivery-engineer |
 | 2026-09-30 | ENGINEERING → REVIEW | Implementación completa (backend + panel_admin); pendiente verificación formal y prueba manual con datos reales | delivery-engineer |
+| 2026-09-30 | REVIEW → PUBLISH | Quality Gate PASS: 0 issues, suites y verificaciones ejecutadas (evidencia en el PR #54) | delivery-review |
 
 ## Investigación
 
@@ -146,7 +147,13 @@ Implementado según el plan v1 (commit `4a658d8` sobre el PR #54). Backend `prax
 - Pendiente para el revisor/usuario: verificación manual con ventas reales (comparar cobrado/costo/utilidad a mano con 3-4 ventas: con y sin instalación, con descuento y una con lote repartido) y con usuarios Admin, Caja y Vendedor de dos sucursales; ejecutar `asignar_permisos_reportes --dry-run` y luego el comando real en cada ambiente.
 
 ## Review
-_Pendiente_
+**Resultado: PASS** (2026-09-30, delivery-review, sobre `0ddcb12`; aislamiento de contexto procedimental). Sin issues: no se creó ningún `REV-*`. Evidencia completa en `## Testing` y `## Review` del [PR #54](https://github.com/rolion/praxsa-django-panel-admin/pull/54).
+
+- Backend `python manage.py test product`: 461 OK. `makemigrations --check`: sin cambios.
+- Frontend `ng test` con cobertura: 263 OK / 15 FAILED; los 15 son los mismos `should create` de la plantilla demo que fallan en `origin/master` (235 OK / 15 FAILED en la línea base). `ng lint` y `ng build`: OK.
+- Datos reales (BD de desarrollo, solo lectura): 12 pagos cobrados, cobrado 10770.00 = suma de `pago.monto`; venta de lámina 10570 y costo 9340 coinciden con un cálculo independiente. Matriz de roles por API: Admin 200/200, Caja 200/403, Vendedor y Almacen 403/403.
+- No ejecutado (herramientas no instaladas): `flake8`/`ruff`, `mypy`, `bandit`/`safety`, `coverage.py` (cobertura backend revisada manualmente). `npm audit`: 3 vulnerabilidades preexistentes (lockfile sin cambios).
+- Pendiente humano antes de publicar: revisión visual de las pantallas con usuarios reales y ejecutar `asignar_permisos_reportes --dry-run` y luego el real en cada ambiente.
 
 ## Publicación
 _Pendiente_
