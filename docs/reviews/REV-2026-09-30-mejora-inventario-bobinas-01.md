@@ -1,6 +1,6 @@
 # REV-2026-09-30-mejora-inventario-bobinas-01: La devolución al inventario no es segura ante llamadas concurrentes (`delete_work_note` no bloquea)
 
-**Status:** Open
+**Status:** Closed
 **Severity:** Medium
 **Category:** IMPLEMENTATION
 **Related plan:** docs/plans/PLAN-2026-09-30-mejora-inventario-bobinas.md (v1)
@@ -29,3 +29,7 @@ Saldo esperado 30.00, saldo obtenido 40.00 en 15 de 15 intentos.
 
 ## Fix sugerido (para el owner, no aplicado por la revisión)
 Que `return_detail_to_inventory` (o `delete_work_note`) tome primero el bloqueo de la proforma/detalle antes de calcular el neto, y agregar un test de concurrencia de doble devolución.
+
+
+## Resolución (revisión corrida 2, 2026-09-30)
+Corregido en b667e50 (`return_detail_to_inventory` bloquea la proforma del detalle antes de calcular el neto). Verificado en la corrida 2: `test_dos_devoluciones_concurrentes_del_mismo_detalle_devuelven_una_sola_vez` pasa (3 corridas del módulo) y, quitando temporalmente la línea de bloqueo, falla con `(Decimal('40.00'), Decimal('-10.00')) != (Decimal('30.00'), Decimal('0.00'))`.

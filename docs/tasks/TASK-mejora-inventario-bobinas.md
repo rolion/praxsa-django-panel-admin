@@ -1,6 +1,6 @@
 # TASK-mejora-inventario-bobinas: Evaluar y mejorar el manejo del inventario de bobinas
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** NO
 **Rama:** task/TASK-mejora-inventario-bobinas
@@ -17,6 +17,7 @@
 | 2026-09-30 | ENGINEERING → REVIEW | Implementación completa de las fases 1 a 6 del plan v1; fase 7.2 (verificación en vivo) queda para review/usuario | delivery-engineer |
 | 2026-09-30 | REVIEW → ENGINEERING | Quality Gate FAIL: REV-01 (Medium, devolución concurrente sin bloqueo en `delete_work_note`) y REV-02 (Low, falta test de PDF/reportes con reparto) | delivery-review |
 | 2026-09-30 | ENGINEERING → REVIEW | REV-01 y REV-02 corregidos; master integrado (PR #53) con renumeración de migraciones a 0113/0114 | delivery-engineer |
+| 2026-09-30 | REVIEW → PUBLISH | Quality Gate PASS en la corrida 2: REV-01 y REV-02 corregidos y verificados; suite `product` 403 OK | delivery-review |
 
 ## Investigación
 
@@ -163,11 +164,13 @@ Fases 1 a 6 del [plan v1](../plans/PLAN-2026-09-30-mejora-inventario-bobinas.md)
 - **Integración con master (PR #53):** master agregó `0112_instalador_is_active`, que colisionaba con mi `0112`. Se renumeraron mis migraciones a `0113_inventario_movimiento` y `0114_precio_venta_sucursal_unico` (encadenadas tras la de master; nunca se aplicaron fuera de bases de prueba). Suite `product`: 403 tests OK. El serializer de precios de master valida duplicados por su cuenta, por lo que la restricción de base de datos no produce un 500 en su API (su docstring dice que la tabla no tiene constraint; ahora sí la tiene, sin efecto funcional).
 
 ## Review
-**Corrida 1 (2026-09-30): FAIL.** Detalle y evidencia en la sección `## Review` del PR #52.
-- [REV-2026-09-30-mejora-inventario-bobinas-01](../reviews/REV-2026-09-30-mejora-inventario-bobinas-01.md) — Medium, IMPLEMENTATION, Open: la devolución no es segura ante llamadas concurrentes (`delete_work_note` no bloquea la proforma).
-- [REV-2026-09-30-mejora-inventario-bobinas-02](../reviews/REV-2026-09-30-mejora-inventario-bobinas-02.md) — Low, IMPLEMENTATION, Open: falta el test planeado de PDF y reportes con línea repartida en varios lotes.
+**Corrida 2 (2026-09-30): PASS.** Detalle y evidencia en la sección `## Review` del PR #52.
+- [REV-2026-09-30-mejora-inventario-bobinas-01](../reviews/REV-2026-09-30-mejora-inventario-bobinas-01.md) — Medium, IMPLEMENTATION, **Closed** (bloqueo de la proforma en la devolución; test de regresión con dos hilos verificado, falla sin el arreglo).
+- [REV-2026-09-30-mejora-inventario-bobinas-02](../reviews/REV-2026-09-30-mejora-inventario-bobinas-02.md) — Low, IMPLEMENTATION, **Closed** (tests de PDF y reportes con reparto).
 
-Verificado: suite `product` 374 OK (2 corridas; 1 corrida anómala por posible uso concurrente de la base de pruebas), `check`, `makemigrations --check`, PDF y reportes con reparto multi-fila. No ejecutado: frontend (no tocado), lint/tipos/seguridad/cobertura (herramientas no instaladas) y la prueba manual en vivo (fase 7.2).
+Verificado: suite `product` 403 OK, módulo de asignación 31 OK x3, `check`, `makemigrations --check`. No ejecutado: frontend (no tocado), lint/tipos/seguridad/cobertura (herramientas no instaladas) y la prueba manual en vivo (fase 7.2), recomendada antes de fusionar.
+
+**Corrida 1 (2026-09-30): FAIL** (REV-01 y REV-02, ya cerrados).
 
 ## Publicación
 _Pendiente_

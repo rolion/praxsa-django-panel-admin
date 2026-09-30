@@ -1,6 +1,6 @@
 # REV-2026-09-30-mejora-inventario-bobinas-02: Falta el test planeado de PDF y reportes con una línea repartida en varios lotes
 
-**Status:** Open
+**Status:** Closed
 **Severity:** Low
 **Category:** IMPLEMENTATION
 **Related plan:** docs/plans/PLAN-2026-09-30-mejora-inventario-bobinas.md (v1)
@@ -27,3 +27,7 @@ Ran 2 tests in 0.717s OK
 ```
 
 Sin errores; los saldos agregados son correctos (10 m disponibles, 50 m instalados). Se observa además, como ya estaba diferido por decisión del usuario, que PDF y reporte de utilidades solo muestran el primer lote (L100). La lista de filas del reporte de almacén está deduplicada por diseño (`distinct` por sucursal, lámina y ancho).
+
+
+## Resolución (revisión corrida 2, 2026-09-30)
+Corregido en b667e50 (`PdfYReportesConRepartoTest`: PDF de la hoja de trabajo, reporte de almacén y de utilidades con una línea repartida en dos lotes). Verificado en la corrida 2: los tests pasan dentro de la suite completa (403 OK).
