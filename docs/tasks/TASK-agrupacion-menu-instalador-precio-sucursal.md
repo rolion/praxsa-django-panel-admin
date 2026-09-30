@@ -1,6 +1,6 @@
 # TASK-agrupacion-menu-instalador-precio-sucursal: Dónde agrupar `instalador` y `precio_venta_sucursal` en el menú lateral de `panel_admin/`
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** `task/TASK-agrupacion-menu-instalador-precio-sucursal`
@@ -15,6 +15,7 @@
 | 2026-09-30 | ARCHITECTURE → PLANNING | ADR: permisos por `DjangoModelPermissions` (escritura solo `admin`, supuesto a confirmar), soft delete de instalador con `is_active`, borrado físico de precios, alcance por `get_sucursales_in_scope`, unicidad validada en serializer (constraint en base diferido) | delivery-architect |
 | 2026-09-30 | PLANNING → ENGINEERING | Plan v1 escrito (backend primero, frontend después, un solo PR); el usuario confirmó que solo `admin` escribe y los demás roles solo leen | delivery-plan |
 | 2026-09-30 | ENGINEERING → REVIEW | Plan v1 implementado sin desvíos de alcance (backend + frontend). Verificación propia: backend 371/371, `makemigrations --check` limpio, `ng build`/`ng lint` limpios, frontend 235/250 con las mismas 15 fallas de componentes demo de la plantilla | delivery-engineer |
+| 2026-09-30 | REVIEW → PUBLISH | Quality Gate PASS: backend 371/371, frontend sin fallas nuevas, prueba en vivo correcta; 1 issue Low abierto (REV-01, estético, no bloqueante) | delivery-review |
 
 ## Investigación
 
@@ -131,7 +132,14 @@ Plan v1 implementado tal cual, sin desvíos de alcance.
 - Tras desplegar hay que ejecutar `python manage.py asignar_permisos_instalador_precio` en cada ambiente.
 
 ## Review
-_Pendiente_
+**Resultado: PASS** (2026-09-30, delivery-review; sesión distinta de la implementación, aislamiento procedimental).
+
+- Backend `manage.py test` 371/371 OK; `makemigrations --check` limpio; migración `0112` aplicada sin error sobre BD vacía.
+- Frontend `ng lint` limpio, `ng build` OK, `ng test` 235 OK / 15 fallas preexistentes de componentes demo (ajenas al cambio).
+- Prueba en vivo (BD descartable) con `admin` y con usuario de solo lectura: CRUD, soft delete, unicidad, alcance por sucursal y 403 verificados.
+- No realizado: `flake8`/`ruff`/`mypy`/`bandit`/`safety`/`coverage.py` no están instalados en backend (revisión manual de cobertura de ramas nuevas). `npm audit`: 79 vulnerabilidades preexistentes, sin dependencias nuevas.
+- Issues abiertos: [REV-2026-09-30-agrupacion-menu-instalador-precio-sucursal-01](../reviews/REV-2026-09-30-agrupacion-menu-instalador-precio-sucursal-01.md) (Low, IMPLEMENTATION, estético; no bloquea).
+- Siguiente: `/delivery-publish TASK-agrupacion-menu-instalador-precio-sucursal`.
 
 ## Publicación
 _Pendiente_
