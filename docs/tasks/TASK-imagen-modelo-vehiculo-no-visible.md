@@ -1,6 +1,6 @@
 # TASK-imagen-modelo-vehiculo-no-visible: La imagen del vehículo no se visualiza en el listado ni en la vista de Modelo
 
-**Etapa actual:** PUBLISH
+**Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** NO
 **Rama:** task/TASK-imagen-modelo-vehiculo-no-visible
@@ -14,6 +14,7 @@
 | 2026-09-30 20:40 UTC | PLANNING → ENGINEERING | Plan v1 listo, pendiente de confirmación humana | delivery-plan |
 | 2026-09-30 21:00 UTC | ENGINEERING → REVIEW | Implementación completa según plan v1 | delivery-engineer |
 | 2026-09-30 21:30 UTC | REVIEW → PUBLISH | Quality Gate PASS (2 issues no bloqueantes: REV-01 Medium, REV-02 Low) | delivery-review |
+| 2026-09-30 22:00 UTC | PUBLISH → PLANNING → ENGINEERING | REV-01 (PLAN, Medium): plan v2 añade ajuste de nginx; incorpora REV-02 | delivery-plan |
 
 ## Investigación
 
@@ -78,7 +79,7 @@ _Pendiente / No aplica_
 _Pendiente / No aplica según veredicto_
 
 ## Plan
-[PLAN-2026-09-30-imagen-modelo-vehiculo-no-visible.md](../plans/PLAN-2026-09-30-imagen-modelo-vehiculo-no-visible.md) — versión vigente: v1
+[PLAN-2026-09-30-imagen-modelo-vehiculo-no-visible.md](../plans/PLAN-2026-09-30-imagen-modelo-vehiculo-no-visible.md) — versión vigente: v2
 
 ## Implementación
 Según plan v1, sin desvíos. (Las preguntas abiertas del plan —dev vs. stg/prod, placeholder como indicador— no se respondieron; se siguió el plan tal cual.)

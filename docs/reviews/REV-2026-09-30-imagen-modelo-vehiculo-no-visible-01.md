@@ -1,6 +1,6 @@
 # REV-2026-09-30-imagen-modelo-vehiculo-no-visible-01: `SECURE_PROXY_SSL_HEADER` probablemente inefectivo en prod/stg (nginx interno reenvía `$scheme` = http)
 
-**Status:** Open
+**Status:** In progress (plan v2)
 **Severity:** Medium
 **Category:** PLAN
 **Related plan:** docs/plans/PLAN-2026-09-30-imagen-modelo-vehiculo-no-visible.md (v1)

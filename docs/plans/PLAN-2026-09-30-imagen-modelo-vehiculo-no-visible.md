@@ -1,4 +1,4 @@
-# PLAN-2026-09-30-imagen-modelo-vehiculo-no-visible (v1)
+# PLAN-2026-09-30-imagen-modelo-vehiculo-no-visible (v2)
 
 **Task:** TASK-imagen-modelo-vehiculo-no-visible
 **DDRs relacionados:** Ninguno
@@ -29,7 +29,7 @@ Ver `docs/tasks/TASK-imagen-modelo-vehiculo-no-visible.md`. Causa confirmada en 
 
 ## Proposed solution
 1. **Frontend (robustez)**: en listado y vista, manejar `(error)` del `<img>` y conmutar al placeholder existente (bandera por fila/por componente). En `image-upload` hacer lo mismo para `currentImageUrl` remoto (no para el preview local de un `File`).
-2. **Backend (esquema)**: agregar `SECURE_PROXY_SSL_HEADER` en `settings.py` para que las URLs absolutas salgan con `https` tras nginx.
+2. **Backend (esquema)**: agregar `SECURE_PROXY_SSL_HEADER` en `settings.py` para que las URLs absolutas salgan con `https` tras nginx. **(v2)** Además, en `nginx/nginx.conf.prod` y `.stg` (bloque del panel) propagar el `X-Forwarded-Proto` recibido del proxy externo en vez de sobrescribirlo con `$scheme`: un `map $http_x_forwarded_proto $forwarded_proto { default $http_x_forwarded_proto; '' $scheme; }` en `http {}` y `proxy_set_header X-Forwarded-Proto $forwarded_proto;`. Motivo (REV-01): el nginx interno escucha solo en :80 y está detrás de nginx-proxy (`VIRTUAL_HOST`/`LETSENCRYPT_HOST` en `docker-compose.prod|stg.yml:43-45`, red `proxy`), que termina TLS; con `$scheme` Django siempre veía `http`. Confiar en el header entrante es seguro porque el nginx interno solo hace `expose: 80` y es alcanzable únicamente vía ese proxy.
 3. **Datos/entorno (manual, sin código)**: restaurar o re-subir las 2 imágenes en dev; en stg/prod verificar volumen `media` y `location /media/`. Se documenta en el PR, no se automatiza.
 
 Alternativa descartada: devolver URL relativa (`/media/...`) y resolver en el frontend. Cambia el contrato, y en dev el frontend (puerto 4200) y la API (8000) tienen orígenes distintos, por lo que exigiría lógica extra con `environment.apiUrl`.
@@ -37,10 +37,11 @@ Alternativa descartada: devolver URL relativa (`/media/...`) y resolver en el fr
 ## Files/components affected
 **Backend**
 - `praxsa_manager/praxsa_manager/settings.py` (1 línea de configuración)
+- **(v2)** `nginx/nginx.conf.prod` y `nginx/nginx.conf.stg` (map + `proxy_set_header`, solo bloque del panel)
 - `praxsa_manager/product/tests/test_vehicles_module.py` (test nuevo)
 
 **Frontend (`panel_admin/src/app/`)**
-- `vehicles/models/model-view.component.{html,ts}` y su spec
+- `vehicles/models/model-view.component.{html,ts}` y su spec (v2: resetear `imageFailed` en `load()`, REV-02)
 - `vehicles/models/models-list.component.{html,ts}` y su spec
 - `shared/image-upload/image-upload.component.{html,ts}` y `vehicles/models/model-edit.component.spec.ts` (o spec propio del componente)
 
@@ -51,6 +52,7 @@ Alternativa descartada: devolver URL relativa (`/media/...`) y resolver en el fr
 4. Frontend: `models-list` — mismo patrón por fila (p. ej. conjunto de ids fallidos) con `(error)`.
 5. Frontend: `image-upload` — `(error)` sobre `currentImageUrl` remoto: mostrar placeholder y no mostrar "Quitar imagen" falsa; el preview de `File` local no se ve afectado.
 6. Specs Angular: simular evento `error` en el `<img>` y verificar que aparece el placeholder (view, list, image-upload); verificar que con imagen válida se mantiene el `<img>`.
+6b. **(v2)** Nginx: aplicar el `map` y el `proxy_set_header` en `.prod` y `.stg`; validar sintaxis con `nginx -t` (p. ej. `docker run --rm -v <conf>:/etc/nginx/nginx.conf:ro nginx:alpine nginx -t`; si Docker no está disponible, declararlo como verificación no realizada). **(v2, REV-02)** En `model-view`, poner `imageFailed = false` al inicio de `load()` y añadir spec que verifique que tras recargar el modelo se reintenta el `<img>`.
 7. Correr suite backend de vehículos y specs Angular afectados; `ng build` y `ng lint`.
 8. Smoke manual en dev (con el usuario): re-subir una imagen a un Modelo y ver listado/vista/edición; comprobar placeholder con una URL rota.
 
@@ -63,6 +65,8 @@ Alternativa descartada: devolver URL relativa (`/media/...`) y resolver en el fr
 ## Acceptance criteria
 - Con archivo existente, la imagen se ve en listado, vista y edición de Modelo.
 - Con archivo inexistente/URL rota, en las tres pantallas se ve el placeholder, no el icono roto.
+- **(v2)** Ambos `nginx.conf.prod|stg` pasan `nginx -t` y reenvían el `X-Forwarded-Proto` entrante (fallback a `$scheme` si viene vacío). Post-despliegue (manual): `GET` del API del panel en stg/prod devuelve `image` con `https://`.
+- **(v2)** Tras recargar `model-view`, una imagen que falló vuelve a intentarse.
 - Con `X-Forwarded-Proto: https` la API devuelve `image` con `https://`; sin header, sin cambios.
 - Tests backend de vehículos y specs Angular afectados en verde (las fallas preexistentes de la plantilla no cuentan); `ng build`/`ng lint` limpios.
 - El PR documenta los pasos manuales de datos/infra (re-subir imágenes, volumen `media`).
@@ -82,3 +86,6 @@ Alternativa descartada: devolver URL relativa (`/media/...`) y resolver en el fr
 **Preguntas abiertas para el usuario:**
 1. ¿La captura es de dev local o de stg/prod? (No cambia el código del plan, sí los pasos manuales.)
 2. ¿Aceptás mostrar el placeholder cuando la imagen no carga, o preferís otro indicador?
+
+## Changelog
+- **v2** (2026-09-30): REV-01 — el cambio de `settings.py` solo no produce `https` porque el nginx interno sobrescribe `X-Forwarded-Proto` con `$scheme` (=http) detrás de nginx-proxy; se agrega el ajuste en `nginx.conf.prod|stg`. Se incorpora también REV-02 (reset de `imageFailed` en `load()`), ya prevista en el paso 3 de v1. Solicitado por delivery-review (REV-2026-09-30-imagen-modelo-vehiculo-no-visible-01 y -02).
