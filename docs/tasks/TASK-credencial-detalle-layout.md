@@ -4,7 +4,7 @@
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** SI
 **Rama:** `claude/credential-detail-layout-248c24` (asignada por el entorno)
-**Pull Request:** _pendiente de abrir_
+**Pull Request:** [#57](https://github.com/rolion/praxsa-django-panel-admin/pull/57)
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
