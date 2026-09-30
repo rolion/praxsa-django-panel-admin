@@ -1,10 +1,10 @@
 # TASK-imagen-modelo-vehiculo-no-visible: La imagen del vehículo no se visualiza en el listado ni en la vista de Modelo
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** NO
 **Rama:** task/TASK-imagen-modelo-vehiculo-no-visible
-**Pull Request:** _sin abrir todavía_
+**Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/58
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
@@ -13,6 +13,7 @@
 | 2026-09-30 20:40 UTC | INVESTIGATION → PLANNING | Investigación completa, veredicto NEEDS_PLAN, sin diseño | delivery-plan |
 | 2026-09-30 20:40 UTC | PLANNING → ENGINEERING | Plan v1 listo, pendiente de confirmación humana | delivery-plan |
 | 2026-09-30 21:00 UTC | ENGINEERING → REVIEW | Implementación completa según plan v1 | delivery-engineer |
+| 2026-09-30 21:30 UTC | REVIEW → PUBLISH | Quality Gate PASS (2 issues no bloqueantes: REV-01 Medium, REV-02 Low) | delivery-review |
 
 ## Investigación
 
@@ -94,7 +95,11 @@ Según plan v1, sin desvíos. (Las preguntas abiertas del plan —dev vs. stg/pr
 
 
 ## Review
-_Pendiente_
+**Resultado: PASS** — backend 48/48 (módulo) y 522/522 (suite completa); Angular 333/347 (14 fallos preexistentes "should create" de la plantilla, ajenos al diff); `ng lint` y `ng build` OK. flake8/bandit/mypy/coverage.py no instalados (no ejecutados). `npm audit`: 79 vulnerabilidades preexistentes. Smoke manual en navegador real: pendiente.
+
+Issues abiertos (no bloqueantes):
+- [REV-01](../reviews/REV-2026-09-30-imagen-modelo-vehiculo-no-visible-01.md) — Medium / PLAN: nginx interno con `listen 80` reenvía `X-Forwarded-Proto $scheme`=http; `SECURE_PROXY_SSL_HEADER` probablemente no produzca `https` en prod/stg.
+- [REV-02](../reviews/REV-2026-09-30-imagen-modelo-vehiculo-no-visible-02.md) — Low / IMPLEMENTATION: `imageFailed` no se resetea en `load()`.
 
 ## Publicación
 _Pendiente_
