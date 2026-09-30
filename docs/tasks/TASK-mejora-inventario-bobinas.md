@@ -18,6 +18,7 @@
 | 2026-09-30 | REVIEW → ENGINEERING | Quality Gate FAIL: REV-01 (Medium, devolución concurrente sin bloqueo en `delete_work_note`) y REV-02 (Low, falta test de PDF/reportes con reparto) | delivery-review |
 | 2026-09-30 | ENGINEERING → REVIEW | REV-01 y REV-02 corregidos; master integrado (PR #53) con renumeración de migraciones a 0113/0114 | delivery-engineer |
 | 2026-09-30 | REVIEW → PUBLISH | Quality Gate PASS en la corrida 2: REV-01 y REV-02 corregidos y verificados; suite `product` 403 OK | delivery-review |
+| 2026-09-30 | PUBLISH (sin cambio de etapa) | PR #52 completo y verificado; cambio sensible (ADR + migraciones): queda a la espera de aprobación humana explícita | delivery-publish |
 
 ## Investigación
 
@@ -173,4 +174,8 @@ Verificado: suite `product` 403 OK, módulo de asignación 31 OK x3, `check`, `m
 **Corrida 1 (2026-09-30): FAIL** (REV-01 y REV-02, ya cerrados).
 
 ## Publicación
-_Pendiente_
+**Estado: Listo para aprobación humana** — [PR #52](https://github.com/rolion/praxsa-django-panel-admin/pull/52).
+
+Verificado antes de publicar: review corrida 2 en PASS sin issues abiertos; la rama incluye master (PR #53) y no tiene commits de código posteriores al review (el último es solo de documentación); el diff contiene únicamente archivos del plan; sin secretos ni temporales; la descripción del PR está completa (arquitectura, cambios, testing, review, limitaciones conocidas).
+
+**Cambio sensible (arquitectura y base de datos):** no se marca como mergeado ni se mergea sin aprobación humana explícita. ADR: asignación y movimientos; regla de ancho y precio. Migraciones 0113/0114 reversibles.
