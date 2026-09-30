@@ -20,6 +20,8 @@ const nota = (overrides: Partial<AppNotaTrabajoDetail> = {}): AppNotaTrabajoDeta
   sales_type_label: 'Venta con Instalación', resumen: [], proforma_items: [], ...overrides,
 });
 
+const ev = (value: string) => ({ target: { value } }) as unknown as Event;
+
 function routeWithId(id: string) {
   return { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ id }) } } };
 }
@@ -69,6 +71,112 @@ describe('NotasTrabajoListComponent', () => {
 
     expect(component.withoutSucursal).toBe(true);
     expect(component.canEdit).toBe(false);
+  });
+});
+
+describe('NotasTrabajoListComponent filtros', () => {
+  let httpMock: HttpTestingController;
+  let component: NotasTrabajoListComponent;
+
+  const nv = (status: 'por_cobrar' | 'pagada' | 'anulada') => ({ id: 1, status, status_label: status, total_price: '1.00' });
+  const rows = (): AppNotaTrabajo[] => [
+    nota({ id: 1, sucursal_id: 1, sucursal_name: 'Central', car_brand_name: 'Toyota', car_model_name: 'Corolla', instaladar: 10, instalador_name: 'Pedro', status: 'en_proceso', nota_venta: nv('por_cobrar') }),
+    nota({ id: 2, sucursal_id: 2, sucursal_name: 'Norte', car_brand_name: 'Toyota', car_model_name: 'Hilux', instaladar: 11, instalador_name: 'Juan', status: 'terminado', nota_venta: nv('pagada') }),
+    nota({ id: 3, sucursal_id: 2, sucursal_name: 'Norte', car_brand_name: 'Nissan', car_model_name: 'Sentra', instaladar: null, instalador_name: null, status: 'cancelada', nota_venta: null }),
+  ];
+  const ids = () => component.rows.map((r) => r.id);
+
+  function create(data: AppNotaTrabajo[]) {
+    const fixture = TestBed.createComponent(NotasTrabajoListComponent);
+    component = fixture.componentInstance;
+    component.ngOnInit();
+    httpMock.expectOne(`${base}/notas-trabajo`).flush(data);
+    return fixture;
+  }
+
+  beforeEach(() => {
+    localStorage.clear();
+    TestBed.configureTestingModule({
+      imports: [NotasTrabajoListComponent],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
+    });
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+    localStorage.clear();
+  });
+
+  it('offers sucursales, brands, models and installers from the loaded rows', () => {
+    create(rows());
+    expect(component.sucursalOptions.map((o) => o.label)).toEqual(['Central', 'Norte']);
+    expect(component.marcaOptions).toEqual(['Nissan', 'Toyota']);
+    expect(component.modeloOptions).toEqual(['Corolla', 'Hilux', 'Sentra']);
+    expect(component.instaladorOptions.map((o) => o.label)).toEqual(['Juan', 'Pedro']);
+  });
+
+  it('filters by sucursal, brand, model, installer, state and cobro', () => {
+    create(rows());
+    component.setFiltro('sucursal', ev('2'));
+    expect(ids()).toEqual([2, 3]);
+    component.limpiarFiltros();
+    component.setFiltro('marca', ev('Toyota'));
+    expect(ids()).toEqual([1, 2]);
+    component.setFiltro('modelo', ev('Hilux'));
+    expect(ids()).toEqual([2]);
+    component.limpiarFiltros();
+    component.setFiltro('instalador', ev('10'));
+    expect(ids()).toEqual([1]);
+    component.limpiarFiltros();
+    component.setFiltro('status', ev('cancelada'));
+    expect(ids()).toEqual([3]);
+    component.limpiarFiltros();
+    component.setFiltro('cobro', ev('pagada'));
+    expect(ids()).toEqual([2]);
+  });
+
+  it('filters the notes without a nota de venta', () => {
+    create(rows());
+    component.setFiltro('cobro', ev('sin_nota_venta'));
+    expect(ids()).toEqual([3]);
+  });
+
+  it('resets the model when the brand changes and combines filters with the search', () => {
+    create(rows());
+    component.setFiltro('marca', ev('Toyota'));
+    component.setFiltro('modelo', ev('Hilux'));
+    component.setFiltro('marca', ev('Nissan'));
+    expect(component.filtros.modelo).toBe('');
+    component.limpiarFiltros();
+    component.setFiltro('sucursal', ev('2'));
+    component.filterDatatable(ev('ana'));
+    expect(ids()).toEqual([2, 3]);
+    component.setFiltro('status', ev('terminado'));
+    expect(ids()).toEqual([2]);
+  });
+
+  it('works when the backend does not send the brand yet', () => {
+    create([nota({ id: 1, car_brand_name: undefined }), nota({ id: 2, car_brand_name: undefined })]);
+    expect(component.marcaOptions).toEqual([]);
+    component.setFiltro('status', ev('en_proceso'));
+    expect(ids()).toEqual([1, 2]);
+  });
+
+  it('distinguishes "no results with the filters" from "no data" and renders the card', () => {
+    const fixture = TestBed.createComponent(NotasTrabajoListComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    httpMock.expectOne(`${base}/notas-trabajo`).flush(rows());
+    component.setFiltro('status', ev('terminado'));
+    component.setFiltro('sucursal', ev('1'));
+    fixture.detectChanges();
+    const text: string = fixture.nativeElement.textContent;
+    expect(text).toContain('No hay resultados con los filtros aplicados.');
+    expect(text).not.toContain('No hay notas de trabajo para mostrar.');
+    for (const label of ['Filtros', 'Sucursal', 'Marca', 'Modelo', 'Instalador', 'Estado', 'Cobro', 'Limpiar']) {
+      expect(text).toContain(label);
+    }
   });
 });
 

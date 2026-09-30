@@ -38,7 +38,7 @@ class Orden_Trabajo_Business:
         sucursal, ninguna. Ver ADR-modulo-ordenes-proforma-nota-trabajo-alcance-permisos."""
         qs = qs.filter(proforma__is_delete=False).select_related(
             'proforma', 'proforma__sucursal', 'proforma__car_model_id',
-            'instaladar', 'car_model', 'responsable', 'nota_venta',
+            'instaladar', 'car_model', 'car_model__car_brand_id', 'responsable', 'nota_venta',
         )
         if self.user_helper.can_view_all_sucursales(user):
             return qs

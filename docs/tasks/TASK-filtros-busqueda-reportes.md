@@ -1,6 +1,6 @@
 # TASK-filtros-busqueda-reportes: Filtros de búsqueda en reportes Proforma, Nota Trabajo y Nota Venta
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** SI
 **Rama:** `task/TASK-filtros-busqueda-reportes`
@@ -18,6 +18,7 @@
 | 2026-09-30 | DESIGN → PLANNING | DDR de filtros en listados del panel Angular emitido; veredicto NEEDS_PLAN se mantiene (plan v2 requerido) | delivery-design |
 | 2026-09-30 | PLANNING → PLANNING | Plan v2: agrega Fase 2 (panel Angular) tras DESIGN_REVIEW_REQUIRED | delivery-plan |
 | 2026-09-30 | PLANNING → ENGINEERING | Plan v2 listo para implementar (pendiente de aprobación humana) | delivery-plan |
+| 2026-09-30 | ENGINEERING → REVIEW | Fase 2 (panel Angular) implementada según plan v2 | delivery-engineer |
 
 ## Investigación
 
@@ -135,6 +136,18 @@ Implementado según plan v1, sin desvíos de alcance.
 - Al listar notas sin `entrada_vehiculo` (ahora visibles), `get_entrada_vehiculo_date_format` fallaba con `None`; se corrigió mostrando `-` (cambio mínimo necesario, no estaba en el plan).
 
 **Deuda técnica / pendiente:** alcance por sucursal legado (`sucursales[0]`) y Admin sin sucursal en `NotaVentaAdmin` siguen fuera de alcance (ADR-002). Sin verificación manual en el admin real todavía (recomendada en el plan).
+
+### Fase 2 — Panel Angular (plan v2)
+- **Backend (aditivo):** `car_brand_name` en `NotaTrabajoListSerializer` y `car_model__car_brand_id` en el `select_related` de `Orden_Trabajo_Business.get_panel_nota_queryset` (sin N+1 nuevo; cubierto por test de conteo de queries). Tests en `tests/test_ordenes_notas_trabajo.py` (3 casos).
+- **Frontend:** nuevo `panel_admin/src/app/ordenes/ordenes.filtros.ts` (utilidades puras: `opcionesUnicas`, `opcionesPorId`, `dentroDeRango`, `rangoFechasInvalido`, opciones de estado/cobro) y su spec. Tarjeta "Filtros" (patrón `section-card` de Reportes) en `proformas-list`, `notas-trabajo-list` y `notas-venta-list` con los filtros del DDR, botón "Limpiar", mensaje "No hay resultados con los filtros aplicados." y sucursal única como texto. El select de estado de Proformas pasó del encabezado a la tarjeta (`onStatusChange` se conserva). `AppNotaTrabajo.car_brand_name?` opcional en `ordenes.model.ts`.
+- **Tests Angular:** +31 casos (`ordenes.filtros.spec.ts` y bloques "filtros" en los tres specs de lista). Corrida propia de `ng test`: 294 OK / 15 FAILED; los 15 son specs "should create" de la plantilla (`FeatherModule`: AdvanceTable, Blank, Dashboard2, First1-3, Footer, Main, Page404/500, Second1-2, Sidebar, Signup, Third1) y **fallan igual en `origin/master`** (263 OK / 15 FAILED), no relacionados con este cambio. `manage.py test product`: 481 OK. `ng build` (development) compila. No es el Quality Gate.
+
+**Desvío menor del plan (implementación, no cambia alcance):** las opciones del filtro de sucursal se derivan de las filas cargadas (`sucursal_id`/`sucursal_name`, ya acotadas por el backend a las sucursales del usuario), en vez de llamar a `listSucursales()`. Mismo resultado observable para el usuario (solo ve sucursales con filas dentro de su alcance), evita una petición extra por lista y es consistente con marca/modelo/instalador. Una sucursal del usuario sin filas no aparece como opción.
+
+**Deuda técnica / pendiente**
+- Verificación manual en el navegador contra el backend local (plan, paso 6) **no realizada**: requiere iniciar sesión en el panel con un usuario real y no se ingresaron credenciales; recomendada antes de mergear.
+- Filtrado en cliente (se migra a servidor si crece el volumen); `proforma_created_on` es `auto_now` (filtra por última modificación).
+- Los 15 specs rotos de la plantilla son deuda preexistente.
 
 ## Review
 _Pendiente_

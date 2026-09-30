@@ -6,6 +6,7 @@ import { AuthService } from '../../core/service/auth.service';
 import { extractApiError } from '../ordenes.errors';
 import { AppProforma } from '../ordenes.model';
 import { OrdenesService } from '../ordenes.service';
+import { OpcionFiltro, TODOS, dentroDeRango, opcionesPorId, opcionesUnicas, rangoFechasInvalido, valorDeEvento } from '../ordenes.filtros';
 import { ORDER_STATUS_OPTIONS, statusClass } from '../ordenes.status';
 import { confirmAnularProforma, confirmGenerateNota, saveBlob, showErrorAlert } from '../proforma-actions';
 
@@ -13,6 +14,11 @@ import { confirmAnularProforma, confirmGenerateNota, saveBlob, showErrorAlert } 
  * acciones que Almacen. Los botones se ocultan segun estado y permisos, pero
  * solo es UX: cada endpoint valida permiso y alcance por sucursal
  * (ADR-modulo-ordenes-proforma-nota-trabajo-alcance-permisos). */
+type FiltroProforma = 'sucursal' | 'marca' | 'modelo' | 'desde' | 'hasta' | 'status';
+const FILTROS_VACIOS: Record<FiltroProforma, string> = {
+  sucursal: TODOS, marca: TODOS, modelo: TODOS, desde: TODOS, hasta: TODOS, status: TODOS,
+};
+
 @Component({
   selector: 'app-proformas-list',
   standalone: true,
@@ -32,8 +38,36 @@ export class ProformasListComponent implements OnInit {
   /** El usuario no tiene ninguna sucursal asignada: el listado vacio se explica. */
   withoutSucursal = false;
   readonly statusOptions = ORDER_STATUS_OPTIONS;
-  statusFilter = '';
+  /** Filtros de la tarjeta "Filtros" ('' = todos); se combinan con el buscador por AND. */
+  filtros: Record<FiltroProforma, string> = { ...FILTROS_VACIOS };
   private searchTerm = '';
+
+  get statusFilter(): string {
+    return this.filtros.status;
+  }
+
+  /** Opciones tomadas de las filas cargadas (ya acotadas por el backend a las sucursales del usuario). */
+  get sucursalOptions(): OpcionFiltro[] {
+    return opcionesPorId(this.data, (r) => r.sucursal, (r) => r.sucursal_name);
+  }
+
+  get marcaOptions(): string[] {
+    return opcionesUnicas(this.data, (r) => r.car_brand_name);
+  }
+
+  get modeloOptions(): string[] {
+    const marca = this.filtros.marca;
+    const rows = marca ? this.data.filter((r) => r.car_brand_name === marca) : this.data;
+    return opcionesUnicas(rows, (r) => r.car_model_name);
+  }
+
+  get rangoError(): string {
+    return rangoFechasInvalido(this.filtros.desde, this.filtros.hasta);
+  }
+
+  get hasActiveFilters(): boolean {
+    return Object.values(this.filtros).some((value) => value !== TODOS);
+  }
 
   badge(status: string): string {
     return 'status-badge ' + statusClass(status);
@@ -90,15 +124,32 @@ export class ProformasListComponent implements OnInit {
   }
 
   onStatusChange(event: Event): void {
-    this.statusFilter = (event.target as HTMLSelectElement).value;
+    this.setFiltro('status', event);
+  }
+
+  setFiltro(campo: FiltroProforma, event: Event): void {
+    this.filtros[campo] = valorDeEvento(event);
+    if (campo === 'marca') {
+      this.filtros.modelo = TODOS;
+    }
+    this.applyFilters();
+  }
+
+  limpiarFiltros(): void {
+    this.filtros = { ...FILTROS_VACIOS };
     this.applyFilters();
   }
 
   private applyFilters(): void {
     const val = this.searchTerm;
+    const f = this.filtros;
     this.rows = this.data.filter(
       (row) =>
-        (!this.statusFilter || row.status === this.statusFilter) &&
+        (!f.status || row.status === f.status) &&
+        (!f.sucursal || String(row.sucursal) === f.sucursal) &&
+        (!f.marca || row.car_brand_name === f.marca) &&
+        (!f.modelo || row.car_model_name === f.modelo) &&
+        dentroDeRango(row.proforma_created_on, f.desde, f.hasta) &&
         (!val ||
           String(row.id).indexOf(val) !== -1 ||
           row.name.toLowerCase().indexOf(val) !== -1 ||

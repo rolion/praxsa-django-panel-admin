@@ -16,6 +16,8 @@ const row = (overrides: Partial<AppProforma> = {}): AppProforma => ({
   is_close: false, nota_trabajo_id: null, ...overrides,
 });
 
+const ev = (value: string) => ({ target: { value } }) as unknown as Event;
+
 describe('ProformasListComponent', () => {
   let component: ProformasListComponent;
   let httpMock: HttpTestingController;
@@ -203,5 +205,102 @@ describe('ProformasListComponent', () => {
     await pending;
 
     expect(component.rows[0].status).toBe('anulada');
+  });
+
+  describe('filtros', () => {
+    const rows = () => [
+      row({ id: 1, sucursal: 1, sucursal_name: 'Central', car_brand_name: 'Toyota', car_model_name: 'Corolla', proforma_created_on: '2026-09-01T09:00:00' }),
+      row({ id: 2, sucursal: 2, sucursal_name: 'Norte', car_brand_name: 'Toyota', car_model_name: 'Hilux', proforma_created_on: '2026-09-15T09:00:00', status: 'en_trabajo', status_label: 'En trabajo' }),
+      row({ id: 3, sucursal: 2, sucursal_name: 'Norte', car_brand_name: 'Nissan', car_model_name: 'Sentra', proforma_created_on: '2026-09-30T23:00:00' }),
+    ];
+    const ids = () => component.rows.map((r) => r.id);
+
+    /** Renderiza el componente (el primer detectChanges dispara ngOnInit) y carga las filas. */
+    function render(data: AppProforma[]) {
+      const fixture = TestBed.createComponent(ProformasListComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+      httpMock.expectOne(`${base}/proformas`).flush(data);
+      fixture.detectChanges();
+      return fixture;
+    }
+
+    it('offers the sucursales, brands and models present in the loaded rows', () => {
+      create(rows());
+      expect(component.sucursalOptions.map((o) => o.label)).toEqual(['Central', 'Norte']);
+      expect(component.marcaOptions).toEqual(['Nissan', 'Toyota']);
+      expect(component.modeloOptions).toEqual(['Corolla', 'Hilux', 'Sentra']);
+    });
+
+    it('filters by sucursal, brand, model and date range', () => {
+      create(rows());
+      component.setFiltro('sucursal', ev('2'));
+      expect(ids()).toEqual([2, 3]);
+      component.setFiltro('marca', ev('Toyota'));
+      expect(ids()).toEqual([2]);
+      component.limpiarFiltros();
+      component.setFiltro('modelo', ev('Sentra'));
+      expect(ids()).toEqual([3]);
+      component.limpiarFiltros();
+      component.setFiltro('desde', ev('2026-09-10'));
+      component.setFiltro('hasta', ev('2026-09-30'));
+      expect(ids()).toEqual([2, 3]);
+    });
+
+    it('limits the models to the chosen brand and resets the model when the brand changes', () => {
+      create(rows());
+      component.setFiltro('marca', ev('Toyota'));
+      expect(component.modeloOptions).toEqual(['Corolla', 'Hilux']);
+      component.setFiltro('modelo', ev('Hilux'));
+      component.setFiltro('marca', ev('Nissan'));
+      expect(component.filtros.modelo).toBe('');
+      expect(ids()).toEqual([3]);
+    });
+
+    it('combines filters with the search (AND), clears them and keeps the search text', () => {
+      create(rows());
+      component.setFiltro('sucursal', ev('2'));
+      component.onStatusChange(ev('en_trabajo'));
+      expect(ids()).toEqual([2]);
+      component.filterDatatable(ev('nissan'));
+      expect(ids()).toEqual([]);
+      component.filterDatatable(ev('luis'));
+      component.limpiarFiltros();
+      expect(component.hasActiveFilters).toBe(false);
+      expect(ids()).toEqual([]);
+      component.filterDatatable(ev(''));
+      expect(ids()).toEqual([1, 2, 3]);
+    });
+
+    it('does not filter by date and reports the error when desde > hasta', () => {
+      create(rows());
+      component.setFiltro('desde', ev('2026-10-01'));
+      component.setFiltro('hasta', ev('2026-09-01'));
+      expect(component.rangoError).toContain('inicial');
+      expect(ids()).toEqual([1, 2, 3]);
+    });
+
+    it('shows the no results message only when rows are loaded but the filters hide them', () => {
+      const fixture = render(rows());
+      component.setFiltro('marca', ev('Nissan'));
+      component.setFiltro('sucursal', ev('1'));
+      fixture.detectChanges();
+      expect(component.rows.length).toBe(0);
+      expect(fixture.nativeElement.textContent).toContain('No hay resultados con los filtros aplicados.');
+      expect(fixture.nativeElement.textContent).not.toContain('No hay proformas para mostrar.');
+    });
+
+    it('renders the filter card with its controls', () => {
+      const fixture = render(rows());
+      const text: string = fixture.nativeElement.textContent;
+      for (const label of ['Filtros', 'Sucursal', 'Marca', 'Modelo', 'Desde', 'Hasta', 'Estado', 'Limpiar']) {
+        expect(text).toContain(label);
+      }
+    });
+
+    it('shows a single sucursal as text instead of a select', () => {
+      const fixture = render([row()]);
+      expect(fixture.nativeElement.querySelector('#pf-sucursal').tagName).not.toBe('SELECT');
+    });
   });
 });

@@ -10,6 +10,72 @@
     <li class="breadcrumb-item">Nota de Trabajo</li>
   </ul>
   <div class="section-body">
+    <div class="card section-card">
+      <div class="section-header"><i class="fas fa-filter"></i><h6>Filtros</h6></div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-6 col-md-2 mb-2">
+            <label class="info-label" for="nt-sucursal">Sucursal</label>
+            @if (sucursalOptions.length === 1) {
+              <div id="nt-sucursal" class="form-control-plaintext fw-bold">{{ sucursalOptions[0].label }}</div>
+            } @else {
+              <select id="nt-sucursal" class="form-select form-control" [value]="filtros.sucursal" (change)="setFiltro('sucursal', $event)">
+                <option value="">Todas</option>
+              @for (option of sucursalOptions; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+              </select>
+            }
+          </div>
+          <div class="col-6 col-md-2 mb-2">
+            <label class="info-label" for="nt-marca">Marca</label>
+            <select id="nt-marca" class="form-select form-control" [value]="filtros.marca" (change)="setFiltro('marca', $event)">
+              <option value="">Todas</option>
+              @for (marca of marcaOptions; track marca) {
+                <option [value]="marca">{{ marca }}</option>
+              }
+            </select>
+          </div>
+          <div class="col-6 col-md-2 mb-2">
+            <label class="info-label" for="nt-modelo">Modelo</label>
+            <select id="nt-modelo" class="form-select form-control" [value]="filtros.modelo" (change)="setFiltro('modelo', $event)">
+              <option value="">Todos</option>
+              @for (modelo of modeloOptions; track modelo) {
+                <option [value]="modelo">{{ modelo }}</option>
+              }
+            </select>
+          </div>
+          <div class="col-6 col-md-2 mb-2">
+            <label class="info-label" for="nt-instalador">Instalador</label>
+            <select id="nt-instalador" class="form-select form-control" [value]="filtros.instalador" (change)="setFiltro('instalador', $event)">
+              <option value="">Todos</option>
+              @for (option of instaladorOptions; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="col-6 col-md-2 mb-2">
+            <label class="info-label" for="nt-estado">Estado</label>
+            <select id="nt-estado" class="form-select form-control" [value]="filtros.status" (change)="setFiltro('status', $event)">
+              <option value="">Todos</option>
+              @for (option of estadoOptions; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="col-6 col-md-2 mb-2">
+            <label class="info-label" for="nt-cobro">Cobro</label>
+            <select id="nt-cobro" class="form-select form-control" [value]="filtros.cobro" (change)="setFiltro('cobro', $event)">
+              <option value="">Todos</option>
+              @for (option of cobroOptions; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        <button type="button" class="btn btn-outline-secondary" [disabled]="!hasActiveFilters" (click)="limpiarFiltros()">Limpiar</button>
+      </div>
+    </div>
     <div class="row clearfix">
       <div class="col-12">
         <div class="card">
@@ -43,8 +109,10 @@
             }
             @if (withoutSucursal) {
               <div class="alert alert-warning m-3">Asigne una sucursal al usuario para ver notas de trabajo.</div>
-            } @else if (!loadingIndicator && rows.length === 0 && !errorMessage) {
+            } @else if (!loadingIndicator && data.length === 0 && !errorMessage) {
               <div class="alert alert-info m-3">No hay notas de trabajo para mostrar.</div>
+            } @else if (!loadingIndicator && rows.length === 0 && !errorMessage) {
+              <div class="alert alert-info m-3">No hay resultados con los filtros aplicados.</div>
             }
             <ngx-datatable
               class="material"

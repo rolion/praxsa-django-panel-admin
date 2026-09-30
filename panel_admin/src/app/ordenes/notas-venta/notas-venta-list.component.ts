@@ -7,7 +7,15 @@ import { AuthService } from '../../core/service/auth.service';
 import { extractApiError } from '../ordenes.errors';
 import { AppNotaVenta } from '../ordenes.model';
 import { OrdenesService } from '../ordenes.service';
+import {
+  COBRO_OPTIONS, OpcionFiltro, TODOS, TRABAJO_OPTIONS, dentroDeRango, opcionesPorId, rangoFechasInvalido, valorDeEvento,
+} from '../ordenes.filtros';
 import { statusClass } from '../ordenes.status';
+
+type FiltroNotaVenta = 'sucursal' | 'desde' | 'hasta' | 'trabajo' | 'cobro';
+const FILTROS_VACIOS: Record<FiltroNotaVenta, string> = {
+  sucursal: TODOS, desde: TODOS, hasta: TODOS, trabajo: TODOS, cobro: TODOS,
+};
 import { confirmAnularOrden, showErrorAlert } from '../proforma-actions';
 import { anularBlockReason, payBlockReason } from './nota-venta-rules';
 import { PagoModalComponent } from './pago-modal.component';
@@ -34,9 +42,27 @@ export class NotasVentaListComponent implements OnInit {
   loadingIndicator = true;
   errorMessage = '';
   withoutSucursal = false;
+  /** Filtros de la tarjeta "Filtros" ('' = todos); se combinan con el buscador por AND. */
+  filtros: Record<FiltroNotaVenta, string> = { ...FILTROS_VACIOS };
+  readonly trabajoOptions = TRABAJO_OPTIONS;
+  readonly cobroOptions = COBRO_OPTIONS;
+  private searchTerm = '';
 
   readonly payBlockReason = payBlockReason;
   readonly anularBlockReason = anularBlockReason;
+
+  /** Opciones tomadas de las filas cargadas (ya acotadas por el backend a las sucursales del usuario). */
+  get sucursalOptions(): OpcionFiltro[] {
+    return opcionesPorId(this.data, (r) => r.sucursal_id, (r) => r.sucursal_name);
+  }
+
+  get rangoError(): string {
+    return rangoFechasInvalido(this.filtros.desde, this.filtros.hasta);
+  }
+
+  get hasActiveFilters(): boolean {
+    return Object.values(this.filtros).some((value) => value !== TODOS);
+  }
 
   badge(status: string): string {
     return 'status-badge ' + statusClass(status);
@@ -59,7 +85,7 @@ export class NotasVentaListComponent implements OnInit {
     this.ordenesService.listNotasVenta().subscribe({
       next: (rows) => {
         this.data = rows;
-        this.rows = rows;
+        this.applyFilters();
         this.loadingIndicator = false;
         if (rows.length === 0) {
           this.ordenesService.listSucursales().subscribe({
@@ -76,15 +102,35 @@ export class NotasVentaListComponent implements OnInit {
   }
 
   filterDatatable(event: Event): void {
-    const val = (event.target as HTMLInputElement).value.toLowerCase();
+    this.searchTerm = valorDeEvento(event).toLowerCase();
+    this.applyFilters();
+  }
+
+  setFiltro(campo: FiltroNotaVenta, event: Event): void {
+    this.filtros[campo] = valorDeEvento(event);
+    this.applyFilters();
+  }
+
+  limpiarFiltros(): void {
+    this.filtros = { ...FILTROS_VACIOS };
+    this.applyFilters();
+  }
+
+  private applyFilters(): void {
+    const val = this.searchTerm;
+    const f = this.filtros;
     this.rows = this.data.filter(
       (row) =>
-        !val ||
-        String(row.id).indexOf(val) !== -1 ||
-        String(row.proforma_id ?? '').indexOf(val) !== -1 ||
-        row.name.toLowerCase().indexOf(val) !== -1 ||
-        (row.ci_nit || '').toLowerCase().indexOf(val) !== -1 ||
-        (row.sucursal_name || '').toLowerCase().indexOf(val) !== -1
+        (!f.sucursal || String(row.sucursal_id) === f.sucursal) &&
+        (!f.trabajo || row.work_status === f.trabajo) &&
+        (!f.cobro || row.status === f.cobro) &&
+        dentroDeRango(row.created_on, f.desde, f.hasta) &&
+        (!val ||
+          String(row.id).indexOf(val) !== -1 ||
+          String(row.proforma_id ?? '').indexOf(val) !== -1 ||
+          row.name.toLowerCase().indexOf(val) !== -1 ||
+          (row.ci_nit || '').toLowerCase().indexOf(val) !== -1 ||
+          (row.sucursal_name || '').toLowerCase().indexOf(val) !== -1)
     );
     if (this.table) {
       this.table.offset = 0;

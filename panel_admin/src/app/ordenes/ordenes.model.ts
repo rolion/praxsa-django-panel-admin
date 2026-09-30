@@ -82,6 +82,8 @@ export interface AppNotaTrabajo {
   proforma_id: number;
   name: string;
   car_model_name: string | null;
+  /** Ausente si el backend aun no lo expone (la marca queda vacia en el filtro). */
+  car_brand_name?: string | null;
   car_plate: string | null;
   instaladar: number | null;
   instalador_name: string | null;
