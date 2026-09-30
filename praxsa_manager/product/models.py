@@ -133,6 +133,7 @@ class instalador(models.Model):
     address = models.CharField(max_length=400, default=" ", null=False, verbose_name="Dirección")
     phonenumber = models.CharField(validators=[RegexValidator('(\+)*\d{7,11}')], verbose_name="Numero Telefónico")
     sucursal = models.ManyToManyField(Sucursal)
+    is_active = models.BooleanField(default=True, verbose_name="Activo")
     def __str__(self):
         return self.name
 

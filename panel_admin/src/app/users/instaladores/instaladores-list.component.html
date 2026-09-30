@@ -1,0 +1,148 @@
+<section class="main-content">
+  <ul class="breadcrumb breadcrumb-style">
+    <li class="breadcrumb-item">
+      <h5 class="page-title m-b-0">Instaladores</h5>
+    </li>
+    <li class="breadcrumb-item bcrumb-1">
+      <a routerLink="/dashboard/main"><i class="fas fa-home font-17"></i></a>
+    </li>
+    <li class="breadcrumb-item">Usuarios</li>
+    <li class="breadcrumb-item">Instaladores</li>
+  </ul>
+  <div class="section-body">
+    <div class="row clearfix">
+      <div class="col-12">
+        <div class="card">
+          <div class="p-10">
+            <div class="row">
+              <div class="col-lg-6">
+                <div class="row m-0">
+                  <div class="col-auto p-0">
+                    <div class="ngxTableHeader">
+                      <div class="table-title">
+                        <h2><strong>Instaladores</strong></h2>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-lg-8 p-0">
+                    <div class="ngxTableHeader">
+                      <div class="table-search-area">
+                        <div>
+                          <label for="search-input"><i class="material-icons search-icon">search</i></label>
+                          <input placeholder="Buscar por nombre" type="text" class="browser-default search-field"
+                            (keyup)="filterDatatable($event)" aria-label="Search box" />
+                        </div>
+                      </div>
+                      @if (canManage) {
+                        <div class="header-buttons-left">
+                          <div class="tbl-btn-style">
+                            <button class="btn btn-icon icon-left btn-primary rounded-button" title="Nuevo instalador"
+                              (click)="openCreate(instaladorModal)">
+                              <i class="material-icons">add</i>
+                            </button>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            @if (errorMessage) {
+              <div class="alert alert-danger m-3">{{ errorMessage }}</div>
+            }
+            <ngx-datatable
+              class="material"
+              [rows]="rows"
+              [loadingIndicator]="loadingIndicator"
+              columnMode="force"
+              [headerHeight]="50"
+              [footerHeight]="50"
+              rowHeight="auto"
+              [limit]="10"
+            >
+              <ngx-datatable-column name="Nombre" prop="name"></ngx-datatable-column>
+              <ngx-datatable-column name="Teléfono" prop="phonenumber" [width]="130"></ngx-datatable-column>
+              <ngx-datatable-column name="Dirección" prop="address"></ngx-datatable-column>
+              <ngx-datatable-column name="Sucursales" [sortable]="false">
+                <ng-template let-row="row" ngx-datatable-cell-template>
+                  {{ row.sucursal_names.join(', ') }}
+                </ng-template>
+              </ngx-datatable-column>
+              @if (canManage) {
+                <ngx-datatable-column name="Acciones" [sortable]="false" [width]="120">
+                  <ng-template let-row="row" ngx-datatable-cell-template>
+                    <button type="button" class="btn btn-tbl-edit h-auto" title="Editar" (click)="openEdit(row, instaladorModal)">
+                      <i class="fas fa-pen"></i>
+                    </button>
+                    <button type="button" class="btn btn-tbl-delete h-auto" title="Eliminar" (click)="deactivate(row)">
+                      <i class="far fa-trash-alt"></i>
+                    </button>
+                  </ng-template>
+                </ngx-datatable-column>
+              }
+            </ngx-datatable>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #instaladorModal let-modal>
+    <div class="modal-header">
+      <h4 class="modal-title" id="modal-basic-title">
+        {{ editingId ? 'Editar instalador' : 'Nuevo instalador' }}
+      </h4>
+      <button type="button" class="close" aria-label="Close" (click)="modal.dismiss()">
+        <span aria-hidden="true"><i class="material-icons">close</i></span>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form [formGroup]="form" (ngSubmit)="save()">
+        <div class="mb-2">
+          <label class="fw-bold">Nombre</label>
+          <input type="text" class="form-control" formControlName="name" maxlength="20" />
+          @if (form.get('name')?.invalid && submitted) {
+            <small class="form-text text-danger">El nombre es obligatorio (máximo 20 caracteres)</small>
+          }
+        </div>
+        <div class="mb-2">
+          <label class="fw-bold">Teléfono</label>
+          <input type="text" class="form-control" formControlName="phonenumber" />
+          @if (form.get('phonenumber')?.invalid && submitted) {
+            <small class="form-text text-danger">Ingresa un teléfono válido (7 a 11 dígitos)</small>
+          }
+        </div>
+        <div class="mb-2">
+          <label class="fw-bold">Dirección</label>
+          <input type="text" class="form-control" formControlName="address" maxlength="400" />
+          @if (form.get('address')?.invalid && submitted) {
+            <small class="form-text text-danger">La dirección es obligatoria</small>
+          }
+        </div>
+        <div class="mb-2">
+          <label class="fw-bold">Sucursales</label>
+          <ng-select
+            [items]="sucursales"
+            bindLabel="name"
+            bindValue="id"
+            [multiple]="true"
+            [closeOnSelect]="false"
+            placeholder="Seleccione una o más sucursales"
+            formControlName="sucursal"
+          ></ng-select>
+          @if (form.get('sucursal')?.invalid && submitted) {
+            <small class="form-text text-danger">Seleccione al menos una sucursal</small>
+          }
+        </div>
+        @if (formError) {
+          <div class="alert alert-danger">{{ formError }}</div>
+        }
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary" [disabled]="saving">Guardar</button>
+          <button type="button" class="btn btn-light" (click)="modal.dismiss()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </ng-template>
+</section>

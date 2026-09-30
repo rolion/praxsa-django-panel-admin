@@ -30,10 +30,17 @@ from .custom_views.vehicle_admin import (
     CarPartListCreateView,
     CarPartToggleActiveView,
 )
+from .custom_views.instalador_admin import (
+    InstaladorDetailView,
+    InstaladorListCreateView,
+    InstaladorToggleActiveView,
+)
 from .custom_views.almacen_admin import (
     InventarioListView,
     InventarioToggleActiveView,
     InventarioUpdateView,
+    PrecioVentaSucursalDetailView,
+    PrecioVentaSucursalListCreateView,
     WindowFilmDetailView,
     WindowFilmListCreateView,
     WindowFilmReelDetailView,
@@ -87,6 +94,9 @@ urlpatterns = [
     path('groups', GroupListCreateView.as_view()),
     path('groups/<int:pk>/', GroupDetailView.as_view()),
     path('permissions', PermissionListView.as_view()),
+    path('instaladores', InstaladorListCreateView.as_view()),
+    path('instaladores/<int:pk>/', InstaladorDetailView.as_view()),
+    path('instaladores/<int:pk>/toggle-active/', InstaladorToggleActiveView.as_view()),
     path('sucursales', SucursalListCreateView.as_view()),
     path('sucursales/<int:pk>/', SucursalDetailView.as_view()),
     # Modulo de Vehiculos: Marcas, Modelos, Items (panel_admin/)
@@ -108,6 +118,8 @@ urlpatterns = [
     path('almacen/bobinas', WindowFilmReelListCreateView.as_view()),
     path('almacen/bobinas/<int:pk>/', WindowFilmReelDetailView.as_view()),
     path('almacen/bobinas/<int:pk>/toggle-active/', WindowFilmReelToggleActiveView.as_view()),
+    path('almacen/precios-sucursal', PrecioVentaSucursalListCreateView.as_view()),
+    path('almacen/precios-sucursal/<int:pk>/', PrecioVentaSucursalDetailView.as_view()),
     path('almacen/inventario', InventarioListView.as_view()),
     path('almacen/inventario/<int:pk>/', InventarioUpdateView.as_view()),
     path('almacen/inventario/<int:pk>/toggle-active/', InventarioToggleActiveView.as_view()),

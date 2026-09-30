@@ -53,6 +53,17 @@
           "badge": "",
           "badgeClass": "",
           "submenu": []
+        },
+        {
+          "path": "/users/instaladores",
+          "title": "Instaladores",
+          "iconType": "",
+          "icon": "",
+          "class": "ml-menu",
+          "groupTitle": false,
+          "badge": "",
+          "badgeClass": "",
+          "submenu": []
         }
       ]
     },
@@ -136,6 +147,17 @@
         {
           "path": "/almacen/inventario",
           "title": "Inventario",
+          "iconType": "",
+          "icon": "",
+          "class": "ml-menu",
+          "groupTitle": false,
+          "badge": "",
+          "badgeClass": "",
+          "submenu": []
+        },
+        {
+          "path": "/almacen/precios-sucursal",
+          "title": "Precios por sucursal",
           "iconType": "",
           "icon": "",
           "class": "ml-menu",

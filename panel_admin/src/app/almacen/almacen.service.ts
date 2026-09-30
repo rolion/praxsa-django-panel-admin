@@ -4,11 +4,13 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
   AppInventario,
+  AppPrecioSucursal,
   AppSucursal,
   AppWindowFilm,
   AppWindowFilmReel,
   InventarioCreatePayload,
   InventarioUpdatePayload,
+  PrecioSucursalPayload,
 } from './almacen.model';
 
 interface ListParams {
@@ -136,6 +138,23 @@ export class AlmacenService {
     return this.http.patch<AppInventario>(`${this.base}/inventario/${id}/toggle-active/`, {
       is_active: isActive,
     });
+  }
+
+  // Precios por sucursal (borrado fisico: DELETE)
+  listPreciosSucursal(): Observable<AppPrecioSucursal[]> {
+    return this.http.get<AppPrecioSucursal[]>(`${this.base}/precios-sucursal`);
+  }
+
+  createPrecioSucursal(payload: PrecioSucursalPayload): Observable<AppPrecioSucursal> {
+    return this.http.post<AppPrecioSucursal>(`${this.base}/precios-sucursal`, payload);
+  }
+
+  updatePrecioSucursal(id: number, payload: PrecioSucursalPayload): Observable<AppPrecioSucursal> {
+    return this.http.patch<AppPrecioSucursal>(`${this.base}/precios-sucursal/${id}/`, payload);
+  }
+
+  deletePrecioSucursal(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/precios-sucursal/${id}/`);
   }
 
   // Reutiliza el endpoint ya existente del modulo Usuarios -- no duplica su CRUD.

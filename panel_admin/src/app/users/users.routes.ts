@@ -5,6 +5,7 @@ import { UserEditComponent } from './edit/user-edit.component';
 import { UserCreateComponent } from './create/user-create.component';
 import { GroupsListComponent } from './groups/groups-list.component';
 import { SucursalesListComponent } from './sucursales/sucursales-list.component';
+import { InstaladoresListComponent } from './instaladores/instaladores-list.component';
 
 export const USERS_ROUTE: Route[] = [
   { path: '', component: UsersListComponent },
@@ -13,4 +14,5 @@ export const USERS_ROUTE: Route[] = [
   { path: 'edit/:id', component: UserEditComponent },
   { path: 'groups', component: GroupsListComponent },
   { path: 'sucursales', component: SucursalesListComponent },
+  { path: 'instaladores', component: InstaladoresListComponent },
 ];
