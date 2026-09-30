@@ -14,6 +14,7 @@
 | 2026-09-30 | PLANNING → ENGINEERING | Plan v1 escrito (3 archivos frontend, spec nuevo, sin E2E ni dependencias); PR abierto sobre la rama asignada por el entorno | delivery-plan |
 | 2026-09-30 | ENGINEERING → REVIEW | Implementación completa según plan v1 (componente, plantilla y spec nuevo) | delivery-engineer |
 | 2026-09-30 | REVIEW → PUBLISH | Quality Gate PASS: 271 tests OK y 15 fallas idénticas a la línea base de master, lint y build limpios, verificación manual (desktop, móvil, tema oscuro) sin issues; 0 issues abiertos | delivery-review |
+| 2026-09-30 | PUBLISH (sin cambio de etapa) | Descripción del PR #57 completada tras verificar árbol limpio, diff acorde al plan, sin secretos y sin commits sin revisar; no sensible, queda pendiente de aprobación humana para el merge | delivery-publish |
 
 ## Investigación
 
@@ -104,4 +105,5 @@ Pendiente para review: la verificación visual manual (móvil, tema oscuro, cont
 - Observaciones no bloqueantes: chips `*-subtle` sin adaptar al tema oscuro (cosmético); sin test del error de carga ni de `toggleSucursales()`.
 
 ## Publicación
-_Pendiente_
+- PR: [#57](https://github.com/rolion/praxsa-django-panel-admin/pull/57), base `master`, mergeable.
+- Estado: **Listo para aprobación humana**. No se mergea en esta invocación. Cambio no sensible (sin ADR, auth, DB ni infraestructura).
