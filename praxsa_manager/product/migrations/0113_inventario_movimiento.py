@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('product', '0111_estados_orden'),
+        ('product', '0112_instalador_is_active'),
     ]
 
     operations = [

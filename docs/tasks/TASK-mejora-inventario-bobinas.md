@@ -1,6 +1,6 @@
 # TASK-mejora-inventario-bobinas: Evaluar y mejorar el manejo del inventario de bobinas
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** NO
 **Rama:** task/TASK-mejora-inventario-bobinas
@@ -16,6 +16,7 @@
 | 2026-09-30 | PLANNING → ENGINEERING | Plan v1 escrito y PR abierto; queda a la espera de la aprobación humana del plan y de la respuesta a las 4 preguntas abiertas antes de implementar | delivery-plan |
 | 2026-09-30 | ENGINEERING → REVIEW | Implementación completa de las fases 1 a 6 del plan v1; fase 7.2 (verificación en vivo) queda para review/usuario | delivery-engineer |
 | 2026-09-30 | REVIEW → ENGINEERING | Quality Gate FAIL: REV-01 (Medium, devolución concurrente sin bloqueo en `delete_work_note`) y REV-02 (Low, falta test de PDF/reportes con reparto) | delivery-review |
+| 2026-09-30 | ENGINEERING → REVIEW | REV-01 y REV-02 corregidos; master integrado (PR #53) con renumeración de migraciones a 0113/0114 | delivery-engineer |
 
 ## Investigación
 
@@ -126,8 +127,8 @@ Supuestos de negocio pendientes de confirmar (marcados en los ADR): repartir una
 Fases 1 a 6 del [plan v1](../plans/PLAN-2026-09-30-mejora-inventario-bobinas.md), sin desvíos de alcance.
 
 **Modelo y migraciones**
-- `Inventario_Movimiento` (`models.py`) con `CheckConstraint metros > 0`; migración `0112_inventario_movimiento` (aditiva, reversible).
-- `UniqueConstraint(sucursal, lamina, width)` en `precio_venta_sucursal`; migración `0113_precio_venta_sucursal_unico` con verificación previa que aborta con el listado de duplicados y sin modificar datos; el reverso elimina la restricción.
+- `Inventario_Movimiento` (`models.py`) con `CheckConstraint metros > 0`; migración `0113_inventario_movimiento` (aditiva, reversible).
+- `UniqueConstraint(sucursal, lamina, width)` en `precio_venta_sucursal`; migración `0114_precio_venta_sucursal_unico` con verificación previa que aborta con el listado de duplicados y sin modificar datos; el reverso elimina la restricción.
 
 **Lógica (`business/inventario.py`)**
 - `eligible_rows`: criterio único de filas vendibles (sucursal habilitada, fila y bobina activas, saldo > 0, ancho exacto), orden FIFO `date`, `id`.
@@ -145,7 +146,7 @@ Fases 1 a 6 del [plan v1](../plans/PLAN-2026-09-30-mejora-inventario-bobinas.md)
 - `get_reel_catalog`: dos consultas constantes (filas elegibles y overrides).
 - `views.get_inventory` conserva `width__gte` y su respuesta; solo se quitó el `print`.
 
-**Pruebas** (`tests/test_inventario_asignacion.py`, 27 casos; suite completa `product`: 374 OK): asignación (una fila, FIFO multi-fila, suma insuficiente, no elegibles, sucursal deshabilitada), devolución (fila por fila, idempotencia, fallback anterior, sin nada), ciclo de la orden con reparto (aprobar/anular/re-aprobar/borrar desde admin/borrar cancelada/stock insuficiente), precio y ancho, validación de metros, catálogo (contenido y consultas constantes), unicidad, migración 0113 (con y sin duplicados, reverso) y concurrencia con dos hilos en Postgres. Ajustes a pruebas existentes: `test_invoice_pricing` (el ancho 1.00 sin bobina exacta ahora da 400; se pide el ancho de la bobina y se añade el caso de rechazo) y `test_orden_estado_migration` (`ACTUAL` pasa a `0113` para que el tearDown no deje la base de pruebas sin las tablas nuevas).
+**Pruebas** (`tests/test_inventario_asignacion.py`, 27 casos; suite completa `product`: 374 OK): asignación (una fila, FIFO multi-fila, suma insuficiente, no elegibles, sucursal deshabilitada), devolución (fila por fila, idempotencia, fallback anterior, sin nada), ciclo de la orden con reparto (aprobar/anular/re-aprobar/borrar desde admin/borrar cancelada/stock insuficiente), precio y ancho, validación de metros, catálogo (contenido y consultas constantes), unicidad, migración 0113 (con y sin duplicados, reverso) y concurrencia con dos hilos en Postgres. Ajustes a pruebas existentes: `test_invoice_pricing` (el ancho 1.00 sin bobina exacta ahora da 400; se pide el ancho de la bobina y se añade el caso de rechazo) y `test_orden_estado_migration` (`ACTUAL` pasa a la última migración para que el tearDown no deje la base de pruebas sin las tablas nuevas).
 
 **Decisiones de negocio aplicadas por defecto (sin respuesta del usuario todavía):** se permite repartir una necesidad entre varios lotes y el precio por defecto es el de la fila FIFO. Si el negocio exige un solo rollo por necesidad, la asignación y el catálogo deben cambiar.
 
@@ -155,6 +156,11 @@ Fases 1 a 6 del [plan v1](../plans/PLAN-2026-09-30-mejora-inventario-bobinas.md)
 - Ajustes manuales del `PATCH almacen/inventario` no generan movimientos.
 - Quedó un comentario obsoleto en `Forms/car_model_part.py` que menciona un método ya eliminado (código ya comentado).
 - **Pendiente:** verificación en vivo (fase 7.2 del plan: panel y Django Admin con stock repartido, PDF y reporte de utilidades) — no ejecutada por el engineer.
+
+**Corrección de la revisión corrida 1 (2026-09-30)**
+- **REV-01:** `Inventario_Business.return_detail_to_inventory` ahora bloquea primero la proforma del detalle y recién después calcula el neto a devolver, de modo que es idempotente también ante llamadas simultáneas aunque `delete_work_note` no bloquee la proforma. Test de regresión con dos hilos (antes del arreglo: saldo 40.00 e instalado -10.00; después: 30.00 y 0.00).
+- **REV-02:** tests de PDF de la hoja de trabajo, reporte de almacén (saldos agregados 10 m / 50 m) y reporte de utilidades con una línea de 50 m repartida en dos lotes (`PdfYReportesConRepartoTest`). No fijan qué lotes se muestran, que sigue diferido.
+- **Integración con master (PR #53):** master agregó `0112_instalador_is_active`, que colisionaba con mi `0112`. Se renumeraron mis migraciones a `0113_inventario_movimiento` y `0114_precio_venta_sucursal_unico` (encadenadas tras la de master; nunca se aplicaron fuera de bases de prueba). Suite `product`: 403 tests OK. El serializer de precios de master valida duplicados por su cuenta, por lo que la restricción de base de datos no produce un 500 en su API (su docstring dice que la tabla no tiene constraint; ahora sí la tiene, sin efecto funcional).
 
 ## Review
 **Corrida 1 (2026-09-30): FAIL.** Detalle y evidencia en la sección `## Review` del PR #52.

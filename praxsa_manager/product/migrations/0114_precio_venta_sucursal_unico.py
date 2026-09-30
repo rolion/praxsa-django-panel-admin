@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
     elimina la restriccion."""
 
     dependencies = [
-        ('product', '0112_inventario_movimiento'),
+        ('product', '0113_inventario_movimiento'),
     ]
 
     operations = [

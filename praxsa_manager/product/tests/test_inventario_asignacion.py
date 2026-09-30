@@ -364,8 +364,8 @@ class UnicidadDePreciosTest(TestCase):
 
 
 class MigracionUnicidadDePreciosTest(TransactionTestCase):
-    ANTERIOR = ('product', '0112_inventario_movimiento')
-    ACTUAL = ('product', '0113_precio_venta_sucursal_unico')
+    ANTERIOR = ('product', '0113_inventario_movimiento')
+    ACTUAL = ('product', '0114_precio_venta_sucursal_unico')
 
     def tearDown(self):
         call_command('migrate', 'product', self.ACTUAL[1], verbosity=0)

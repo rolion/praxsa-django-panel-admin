@@ -114,7 +114,7 @@ class MigracionReversibleEnPostgresTest(TransactionTestCase):
     ANTERIOR = ('product', '0110_inventario_is_active')
     # Ultima migracion del grafo: el tearDown deja la base de pruebas en el estado final
     # (las migraciones posteriores a 0111 crean tablas que otras pruebas necesitan).
-    ACTUAL = ('product', '0113_precio_venta_sucursal_unico')
+    ACTUAL = ('product', '0114_precio_venta_sucursal_unico')
 
     def tearDown(self):
         call_command('migrate', 'product', self.ACTUAL[1], verbosity=0)
