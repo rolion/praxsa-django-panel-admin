@@ -1,6 +1,6 @@
 # TASK-filtros-busqueda-reportes: Filtros de búsqueda en reportes Proforma, Nota Trabajo y Nota Venta
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** SI
 **Rama:** `task/TASK-filtros-busqueda-reportes`
@@ -19,6 +19,7 @@
 | 2026-09-30 | PLANNING → PLANNING | Plan v2: agrega Fase 2 (panel Angular) tras DESIGN_REVIEW_REQUIRED | delivery-plan |
 | 2026-09-30 | PLANNING → ENGINEERING | Plan v2 listo para implementar (pendiente de aprobación humana) | delivery-plan |
 | 2026-09-30 | ENGINEERING → REVIEW | Fase 2 (panel Angular) implementada según plan v2 | delivery-engineer |
+| 2026-09-30 | REVIEW → PUBLISH | Quality Gate PASS (2 observaciones Low abiertas; verificación manual en navegador pendiente) | delivery-review |
 
 ## Investigación
 
@@ -150,7 +151,23 @@ Implementado según plan v1, sin desvíos de alcance.
 - Los 15 specs rotos de la plantilla son deuda preexistente.
 
 ## Review
-_Pendiente_
+**Resultado: PASS** (con verificación manual pendiente y dos observaciones de severidad baja).
+
+Limitación: esta revisión corrió en la **misma sesión** que implementó el código; el aislamiento es solo procedimental.
+
+**Plan compliance (v2)**
+- Fase 1 (Django Admin): filtros de Proforma, Nota Trabajo y Notas de Venta implementados; Nota Trabajo lista los tres estados; Ventas Diaria intacto (`test_list_filter_de_ventas_diaria_intacto`).
+- Fase 2 (panel Angular): tarjeta de filtros en las tres listas con los filtros del DDR, "Limpiar", mensaje de sin resultados, sucursal única como texto, `car_brand_name` en la API sin N+1 (test de conteo de queries).
+- Acceptance criteria: cumplidos por tests automatizados (DOM real en Chrome Headless). Tests del plan presentes; el caso de alcance por sucursal de Notas de Trabajo ya estaba cubierto por `test_ordenes_scope_permissions.py`.
+- Fuera de lo previsto en el plan (documentado en el TASK): columna de fecha de entrada nula muestra `-` en el reporte de Nota Trabajo; `qs.none()` en `NotaVentaAdmin`. Ambos mínimos y necesarios.
+- ADR-002 respetado: el alcance por sucursal sigue aplicándose en el backend; los filtros son solo de opciones/UX.
+
+**Issues abiertos (no bloquean)**
+- [REV-2026-09-30-filtros-busqueda-reportes-01](../reviews/REV-2026-09-30-filtros-busqueda-reportes-01.md) — Low, PLAN: opciones de sucursal desde las filas vs. `listSucursales()` en DDR/plan.
+- [REV-2026-09-30-filtros-busqueda-reportes-02](../reviews/REV-2026-09-30-filtros-busqueda-reportes-02.md) — Low, IMPLEMENTATION: getters de opciones recalculados en cada ciclo de detección.
+
+**Fallos ignorados:** los 15 specs de plantilla que ya fallaban en `origin/master` se tratan como deuda preexistente fuera del alcance (evidencia de línea base en `## Testing`); no hubo autorización del usuario para ignorar fallos nuevos porque no los hay.
+
 
 ## Publicación
 _Pendiente_
