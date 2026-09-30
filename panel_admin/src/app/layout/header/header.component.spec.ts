@@ -73,14 +73,31 @@ describe('HeaderComponent', () => {
     expect(text).not.toContain('Settings');
   });
 
-  it('renders the username on the left side of the header nav', () => {
+  it('does not render the removed template widgets', () => {
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('.current-user-name')).toBeNull();
+    expect(el.querySelector('input[type="search"]')).toBeNull();
+    expect(el.querySelector('.lang-toggle')).toBeNull();
+    expect(el.querySelector('i-feather[name="mail"]')).toBeNull();
+    expect(el.querySelector('i-feather[name="bell"]')).toBeNull();
+  });
+
+  it('keeps the sidebar toggle, fullscreen and user menu', () => {
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('i-feather[name="menu"]')).not.toBeNull();
+    expect(el.querySelector('i-feather[name="maximize"]')).not.toBeNull();
+    expect(el.querySelector('i-feather[name="user"]')).not.toBeNull();
+  });
+
+  it('shows the user name only as the user dropdown title, with Logout', () => {
     authService.login('admin', 'secret123').subscribe();
     httpMock
       .expectOne(loginUrl)
       .flush({ token: 'abc123', user_id: 1, username: 'admin', name: 'Ana', lastname: 'Gomez' });
     fixture.detectChanges();
 
-    const nameEl = (fixture.nativeElement as HTMLElement).querySelector('.current-user-name');
-    expect(nameEl?.textContent?.trim()).toBe('Ana');
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('.dropdown-title')?.textContent?.trim()).toBe('Ana');
+    expect(el.textContent).toContain('Logout');
   });
 });

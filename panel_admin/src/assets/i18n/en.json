@@ -1,9 +1,4 @@
 {
-  "HEADER":{
-    "SEARCH": {
-      "TEXT": "Search.."
-    }
-  },
   "MENUITEMS": {
     "USER":{
       "POST": "Manager"

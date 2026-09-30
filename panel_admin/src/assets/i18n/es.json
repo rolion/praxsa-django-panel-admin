@@ -1,9 +1,4 @@
 {
-  "HEADER":{
-    "SEARCH": {
-      "TEXT": "Buscar.."
-    }
-  },
   "MENUITEMS": {
     "USER":{
       "POST": "Gerente"
