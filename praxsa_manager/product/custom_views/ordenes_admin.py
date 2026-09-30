@@ -419,5 +419,5 @@ class OrdenesInstaladoresView(APIView):
 
     def get(self, request):
         sucursal_id = _sucursal_in_scope_or_404(request.user, request.query_params.get('sucursal'))
-        instaladores = instalador.objects.filter(sucursal__id=sucursal_id).order_by('name')
+        instaladores = instalador.objects.filter(sucursal__id=sucursal_id, is_active=True).order_by('name')
         return Response([{'id': i.id, 'name': i.name} for i in instaladores])

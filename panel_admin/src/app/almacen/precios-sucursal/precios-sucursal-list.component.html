@@ -1,0 +1,146 @@
+<section class="main-content">
+  <ul class="breadcrumb breadcrumb-style">
+    <li class="breadcrumb-item">
+      <h5 class="page-title m-b-0">Precios por sucursal</h5>
+    </li>
+    <li class="breadcrumb-item bcrumb-1">
+      <a routerLink="/dashboard/main"><i class="fas fa-home font-17"></i></a>
+    </li>
+    <li class="breadcrumb-item">Almacén</li>
+    <li class="breadcrumb-item">Precios por sucursal</li>
+  </ul>
+  <div class="section-body">
+    <div class="row clearfix">
+      <div class="col-12">
+        <div class="card">
+          <div class="p-10">
+            <div class="row">
+              <div class="col-lg-6">
+                <div class="row m-0">
+                  <div class="col-auto p-0">
+                    <div class="ngxTableHeader">
+                      <div class="table-title">
+                        <h2><strong>Precios por sucursal</strong></h2>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-lg-8 p-0">
+                    <div class="ngxTableHeader">
+                      <div class="table-search-area">
+                        <div>
+                          <label for="search-input"><i class="material-icons search-icon">search</i></label>
+                          <input placeholder="Buscar por lámina o sucursal" type="text" class="browser-default search-field"
+                            (keyup)="filterDatatable($event)" aria-label="Search box" />
+                        </div>
+                      </div>
+                      @if (canManage) {
+                        <div class="header-buttons-left">
+                          <div class="tbl-btn-style">
+                            <button class="btn btn-icon icon-left btn-primary rounded-button" title="Nuevo precio"
+                              (click)="openCreate(precioModal)">
+                              <i class="material-icons">add</i>
+                            </button>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            @if (errorMessage) {
+              <div class="alert alert-danger m-3">{{ errorMessage }}</div>
+            }
+            <ngx-datatable
+              class="material"
+              [rows]="rows"
+              [loadingIndicator]="loadingIndicator"
+              columnMode="force"
+              [headerHeight]="50"
+              [footerHeight]="50"
+              rowHeight="auto"
+              [limit]="10"
+            >
+              <ngx-datatable-column name="Sucursal" prop="sucursal_name"></ngx-datatable-column>
+              <ngx-datatable-column name="Lámina" prop="lamina_name"></ngx-datatable-column>
+              <ngx-datatable-column name="Ancho" prop="width" [width]="90"></ngx-datatable-column>
+              <ngx-datatable-column name="Precio de venta" prop="precio_venta" [width]="130"></ngx-datatable-column>
+              @if (canManage) {
+                <ngx-datatable-column name="Acciones" [sortable]="false" [width]="120">
+                  <ng-template let-row="row" ngx-datatable-cell-template>
+                    <button type="button" class="btn btn-tbl-edit h-auto" title="Editar" (click)="openEdit(row, precioModal)">
+                      <i class="fas fa-pen"></i>
+                    </button>
+                    <button type="button" class="btn btn-tbl-delete h-auto" title="Eliminar" (click)="remove(row)">
+                      <i class="far fa-trash-alt"></i>
+                    </button>
+                  </ng-template>
+                </ngx-datatable-column>
+              }
+            </ngx-datatable>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #precioModal let-modal>
+    <div class="modal-header">
+      <h4 class="modal-title" id="modal-basic-title">
+        {{ editingId ? 'Editar precio por sucursal' : 'Nuevo precio por sucursal' }}
+      </h4>
+      <button type="button" class="close" aria-label="Close" (click)="modal.dismiss()">
+        <span aria-hidden="true"><i class="material-icons">close</i></span>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form [formGroup]="form" (ngSubmit)="save()">
+        <div class="mb-2">
+          <label class="fw-bold">Sucursal</label>
+          <select class="form-select form-control" formControlName="sucursal">
+            <option [ngValue]="null" disabled>Seleccione una sucursal</option>
+            @for (sucursal of sucursales; track sucursal.id) {
+              <option [ngValue]="sucursal.id">{{ sucursal.name }}</option>
+            }
+          </select>
+          @if (form.get('sucursal')?.invalid && submitted) {
+            <small class="form-text text-danger">La sucursal es obligatoria</small>
+          }
+        </div>
+        <div class="mb-2">
+          <label class="fw-bold">Lámina</label>
+          <select class="form-select form-control" formControlName="lamina">
+            <option [ngValue]="null" disabled>Seleccione una lámina</option>
+            @for (lamina of laminas; track lamina.id) {
+              <option [ngValue]="lamina.id">{{ lamina.name }}</option>
+            }
+          </select>
+          @if (form.get('lamina')?.invalid && submitted) {
+            <small class="form-text text-danger">La lámina es obligatoria</small>
+          }
+        </div>
+        <div class="mb-2">
+          <label class="fw-bold">Ancho</label>
+          <input type="number" step="0.01" min="0.01" class="form-control" formControlName="width" />
+          @if (form.get('width')?.invalid && submitted) {
+            <small class="form-text text-danger">El ancho debe ser mayor a 0</small>
+          }
+        </div>
+        <div class="mb-2">
+          <label class="fw-bold">Precio de venta (por metro lineal)</label>
+          <input type="number" step="0.01" min="0.01" class="form-control" formControlName="precio_venta" />
+          @if (form.get('precio_venta')?.invalid && submitted) {
+            <small class="form-text text-danger">El precio debe ser mayor a 0</small>
+          }
+        </div>
+        @if (formError) {
+          <div class="alert alert-danger">{{ formError }}</div>
+        }
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary" [disabled]="saving">Guardar</button>
+          <button type="button" class="btn btn-light" (click)="modal.dismiss()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </ng-template>
+</section>

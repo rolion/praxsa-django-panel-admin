@@ -4,10 +4,12 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
   AppGroup,
+  AppInstalador,
   AppPermission,
   AppSucursal,
   AppUser,
   CreateUserPayload,
+  InstaladorPayload,
 } from './users.model';
 
 @Injectable({
@@ -89,5 +91,25 @@ export class UsersService {
 
   deleteSucursal(id: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/sucursales/${id}/`);
+  }
+
+  // Instaladores (borrado logico: "eliminar" = toggle-active)
+  listInstaladores(includeInactive = false): Observable<AppInstalador[]> {
+    const params: Record<string, string> = includeInactive ? { include_inactive: 'true' } : {};
+    return this.http.get<AppInstalador[]>(`${this.base}/instaladores`, { params });
+  }
+
+  createInstalador(payload: InstaladorPayload): Observable<AppInstalador> {
+    return this.http.post<AppInstalador>(`${this.base}/instaladores`, payload);
+  }
+
+  updateInstalador(id: number, payload: InstaladorPayload): Observable<AppInstalador> {
+    return this.http.patch<AppInstalador>(`${this.base}/instaladores/${id}/`, payload);
+  }
+
+  toggleInstaladorActive(id: number, isActive: boolean): Observable<AppInstalador> {
+    return this.http.patch<AppInstalador>(`${this.base}/instaladores/${id}/toggle-active/`, {
+      is_active: isActive,
+    });
   }
 }

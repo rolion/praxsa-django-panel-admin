@@ -1,6 +1,6 @@
 # TASK-agrupacion-menu-instalador-precio-sucursal: Dónde agrupar `instalador` y `precio_venta_sucursal` en el menú lateral de `panel_admin/`
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** `task/TASK-agrupacion-menu-instalador-precio-sucursal`
@@ -14,6 +14,7 @@
 | 2026-09-30 | INVESTIGATION → DESIGN → ARCHITECTURE | Diseño decidido: Instaladores en Usuarios, Precios por sucursal en Almacén, sin grupo nuevo; ambos como listado + modal. Pendiente de arquitectura: permisos, alcance por sucursal, unicidad y borrado | delivery-design |
 | 2026-09-30 | ARCHITECTURE → PLANNING | ADR: permisos por `DjangoModelPermissions` (escritura solo `admin`, supuesto a confirmar), soft delete de instalador con `is_active`, borrado físico de precios, alcance por `get_sucursales_in_scope`, unicidad validada en serializer (constraint en base diferido) | delivery-architect |
 | 2026-09-30 | PLANNING → ENGINEERING | Plan v1 escrito (backend primero, frontend después, un solo PR); el usuario confirmó que solo `admin` escribe y los demás roles solo leen | delivery-plan |
+| 2026-09-30 | ENGINEERING → REVIEW | Plan v1 implementado sin desvíos de alcance (backend + frontend). Verificación propia: backend 371/371, `makemigrations --check` limpio, `ng build`/`ng lint` limpios, frontend 235/250 con las mismas 15 fallas de componentes demo de la plantilla | delivery-engineer |
 
 ## Investigación
 
@@ -100,7 +101,34 @@ La elección concreta es trabajo de `delivery-design` (criterio de UX/consistenc
 [PLAN-2026-09-30-agrupacion-menu-instalador-precio-sucursal](../plans/PLAN-2026-09-30-agrupacion-menu-instalador-precio-sucursal.md) — v1.
 
 ## Implementación
-_Pendiente_
+Plan v1 implementado tal cual, sin desvíos de alcance.
+
+**Backend (`praxsa_manager/product/`)**
+- `models.py` + `migrations/0112_instalador_is_active.py`: `instalador.is_active` (default `True`), aditiva.
+- `serializer/instalador_precio_serializer.py`: `InstaladorSerializer` (`is_active` de solo lectura, `sucursal_names`) y `PrecioVentaSucursalSerializer` (ancho y precio > 0, lámina activa, sucursal dentro de `get_sucursales_in_scope`, unicidad sucursal+lámina+ancho excluyendo la propia fila).
+- `custom_views/instalador_admin.py` (listado/alta, detalle, `toggle-active`) y vistas de Precios en `custom_views/almacen_admin.py` (`DELETE` físico; queryset acotado al alcance del usuario).
+- `urls.py`: `instaladores…` y `almacen/precios-sucursal…`.
+- Órdenes: `OrdenesInstaladoresView` excluye inactivos; `NotaTrabajoUpdateSerializer` rechaza **asignar** un instalador inactivo, pero no bloquea editar otros campos de una nota que ya lo tenía.
+- `management/commands/asignar_permisos_instalador_precio.py`: da al grupo `Admin` los permisos de escritura de ambos modelos (idempotente, `--dry-run`).
+- `tests/test_instaladores_precios_module.py`: 25 pruebas nuevas.
+
+**Frontend (`panel_admin/src/`)**
+- `InstaladoresListComponent` (`/users/instaladores`) y `PreciosSucursalListComponent` (`/almacen/precios-sucursal`): `ngx-datatable`, búsqueda en el navegador, modal reactivo, `ng-select` de sucursales, confirmación con SweetAlert2 y botones de escritura solo con `hasGroup('admin')`.
+- Modelos y métodos de servicio en `users.*` y `almacen.*`; rutas y dos entradas en `assets/data/routes.json`.
+- Specs de ambos componentes (que ejercitan las llamadas de servicio).
+
+**Verificación propia (no es el Quality Gate formal)**
+- Backend: `manage.py test` 371/371 OK; `makemigrations --check --dry-run` sin cambios.
+- Frontend: `ng build` y `ng lint` limpios; `ng test` 235 OK y 15 fallas, todas de componentes demo de la plantilla (`AdvanceTable`, `Blank`, `Dashboard2`, `First1-3`, `Footer`, `Main`, `Page404`, `Page500`, `Second1-2`, `Sidebar`, `Signup`, `Third1`), ninguna de este cambio.
+
+**No verificado**
+- No se hizo prueba en vivo en el navegador: exigiría migrar la base de desarrollo real y iniciar sesión. Queda para `delivery-review`. Punto a mirar: la columna "Acciones" se declara dentro de un `@if (canManage)` dentro de `ngx-datatable`; no se comprobó visualmente que se oculte/muestre bien.
+
+**Notas y deuda técnica**
+- Se usó una junction `panel_admin/node_modules` hacia el checkout principal solo para correr las pruebas locales (ignorada por git).
+- Los archivos nuevos quedaron con fin de línea LF y los existentes conservaron CRLF (aviso de git, sin efecto funcional).
+- Sigue pendiente el `UniqueConstraint` en base para precios (BIZ-07).
+- Tras desplegar hay que ejecutar `python manage.py asignar_permisos_instalador_precio` en cada ambiente.
 
 ## Review
 _Pendiente_

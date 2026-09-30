@@ -4,7 +4,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ..business.inventario import Inventario_Business
-from ..models import Window_Film, Window_Film_Reel, inventario
+from ..helper.user import User_Helper
+from ..models import Window_Film, Window_Film_Reel, inventario, precio_venta_sucursal
 from ..permissions import IsStaffUser
 from ..serializer.almacen_serializer import (
     InventarioCreateSerializer,
@@ -13,6 +14,7 @@ from ..serializer.almacen_serializer import (
     WindowFilmReelSerializer,
     WindowFilmSerializer,
 )
+from ..serializer.instalador_precio_serializer import PrecioVentaSucursalSerializer
 
 _STANDARD_PERMISSIONS = [permissions.IsAuthenticated, IsStaffUser, permissions.DjangoModelPermissions]
 
@@ -212,3 +214,49 @@ class InventarioUpdateView(generics.RetrieveUpdateAPIView):
         response = super().update(request, *args, **kwargs)
         response.data = InventarioSerializer(self.get_object()).data
         return response
+
+
+def _precios_in_scope(user):
+    """Precios por sucursal de las sucursales que el usuario puede usar: todas
+    para admin, las suyas para el resto (User_Helper.get_sucursales_in_scope,
+    ver ADR-agrupacion-menu-instalador-precio-sucursal-api-permisos-borrado,
+    decision 5)."""
+    sucursales = User_Helper().get_sucursales_in_scope(user)
+    return precio_venta_sucursal.objects.select_related('sucursal', 'lamina').filter(
+        sucursal__in=sucursales
+    ).order_by('sucursal__name', 'lamina__name', 'width')
+
+
+class PrecioVentaSucursalListCreateView(generics.ListCreateAPIView):
+    """Lista y crea Precios por sucursal. ?sucursal= filtra por sucursal y
+    ?search= por nombre de lamina."""
+
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = _STANDARD_PERMISSIONS
+    serializer_class = PrecioVentaSucursalSerializer
+    queryset = precio_venta_sucursal.objects.all()
+
+    def get_queryset(self):
+        queryset = _precios_in_scope(self.request.user)
+        sucursal = self.request.query_params.get('sucursal')
+        if sucursal and sucursal.isdigit():
+            queryset = queryset.filter(sucursal_id=int(sucursal))
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(lamina__name__icontains=search)
+        return queryset
+
+
+class PrecioVentaSucursalDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Detalle, edicion y borrado fisico de un Precio por sucursal (tabla hoja:
+    nada la referencia; al borrarla la cotizacion vuelve al precio del
+    inventario, ver business/pricing.py)."""
+
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = _STANDARD_PERMISSIONS
+    serializer_class = PrecioVentaSucursalSerializer
+    queryset = precio_venta_sucursal.objects.all()
+    http_method_names = ['get', 'patch', 'delete', 'head', 'options']
+
+    def get_queryset(self):
+        return _precios_in_scope(self.request.user)

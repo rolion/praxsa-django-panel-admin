@@ -24,6 +24,23 @@ export interface AppPermission {
   app_label: string;
 }
 
+export interface AppInstalador {
+  id: number;
+  name: string;
+  address: string;
+  phonenumber: string;
+  sucursal: number[];
+  sucursal_names: string[];
+  is_active: boolean;
+}
+
+export interface InstaladorPayload {
+  name: string;
+  address: string;
+  phonenumber: string;
+  sucursal: number[];
+}
+
 export interface AppSucursal {
   id: number;
   name: string;
