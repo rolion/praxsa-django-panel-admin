@@ -99,6 +99,7 @@ class Client(models.Model):
     last_name = models.CharField(max_length=400, verbose_name="lastname")
     phone_number = models.CharField(validators=[RegexValidator('(\+)*\d{7,11}')], verbose_name="Numero Telefónico")
     ci_nit = models.CharField(validators=[RegexValidator('\d*')], verbose_name="CI/NIT")
+    car_plate = models.CharField(max_length=10, blank=True, default='', verbose_name="Placa Auto")
     user_id = models.ForeignKey(User, on_delete=models.DO_NOTHING, verbose_name='Usuario', null=True)
     class Meta: 
         verbose_name = 'Cliente'

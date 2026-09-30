@@ -125,6 +125,8 @@ REST_FRAMEWORK = {
     # Rate limit for public read-only catalog endpoints, see PublicCatalogThrottle in product/views.py.
     'DEFAULT_THROTTLE_RATES': {
         'public_catalog': '60/min',
+        # Autoregistro de clientes (ClientRegisterThrottle, product/custom_views/client_api.py).
+        'client_register': '10/hour',
     },
 }
 

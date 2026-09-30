@@ -254,11 +254,18 @@ def get_calculator_info(request):
     return calculator information, brand, models, car parts and car part price
     """
     try:
-        car_brands = Car_Brand.objects.all()
+        # Solo activos (ADR-modulo-vehiculos-soft-delete): el catalogo publico no debe
+        # listar marcas/modelos/items/laminas dados de baja.
+        car_brands = Car_Brand.objects.filter(is_active=True)
         brands = list(map(lambda brand: {'id': brand.id, 'name': brand.name}, car_brands))
-        car_models = Car_Model.objects.select_related('car_brand_id').all().order_by('name')
-        models = list(map(lambda model: {'id': model.id, 'name':model.name, "brand_id": model.car_brand_id.id}, car_models))
-        car_parts = Car_Part.objects.all()
+        car_models = Car_Model.objects.select_related('car_brand_id').filter(is_active=True).order_by('name')
+        models = list(map(lambda model: {
+            'id': model.id,
+            'name': model.name,
+            "brand_id": model.car_brand_id.id,
+            'image': request.build_absolute_uri(model.image.url) if model.image else None,
+        }, car_models))
+        car_parts = Car_Part.objects.filter(is_active=True)
         parts = list(map(lambda part: {'id': part.id, 'name': part.name}, car_parts))
         sucursales_query = Sucursal.objects.all().filter(enable_to_install_windows_film = True)
         sucursales = list(map(lambda sucursal: {
@@ -267,7 +274,7 @@ def get_calculator_info(request):
             'addres': sucursal.address
 
         }, sucursales_query))
-        window_films = Window_Film.objects.all()
+        window_films = Window_Film.objects.filter(is_active=True)
         films = list(map(lambda film: {'id': film.id, 'name': film.name}, window_films))
         return JsonResponse(data={'brands': brands, 
                                 'models': models, 
