@@ -19,6 +19,7 @@
 | 2026-09-30 03:00 UTC | ENGINEERING → REVIEW | REV-01 y REV-02 corregidos (autoverificación: 346 tests backend OK); quedan pendientes la verificación en vivo y el ensayo de migración con datos reales señalados en el review | delivery-engineer |
 | 2026-09-30 03:30 UTC | REVIEW → REVIEW | Corrida 2: REV-01/02 cerrados, 346 tests OK; FAIL por verificaciones en vivo y ensayo de migracion con datos reales sin ejecutar (sin issues que devolver a otra etapa) | delivery-review |
 | 2026-09-30 04:30 UTC | REVIEW → PUBLISH | Quality Gate PASS (corrida 2): REV-01/02 cerrados, verificacion en vivo correcta; ensayo de migracion con datos reales ignorado por autorizacion explicita del usuario y registrado en el PR | delivery-review |
+| 2026-09-30 05:00 UTC | PUBLISH (pendiente) | PR #51 con descripción completa; listo para aprobación humana, sin merge (cambio sensible) | delivery-publish |
 
 ## Investigación
 
@@ -169,4 +170,7 @@ Issues: [REV-01](../reviews/REV-2026-09-30-estados-proforma-nota-trabajo-nota-ve
 Verificaciones no realizadas (herramientas no instaladas): flake8, ruff, mypy, bandit, safety, coverage.py (backend).
 
 ## Publicación
-_Pendiente_
+- PR: [#51](https://github.com/rolion/praxsa-django-panel-admin/pull/51)
+- Estado: **Listo para aprobación humana** (no mergeado). Cambio sensible (BD, autorización y arquitectura): el merge requiere aprobación explícita del usuario.
+- Antes del merge: la falla ignorada del ensayo de migración consta en `## Review` y en `Known limitations` del PR; respaldar la BD antes de migrar en cada ambiente.
+- Al desplegar: backup → `migrate` → `asignar_permisos_estados`. Rollback: `git revert` y `migrate product 0110`.
