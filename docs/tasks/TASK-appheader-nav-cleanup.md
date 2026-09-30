@@ -14,6 +14,7 @@
 | 2026-09-30 | PLANNING → ENGINEERING | Plan v1 escrito (4 archivos frontend + i18n, spec actualizado, sin E2E ni dependencias); PR abierto sobre la rama asignada por el entorno | delivery-plan |
 | 2026-09-30 | ENGINEERING → REVIEW | Implementación completa según plan v1 | delivery-engineer |
 | 2026-09-30 | REVIEW → PUBLISH | Quality Gate PASS (1 issue Low abierto, no bloqueante) | delivery-review |
+| 2026-09-30 | PUBLISH (sin cambio) | PR #59 completo; pendiente de aprobación humana para merge | delivery-publish |
 
 ## Investigación
 
@@ -91,4 +92,4 @@ Autoverificación del engineer (no sustituye el Quality Gate): `ng lint` limpio,
 - Limitación: revisión ejecutada en una sesión nueva, sin aislamiento real de memoria entre skills.
 
 ## Publicación
-_Pendiente_
+[PR #59](https://github.com/rolion/praxsa-django-panel-admin/pull/59) — **Listo para aprobación humana** (no mergeado). Cambio no sensible (sin arquitectura/auth/DB/infra).
