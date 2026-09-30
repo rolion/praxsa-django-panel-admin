@@ -50,6 +50,24 @@ class ProformaCreateTest(TestCase):
         self.assertEqual(Decimal(line['installation_price']), Decimal('0'))
         self.assertIsNone(data['car_model_id'])
 
+    def test_metro_lineal_accepts_an_optional_car_model(self):
+        response = self._post(metro_lineal_payload(self.s, car_model_id=self.s['car_model'].id, car_plate='XYZ789'))
+
+        self.assertEqual(response.status_code, 201, response.content)
+        data = response.json()
+        self.assertEqual(data['car_model_id'], self.s['car_model'].id)
+        self.assertEqual(data['car_model_name'], self.s['car_model'].name)
+        line = data['items'][0]
+        self.assertIsNone(line['car_part'])
+        self.assertEqual(Decimal(line['sub_total']), Decimal('420.00'))  # el modelo no cambia el precio
+
+    def test_metro_lineal_rejects_an_inactive_car_model(self):
+        self.s['car_model'].is_active = False
+        self.s['car_model'].save()
+        response = self._post(metro_lineal_payload(self.s, car_model_id=self.s['car_model'].id))
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('car_model_id', response.json())
+
     def test_total_is_sum_of_lines_and_total_a_pagar_subtracts_discount(self):
         payload = metro_lineal_payload(self.s, discount='20.00', discount_reason='cliente frecuente')
         payload['items'].append({'window_film': self.s['film'].id, 'width': '1.50', 'length': '1.00'})

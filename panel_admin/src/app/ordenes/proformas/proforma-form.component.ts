@@ -57,6 +57,9 @@ export class ProformaFormComponent implements OnInit {
   submitted = false;
   errorMessage = '';
   infoMessage = '';
+  /** Panel de referencia de medidas del modelo (colapsable). */
+  showReference = true;
+  copiedItemId: number | null = null;
 
   get isEdit(): boolean {
     return this.editId !== null;
@@ -237,10 +240,7 @@ export class ProformaFormComponent implements OnInit {
     this.applySalesTypeValidators();
     this.lines.clear();
     this.addLine();
-    if (!this.isInstalacion) {
-      this.form.patchValue({ car_model_id: null });
-      this.items = [];
-    }
+    // El modelo (y sus items de referencia) se conserva: en metro lineal es opcional.
   }
 
   private applySalesTypeValidators(): void {
@@ -254,6 +254,28 @@ export class ProformaFormComponent implements OnInit {
     model?.updateValueAndValidity({ emitEvent: false });
     plate?.updateValueAndValidity({ emitEvent: false });
     this.lines.controls.forEach((line) => this.applyLineValidators(line));
+  }
+
+  // ---- referencia de items del modelo (solo lectura) ----
+
+  get hasReference(): boolean {
+    return !!this.form.get('car_model_id')?.value && this.items.length > 0;
+  }
+
+  toggleReference(): void {
+    this.showReference = !this.showReference;
+  }
+
+  /** Copia "ancho x largo" de un item para calcular los metros a vender. */
+  copyMeasure(item: AppCarModelPart): void {
+    const text = `${item.width} x ${item.length}`;
+    navigator.clipboard?.writeText(text).then(
+      () => {
+        this.copiedItemId = item.id;
+        setTimeout(() => (this.copiedItemId = null), 1500);
+      },
+      () => undefined
+    );
   }
 
   // ---- lineas ----
@@ -416,7 +438,7 @@ export class ProformaFormComponent implements OnInit {
       ci_nit: raw.ci_nit,
       phone_number: raw.phone_number,
       car_plate: raw.car_plate,
-      car_model_id: instalacion ? raw.car_model_id : null,
+      car_model_id: raw.car_model_id,
       discount: String(raw.discount || '0'),
       discount_reason: raw.discount_reason || '',
       items,

@@ -107,23 +107,21 @@
           <div class="section-header"><i class="fas fa-car"></i><h6>Vehículo</h6></div>
           <div class="card-body">
             <div class="row">
-              @if (isInstalacion) {
-                <div class="col-md-6 mb-3">
-                  <label class="fw-bold" for="car-model">Modelo</label>
-                  <div class="input-group">
-                    <span class="input-group-text"><i class="fas fa-car-side"></i></span>
-                    <select id="car-model" class="form-select form-control" formControlName="car_model_id" (change)="onModelChange()">
-                      <option [ngValue]="null" disabled>Seleccione un modelo</option>
-                      @for (model of models; track model.id) {
-                        <option [ngValue]="model.id">{{ model.car_brand_name }} - {{ model.name }}</option>
-                      }
-                    </select>
-                  </div>
-                  @if (form.get('car_model_id')?.invalid && submitted) {
-                    <small class="form-text text-danger">El modelo es obligatorio</small>
-                  }
+              <div class="col-md-6 mb-3">
+                <label class="fw-bold" for="car-model">Modelo @if (!isInstalacion) { <span class="text-muted fw-normal">(Opcional)</span> }</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="fas fa-car-side"></i></span>
+                  <select id="car-model" class="form-select form-control" formControlName="car_model_id" (change)="onModelChange()">
+                    <option [ngValue]="null" [disabled]="isInstalacion">{{ isInstalacion ? 'Seleccione un modelo' : 'Sin modelo' }}</option>
+                    @for (model of models; track model.id) {
+                      <option [ngValue]="model.id">{{ model.car_brand_name }} - {{ model.name }}</option>
+                    }
+                  </select>
                 </div>
-              }
+                @if (form.get('car_model_id')?.invalid && submitted) {
+                  <small class="form-text text-danger">El modelo es obligatorio</small>
+                }
+              </div>
               <div class="col-md-6 mb-3">
                 <label class="fw-bold" for="plate">{{ isInstalacion ? 'Placa' : 'Placa (opcional)' }}</label>
                 <div class="input-group">
@@ -135,9 +133,6 @@
                 }
               </div>
             </div>
-            @if (!isInstalacion) {
-              <small class="form-text text-muted">La venta por metro lineal no lleva modelo de vehículo ni items.</small>
-            }
           </div>
         </div>
 
@@ -259,6 +254,54 @@
             </small>
           </div>
         </div>
+
+        <!-- REFERENCIA DE MEDIDAS DEL MODELO (solo lectura) -->
+        @if (hasReference) {
+          <div class="card section-card reference-card">
+            <div class="section-header">
+              <i class="fas fa-ruler-combined"></i><h6>Medidas de referencia del modelo</h6>
+              <button type="button" class="btn btn-sm btn-link ms-auto" (click)="toggleReference()">
+                <i class="fas" [class.fa-chevron-up]="showReference" [class.fa-chevron-down]="!showReference"></i>
+                {{ showReference ? 'Ocultar' : 'Mostrar' }}
+              </button>
+            </div>
+            @if (showReference) {
+              <div class="card-body">
+                <p class="reference-note mb-2">
+                  <i class="fas fa-info-circle"></i>
+                  Medidas de referencia del vehículo seleccionado. Utiliza estos datos para calcular los metros a vender.
+                </p>
+                <div class="table-responsive">
+                  <table class="table table-sm align-middle mb-0 reference-table">
+                    <thead>
+                      <tr>
+                        <th>Item / Pieza</th>
+                        <th class="text-end">Ancho requerido (m)</th>
+                        <th class="text-end">Largo sugerido (m)</th>
+                        <th style="width: 130px"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of items; track item.id) {
+                        <tr>
+                          <td>{{ item.car_part_name }}</td>
+                          <td class="text-end">{{ item.width }}</td>
+                          <td class="text-end">{{ item.length }}</td>
+                          <td class="text-end">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="copyMeasure(item)" title="Copiar medida (ancho x largo)">
+                              <i class="far" [class.fa-copy]="copiedItemId !== item.id" [class.fa-check-circle]="copiedItemId === item.id"></i>
+                              {{ copiedItemId === item.id ? 'Copiado' : 'Copiar medida' }}
+                            </button>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            }
+          </div>
+        }
 
         <!-- 5. DESCUENTO Y TOTALES -->
         <div class="card section-card">

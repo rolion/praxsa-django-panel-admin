@@ -89,6 +89,58 @@ describe('ProformaFormComponent', () => {
     expect(component.lines.at(0).get('quantity')?.valid).toBe(true);
   });
 
+  it('metro lineal shows the model as optional, sends it when chosen and keeps the reference panel', () => {
+    setupCreate();
+    component.form.get('sales_type')?.setValue('venta_metro_lineal');
+    fillCustomer();
+    component.form.patchValue({ car_model_id: 9 });
+    component.onModelChange();
+    httpMock.expectOne(`${vehicles}/models/9/items/`).flush(parts);
+    component.lines.at(0).patchValue({ reel: component.reelKey(3, '1.50'), length: '3.5' });
+
+    expect(component.form.get('car_model_id')?.valid).toBe(true);
+    expect(component.hasReference).toBe(true);
+
+    component.save();
+
+    const req = httpMock.expectOne(`${ordenes}/proformas`);
+    expect(req.request.body.car_model_id).toBe(9);
+    expect(req.request.body.items).toEqual([{ window_film: 3, width: '1.50', length: '3.5' }]);
+    req.flush({ id: 50 });
+  });
+
+  it('switching the sales type keeps the selected model and its reference items', () => {
+    setupCreate();
+    component.form.patchValue({ car_model_id: 9 });
+    component.onModelChange();
+    httpMock.expectOne(`${vehicles}/models/9/items/`).flush(parts);
+
+    component.form.get('sales_type')?.setValue('venta_metro_lineal');
+
+    expect(component.form.get('car_model_id')?.value).toBe(9);
+    expect(component.items.length).toBe(1);
+  });
+
+  it('the reference panel needs a model with items, can be collapsed and copies the measure', async () => {
+    setupCreate();
+    expect(component.hasReference).toBe(false);
+    component.form.patchValue({ car_model_id: 9 });
+    component.onModelChange();
+    httpMock.expectOne(`${vehicles}/models/9/items/`).flush(parts);
+    expect(component.hasReference).toBe(true);
+
+    expect(component.showReference).toBe(true);
+    component.toggleReference();
+    expect(component.showReference).toBe(false);
+
+    const write = jasmine.createSpy('writeText').and.returnValue(Promise.resolve());
+    spyOnProperty(navigator, 'clipboard', 'get').and.returnValue({ writeText: write } as unknown as Clipboard);
+    component.copyMeasure(parts[0]);
+    await Promise.resolve();
+    expect(write).toHaveBeenCalledWith('1.50 x 1.20');
+    expect(component.copiedItemId).toBe(1);
+  });
+
   it('the detail table has 9 columns for instalacion and 6 for metro lineal', () => {
     setupCreate();
     expect(component.columnCount).toBe(9);

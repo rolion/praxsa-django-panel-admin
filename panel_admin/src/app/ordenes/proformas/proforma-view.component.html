@@ -81,7 +81,7 @@
         <div class="section-header"><i class="fas fa-car"></i><h6>Datos del vehículo</h6></div>
         <div class="card-body">
           <div class="row info-grid">
-            @if (isInstalacion) {
+            @if (isInstalacion || proforma.car_model_name) {
               <div class="col-6 col-md-3 info-item">
                 <span class="info-label">Marca</span>
                 <span class="info-value">{{ proforma.car_brand_name || '—' }}</span>
@@ -96,8 +96,8 @@
               <span class="info-value">{{ proforma.car_plate || '—' }}</span>
             </div>
           </div>
-          @if (!isInstalacion) {
-            <small class="text-muted">Venta por metro lineal: no lleva modelo de vehículo ni items.</small>
+          @if (!isInstalacion && !proforma.car_model_name) {
+            <small class="text-muted">Venta por metro lineal: el modelo de vehículo es opcional y no se indicó.</small>
           }
         </div>
       </div>

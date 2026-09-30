@@ -116,6 +116,36 @@
     }
   }
 
+  // ---- referencia de medidas (solo lectura, fondo tenue) ----
+  .reference-card {
+    background: rgba(79, 107, 237, 0.05);
+    border-color: rgba(79, 107, 237, 0.25);
+
+    .section-header {
+      background: rgba(79, 107, 237, 0.09);
+    }
+
+    .reference-note {
+      color: #5b6577;
+      font-size: 0.85rem;
+
+      i {
+        color: #4f6bed;
+      }
+    }
+
+    .reference-table thead th {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: #6c757d;
+    }
+
+    .reference-table td,
+    .reference-table th {
+      background: transparent;
+    }
+  }
+
   // ---- alertas (amarillo = advertencia, rojo = error) ----
   .line-alert {
     display: flex;
