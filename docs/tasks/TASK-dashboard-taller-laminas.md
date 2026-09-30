@@ -1,6 +1,6 @@
 # TASK-dashboard-taller-laminas: Dashboard del panel para el taller de láminas (KPIs, gráficas, stock crítico, cola de instalaciones, últimas proformas)
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** task/TASK-dashboard-taller-laminas
@@ -15,6 +15,7 @@
 | 2026-09-30 | PLANNING → ARCHITECTURE | El plan no se escribió: master trajo el PR #54 (módulo de reportes) que contradice dos decisiones de los ADR (cálculo único de ventas cobradas y permiso `view_proxy_pagos` para ver ventas). Requiere revisar los ADR con `/delivery-architect` | delivery-plan |
 | 2026-09-30 | ARCHITECTURE → PLANNING | ADR de API/alcance y de métricas revisados tras el PR #54 (ventas cobradas y permiso `view_proxy_pagos` reutilizados de Reportes; alcance con `get_panel_pago_queryset`/`get_panel_inventario_queryset`; `sin_sucursal`); DDR ajustado | delivery-architect |
 | 2026-09-30 | PLANNING → ENGINEERING | Plan v1 escrito y PR #56 abierto; queda a la espera de la aprobación humana del plan y de las 6 preguntas abiertas antes de implementar | delivery-plan |
+| 2026-09-30 | ENGINEERING → REVIEW | Implementación completa de las fases 1 a 5 del plan v1 (backend, API, servicio, pantalla); la verificación en vivo contra el backend real (paso 20) queda para review/usuario | delivery-engineer |
 
 ## Investigación
 
@@ -155,7 +156,23 @@ La rama de trabajo de este task está atrás de `origin/master` (`c21814d`). Ese
 - [PLAN-2026-09-30-dashboard-taller-laminas](../plans/PLAN-2026-09-30-dashboard-taller-laminas.md) — **v1**. 5 fases: núcleo de cálculo con tests, API (7 `GET dashboard/*`), servicio y modelos Angular, pantalla, verificación en vivo. Sin migraciones ni dependencias nuevas; E2E: NO. Preguntas abiertas (umbrales 10/30 m, fila = rollo, técnico = `instaladar`, selector 6/12 meses, etiqueta del botón, entregable Angular) con valor por defecto.
 
 ## Implementación
-_Pendiente_
+Implementado el plan v1 (fases 0 a 5) con los valores por defecto de las preguntas abiertas (umbrales 10/30 m, fila de inventario = rollo, técnico = `instaladar`, selector de 6/12 meses, etiqueta "Convertir a venta", entregable Angular).
+
+**Backend** (commit `09ffde5`): `helper/dashboard.py`, `business/dashboard.py`, `serializer/dashboard_serializer.py`, `custom_views/dashboard_admin.py` y 7 rutas en `urls.py`. Sin migraciones (`makemigrations --check` sin cambios). Las ventas reutilizan `Reportes_Business.pagos_cobrados` + `filtrar_pagos` y solo se entregan con `product.view_proxy_pagos`; sin el permiso el bloque va `null`. Tests: `test_dashboard_calculo.py` (25) y `test_dashboard_api.py` (14: acceso, solo lectura, parámetros, alcance, permiso de ventas, sin costos, equivalencia con `reportes/ventas-diarias`, consultas acotadas).
+
+**Frontend** (commit `028a3ad`): `dashboard.model.ts`, `dashboard.service.ts`, `dashboard.charts.ts`, `main.component.{ts,html}` reescrito, `assets/scss/_dashboard.scss` (+ `@use` en `style.scss`), specs del servicio, las gráficas y el componente (27 en verde). "Convertir a venta" reutiliza `confirmGenerateNota` y `OrdenesService.generarNotaTrabajo`.
+
+**Desvíos frente al plan/DDR (a revisar):**
+- `angular.json`: se agregó `@angular/localize/init` a los polyfills del target `test` (una línea). Sin eso `ngb-progressbar` no se puede instanciar en tests (`$localize is not defined`); la build ya lo tenía. No estaba en el plan.
+- El botón "Convertir a venta" usa `btn btn-sm btn-success` y no `btn-tbl-activate`: esa clase de la plantilla es un botón circular de solo ícono y recortaba el texto.
+- Los badges de estado se replicaron en `_dashboard.scss` porque los de `_ordenes.scss` solo aplican dentro de `.orden-view`.
+- Selector de período "Últimos 6/12 meses" y selector de sucursal con más de una sucursal en alcance (ya anunciados en el plan).
+
+**Verificación propia (no es el Quality Gate):** `python manage.py test product` → 500 tests OK; `makemigrations --check --dry-run` sin cambios; `ng lint` sin errores; `ng build` compila; `ng test` completo → 290 OK y 14 fallas, **todas** specs "should create" de componentes que no se tocaron (Sidebar, Footer, Page404, Page500, Signup, Blank, AdvanceTable, Dashboard2, First1-3, Second1-2, Third1; faltan providers de router/HTTP). Revisión visual con una API simulada (no con el backend real): desktop 1280 px, móvil 375 px (una columna, sin scroll horizontal, orden stock → cola → proformas → gráficas) y las cuatro tarjetas KPI, líneas, barras, donut, stock, cola y proformas; el tema oscuro de la plantilla **no** se revisó.
+
+**Pendiente de review/usuario:** verificación en vivo con el backend real (Admin, Caja y un usuario sin `view_proxy_pagos`; empleado de una y de dos sucursales; total del mes contra Reportes → Ventas diarias; "Convertir a venta" con éxito y con error de stock); confirmar los umbrales de stock con negocio; ejecutar `asignar_permisos_reportes --dry-run` en cada ambiente.
+
+**Deuda técnica señalada:** las 14 specs "should create" rotas son previas y no se arreglaron (fuera de alcance); `dashboard2` y sus assets de demo siguen sin uso.
 
 ## Review
 _Pendiente_
