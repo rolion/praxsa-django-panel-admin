@@ -1,6 +1,6 @@
 # TASK-pricing-calculator-screen: Pantalla "Calculadora de precios" para staff/asesores en panel_admin
 
-**Etapa actual:** INVESTIGATION
+**Etapa actual:** ARCHITECTURE
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** `claude/pricing-calculator-screen-b5e976` (asignada por el entorno)
@@ -15,6 +15,7 @@
 | 2026-09-30 | PLANNING → ENGINEERING | Plan v1 escrito (solo frontend `panel_admin/`: layout mínimo, módulo `calculadora/`, preload del borrador en el formulario de proforma, ítem de menú; sin backend ni dependencias; sin E2E, con verificación manual en vivo); PR abierto sobre la rama asignada por el entorno | delivery-plan |
 | 2026-09-30 | ENGINEERING → REVIEW | Implementación completa según plan v1 (5 fases, solo frontend `panel_admin/`); specs propios en verde, `ng lint` y `ng build` limpios; verificación en vivo con API simulada (escritorio y móvil) | delivery-engineer |
 | 2026-09-30 | REVIEW → INVESTIGATION | Cambio de alcance pedido por el usuario tras ver la v1: la calculadora es para cliente final (login/registro en modal por etapas, menú superior Calculadora/Proformas, lista de proformas de solo lectura, sin sidebar ni acceso a administración), dentro de `panel_admin/` y con la placa en la cuenta. Reinvestigación de cuentas de cliente, sesión y contratos; el DDR/ADR/plan v1 quedan pendientes de revisión | delivery-investigate |
+| 2026-09-30 | INVESTIGATION → ARCHITECTURE (via DESIGN) | Diseño del flujo de cliente resuelto en un DDR nuevo que reemplaza al de la v1: calculadora navegable sin sesión, modal de acceso (login y registro en 2 etapas), encabezado con Calculadora/Proformas, guardado directo con datos de la cuenta y lista Mis proformas de solo lectura; el veredicto NEEDS_ARCHITECTURE exige decidir aislamiento de sesión/autorización, registro con username y placa, catálogos y contrato de listado | delivery-design |
 
 ## Investigación
 
@@ -182,7 +183,9 @@ Hoy un asesor arma una cotización creando directamente una proforma en `/ordene
 **SI** — Pantalla nueva de varios pasos (stepper, card de filtros, grid 70/30 con sticky, estados inicial/cargando/vacío) y adopción de componentes de la plantilla `panel_admin/` (`docs/frontend/panel_admin/reference.md`); debe definirse visualmente con criterio para no quedar inconsistente con las pantallas de `ordenes/`.
 
 ## Diseño
-- [DDR-pricing-calculator-screen-pantalla-calculadora](../design/DDR-pricing-calculator-screen-pantalla-calculadora.md) — pantalla única sin sidebar (header mínimo con logo + perfil), stepper propio de 3 pasos derivado del estado, tabla Bootstrap de ítems con select de lámina apta por ítem, resumen sticky con Crear Proforma (lleva al formulario existente precargado) y WhatsApp con mensaje prearmado, estados inicial/cargando/sin resultados/error.
+- [DDR-pricing-calculator-screen-flujo-cliente](../design/DDR-pricing-calculator-screen-flujo-cliente.md) — **vigente (2026-09-30)**. Actor cliente final: calculadora sin sesión; "Crear Proforma" pide login/registro en modal (registro en 2 etapas: datos → credenciales) y guarda con los datos de la cuenta; encabezado sin sidebar con Calculadora/Proformas y usuario; lista Mis proformas (`ngx-datatable`, solo lectura, sin columna de estado). Hereda del DDR anterior la pantalla de cotización.
+  - Pendientes: flujo/menú de staff, detalle y estado para el cliente, CI/NIT, etiqueta del botón, y los de la v1.
+- *(Reemplazado por el DDR de flujo cliente; la pantalla de cotización se hereda)* [DDR-pricing-calculator-screen-pantalla-calculadora](../design/DDR-pricing-calculator-screen-pantalla-calculadora.md) — pantalla única sin sidebar (header mínimo con logo + perfil), stepper propio de 3 pasos derivado del estado, tabla Bootstrap de ítems con select de lámina apta por ítem, resumen sticky con Crear Proforma (lleva al formulario existente precargado) y WhatsApp con mensaje prearmado, estados inicial/cargando/sin resultados/error.
 
 **Pendientes de negocio (no resolubles desde el código):** regla de "Recomendada", número de WhatsApp (global vs. por sucursal), texto/formato de importes y ubicación de la entrada al menú.
 

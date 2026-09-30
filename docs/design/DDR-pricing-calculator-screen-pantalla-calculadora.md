@@ -1,6 +1,6 @@
 # DDR-pricing-calculator-screen-pantalla-calculadora: Pantalla "Calculadora de precios" (layout sin sidebar, stepper, tabla de ítems y resumen sticky) en `panel_admin/`
 
-**Estado:** Propuesto
+**Estado:** Reemplazado por DDR-pricing-calculator-screen-flujo-cliente
 **Task relacionado:** TASK-pricing-calculator-screen
 **Fecha:** 2026-09-30
 
