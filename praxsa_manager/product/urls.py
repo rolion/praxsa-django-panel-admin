@@ -48,6 +48,7 @@ from .custom_views.almacen_admin import (
     WindowFilmReelToggleActiveView,
     WindowFilmToggleActiveView,
 )
+from .custom_views.reportes_admin import ReporteUtilidadView, ReporteVentasDiariasView
 from .custom_views.ordenes_admin import (
     NotaTrabajoAnularView,
     NotaTrabajoCorregirView,
@@ -142,5 +143,7 @@ urlpatterns = [
     path('ordenes/catalogo/sucursales', OrdenesSucursalesView.as_view()),
     path('ordenes/catalogo/bobinas', OrdenesBobinasView.as_view()),
     path('ordenes/catalogo/instaladores', OrdenesInstaladoresView.as_view()),
+    path('reportes/ventas-diarias', ReporteVentasDiariasView.as_view()),
+    path('reportes/utilidad', ReporteUtilidadView.as_view()),
 ]
 urlpatterns = format_suffix_patterns(urlpatterns)

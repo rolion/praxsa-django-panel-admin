@@ -140,6 +140,7 @@ def create_inventario(
     quantity=1,
     to_install=Decimal('50.00'),
     precio_venta_mtr_lineal=Decimal('120.00'),
+    precio_compra_mtr_lineal=Decimal('80.00'),
 ):
     sucursal = sucursal or create_sucursal(create_user_with_token()[0])
     bobina = bobina or create_window_film_reel()
@@ -151,7 +152,7 @@ def create_inventario(
         installed=Decimal('0.00'),
         original_length=bobina.length,
         date=timezone.now(),
-        precio_compra_mtr_lineal=Decimal('80.00'),
+        precio_compra_mtr_lineal=precio_compra_mtr_lineal,
         precio_venta_mtr_lineal=precio_venta_mtr_lineal,
     )
 
@@ -243,7 +244,7 @@ def create_full_pago_chain(user, sucursal=None, inventario=None):
     listos para probar el filtrado por sucursal en Pagos/Reportes del admin."""
     header, _ = create_full_proforma(user=user, sucursal=sucursal, inventario=inventario)
     nota_trabajo = create_nota_trabajo(proforma=header, status='terminado')
-    nota_venta = create_nota_venta(nota_trabajo=nota_trabajo, created_by=user, total_price=header.total_price)
+    nota_venta = create_nota_venta(nota_trabajo=nota_trabajo, created_by=user, total_price=header.total_price, status='pagada')
     paiment = create_pago(nota_venta=nota_venta, created_by=user)
     return {
         'proforma': header,

@@ -212,6 +212,42 @@
           "submenu": []
         }
       ]
+    },
+    {
+      "path": "",
+      "title": "Reportes",
+      "iconType": "feather",
+      "icon": "bar-chart-2",
+      "class": "menu-toggle",
+      "groupTitle": false,
+      "badge": "",
+      "badgeClass": "",
+      "submenu": [
+        {
+          "path": "/reportes/ventas-diarias",
+          "title": "Ventas Diarias",
+          "iconType": "",
+          "icon": "",
+          "class": "ml-menu",
+          "groupTitle": false,
+          "badge": "",
+          "badgeClass": "",
+          "permission": "view_proxy_pagos",
+          "submenu": []
+        },
+        {
+          "path": "/reportes/utilidad",
+          "title": "Utilidad",
+          "iconType": "",
+          "icon": "",
+          "class": "ml-menu",
+          "groupTitle": false,
+          "badge": "",
+          "badgeClass": "",
+          "permission": "view_utilidades",
+          "submenu": []
+        }
+      ]
     }
   ]
 }

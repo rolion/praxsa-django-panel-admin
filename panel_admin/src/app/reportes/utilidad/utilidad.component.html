@@ -1,0 +1,278 @@
+<section class="main-content orden-list orden-view reporte-view">
+  <ul class="breadcrumb breadcrumb-style">
+    <li class="breadcrumb-item">
+      <h5 class="page-title m-b-0">Utilidad</h5>
+    </li>
+    <li class="breadcrumb-item bcrumb-1">
+      <a routerLink="/dashboard/main"><i class="fas fa-home font-17"></i></a>
+    </li>
+    <li class="breadcrumb-item">Reportes</li>
+    <li class="breadcrumb-item">Utilidad</li>
+  </ul>
+  <div class="section-body">
+    @if (!canView) {
+      <div class="alert alert-warning">No tiene permiso para ver este reporte.</div>
+    } @else {
+      <!-- FILTROS -->
+      <div class="card section-card">
+        <div class="section-header"><i class="fas fa-filter"></i><h6>Filtros</h6></div>
+        <form class="card-body" [formGroup]="filtros" (ngSubmit)="aplicar()">
+          <div class="row">
+            <div class="col-6 col-md-3 mb-2">
+              <label class="info-label" for="ru-desde">Desde</label>
+              <input id="ru-desde" type="date" class="form-control" formControlName="desde" />
+            </div>
+            <div class="col-6 col-md-3 mb-2">
+              <label class="info-label" for="ru-hasta">Hasta</label>
+              <input id="ru-hasta" type="date" class="form-control" formControlName="hasta" />
+            </div>
+            <div class="col-6 col-md-3 mb-2">
+              <label class="info-label" for="ru-sucursal">Sucursal</label>
+              @if (showSucursalSelector) {
+                <select id="ru-sucursal" class="form-select form-control" formControlName="sucursal">
+                  <option [ngValue]="null">Todas</option>
+                  @for (s of sucursales; track s.id) {
+                    <option [ngValue]="s.id">{{ s.name }}</option>
+                  }
+                </select>
+              } @else {
+                <div class="form-control-plaintext fw-bold">{{ sucursales[0]?.name || '—' }}</div>
+              }
+            </div>
+            <div class="col-6 col-md-3 mb-2">
+              <label class="info-label" for="ru-tipo-venta">Tipo de venta</label>
+              <select id="ru-tipo-venta" class="form-select form-control" formControlName="salesType">
+                <option value="">Todos</option>
+                <option value="venta_instalacion">Con instalación</option>
+                <option value="venta_metro_lineal">Metro lineal</option>
+              </select>
+            </div>
+          </div>
+          @if (rangeError) {
+            <div class="text-danger mb-2">{{ rangeError }}</div>
+          }
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary" [disabled]="loading">Aplicar</button>
+            <button type="button" class="btn btn-outline-secondary" [disabled]="loading" (click)="limpiar()">Limpiar</button>
+          </div>
+        </form>
+      </div>
+
+      @if (errorMessage) {
+        <div class="alert alert-danger">{{ errorMessage }}</div>
+      }
+      @if (withoutSucursal) {
+        <div class="alert alert-warning">Asigne una sucursal al usuario para ver ventas.</div>
+      }
+
+      @if (report && !withoutSucursal) {
+        @if (report.totales.ventas_costo_incompleto > 0) {
+          <div class="line-alert warn reporte-costo-alert" role="alert">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>Ventas con costo de compra incompleto: {{ report.totales.ventas_costo_incompleto }}; su utilidad está sobreestimada.</span>
+          </div>
+        }
+
+        <!-- TOTALES -->
+        <div class="row reporte-cards">
+          <div class="col-6 col-lg-3">
+            <div class="card section-card reporte-card"><div class="card-body">
+              <span class="info-label">Venta bruta</span>
+              <span class="reporte-valor">{{ bs(report.totales.bruto) }}</span>
+            </div></div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="card section-card reporte-card"><div class="card-body">
+              <span class="info-label">Descuentos</span>
+              <span class="reporte-valor">{{ bs(report.totales.descuento) }}</span>
+            </div></div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="card section-card reporte-card"><div class="card-body">
+              <span class="info-label">Venta neta (cobrado)</span>
+              <span class="reporte-valor">{{ bs(report.totales.cobrado) }}</span>
+            </div></div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="card section-card reporte-card"><div class="card-body">
+              <span class="info-label">Costo de compra</span>
+              <span class="reporte-valor">{{ bs(report.totales.costo_compra) }}</span>
+            </div></div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="card section-card reporte-card"><div class="card-body">
+              <span class="info-label">Utilidad antes de descuento</span>
+              <span class="reporte-valor">{{ bs(report.totales.utilidad_antes) }}</span>
+            </div></div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="card section-card reporte-card reporte-card-total"><div class="card-body">
+              <span class="info-label">Utilidad después de descuento</span>
+              <span class="reporte-valor">{{ bs(report.totales.utilidad_despues) }}</span>
+            </div></div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="card section-card reporte-card"><div class="card-body">
+              <span class="info-label">Margen</span>
+              <span class="reporte-valor">{{ porcentaje(report.totales.margen) }}</span>
+            </div></div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="card section-card reporte-card"><div class="card-body">
+              <span class="info-label">Ingreso por instalación (aparte)</span>
+              <span class="reporte-valor">{{ bs(report.totales.instalacion) }}</span>
+            </div></div>
+          </div>
+        </div>
+
+        <!-- DESGLOSE -->
+        <div class="card section-card">
+          <div class="section-header"><i class="fas fa-tools"></i><h6>Por tipo de venta</h6></div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-sm reporte-table mb-0">
+                <thead>
+                  <tr>
+                    <th>Tipo</th><th class="text-end">Ventas</th><th class="text-end">Venta lámina</th><th class="text-end">Instalación</th>
+                    <th class="text-end">Costo compra</th><th class="text-end">Utilidad antes</th><th class="text-end">Utilidad después</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (t of report.por_tipo_venta; track t.sales_type) {
+                    <tr>
+                      <td>{{ t.label }}</td>
+                      <td class="text-end">{{ t.ventas }}</td>
+                      <td class="text-end">{{ bs(t.venta_lamina) }}</td>
+                      <td class="text-end">{{ bs(t.instalacion) }}</td>
+                      <td class="text-end">{{ bs(t.costo_compra) }}</td>
+                      <td class="text-end">{{ bs(t.utilidad_antes) }}</td>
+                      <td class="text-end fw-bold">{{ bs(t.utilidad_despues) }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- UTILIDAD POR VENTA -->
+      <div class="card section-card">
+        <div class="p-10">
+          <div class="row m-0">
+            <div class="col-auto p-0">
+              <div class="ngxTableHeader"><div class="table-title"><h2><strong>Utilidad por venta</strong></h2></div></div>
+            </div>
+            <div class="col-lg-5 p-0">
+              <div class="ngxTableHeader">
+                <div class="table-search-area">
+                  <div>
+                    <label for="search-input"><i class="material-icons search-icon">search</i></label>
+                    <input placeholder="Buscar por número o cliente" type="text" class="browser-default search-field"
+                      (keyup)="filterDatatable($event)" aria-label="Search box" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          @if (loadedOnce && !loading && rows.length === 0 && !errorMessage && !withoutSucursal) {
+            <div class="alert alert-info m-3">No hay ventas pagadas en el período seleccionado.</div>
+          }
+          <ngx-datatable
+            class="material orden-table"
+            [rows]="rows"
+            [loadingIndicator]="loading"
+            columnMode="force"
+            [headerHeight]="50"
+            [footerHeight]="50"
+            rowHeight="auto"
+            [limit]="10"
+            [scrollbarH]="true"
+            [summaryRow]="true"
+            summaryPosition="bottom"
+            [summaryHeight]="50"
+          >
+            <ngx-datatable-column name="Fecha" prop="fecha" [width]="140" [summaryFunc]="noSummary">
+              <ng-template let-value="value" ngx-datatable-cell-template>{{ fechaHora(value) }}</ng-template>
+            </ngx-datatable-column>
+            <ngx-datatable-column name="Nota venta" prop="nota_venta_id" [width]="100" [summaryFunc]="noSummary">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                <a [routerLink]="['/ordenes/notas-venta/view', row.nota_venta_id]">{{ row.nota_venta_id }}</a>
+              </ng-template>
+            </ngx-datatable-column>
+            <ngx-datatable-column name="Cliente" prop="cliente" [width]="160" [summaryFunc]="noSummary"></ngx-datatable-column>
+            <ngx-datatable-column name="Tipo de venta" prop="sales_type_label" [width]="170" [summaryFunc]="noSummary">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                <span [class]="badge(row)">{{ row.sales_type_label }}</span>
+              </ng-template>
+            </ngx-datatable-column>
+            @if (showSucursalSelector) {
+              <ngx-datatable-column name="Sucursal" prop="sucursal_name" [width]="120" [summaryFunc]="noSummary"></ngx-datatable-column>
+            }
+            <ngx-datatable-column name="Venta lámina" prop="venta_lamina" [width]="120" headerClass="text-end" cellClass="text-end" [summaryFunc]="summary['venta_lamina']">
+              <ng-template let-value="value" ngx-datatable-cell-template>{{ bs(value) }}</ng-template>
+            </ngx-datatable-column>
+            <ngx-datatable-column name="Instalación" prop="instalacion" [width]="110" headerClass="text-end" cellClass="text-end" [summaryFunc]="summary['instalacion']">
+              <ng-template let-value="value" ngx-datatable-cell-template>{{ bs(value) }}</ng-template>
+            </ngx-datatable-column>
+            <ngx-datatable-column name="Descuento" prop="descuento" [width]="110" headerClass="text-end" cellClass="text-end" [summaryFunc]="summary['descuento']">
+              <ng-template let-value="value" ngx-datatable-cell-template>{{ bs(value) }}</ng-template>
+            </ngx-datatable-column>
+            <ngx-datatable-column name="Costo compra" prop="costo_compra" [width]="130" headerClass="text-end" cellClass="text-end" [summaryFunc]="summary['costo_compra']">
+              <ng-template let-row="row" ngx-datatable-cell-template>
+                {{ bs(row.costo_compra) }}
+                @if (row.costo_incompleto) {
+                  <i class="fas fa-exclamation-triangle reporte-warn" title="Falta el costo de compra: la utilidad de esta venta está sobreestimada" aria-label="Costo de compra incompleto"></i>
+                }
+              </ng-template>
+            </ngx-datatable-column>
+            <ngx-datatable-column name="Utilidad" prop="utilidad_despues" [width]="130" headerClass="text-end" cellClass="text-end fw-bold" [summaryFunc]="summary['utilidad_despues']">
+              <ng-template let-value="value" ngx-datatable-cell-template>{{ bs(value) }}</ng-template>
+            </ngx-datatable-column>
+            <ngx-datatable-column name="Margen" prop="margen" [width]="90" headerClass="text-end" cellClass="text-end" [summaryFunc]="summary['margen']">
+              <ng-template let-value="value" ngx-datatable-cell-template>{{ porcentaje(value) }}</ng-template>
+            </ngx-datatable-column>
+          </ngx-datatable>
+          <small class="text-muted d-block px-3 pb-2">
+            Utilidad = venta de lámina − costo de compra − descuento; la instalación no entra en la utilidad.
+          </small>
+        </div>
+      </div>
+
+      <!-- RESUMEN POR LAMINA -->
+      @if (report && !withoutSucursal) {
+        <div class="card section-card">
+          <div class="section-header"><i class="fas fa-layer-group"></i><h6>Resumen por lámina</h6></div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-sm reporte-table mb-0">
+                <thead>
+                  <tr>
+                    <th>Sucursal</th><th>Lámina</th><th class="text-end">Ancho</th><th class="text-end">Metros</th>
+                    <th class="text-end">Venta lámina</th><th class="text-end">Costo compra</th><th class="text-end">Utilidad antes de descuento</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (l of report.por_lamina; track $index) {
+                    <tr>
+                      <td>{{ l.sucursal_name }}</td>
+                      <td>{{ l.window_film_name }}</td>
+                      <td class="text-end">{{ l.width }}</td>
+                      <td class="text-end">{{ l.metros }}</td>
+                      <td class="text-end">{{ bs(l.venta_lamina) }}</td>
+                      <td class="text-end">{{ bs(l.costo_compra) }}</td>
+                      <td class="text-end fw-bold">{{ bs(l.utilidad_antes) }}</td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="7" class="text-center empty-value">Sin ventas en el período.</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <small class="text-muted d-block px-3 py-2">El descuento se aplica por venta, por eso este resumen no lo descuenta.</small>
+          </div>
+        </div>
+      }
+    }
+  </div>
+</section>

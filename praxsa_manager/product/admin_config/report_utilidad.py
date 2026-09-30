@@ -1,82 +1,99 @@
+"""Reporte Utilidades (Django Admin, solo lectura): una fila por lote de inventario
+con lo vendido, su costo de compra y la utilidad (venta de lamina - costo, antes de
+descuento), acumulado de todas las ventas cobradas. Las cifras salen de
+`Reportes_Business` (misma implementacion que la API del panel; ver
+ADR-reportes-utilidad-ventas-diarias-calculo-y-api). El detalle por periodo, con y
+sin descuento, esta en el panel."""
 from typing import Any
-from django.http.request import HttpRequest
-from django.contrib import admin
-from django.contrib import messages
+
+from django.contrib import admin, messages
 from django.db.models.query import QuerySet
 from django.http.request import HttpRequest
+from django_admin_listfilter_dropdown.filters import RelatedDropdownFilter
 
-from product.helper.proforma import Proforma_Helper
-from product.helper.user import User_Helper
 from ..business.inventario import Inventario_Business
-
-import io
-from datetime import datetime
-from django.db.models import Count, Sum, Q, F, Case, When
-import functools
+from ..business.reportes import Reportes_Business
+from ..helper.user import User_Helper
 
 
-from django_admin_listfilter_dropdown.filters import DropdownFilter, RelatedDropdownFilter, ChoiceDropdownFilter
-from rangefilter.filters import (
-    DateRangeFilterBuilder,
-    DateTimeRangeFilterBuilder,
-    NumericRangeFilterBuilder,
-    DateRangeQuickSelectListFilterBuilder,
-)
-    
+def _bs(value):
+    return f'{value} Bs'
+
+
 class ReportUtilidadAdmin(admin.ModelAdmin):
-    
     list_display = [
-        "sucursal",
-        "bobina",
-        "precio_compra_mtr_lineal",
-        "precio_venta_mtr_lineal",
-        "get_utilidad"
+        'sucursal',
+        'bobina',
+        'precio_compra_mtr_lineal',
+        'precio_venta_mtr_lineal',
+        'get_metros',
+        'get_venta',
+        'get_costo',
+        'get_utilidad',
     ]
-    
     list_filter = [
-        ('sucursal', ChoiceDropdownFilter),
         ('sucursal', RelatedDropdownFilter),
-        ('bobina', RelatedDropdownFilter)]
-    
-    def get_utilidad(self, obj):
-        return str( round(obj.sum_film_utilidad,2))+" Bs"
-    get_utilidad.short_description = 'Utilidad Lamina'
-    get_utilidad.admin_order_field = 'sum_film_utilidad'
-    
-    helper = Proforma_Helper()
+        ('bobina', RelatedDropdownFilter),
+    ]
+    list_per_page = 10
+    reportes_business = Reportes_Business()
     inventario_business = Inventario_Business()
     user_helper = User_Helper()
 
+    def _lote(self, obj):
+        return getattr(obj, '_lote', None)
+
+    @admin.display(description='Metros vendidos')
+    def get_metros(self, obj):
+        return self._lote(obj)['metros']
+
+    @admin.display(description='Venta Lamina')
+    def get_venta(self, obj):
+        return _bs(self._lote(obj)['venta_lamina'])
+
+    @admin.display(description='Costo Compra')
+    def get_costo(self, obj):
+        lote = self._lote(obj)
+        aviso = ' (costo incompleto)' if lote['costo_incompleto'] else ''
+        return _bs(lote['costo_compra']) + aviso
+
+    @admin.display(description='Utilidad Lamina')
+    def get_utilidad(self, obj):
+        return _bs(self._lote(obj)['utilidad_antes'])
+
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
-
         base_qs = super().get_queryset(request)
-        base_qs = self.inventario_business.get_inventario_queryset_by_role(user = request.user, qs=base_qs)
-        # get_inventario_queryset_by_role ya no devuelve None (ver REV-2026-09-27-
-        # modulo-almacen-02) -- se replica aca la misma condicion de sucursal
-        # que ese metodo usa, para no confundir "sin sucursal asignada" con
-        # "el reporte da 0 filas legitimamente" (ambos casos dan un queryset vacio).
         if not self.user_helper.can_view_all_sucursales(request.user) and not self.user_helper.has_assigned_sucursal(request.user):
-            self.message_user(request=request,  message=str('Asigne una sucursal al usuario'), level= messages.ERROR)
-            base_qs = super().get_queryset(request).filter(sucursal = -1)
+            self.message_user(request=request, message='Asigne una sucursal al usuario', level=messages.ERROR)
+            return base_qs.none()
+        base_qs = self.inventario_business.get_panel_inventario_queryset(request.user, base_qs)
+        return self.reportes_business.lotes_con_ventas(base_qs).select_related('sucursal', 'bobina', 'bobina__window_film')
 
-        qs = base_qs.select_related(
-            "sucursal","bobina", "bobina__window_film").filter(lamina_inventario__proforma_header__nota_trabajo__nota_venta__isnull=False).annotate(
-                sum_film_utilidad=Sum(Case(
-                    When(lamina_inventario__proforma_header__sales_type=self.helper.tipo_venta_metro_lineal,
-                         then=F("lamina_inventario__window_film_price") * F("lamina_inventario__length")),
-                    When(lamina_inventario__proforma_header__sales_type=self.helper.tipo_venta_instalacion,
-                         then=F("lamina_inventario__window_film_price") * (F("lamina_inventario__length") * F("lamina_inventario__quantity")))
-                         )))
-        return  qs
-    
+    def get_changelist_instance(self, request):
+        """Adjunta a cada lote de la pagina lo vendido y su costo (una sola pasada) y agrega
+        el total de TODO el filtro como mensaje sobre la tabla."""
+        changelist = super().get_changelist_instance(request)
+        pagina = list(changelist.result_list)
+        if pagina:
+            calculado = self.reportes_business.calcular_por_lote([obj.pk for obj in pagina])
+            for obj in pagina:
+                obj._lote = calculado[obj.pk]
+            todos = self.reportes_business.calcular_por_lote(list(changelist.queryset.values_list('pk', flat=True)))
+            venta = sum(fila['venta_lamina'] for fila in todos.values())
+            costo = sum(fila['costo_compra'] for fila in todos.values())
+            self.message_user(
+                request,
+                f'Totales del filtro: Venta lamina {_bs(venta)} | Costo de compra {_bs(costo)} | '
+                f'Utilidad lamina {_bs(venta - costo)}',
+                level=messages.INFO,
+            )
+        return changelist
+
     def has_add_permission(self, request, obj=None):
         return False
-    
-    def has_change_permission(self, request: HttpRequest, obj: Any | None = ...) -> bool:
+
+    def has_change_permission(self, request, obj=None):
         return False
-    
-    def get_actions(self, request):
-        actions = super().get_actions(request)
-        if 'delete_selected' in actions:
-            del actions['delete_selected']
-        return actions
+
+    def has_delete_permission(self, request, obj=None):
+        return False

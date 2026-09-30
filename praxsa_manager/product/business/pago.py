@@ -23,6 +23,14 @@ class Pago_Business:
             return qs
         return qs.filter(nota_trabajo__proforma__sucursal_id__in=self.user_helper.get_enabled_sucursal_ids(user))
 
+    def get_panel_pago_queryset(self, user, qs):
+        """Alcance de pagos para los reportes (panel y Django Admin, ADR-reportes-
+        utilidad-ventas-diarias-permisos): admin ve todos; el resto, los de todas
+        sus sucursales habilitadas; sin sucursal, ninguno (qs.none(), no None)."""
+        if self.user_helper.can_view_all_sucursales(user):
+            return qs
+        return qs.filter(nota_venta__nota_trabajo__proforma__sucursal_id__in=self.user_helper.get_enabled_sucursal_ids(user))
+
     def get_pago_queryset_by_role(self, user, qs):
         try:
             if self.user_helper.can_view_all_sucursales(user):

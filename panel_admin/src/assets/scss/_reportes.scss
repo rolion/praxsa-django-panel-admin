@@ -1,0 +1,59 @@
+// Modulo Reportes (Ventas Diarias y Utilidad): tarjetas de totales y tablas de
+// desglose, sobre los estilos compartidos de _ordenes.scss (.orden-list /
+// .orden-view: section-card, section-header, info-label, line-alert). Ver
+// DDR-reportes-utilidad-ventas-diarias-pantallas-reportes.
+.reporte-view {
+  .reporte-card {
+    margin-bottom: 1rem;
+
+    .card-body {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      padding: 0.9rem 1.1rem;
+    }
+
+    .reporte-valor {
+      font-size: 1.35rem;
+      font-weight: 800;
+      word-break: break-word;
+    }
+
+    &.reporte-card-total {
+      background: rgba(79, 107, 237, 0.09);
+      border-color: rgba(79, 107, 237, 0.3);
+
+      .reporte-valor {
+        color: #2f43b5;
+      }
+    }
+  }
+
+  .reporte-costo-alert {
+    margin-bottom: 1rem;
+  }
+
+  .reporte-warn {
+    margin-left: 0.35rem;
+    color: #b7791f;
+    cursor: help;
+  }
+
+  .reporte-table {
+    th {
+      color: #8a8f98;
+      font-weight: 600;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    td {
+      white-space: nowrap;
+    }
+  }
+
+  .form-control-plaintext {
+    min-height: 38px;
+  }
+}
