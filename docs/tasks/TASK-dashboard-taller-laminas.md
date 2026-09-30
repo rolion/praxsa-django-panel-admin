@@ -1,6 +1,6 @@
 # TASK-dashboard-taller-laminas: Dashboard del panel para el taller de láminas (KPIs, gráficas, stock crítico, cola de instalaciones, últimas proformas)
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** task/TASK-dashboard-taller-laminas
@@ -20,6 +20,7 @@
 | 2026-09-30 | ENGINEERING → REVIEW | Corregidos REV-01 (contraste de cifras y enlaces en tema oscuro) y REV-02 (contraste del botón Convertir a venta) | delivery-engineer |
 | 2026-09-30 | REVIEW → PUBLISH | Quality Gate PASS en el re-review sobre `02e9153`: REV-01 y REV-02 resueltos; queda abierto REV-03 (Low) | delivery-review |
 | 2026-09-30 | PUBLISH → ENGINEERING → REVIEW | A pedido del usuario se corrige REV-03 (`.text-muted` en tema claro) antes de publicar | delivery-engineer |
+| 2026-09-30 | REVIEW → PUBLISH | Quality Gate PASS sobre `1c830f6`: REV-01, REV-02 y REV-03 resueltos; sin issues abiertos | delivery-review |
 
 ## Investigación
 
@@ -186,13 +187,12 @@ Implementado el plan v1 (fases 0 a 5) con los valores por defecto de las pregunt
 **Corrección de REV-03 (a pedido del usuario, antes de publicar):** solo `panel_admin/src/assets/scss/_dashboard.scss`: `.dashboard .text-muted { color: #5f6b7d !important; }` (5.4:1 sobre blanco; el `!important` es necesario porque la plantilla fija el color con él). El bloque `body.dark` sigue ganando en tema oscuro (8.3:1). Verificación propia (no es el Quality Gate): `ng build` OK; `getComputedStyle` sobre el CSS compilado da `rgb(95,107,125)` en claro y `rgb(170,180,200)` en oscuro. Requiere nuevo review para cerrar REV-03 y reconfirmar PASS.
 
 ## Review
-**Resultado: PASS** (2026-09-30, delivery-review, re-review sobre `02e9153`; aislamiento de contexto procedimental: sesión nueva, solo artefactos y diff). La primera revisión (sobre `0aec4e4`) fue FAIL por REV-01 y REV-02. Evidencia completa en `## Testing` y `## Review` del [PR #56](https://github.com/rolion/praxsa-django-panel-admin/pull/56).
+**Resultado: PASS** (2026-09-30, delivery-review, sobre `1c830f6`). Aislamiento de contexto procedimental: esta revisión corrió en la misma sesión que `delivery-engineer`. Evidencia completa en `## Testing` y `## Review` del [PR #56](https://github.com/rolion/praxsa-django-panel-admin/pull/56). Historial: FAIL sobre `0aec4e4`, PASS con REV-03 abierto sobre `02e9153`, PASS final sobre `1c830f6`.
 
-- Resueltos: [REV-01](../reviews/REV-2026-09-30-dashboard-taller-laminas-01.md) (cifras KPI y "Ver todos" en tema oscuro: ahora 14.3:1) y [REV-02](../reviews/REV-2026-09-30-dashboard-taller-laminas-02.md) (botón "Convertir a venta": ahora 5.1:1).
-- Abierto, no bloqueante: [REV-03](../reviews/REV-2026-09-30-dashboard-taller-laminas-03.md) (Low, IMPLEMENTATION: `.text-muted` con 2.5:1 en tema claro, heredado de la plantilla).
-- Backend `python manage.py test product`: 500 OK; `makemigrations --check`: sin cambios. Frontend `ng test`: 290 OK / 14 FAILED (los mismos 14 `should create` que fallan en `origin/master`); `ng lint` y `ng build` OK.
-- El contraste se midió sobre el CSS compilado real y el markup del dashboard en una página de prueba (no en la app con login); el comportamiento de datos/permisos no cambió desde la primera revisión (el diff posterior es solo `_dashboard.scss`).
-- No verificado: "Convertir a venta" de extremo a extremo, UI con usuario sin permiso de ventas, empleado con dos sucursales, umbrales de stock con negocio, herramientas de lint/seguridad de backend (no instaladas).
+- Resueltos: [REV-01](../reviews/REV-2026-09-30-dashboard-taller-laminas-01.md), [REV-02](../reviews/REV-2026-09-30-dashboard-taller-laminas-02.md) y [REV-03](../reviews/REV-2026-09-30-dashboard-taller-laminas-03.md). Sin issues abiertos.
+- Backend `python manage.py test product`: 500 OK; `makemigrations --check`: sin cambios. Frontend `ng test`: 290 OK / 14 FAILED (los mismos `should create` previos, también en `origin/master`); `ng lint` y `ng build` OK.
+- Contraste medido sobre el CSS compilado real y el markup del dashboard en una página de prueba: todos los textos >= 4.5:1 en tema claro y oscuro (mínimo 4.5 en el enlace "Ver mas" del tema claro).
+- No verificado: la app con login (se usó la página de prueba), "Convertir a venta" de extremo a extremo, usuario sin permiso de ventas, empleado con dos sucursales, herramientas de lint/seguridad de backend (no instaladas).
 
 ## Publicación
 _Pendiente_

@@ -1,6 +1,6 @@
 # REV-2026-09-30-dashboard-taller-laminas-03: Textos secundarios `.text-muted` con contraste 2.5:1 en tema claro
 
-**Status:** Open
+**Status:** Resolved (verificado en el re-review sobre 1c830f6)
 **Severity:** Low
 **Category:** IMPLEMENTATION
 **Related plan:** docs/plans/PLAN-2026-09-30-dashboard-taller-laminas.md (v1)
