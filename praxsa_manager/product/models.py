@@ -264,7 +264,35 @@ class Proforma_Detail(models.Model):
     
     def __str__(self) -> str:
         return f'Detalle'
-    
+
+
+class Inventario_Movimiento(models.Model):
+    """Historial de metros que un detalle de proforma tomo de (egreso) o
+    devolvio a (devolucion) una fila de inventario. `inventario.to_install`/
+    `installed` siguen siendo el saldo; este registro es el respaldo que
+    permite devolver exactamente lo descontado, fila por fila (ver
+    ADR-mejora-inventario-bobinas-asignacion-y-movimientos)."""
+    EGRESO = 'egreso'
+    DEVOLUCION = 'devolucion'
+    TIPOS = [(EGRESO, 'Egreso'), (DEVOLUCION, 'Devolución')]
+
+    inventario = models.ForeignKey(inventario, related_name='movimientos', on_delete=models.DO_NOTHING, verbose_name='Inventario')
+    proforma_detail = models.ForeignKey(Proforma_Detail, related_name='movimientos_inventario', null=True, blank=True,
+                                        on_delete=models.DO_NOTHING, verbose_name='Detalle de proforma')
+    tipo = models.CharField(max_length=12, choices=TIPOS, verbose_name='Tipo')
+    metros = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Metros')
+    created_on = models.DateTimeField(auto_now_add=True, verbose_name='Fecha')
+    created_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.DO_NOTHING, verbose_name='Creado por')
+
+    class Meta:
+        verbose_name = 'Movimiento de Inventario'
+        constraints = [
+            models.CheckConstraint(check=models.Q(metros__gt=0), name='inventario_movimiento_metros_gt_0'),
+        ]
+
+    def __str__(self) -> str:
+        return f'{self.tipo} {self.metros} m (inventario {self.inventario_id})'
+
 
 class Nota_Venta(models.Model):
     nota_trabajo = models.OneToOneField(Nota_trabajo, on_delete=models.DO_NOTHING, verbose_name="Nota de Trabajo")
@@ -333,4 +361,7 @@ class precio_venta_sucursal(models.Model):
     precio_venta= models.DecimalField(max_digits=10, decimal_places=2, default= 0)
     class Meta:
         verbose_name = 'Precio por Sucursal'
+        constraints = [
+            models.UniqueConstraint(fields=['sucursal', 'lamina', 'width'], name='unique_precio_sucursal_lamina_width'),
+        ]
 

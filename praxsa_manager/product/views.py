@@ -243,7 +243,6 @@ def get_inventory(request, sucursal_id, lamina_id, width):
                 'bobina_price': float(precio),
                 'bobina_id': i['bobina__window_film__id'],
             })
-        print('inventario',inv)
         return Response(data={'inventario': inv})
     except Exception as e:
         print('algo salio mal -->', str(e))

@@ -112,7 +112,9 @@ class MigracionReversibleEnPostgresTest(TransactionTestCase):
     el reverso con "pending trigger events" cuando el RunPython borro filas."""
 
     ANTERIOR = ('product', '0110_inventario_is_active')
-    ACTUAL = ('product', '0111_estados_orden')
+    # Ultima migracion del grafo: el tearDown deja la base de pruebas en el estado final
+    # (las migraciones posteriores a 0111 crean tablas que otras pruebas necesitan).
+    ACTUAL = ('product', '0114_precio_venta_sucursal_unico')
 
     def tearDown(self):
         call_command('migrate', 'product', self.ACTUAL[1], verbosity=0)

@@ -102,12 +102,17 @@ class Orden_Estado_Business:
                     for detalle in list(detalles):
                         to_reduce = detalle.length
                         to_reduce = to_reduce * Decimal(detalle.quantity) if detalle.quantity > 0 else to_reduce
-                        inventario = self.inv_business.reduce_inventory(
+                        asignaciones = self.inv_business.reduce_inventory(
                             sucursal=detalle.proforma_header.sucursal,
                             windows_film=detalle.window_film,
                             width=detalle.width,
                             length_to_reduce=to_reduce,
+                            proforma_detail=detalle,
+                            created_by=responsable,
                         )
+                        # El FK legado (reportes, PDF) apunta a la primera fila usada; el
+                        # detalle completo por fila vive en Inventario_Movimiento.
+                        inventario = asignaciones[0][0]
                         detalle.inventario = inventario
                         detalle.save()
                         item_index = next((i for i, item in enumerate(sumary)
@@ -208,15 +213,11 @@ class Orden_Estado_Business:
         nota_venta = Nota_Venta.objects.filter(nota_trabajo=nota_trabajo).first()
         if nota_venta is not None and nota_venta.status != estados.NV_POR_COBRAR:
             raise OrdenEstadoException('La nota de venta ya no está por cobrar; anule el pago primero.')
-        for detalle in Proforma_Detail.objects.filter(proforma_header=proforma).select_related('inventario'):
-            if detalle.inventario_id is None:
-                continue
-            to_add = detalle.length
-            to_add = to_add * Decimal(detalle.quantity) if detalle.quantity > 0 else to_add
-            if self.inv_business.return_to_inventory(detail_inventory=detalle.inventario, length_to_add=to_add) is not True:
-                raise OrdenEstadoException('No se pudo devolver el inventario; la orden no se anuló.')
-            detalle.inventario = None
-            detalle.save(update_fields=['inventario'])
+        for detalle in Proforma_Detail.objects.filter(proforma_header=proforma):
+            self.inv_business.return_detail_to_inventory(detalle)
+            if detalle.inventario_id is not None:
+                detalle.inventario = None
+                detalle.save(update_fields=['inventario'])
         nota_trabajo.status = estados.NT_CANCELADA
         self._sincronizar_legado(nota=nota_trabajo)
         nota_trabajo.save()

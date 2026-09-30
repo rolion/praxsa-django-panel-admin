@@ -87,17 +87,12 @@ class Orden_Trabajo_Business:
                 proforma = work_note.proforma
 
                 # Si la nota estaba cancelada, el inventario ya se devolvio y detalle.inventario es None.
-                detalles_proforma= Proforma_Detail.objects.filter(proforma_header = proforma).select_related('inventario')
-                for detalle in detalles_proforma:
-                    inventario =detalle.inventario
-                    if inventario is None:
-                        continue
-                    to_return = detalle.length * Decimal(detalle.quantity) if detalle.quantity > 0 else detalle.length
-                    inventario.to_install = inventario.to_install + to_return
-                    inventario.installed = inventario.installed - to_return
-                    detalle.inventario = None
-                    detalle.save()
-                    inventario.save()
+                if work_note.status != estados.NT_CANCELADA:
+                    for detalle in Proforma_Detail.objects.filter(proforma_header = proforma):
+                        Inventario_Business().return_detail_to_inventory(detalle)
+                        if detalle.inventario_id is not None:
+                            detalle.inventario = None
+                            detalle.save(update_fields=['inventario'])
                 if nota_venta is not None:
                     nota_venta.delete()
                 work_note.delete()

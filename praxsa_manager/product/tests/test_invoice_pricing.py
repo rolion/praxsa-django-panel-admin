@@ -194,7 +194,7 @@ class InvoicePriceRecalculationTest(TestCase):
         scenario = helpers.build_full_scenario()
         payload = build_invoice_payload(
             scenario, sub_total='1.00', installation_price='0', window_film_price='0',
-            quantity=5, length='3.00', width='1.00',
+            quantity=5, length='3.00', width='1.50',
         )
 
         response = self.client.post(
@@ -206,11 +206,29 @@ class InvoicePriceRecalculationTest(TestCase):
 
         self.assertEqual(response.status_code, 201)
         detail = Proforma_Detail.objects.get(proforma_header_id=response.json()['id'])
-        self.assertEqual(detail.width, Decimal('1.00'))
+        self.assertEqual(detail.width, Decimal('1.50'))
         self.assertEqual(detail.length, Decimal('3.00'))
         self.assertEqual(detail.quantity, 5)
         # (3.00 * 5 * 120.00) + (50.00 * 5) = 1800.00 + 250.00
         self.assertEqual(detail.sub_total, Decimal('2050.00'))
+
+    def test_width_without_an_exact_reel_is_rejected(self):
+        """Regla unica de ancho exacto (ADR-mejora-inventario-bobinas-regla-ancho-y-precio):
+        pedir un ancho para el que no hay bobina ya no toma el precio de una bobina mas ancha."""
+        scenario = helpers.build_full_scenario()
+        payload = build_invoice_payload(
+            scenario, sub_total='1.00', installation_price='0', window_film_price='0',
+            quantity=5, length='3.00', width='1.00',
+        )
+
+        response = self.client.post(
+            '/product/invoice',
+            data=json.dumps(payload),
+            content_type='application/json',
+            HTTP_AUTHORIZATION=f'Token {scenario["token"].key}',
+        )
+
+        self.assertEqual(response.status_code, 400)
 
 
 class InvoicePriceUnresolvableTest(TestCase):
