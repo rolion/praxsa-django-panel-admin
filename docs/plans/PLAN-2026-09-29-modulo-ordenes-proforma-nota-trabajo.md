@@ -1,4 +1,4 @@
-# PLAN-2026-09-29-modulo-ordenes-proforma-nota-trabajo (v1)
+# PLAN-2026-09-29-modulo-ordenes-proforma-nota-trabajo (v2)
 
 **Task:** TASK-modulo-ordenes-proforma-nota-trabajo
 **DDRs relacionados:** [DDR-modulo-ordenes-proforma-nota-trabajo-listado-y-flujo-ordenes](../design/DDR-modulo-ordenes-proforma-nota-trabajo-listado-y-flujo-ordenes.md)
@@ -7,6 +7,8 @@
 ## Objective
 
 Agregar a `panel_admin/` el grupo de menú **Órdenes** (Proforma, Nota de Trabajo): tabla de proformas con Ver / Editar / Generar nota de trabajo / PDF, alta y edición de proformas de los dos tipos de venta (con instalación y metro lineal), y listado/ver/edición operativa de Notas de Trabajo, sobre una API REST nueva con cálculo de precios server-side y alcance por sucursal/permisos.
+
+**v2**: el plan v1 ya está implementado. Esta versión recoge los ajustes de interfaz pedidos por el usuario después de ver las pantallas (rediseño del formulario, de "Ver proforma" y de "Ver nota de trabajo", modelo opcional en metro lineal, edición in-situ de la nota) tal como quedaron implementados; el detalle de cada decisión está en las "Actualización 1 a 7" del DDR. No cambia la API, los ADR ni el alcance de backend. Ver `## Changelog`.
 
 ## Context
 
@@ -65,7 +67,7 @@ Implementar en el orden backend → login/permisos → frontend, con cada paso v
 **Frontend (`panel_admin/src/`)**
 - `assets/data/routes.json` (grupo "Órdenes"), `app/app.routes.ts` (ruta lazy `ordenes`).
 - `app/core/models/user.ts` y `app/core/service/auth.service.ts` (+ spec): `permissions`, `hasPermission`.
-- Nuevo módulo `app/ordenes/`: `ordenes.routes.ts`, `ordenes.model.ts`, `ordenes.service.ts` (+ spec), `proformas/proformas-list.component.*`, `proformas/proforma-form.component.*` (crear y editar), `proformas/proforma-view.component.*`, `notas-trabajo/notas-trabajo-list.component.*`, `notas-trabajo/nota-trabajo-view.component.*`, `notas-trabajo/nota-trabajo-edit.component.*` (+ specs).
+- Nuevo módulo `app/ordenes/`: `ordenes.routes.ts`, `ordenes.model.ts`, `ordenes.service.ts` (+ spec), `proformas/proformas-list.component.*`, `proformas/proforma-form.component.*` (crear y editar), `proformas/proforma-view.component.*`, `notas-trabajo/notas-trabajo-list.component.*`, `notas-trabajo/nota-trabajo-view.component.*` (lectura y edición in-situ; la ruta `edit/:id` abre esta misma vista en modo edición, **ya no hay componente de edición separado**), estilos `proformas/proforma-form.component.scss`, `proformas/proforma-view.component.scss` y `orden-view.shared.scss` (+ specs).
 
 ## Implementation steps
 
@@ -105,15 +107,18 @@ Implementar en el orden backend → login/permisos → frontend, con cada paso v
 ### Fase 3 — Frontend: pantallas
 
 - **F4. Proformas / listado**: `ngx-datatable` + `filterDatatable`, columnas del DDR, botones `btn-tbl-view`/`btn-tbl-edit`, botón Generar nota (ícono propio, visible si `!is_close && hasPermission('add_nota_trabajo')`, confirmación SweetAlert2) y PDF; Editar visible si `!is_close && hasPermission('change_proforma_header')`; "Nueva proforma" si `hasPermission('add_proforma_header')`. Refresca la fila tras generar nota; muestra `errorMessage`/estado "sin sucursal".
-- **F5. Proforma / formulario (crear y editar)**: un componente con `FormGroup` + `FormArray` de líneas.
+- **F5. Proforma / formulario (crear y editar)**: un componente con `FormGroup` + `FormArray` de líneas. *(v2: presentación rediseñada, ver DDR Actualizaciones 1, 2 y 5.)*
+  - Layout: cinco tarjetas (Venta, Cliente, Vehículo, Detalle de items, Descuento y totales) con encabezado e ícono, inputs con íconos y bordes redondeados, campos bloqueados en gris con candado (tipo de venta y sucursal al editar; ancho, precios y subtotal), botones primario "Crear proforma" y secundarios "Cancelar" / "Agregar item".
   - Cabecera: tipo de venta (bloqueado en edición), sucursal (select con las del alcance; una sola → fija), cliente (validadores espejo del modelo: `EmailValidator`, patrón teléfono `(\+)*\d{7,11}`, CI/NIT `\d*`, placa máx. 10, nombre máx. 400), descuento y motivo (motivo requerido si descuento > 0; descuento ≤ 50 % del total en vista previa).
   - Al cambiar de sucursal: recarga catálogo de bobinas y limpia líneas incompatibles (con aviso).
-  - Instalación: modelo (select, activos, con marca) → carga items (`vehicles/models/:id/items/`); por línea: item → precarga largo y cantidad; bobina (lámina + ancho) → precio y ancho; aviso si ancho de bobina < ancho de item.
-  - Metro lineal: sin modelo/item; por línea bobina + metros; muestra metros disponibles como tope orientativo (el servidor no bloquea, ver ADR).
+  - Detalle: **tabla de una fila por línea** (instalación: Item, Lámina (bobina), Ancho, Largo, Cantidad, Precio lámina, Instalación, Subtotal; metro lineal: sin Item, Cantidad ni Instalación) con el **Total al pie alineado bajo Subtotal**. Alertas por línea: roja "Ancho insuficiente: mínimo requerido X m" y amarilla de stock. Resumen a la derecha con Total, Descuento y Total a pagar destacado.
+  - Instalación: modelo (select, activos, con marca, obligatorio) → carga items (`vehicles/models/:id/items/`); por línea: item → precarga largo y cantidad; bobina (lámina + ancho) → precio y ancho.
+  - Metro lineal: **el modelo es opcional** ("(Opcional)", se envía y guarda si se elige; no cambia el precio), sin item; por línea bobina + metros; muestra metros disponibles como tope orientativo (el servidor no bloquea, ver ADR). Cambiar de tipo de venta conserva el modelo elegido.
+  - Panel colapsable de solo lectura **"Medidas de referencia del modelo"** (cualquier tipo de venta, al elegir un modelo con items): tabla Item / Ancho requerido / Largo sugerido con botón "Copiar medida" (copia "ancho x largo" al portapapeles).
   - Vista previa de subtotal/total/total a pagar con la misma fórmula (instalación: `largo×cantidad×precio + instalación×cantidad`; metro lineal: `metros×precio`), 2 decimales; tras guardar se muestran los importes definitivos devueltos.
   - Modo edición: precarga desde `GET ordenes/proformas/:id`; si `is_close` muestra aviso y redirige a la vista. Errores del servidor por campo/línea en `alert-danger`.
-- **F6. Proforma / ver**: layout `dl`/`dt`/`dd`, tabla de líneas, totales, estado, enlace a la nota si existe; botones PDF y (si aplica) Generar nota.
-- **F7. Notas de trabajo**: listado (columnas del DDR, Ver, Editar oculto si finalizada o sin `change_nota_trabajo`), vista con resumen de láminas, edición con instalador (select por sucursal de la proforma), código de garantía (máx. 12 caracteres y único; el modelo no define otro validador, `models.py:202`), salida y observaciones.
+- **F6. Proforma / ver** *(v2, DDR Actualizaciones 3 y 4)*: tarjetas Datos de venta, Datos del cliente, Datos del vehículo (Marca/Modelo también en metro lineal si existen) y Detalle de items, con grid etiqueta gris / valor en negrita; fecha `dd/MM/yyyy - HH:mm h`; badge de estado (azul Proforma, verde Nota de trabajo generada, ámbar Por cobrar, verde oscuro Finalizado); detalle en **`ngx-datatable`** con Total, Descuento y Total a pagar (recuadro destacado) en la fila de resumen bajo Subtotal; acciones: "Editar" (secundario), "Generar nota de trabajo" (verde), "Descargar PDF" (neutro) y "Volver al listado".
+- **F7. Notas de trabajo** *(v2, DDR Actualizaciones 6 y 7)*: listado (columnas del DDR, Ver, Editar oculto si finalizada o sin `change_nota_trabajo`). Vista con el mismo sistema visual que "Ver proforma": tarjetas Datos de la orden, Datos del cliente y vehículo, Control operativo y tiempos; badge "En ejecución" / "Finalizado"; vacíos tenues ("Sin código", "Aún no registrada", "No asignado", "Sin observaciones"); tablas `ngx-datatable` Resumen de láminas usadas y Detalle de la proforma. **Edición in-situ**: "Editar nota de trabajo" convierte en inputs código de garantía (máx. 12, único; el modelo no define otro validador, `models.py:202`), instalador (select por sucursal de la proforma), salida del vehículo (`datetime-local`) y observaciones (textarea); el resto queda en lectura; barra inferior "Cancelar" (restaura los valores originales) / "Guardar cambios". La ruta `notas-trabajo/edit/:id` abre la misma vista en modo edición.
 - **F8. Specs** de servicio y componentes (ver Test strategy).
 
 ### Fase 4 — Verificación
@@ -190,3 +195,7 @@ Implementar en el orden backend → login/permisos → frontend, con cada paso v
 ## Dependencias nuevas
 
 Ninguna. SweetAlert2, `ngx-datatable` y Bootstrap ya están en `panel_admin/`. (Playwright no se instala en este plan.)
+
+## Changelog
+- **v2** (2026-09-30): se actualizan F5, F6, F7 y "Files/components affected" para reflejar lo implementado tras los ajustes de interfaz pedidos por el usuario después de ver las pantallas: formulario en tarjetas con detalle en tabla de una fila por línea y total bajo Subtotal; modelo de vehículo opcional en metro lineal con panel de medidas de referencia; "Ver proforma" con tarjetas, badge y `ngx-datatable` con resumen de totales; "Ver nota de trabajo" con el mismo sistema visual; edición in-situ de la nota (se elimina el componente `nota-trabajo-edit`). Solicitado por el usuario (no por `delivery-review`). Sin cambios en backend, API, ADR, migraciones ni dependencias; `## Test strategy` y los criterios de aceptación 1 a 12 siguen vigentes (los specs de frontend se ampliaron para los nuevos comportamientos).
+- **v1** (2026-09-29): plan inicial.

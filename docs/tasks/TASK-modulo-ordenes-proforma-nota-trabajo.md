@@ -21,6 +21,7 @@
 | 2026-09-29 | REVIEW → REVIEW | Metro lineal: el modelo de vehículo pasa a mostrarse como opcional y se guarda si se elige; panel colapsable de medidas de referencia del modelo (solo lectura, con copiar medida) en el formulario; Ver proforma muestra el modelo si existe. Pedido del usuario; DDR actualizado. Sin cambios de API (2 tests backend nuevos que fijan el comportamiento) | usuario |
 | 2026-09-29 | REVIEW → REVIEW | Rediseño de "Ver nota de trabajo" pedido por el usuario, con el mismo sistema visual que Ver proforma (tarjetas, grid, badge En ejecución/Finalizado, fechas legibles, vacíos tenues, tablas ngx-datatable y barra de acciones); estilos compartidos en `orden-view.shared.scss`. DDR actualizado. Solo presentación | usuario |
 | 2026-09-30 | REVIEW → REVIEW | Edición in-situ de la nota de trabajo pedida por el usuario: el botón "Editar nota de trabajo" convierte en inputs los 4 campos operativos dentro de las tarjetas; barra inferior Cancelar/Guardar cambios. Se elimina el componente separado `nota-trabajo-edit` (la ruta `/edit/:id` abre la misma vista en modo edición). Sin cambios de API. DDR actualizado | usuario |
+| 2026-09-30 | REVIEW → REVIEW | Documentación al día con los ajustes de interfaz: plan **v2** con changelog (F5, F6, F7 y archivos afectados), `## Implementación` del TASK y sección Changes del PR. Sin cambios de código | usuario |
 
 ## Investigación
 
@@ -173,20 +174,28 @@ Sin migraciones. Sin cambios en `proforma/`. Cambio aditivo, reversible por `git
 
 ## Plan
 
-[PLAN-2026-09-29-modulo-ordenes-proforma-nota-trabajo](../plans/PLAN-2026-09-29-modulo-ordenes-proforma-nota-trabajo.md) — **v1**. Backend (negocio, serializers, vistas, login con `permissions`) → frontend (auth, menú, servicio, pantallas) → verificación manual en vivo. Sin migraciones, sin dependencias nuevas, sin E2E automatizado (justificado en el plan). Pendiente de aprobación humana; preguntas abiertas: grupos que reciben cada permiso, `origen` de las proformas del panel, stock no bloqueante al guardar.
+[PLAN-2026-09-29-modulo-ordenes-proforma-nota-trabajo](../plans/PLAN-2026-09-29-modulo-ordenes-proforma-nota-trabajo.md) — **v2** (v1 + ajustes de interfaz pedidos por el usuario, ver su Changelog). Backend (negocio, serializers, vistas, login con `permissions`) → frontend (auth, menú, servicio, pantallas) → verificación manual en vivo. Sin migraciones, sin dependencias nuevas, sin E2E automatizado (justificado en el plan). Pendiente de aprobación humana; preguntas abiertas: grupos que reciben cada permiso, `origen` de las proformas del panel, stock no bloqueante al guardar.
 
 ## Implementación
 
-Implementado según el plan v1, sin desvíos de alcance ni arquitectura. Sin migraciones, sin dependencias nuevas.
+Implementado según el plan (v1 + ajustes de interfaz de la v2), sin desvíos de alcance ni de arquitectura. Sin migraciones, sin dependencias nuevas.
 
 **Backend** (`praxsa_manager/product/`)
 - `business/pricing.py`: `Pricing_Business.get_reel_catalog`, `has_stock_for_reel` y `build_line_pricing` (reutiliza `resolve_unit_price` y las dos `calculate_subtotal_*`; `CarModelPartForm` intacto).
 - Alcance: `Proforma_Business.get_panel_proforma_queryset`, `Orden_Trabajo_Business.get_panel_nota_queryset`, `User_Helper.get_enabled_sucursal_ids` / `get_sucursales_in_scope` (métodos legados intactos).
 - `serializer/ordenes_serializer.py` y `custom_views/ordenes_admin.py`, rutas `ordenes/*` en `urls.py`; `permissions` en el login del panel.
-- Tests: `test_ordenes_proformas.py`, `test_ordenes_notas_trabajo.py`, `test_ordenes_scope_permissions.py`, `test_ordenes_price_parity.py` (+ `ordenes_helpers.py`): 61 tests nuevos.
+- Tests: `test_ordenes_proformas.py`, `test_ordenes_notas_trabajo.py`, `test_ordenes_scope_permissions.py`, `test_ordenes_price_parity.py` (+ `ordenes_helpers.py`): 63 tests nuevos (incluye 2 que fijan que metro lineal acepta un modelo de vehículo opcional y rechaza uno inactivo).
 
 **Frontend** (`panel_admin/src/`)
-- Menú "Órdenes" (`routes.json`), ruta lazy, `AuthService.hasPermission`, módulo `app/ordenes/` (servicio, modelos, cálculo de vista previa, listado/formulario único/vista de proformas, listado/vista/edición de notas) con specs.
+- Menú "Órdenes" (`routes.json`), ruta lazy, `AuthService.hasPermission`, módulo `app/ordenes/` (servicio, modelos, cálculo de vista previa, listado/formulario único/vista de proformas, listado y vista con edición in-situ de notas) con specs.
+
+**Ajustes de interfaz pedidos por el usuario tras ver las pantallas** (detalle en el DDR, Actualizaciones 1 a 7; reflejados en el plan v2)
+- **Formulario de proforma:** tarjetas por sección con íconos, campos bloqueados en gris con candado, detalle como tabla de una fila por línea con el Total bajo Subtotal, alertas por línea (roja de ancho, amarilla de stock), resumen de totales a la derecha y botones primario/secundario (`proforma-form.component.html/.scss`).
+- **Metro lineal:** el modelo de vehículo se muestra como opcional y se guarda si se elige (la API ya lo aceptaba); panel colapsable de solo lectura con las medidas de referencia del modelo y botón "Copiar medida".
+- **Ver proforma:** tarjetas Venta/Cliente/Vehículo/Detalle, fecha `dd/MM/yyyy - HH:mm h`, badge de estado, detalle en `ngx-datatable` con Total, Descuento y Total a pagar (destacado) bajo Subtotal, y barra de acciones jerarquizada.
+- **Ver nota de trabajo:** mismo sistema visual (estilos compartidos en `orden-view.shared.scss`), badge En ejecución/Finalizado, vacíos tenues y dos tablas `ngx-datatable`.
+- **Edición in-situ de la nota de trabajo:** "Editar nota de trabajo" convierte en inputs los 4 campos operativos dentro de las tarjetas, con "Cancelar" (restaura) y "Guardar cambios". Se **eliminó** el componente `nota-trabajo-edit`; la ruta `/ordenes/notas-trabajo/edit/:id` abre la misma vista en modo edición.
+- **Verificación visual:** cada pantalla se revisó en el navegador con datos de muestra y el backend simulado (no contra el backend real). Frontend: 165 specs pasan; siguen fallando los 15 de la plantilla ya mencionados.
 
 **Detalles de implementación a tener en cuenta**
 - El indicador de "sin sucursal" del listado es el catálogo `ordenes/catalogo/sucursales` vacío (el listado llega vacío y la UI lo consulta); el ADR hablaba de un "indicador" sin fijar el mecanismo.
