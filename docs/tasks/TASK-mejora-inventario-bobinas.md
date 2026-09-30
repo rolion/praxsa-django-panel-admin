@@ -149,7 +149,7 @@ Fases 1 a 6 del [plan v1](../plans/PLAN-2026-09-30-mejora-inventario-bobinas.md)
 **Decisiones de negocio aplicadas por defecto (sin respuesta del usuario todavía):** se permite repartir una necesidad entre varios lotes y el precio por defecto es el de la fila FIFO. Si el negocio exige un solo rollo por necesidad, la asignación y el catálogo deben cambiar.
 
 **Deuda técnica / límites señalados**
-- Utilidad por lote (`report_utilidad.py:63-68`) y `nro_lote` del PDF (`helper/pdf.py:299`) siguen leyendo solo la primera fila usada.
+- **Diferido a otra iteración por decisión del usuario (2026-09-30):** utilidad por lote (`report_utilidad.py:63-68`) y `nro_lote` del PDF de la hoja de trabajo (`helper/pdf.py:299-300`) siguen leyendo solo la primera fila usada; ambos deberían leer los lotes desde `Inventario_Movimiento`. Al abordarlo, hay que revisar visualmente cómo se ve el PDF y el reporte con una línea repartida en 2 o más lotes. El PDF además falla si el detalle no tiene `inventario` (preexistente, más visible tras anular órdenes).
 - La validación de metros es por línea: varias líneas de la misma bobina en una proforma se validan por separado; la garantía real es la asignación bajo bloqueo al aprobar.
 - Ajustes manuales del `PATCH almacen/inventario` no generan movimientos.
 - Quedó un comentario obsoleto en `Forms/car_model_part.py` que menciona un método ya eliminado (código ya comentado).
