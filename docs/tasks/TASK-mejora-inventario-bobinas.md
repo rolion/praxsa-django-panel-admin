@@ -1,6 +1,6 @@
 # TASK-mejora-inventario-bobinas: Evaluar y mejorar el manejo del inventario de bobinas
 
-**Etapa actual:** REVIEW
+**Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** NO
 **Rama:** task/TASK-mejora-inventario-bobinas
@@ -15,6 +15,7 @@
 | 2026-09-30 | ARCHITECTURE → PLANNING | ADR revisados tras la re-investigación (PR #51): asignación integrada en `Orden_Estado_Business`, devolución unificada, orden de bloqueo definido, migraciones separadas | delivery-architect |
 | 2026-09-30 | PLANNING → ENGINEERING | Plan v1 escrito y PR abierto; queda a la espera de la aprobación humana del plan y de la respuesta a las 4 preguntas abiertas antes de implementar | delivery-plan |
 | 2026-09-30 | ENGINEERING → REVIEW | Implementación completa de las fases 1 a 6 del plan v1; fase 7.2 (verificación en vivo) queda para review/usuario | delivery-engineer |
+| 2026-09-30 | REVIEW → ENGINEERING | Quality Gate FAIL: REV-01 (Medium, devolución concurrente sin bloqueo en `delete_work_note`) y REV-02 (Low, falta test de PDF/reportes con reparto) | delivery-review |
 
 ## Investigación
 
@@ -156,7 +157,11 @@ Fases 1 a 6 del [plan v1](../plans/PLAN-2026-09-30-mejora-inventario-bobinas.md)
 - **Pendiente:** verificación en vivo (fase 7.2 del plan: panel y Django Admin con stock repartido, PDF y reporte de utilidades) — no ejecutada por el engineer.
 
 ## Review
-_Pendiente_
+**Corrida 1 (2026-09-30): FAIL.** Detalle y evidencia en la sección `## Review` del PR #52.
+- [REV-2026-09-30-mejora-inventario-bobinas-01](../reviews/REV-2026-09-30-mejora-inventario-bobinas-01.md) — Medium, IMPLEMENTATION, Open: la devolución no es segura ante llamadas concurrentes (`delete_work_note` no bloquea la proforma).
+- [REV-2026-09-30-mejora-inventario-bobinas-02](../reviews/REV-2026-09-30-mejora-inventario-bobinas-02.md) — Low, IMPLEMENTATION, Open: falta el test planeado de PDF y reportes con línea repartida en varios lotes.
+
+Verificado: suite `product` 374 OK (2 corridas; 1 corrida anómala por posible uso concurrente de la base de pruebas), `check`, `makemigrations --check`, PDF y reportes con reparto multi-fila. No ejecutado: frontend (no tocado), lint/tipos/seguridad/cobertura (herramientas no instaladas) y la prueba manual en vivo (fase 7.2).
 
 ## Publicación
 _Pendiente_
