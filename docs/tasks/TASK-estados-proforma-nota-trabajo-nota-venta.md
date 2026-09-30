@@ -17,6 +17,7 @@
 | 2026-09-30 02:14 UTC | ENGINEERING → REVIEW | Implementación completa según plan v2.1 (backend, Django Admin, API, comando de permisos y panel). Vendedor también edita proformas (indicado por el usuario). Autoverificación: 333 tests backend y 221 frontend en verde (15 fallas preexistentes en specs "should create" de la plantilla, idénticas en `origin/master`), `ng build` y `ng lint` limpios, migración ensayada en Postgres real | delivery-engineer |
 | 2026-09-30 02:40 UTC | REVIEW → ENGINEERING | Quality Gate FAIL: sin issues Critical/High, pero REV-01 (Medium) y REV-02 (Low) abiertos y verificaciones del plan sin ejecutar (verificación en vivo, ensayo de migración con datos reales), por lo que no se puede emitir PASS | delivery-review |
 | 2026-09-30 03:00 UTC | ENGINEERING → REVIEW | REV-01 y REV-02 corregidos (autoverificación: 346 tests backend OK); quedan pendientes la verificación en vivo y el ensayo de migración con datos reales señalados en el review | delivery-engineer |
+| 2026-09-30 03:30 UTC | REVIEW → REVIEW | Corrida 2: REV-01/02 cerrados, 346 tests OK; FAIL por verificaciones en vivo y ensayo de migracion con datos reales sin ejecutar (sin issues que devolver a otra etapa) | delivery-review |
 
 ## Investigación
 
@@ -159,14 +160,12 @@ Implementado según el plan v2.1 (PR [#51](https://github.com/rolion/praxsa-djan
 - Autoverificación: 346 tests backend OK. Sigue pendiente lo que el review marcó como no ejecutado (verificación en vivo, ensayo de `migrate`/reverso con datos reales).
 
 ## Review
-**Resultado: FAIL** (2026-09-30, delivery-review; aislamiento procedimental, no real). Sin issues Critical/High; no se emite PASS porque quedaron verificaciones aplicables sin ejecutar.
+**Resultado: FAIL (pendiente de verificaciones)** (corrida 2, 2026-09-30, delivery-review; aislamiento procedimental, no real). REV-01 y REV-02 verificados y cerrados; sin issues abiertos. No se emite PASS porque siguen sin ejecutar verificaciones aplicables del plan.
 
-Issues abiertos:
-- [REV-01](../reviews/REV-2026-09-30-estados-proforma-nota-trabajo-nota-venta-01.md) — Medium, IMPLEMENTATION: Django Admin responde 500 al eliminar un pago cerrado.
-- [REV-02](../reviews/REV-2026-09-30-estados-proforma-nota-trabajo-nota-venta-02.md) — Low, IMPLEMENTATION: `ProformaAdmin.delete_proforma` huérfano llama a un método eliminado.
+Issues: [REV-01](../reviews/REV-2026-09-30-estados-proforma-nota-trabajo-nota-venta-01.md) (Closed), [REV-02](../reviews/REV-2026-09-30-estados-proforma-nota-trabajo-nota-venta-02.md) (Closed).
 
-Verificaciones ejecutadas: backend 345 tests OK; frontend 221 OK / 15 FAILED (specs "should create" de plantilla, archivos no tocados por el PR, `No provider for ActivatedRoute`); `ng lint` limpio; `ng build` OK; `makemigrations --check` y `manage.py check` limpios.
-Verificaciones NO ejecutadas: verificación en vivo (`runserver` + `ng serve`, Django Admin y reportes) y ensayo de `migrate`/reverso sobre copia de datos reales (la BD de desarrollo estaba en uso por otra sesión y no hay `pg_dump`/`psql`); bandit/safety/flake8/ruff/mypy/coverage.py no instalados.
+Ejecutado: backend 346 tests OK; frontend 221 OK / 15 FAILED (plantilla, fuera de `ordenes`); `ng lint` limpio; `ng build` OK; `makemigrations --check` y `check` limpios.
+NO ejecutado: verificacion en vivo (`runserver` + `ng serve`, Django Admin, reportes) y ensayo de `migrate`/reverso sobre copia de datos reales (crear la copia de la BD compartida fue denegado por el entorno). Pendiente que lo ejecute el usuario o autorice ignorarlo explicitamente.
 
 ## Publicación
 _Pendiente_
