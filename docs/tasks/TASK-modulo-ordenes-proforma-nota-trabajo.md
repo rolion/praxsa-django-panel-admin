@@ -20,6 +20,7 @@
 | 2026-09-29 | REVIEW → REVIEW | Rediseño de "Ver proforma" pedido por el usuario: tarjetas (venta, cliente, vehículo, detalle), grid etiqueta/valor, fecha `dd/MM/yyyy - HH:mm h`, badge de estado, totales con Total a pagar destacado y barra de acciones jerarquizada (DDR actualizado). Solo presentación | usuario |
 | 2026-09-29 | REVIEW → REVIEW | Metro lineal: el modelo de vehículo pasa a mostrarse como opcional y se guarda si se elige; panel colapsable de medidas de referencia del modelo (solo lectura, con copiar medida) en el formulario; Ver proforma muestra el modelo si existe. Pedido del usuario; DDR actualizado. Sin cambios de API (2 tests backend nuevos que fijan el comportamiento) | usuario |
 | 2026-09-29 | REVIEW → REVIEW | Rediseño de "Ver nota de trabajo" pedido por el usuario, con el mismo sistema visual que Ver proforma (tarjetas, grid, badge En ejecución/Finalizado, fechas legibles, vacíos tenues, tablas ngx-datatable y barra de acciones); estilos compartidos en `orden-view.shared.scss`. DDR actualizado. Solo presentación | usuario |
+| 2026-09-30 | REVIEW → REVIEW | Edición in-situ de la nota de trabajo pedida por el usuario: el botón "Editar nota de trabajo" convierte en inputs los 4 campos operativos dentro de las tarjetas; barra inferior Cancelar/Guardar cambios. Se elimina el componente separado `nota-trabajo-edit` (la ruta `/edit/:id` abre la misma vista en modo edición). Sin cambios de API. DDR actualizado | usuario |
 
 ## Investigación
 

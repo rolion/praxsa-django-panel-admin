@@ -1,7 +1,7 @@
-<section class="main-content orden-view">
+<section class="main-content orden-view" [class.is-editing]="editing">
   <ul class="breadcrumb breadcrumb-style">
     <li class="breadcrumb-item">
-      <h5 class="page-title m-b-0">Ver nota de trabajo</h5>
+      <h5 class="page-title m-b-0">{{ editing ? 'Editar nota de trabajo' : 'Ver nota de trabajo' }}</h5>
     </li>
     <li class="breadcrumb-item bcrumb-1"><a routerLink="/ordenes/notas-trabajo"><i class="fas fa-clipboard-list font-17"></i></a></li>
     <li class="breadcrumb-item">Órdenes</li>
@@ -13,168 +13,212 @@
     } @else if (errorMessage) {
       <div class="alert alert-danger">{{ errorMessage }}</div>
     } @else if (nota) {
+      <form [formGroup]="form" (ngSubmit)="save()" novalidate>
 
-      <!-- DATOS DE LA ORDEN -->
-      <div class="card section-card">
-        <div class="section-header"><i class="fas fa-clipboard-check"></i><h6>Datos de la orden</h6></div>
-        <div class="card-body">
-          <div class="row">
-            <div class="col-6 col-md-3 info-item">
-              <span class="info-label">Proforma Nº</span>
-              <span class="info-value"><a [routerLink]="['/ordenes/proformas/view', nota.proforma_id]">{{ nota.proforma_id }}</a></span>
-            </div>
-            <div class="col-6 col-md-3 info-item">
-              <span class="info-label">Tipo de venta</span>
-              <span class="info-value">
-                @if (nota.sales_type_label) { {{ nota.sales_type_label }} } @else { <span class="empty-value">No asignado</span> }
-              </span>
-            </div>
-            <div class="col-6 col-md-3 info-item">
-              <span class="info-label">Sucursal</span>
-              <span class="info-value">
-                @if (nota.sucursal_name) { {{ nota.sucursal_name }} } @else { <span class="empty-value">No asignada</span> }
-              </span>
-            </div>
-            <div class="col-6 col-md-3 info-item">
-              <span class="info-label">Estado</span>
-              <span class="info-value"><span [class]="'status-badge ' + statusClass">{{ statusText }}</span></span>
-            </div>
-            <div class="col-6 col-md-3 info-item">
-              <span class="info-label">Código de garantía</span>
-              <span class="info-value">
-                @if (nota.codigo_garantia) { {{ nota.codigo_garantia }} } @else { <span class="empty-value">Sin código</span> }
-              </span>
+        @if (savedMessage) {
+          <div class="alert alert-success py-2">{{ savedMessage }}</div>
+        }
+        @if (editing) {
+          <div class="edit-banner"><i class="fas fa-pen"></i> Modo edición: solo se pueden modificar los campos resaltados.</div>
+        }
+
+        <!-- DATOS DE LA ORDEN -->
+        <div class="card section-card">
+          <div class="section-header"><i class="fas fa-clipboard-check"></i><h6>Datos de la orden</h6></div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-6 col-md-3 info-item">
+                <span class="info-label">Proforma Nº</span>
+                <span class="info-value"><a [routerLink]="['/ordenes/proformas/view', nota.proforma_id]">{{ nota.proforma_id }}</a></span>
+              </div>
+              <div class="col-6 col-md-3 info-item">
+                <span class="info-label">Tipo de venta</span>
+                <span class="info-value">
+                  @if (nota.sales_type_label) { {{ nota.sales_type_label }} } @else { <span class="empty-value">No asignado</span> }
+                </span>
+              </div>
+              <div class="col-6 col-md-3 info-item">
+                <span class="info-label">Sucursal</span>
+                <span class="info-value">
+                  @if (nota.sucursal_name) { {{ nota.sucursal_name }} } @else { <span class="empty-value">No asignada</span> }
+                </span>
+              </div>
+              <div class="col-6 col-md-3 info-item">
+                <span class="info-label">Estado</span>
+                <span class="info-value"><span [class]="'status-badge ' + statusClass">{{ statusText }}</span></span>
+              </div>
+              <div class="col-6 col-md-3 info-item" [class.editable]="editing">
+                <label class="info-label" for="codigo-garantia">Código de garantía</label>
+                @if (editing) {
+                  <input id="codigo-garantia" type="text" class="form-control form-control-sm" formControlName="codigo_garantia" maxlength="12" placeholder="Máximo 12 caracteres" />
+                  @if (form.get('codigo_garantia')?.invalid && submitted) {
+                    <small class="text-danger">Máximo 12 caracteres</small>
+                  }
+                } @else {
+                  <span class="info-value">
+                    @if (nota.codigo_garantia) { {{ nota.codigo_garantia }} } @else { <span class="empty-value">Sin código</span> }
+                  </span>
+                }
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- DATOS DEL CLIENTE Y VEHICULO -->
-      <div class="card section-card">
-        <div class="section-header"><i class="fas fa-user"></i><h6>Datos del cliente y vehículo</h6></div>
-        <div class="card-body">
-          <div class="row">
-            <div class="col-6 col-md-4 info-item">
-              <span class="info-label">Cliente</span>
-              <span class="info-value">{{ nota.name }}</span>
-            </div>
-            <div class="col-6 col-md-4 info-item">
-              <span class="info-label">Modelo</span>
-              <span class="info-value">
-                @if (nota.car_model_name) { {{ nota.car_model_name }} } @else { <span class="empty-value">Sin modelo</span> }
-              </span>
-            </div>
-            <div class="col-6 col-md-4 info-item">
-              <span class="info-label">Placa</span>
-              <span class="info-value">
-                @if (nota.car_plate) { {{ nota.car_plate }} } @else { <span class="empty-value">Sin placa</span> }
-              </span>
+        <!-- DATOS DEL CLIENTE Y VEHICULO -->
+        <div class="card section-card">
+          <div class="section-header"><i class="fas fa-user"></i><h6>Datos del cliente y vehículo</h6></div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-6 col-md-4 info-item">
+                <span class="info-label">Cliente</span>
+                <span class="info-value">{{ nota.name }}</span>
+              </div>
+              <div class="col-6 col-md-4 info-item">
+                <span class="info-label">Modelo</span>
+                <span class="info-value">
+                  @if (nota.car_model_name) { {{ nota.car_model_name }} } @else { <span class="empty-value">Sin modelo</span> }
+                </span>
+              </div>
+              <div class="col-6 col-md-4 info-item">
+                <span class="info-label">Placa</span>
+                <span class="info-value">
+                  @if (nota.car_plate) { {{ nota.car_plate }} } @else { <span class="empty-value">Sin placa</span> }
+                </span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- CONTROL OPERATIVO Y TIEMPOS -->
-      <div class="card section-card">
-        <div class="section-header"><i class="fas fa-user-clock"></i><h6>Control operativo y tiempos</h6></div>
-        <div class="card-body">
-          <div class="row">
-            <div class="col-6 col-md-3 info-item">
-              <span class="info-label">Entrada vehículo</span>
-              <span class="info-value">
-                @if (nota.entrada_vehiculo) { {{ nota.entrada_vehiculo | date: "dd/MM/yyyy - HH:mm 'h'" }} } @else { <span class="empty-value">No registrada</span> }
-              </span>
-            </div>
-            <div class="col-6 col-md-3 info-item">
-              <span class="info-label">Salida vehículo</span>
-              <span class="info-value">
-                @if (nota.salida_vehiculo) { {{ nota.salida_vehiculo | date: "dd/MM/yyyy - HH:mm 'h'" }} } @else { <span class="empty-value">Aún no registrada</span> }
-              </span>
-            </div>
-            <div class="col-6 col-md-3 info-item">
-              <span class="info-label">Responsable</span>
-              <span class="info-value">
-                @if (nota.responsable_name) { {{ nota.responsable_name }} } @else { <span class="empty-value">No asignado</span> }
-              </span>
-            </div>
-            <div class="col-6 col-md-3 info-item">
-              <span class="info-label">Instalador asignado</span>
-              <span class="info-value">
-                @if (nota.instalador_name) { {{ nota.instalador_name }} } @else { <span class="empty-value">No asignado</span> }
-              </span>
-            </div>
-            <div class="col-12 info-item">
-              <span class="info-label">Observaciones</span>
-              <span class="info-value">
-                @if (nota.observaciones) { {{ nota.observaciones }} } @else { <span class="empty-value">Sin observaciones</span> }
-              </span>
+        <!-- CONTROL OPERATIVO Y TIEMPOS -->
+        <div class="card section-card">
+          <div class="section-header"><i class="fas fa-user-clock"></i><h6>Control operativo y tiempos</h6></div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-6 col-md-3 info-item">
+                <span class="info-label">Entrada vehículo</span>
+                <span class="info-value">
+                  @if (nota.entrada_vehiculo) { {{ nota.entrada_vehiculo | date: "dd/MM/yyyy - HH:mm 'h'" }} } @else { <span class="empty-value">No registrada</span> }
+                </span>
+              </div>
+              <div class="col-6 col-md-3 info-item" [class.editable]="editing">
+                <label class="info-label" for="salida-vehiculo">Salida vehículo</label>
+                @if (editing) {
+                  <input id="salida-vehiculo" type="datetime-local" class="form-control form-control-sm" formControlName="salida_vehiculo" />
+                } @else {
+                  <span class="info-value">
+                    @if (nota.salida_vehiculo) { {{ nota.salida_vehiculo | date: "dd/MM/yyyy - HH:mm 'h'" }} } @else { <span class="empty-value">Aún no registrada</span> }
+                  </span>
+                }
+              </div>
+              <div class="col-6 col-md-3 info-item">
+                <span class="info-label">Responsable</span>
+                <span class="info-value">
+                  @if (nota.responsable_name) { {{ nota.responsable_name }} } @else { <span class="empty-value">No asignado</span> }
+                </span>
+              </div>
+              <div class="col-6 col-md-3 info-item" [class.editable]="editing">
+                <label class="info-label" for="instalador">Instalador asignado</label>
+                @if (editing) {
+                  <select id="instalador" class="form-select form-control form-control-sm" formControlName="instaladar">
+                    <option [ngValue]="null">Sin instalador</option>
+                    @for (instalador of instaladores; track instalador.id) {
+                      <option [ngValue]="instalador.id">{{ instalador.name }}</option>
+                    }
+                  </select>
+                } @else {
+                  <span class="info-value">
+                    @if (nota.instalador_name) { {{ nota.instalador_name }} } @else { <span class="empty-value">No asignado</span> }
+                  </span>
+                }
+              </div>
+              <div class="col-12 info-item" [class.editable]="editing">
+                <label class="info-label" for="observaciones">Observaciones</label>
+                @if (editing) {
+                  <textarea id="observaciones" class="form-control" rows="3" formControlName="observaciones" placeholder="Observaciones del trabajo"></textarea>
+                } @else {
+                  <span class="info-value">
+                    @if (nota.observaciones) { {{ nota.observaciones }} } @else { <span class="empty-value">Sin observaciones</span> }
+                  </span>
+                }
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- RESUMEN DE LAMINAS USADAS -->
-      <div class="card section-card">
-        <div class="section-header"><i class="fas fa-layer-group"></i><h6>Resumen de láminas usadas</h6></div>
-        <div class="card-body">
-          @if (nota.resumen.length === 0) {
-            <span class="empty-value">Sin resumen de láminas.</span>
-          } @else {
+        <!-- RESUMEN DE LAMINAS USADAS -->
+        <div class="card section-card">
+          <div class="section-header"><i class="fas fa-layer-group"></i><h6>Resumen de láminas usadas</h6></div>
+          <div class="card-body">
+            @if (nota.resumen.length === 0) {
+              <span class="empty-value">Sin resumen de láminas.</span>
+            } @else {
+              <ngx-datatable
+                class="material orden-table orden-table-muted"
+                [rows]="nota.resumen"
+                columnMode="force"
+                [headerHeight]="42"
+                [footerHeight]="0"
+                rowHeight="auto"
+                [limit]="nota.resumen.length"
+              >
+                <ngx-datatable-column name="Lámina" prop="window_film_name" [minWidth]="160" [sortable]="false"></ngx-datatable-column>
+                <ngx-datatable-column name="Ancho" prop="width" [width]="110" [minWidth]="90" [sortable]="false" headerClass="text-end" cellClass="text-end"></ngx-datatable-column>
+                <ngx-datatable-column name="Metros" prop="length" [width]="110" [minWidth]="90" [sortable]="false" headerClass="text-end" cellClass="text-end"></ngx-datatable-column>
+              </ngx-datatable>
+            }
+          </div>
+        </div>
+
+        <!-- DETALLE DE LA PROFORMA -->
+        <div class="card section-card">
+          <div class="section-header"><i class="fas fa-list"></i><h6>Detalle de la proforma</h6></div>
+          <div class="card-body">
             <ngx-datatable
-              class="material orden-table orden-table-muted"
-              [rows]="nota.resumen"
+              class="material orden-table"
+              [rows]="nota.proforma_items"
               columnMode="force"
               [headerHeight]="42"
               [footerHeight]="0"
               rowHeight="auto"
-              [limit]="nota.resumen.length"
+              [limit]="nota.proforma_items.length || 1"
             >
-              <ngx-datatable-column name="Lámina" prop="window_film_name" [minWidth]="160" [sortable]="false"></ngx-datatable-column>
-              <ngx-datatable-column name="Ancho" prop="width" [width]="110" [minWidth]="90" [sortable]="false" headerClass="text-end" cellClass="text-end"></ngx-datatable-column>
-              <ngx-datatable-column name="Metros" prop="length" [width]="110" [minWidth]="90" [sortable]="false" headerClass="text-end" cellClass="text-end"></ngx-datatable-column>
+              @if (isInstalacion) {
+                <ngx-datatable-column name="Item" prop="car_part_name" [minWidth]="130" [sortable]="false"></ngx-datatable-column>
+              }
+              <ngx-datatable-column name="Lámina" prop="window_film_name" [minWidth]="150" [sortable]="false"></ngx-datatable-column>
+              <ngx-datatable-column name="Ancho" prop="width" [width]="90" [minWidth]="80" [sortable]="false" headerClass="text-end" cellClass="text-end"></ngx-datatable-column>
+              <ngx-datatable-column [name]="isInstalacion ? 'Largo' : 'Metros'" prop="length" [width]="100" [minWidth]="80" [sortable]="false" headerClass="text-end" cellClass="text-end"></ngx-datatable-column>
+              @if (isInstalacion) {
+                <ngx-datatable-column name="Cantidad" prop="quantity" [width]="100" [minWidth]="80" [sortable]="false" headerClass="text-end" cellClass="text-end"></ngx-datatable-column>
+              }
             </ngx-datatable>
+          </div>
+        </div>
+
+        @if (saveError) {
+          <div class="alert alert-danger">{{ saveError }}</div>
+        }
+
+        <!-- ACCIONES -->
+        <div class="form-actions">
+          @if (editing) {
+            <button type="button" class="btn btn-secondary ms-auto" (click)="cancelEdit()" [disabled]="saving">Cancelar</button>
+            <button type="submit" class="btn btn-primary" [disabled]="saving">
+              <i class="fas fa-save"></i> Guardar cambios
+            </button>
+          } @else {
+            <a routerLink="/ordenes/notas-trabajo" class="btn btn-link text-muted me-auto"><i class="fas fa-arrow-left"></i> Volver al listado</a>
+            <a [routerLink]="['/ordenes/proformas/view', nota.proforma_id]" class="btn btn-outline-secondary">
+              <i class="fas fa-file-invoice"></i> Ver proforma
+            </a>
+            @if (canEdit) {
+              <button type="button" class="btn btn-primary" (click)="startEdit()">
+                <i class="fas fa-pen"></i> Editar nota de trabajo
+              </button>
+            }
           }
         </div>
-      </div>
-
-      <!-- DETALLE DE LA PROFORMA -->
-      <div class="card section-card">
-        <div class="section-header"><i class="fas fa-list"></i><h6>Detalle de la proforma</h6></div>
-        <div class="card-body">
-          <ngx-datatable
-            class="material orden-table"
-            [rows]="nota.proforma_items"
-            columnMode="force"
-            [headerHeight]="42"
-            [footerHeight]="0"
-            rowHeight="auto"
-            [limit]="nota.proforma_items.length || 1"
-          >
-            @if (isInstalacion) {
-              <ngx-datatable-column name="Item" prop="car_part_name" [minWidth]="130" [sortable]="false"></ngx-datatable-column>
-            }
-            <ngx-datatable-column name="Lámina" prop="window_film_name" [minWidth]="150" [sortable]="false"></ngx-datatable-column>
-            <ngx-datatable-column name="Ancho" prop="width" [width]="90" [minWidth]="80" [sortable]="false" headerClass="text-end" cellClass="text-end"></ngx-datatable-column>
-            <ngx-datatable-column [name]="isInstalacion ? 'Largo' : 'Metros'" prop="length" [width]="100" [minWidth]="80" [sortable]="false" headerClass="text-end" cellClass="text-end"></ngx-datatable-column>
-            @if (isInstalacion) {
-              <ngx-datatable-column name="Cantidad" prop="quantity" [width]="100" [minWidth]="80" [sortable]="false" headerClass="text-end" cellClass="text-end"></ngx-datatable-column>
-            }
-          </ngx-datatable>
-        </div>
-      </div>
-
-      <!-- ACCIONES -->
-      <div class="form-actions">
-        <a routerLink="/ordenes/notas-trabajo" class="btn btn-link text-muted me-auto"><i class="fas fa-arrow-left"></i> Volver al listado</a>
-        <a [routerLink]="['/ordenes/proformas/view', nota.proforma_id]" class="btn btn-outline-secondary">
-          <i class="fas fa-file-invoice"></i> Ver proforma
-        </a>
-        @if (canEdit) {
-          <a [routerLink]="['/ordenes/notas-trabajo/edit', nota.id]" class="btn btn-primary">
-            <i class="fas fa-pen"></i> Editar nota de trabajo
-          </a>
-        }
-      </div>
+      </form>
     }
   </div>
 </section>
