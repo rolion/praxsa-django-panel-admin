@@ -160,12 +160,12 @@ Implementado según el plan v2.1 (PR [#51](https://github.com/rolion/praxsa-djan
 - Autoverificación: 346 tests backend OK. Sigue pendiente lo que el review marcó como no ejecutado (verificación en vivo, ensayo de `migrate`/reverso con datos reales).
 
 ## Review
-**Resultado: FAIL (pendiente de verificaciones)** (corrida 2, 2026-09-30, delivery-review; aislamiento procedimental, no real). REV-01 y REV-02 verificados y cerrados; sin issues abiertos. No se emite PASS porque siguen sin ejecutar verificaciones aplicables del plan.
+**Resultado: FAIL (pendiente del ensayo de migracion con datos reales)** (corrida 2, 2026-09-30, delivery-review; aislamiento procedimental, no real). REV-01 y REV-02 verificados y cerrados; sin issues abiertos. No se emite PASS porque siguen sin ejecutar verificaciones aplicables del plan.
 
 Issues: [REV-01](../reviews/REV-2026-09-30-estados-proforma-nota-trabajo-nota-venta-01.md) (Closed), [REV-02](../reviews/REV-2026-09-30-estados-proforma-nota-trabajo-nota-venta-02.md) (Closed).
 
 Ejecutado: backend 346 tests OK; frontend 221 OK / 15 FAILED (plantilla, fuera de `ordenes`); `ng lint` limpio; `ng build` OK; `makemigrations --check` y `check` limpios.
-NO ejecutado: verificacion en vivo (`runserver` + `ng serve`, Django Admin, reportes) y ensayo de `migrate`/reverso sobre copia de datos reales (crear la copia de la BD compartida fue denegado por el entorno). Pendiente que lo ejecute el usuario o autorice ignorarlo explicitamente.
+Verificacion en vivo EJECUTADA y correcta (panel, flujo completo, reglas 409, Django Admin, cierre contable, 403 en pago cerrado, PDF de reportes; ver PR #51). NO ejecutado: ensayo de `migrate`/reverso sobre copia de datos reales (crear la copia de la BD compartida fue denegado por el entorno). Pendiente que lo ejecute el usuario o autorice ignorarlo explicitamente.
 
 ## Publicación
 _Pendiente_
