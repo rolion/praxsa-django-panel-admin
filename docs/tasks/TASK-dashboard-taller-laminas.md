@@ -1,6 +1,6 @@
 # TASK-dashboard-taller-laminas: Dashboard del panel para el taller de láminas (KPIs, gráficas, stock crítico, cola de instalaciones, últimas proformas)
 
-**Etapa actual:** REVIEW
+**Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** task/TASK-dashboard-taller-laminas
@@ -16,6 +16,7 @@
 | 2026-09-30 | ARCHITECTURE → PLANNING | ADR de API/alcance y de métricas revisados tras el PR #54 (ventas cobradas y permiso `view_proxy_pagos` reutilizados de Reportes; alcance con `get_panel_pago_queryset`/`get_panel_inventario_queryset`; `sin_sucursal`); DDR ajustado | delivery-architect |
 | 2026-09-30 | PLANNING → ENGINEERING | Plan v1 escrito y PR #56 abierto; queda a la espera de la aprobación humana del plan y de las 6 preguntas abiertas antes de implementar | delivery-plan |
 | 2026-09-30 | ENGINEERING → REVIEW | Implementación completa de las fases 1 a 5 del plan v1 (backend, API, servicio, pantalla); la verificación en vivo contra el backend real (paso 20) queda para review/usuario | delivery-engineer |
+| 2026-09-30 | REVIEW → ENGINEERING | Quality Gate FAIL: 1 issue High (valores KPI ilegibles en tema oscuro) y 1 Low (contraste del botón Convertir a venta), ambos IMPLEMENTATION; `view_proxy_pagos`, equivalencia con Reportes y alcance verificados en vivo | delivery-review |
 
 ## Investigación
 
@@ -175,7 +176,13 @@ Implementado el plan v1 (fases 0 a 5) con los valores por defecto de las pregunt
 **Deuda técnica señalada:** las 14 specs "should create" rotas son previas y no se arreglaron (fuera de alcance); `dashboard2` y sus assets de demo siguen sin uso.
 
 ## Review
-_Pendiente_
+**Resultado: FAIL** (2026-09-30, delivery-review, sobre `0aec4e4`; aislamiento de contexto procedimental). Evidencia completa en `## Testing` y `## Review` del [PR #56](https://github.com/rolion/praxsa-django-panel-admin/pull/56).
+
+- Issues abiertos: [REV-2026-09-30-dashboard-taller-laminas-01](../reviews/REV-2026-09-30-dashboard-taller-laminas-01.md) (High, IMPLEMENTATION: cifras de KPI y "Ver todos" ilegibles en tema oscuro; AC 10) y [REV-...-02](../reviews/REV-2026-09-30-dashboard-taller-laminas-02.md) (Low, IMPLEMENTATION: contraste de "Convertir a venta").
+- Backend `python manage.py test product`: 500 OK; `makemigrations --check`: sin cambios. Frontend: `ng test` 290 OK / 14 FAILED (los mismos 14 `should create` que fallan en `origin/master`, que además falla `MainComponent`); `ng lint` y `ng build` OK.
+- En vivo (backend y `ng serve` de la rama, Admin): 7 widgets con datos reales, sin errores; ventas del mes = `totales.cobrado` de Ventas Diarias; sin `view_proxy_pagos` el API devuelve `null` (9 perfiles); móvil sin scroll horizontal.
+- No verificado: "Convertir a venta" de extremo a extremo (escribe en el DB de desarrollo), UI con un usuario sin permiso de ventas, empleado con dos sucursales (solo tests automáticos), umbrales de stock con negocio.
+- Sin herramientas de lint/seguridad de backend instaladas (flake8, ruff, mypy, bandit, safety); `npm audit` reporta 3 vulnerabilidades previas (package.json sin cambios).
 
 ## Publicación
 _Pendiente_
