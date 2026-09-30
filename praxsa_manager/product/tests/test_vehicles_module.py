@@ -452,6 +452,28 @@ class CarModelTest(TestCase):
 
 
 class CarModelImageTest(TestCase):
+    def _image_url_for(self, token, **extra_headers):
+        model = helpers.create_model(brand=helpers.create_brand(), name='CR-V')
+        # Solo interesa la URL emitida, no el archivo: no se escribe nada en MEDIA_ROOT.
+        Car_Model.objects.filter(pk=model.pk).update(image='car_models/cr-v.jpg')
+        response = self.client.get('/product/vehicles/models', HTTP_HOST='panel.praxsasrl.store', **_auth_headers(token), **extra_headers)
+        self.assertEqual(response.status_code, 200, response.content)
+        return response.json()[0]['image']
+
+    def test_image_url_is_https_behind_proxy_that_forwards_https(self):
+        admin, token, _ = helpers.create_staff_user_with_token()
+
+        url = self._image_url_for(token, HTTP_X_FORWARDED_PROTO='https')
+
+        self.assertEqual(url, 'https://panel.praxsasrl.store/media/car_models/cr-v.jpg')
+
+    def test_image_url_is_http_without_forwarded_proto(self):
+        admin, token, _ = helpers.create_staff_user_with_token()
+
+        url = self._image_url_for(token)
+
+        self.assertEqual(url, 'http://panel.praxsasrl.store/media/car_models/cr-v.jpg')
+
     def test_create_with_valid_image(self):
         admin, token, _ = helpers.create_staff_user_with_token()
         helpers.grant_permission(admin, 'product', 'add_car_model')

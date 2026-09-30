@@ -22,6 +22,8 @@ export class ModelsListComponent implements OnInit {
   rows: AppCarModel[] = [];
   loadingIndicator = true;
   errorMessage = '';
+  /** Modelos cuya imagen no cargo (404, bloqueo): se muestra el placeholder. */
+  failedImageIds = new Set<number>();
 
   ngOnInit(): void {
     this.load();

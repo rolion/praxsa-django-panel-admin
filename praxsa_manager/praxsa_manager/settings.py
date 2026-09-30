@@ -211,6 +211,13 @@ if env('ENV') == "PROD":
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# Detras de nginx (ver nginx/nginx.conf.prod|stg, que siempre fija
+# X-Forwarded-Proto) el backend ve HTTP plano; sin esto las URLs absolutas de
+# DRF (p. ej. Car_Model.image) salen con http:// y el navegador las bloquea
+# como contenido mixto desde el panel https. `web` solo hace `expose` del
+# puerto en los compose prod/stg, asi que no es alcanzable sin pasar por nginx.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 
 
 

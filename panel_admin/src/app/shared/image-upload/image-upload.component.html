@@ -1,7 +1,7 @@
 <div class="image-upload">
   <div class="image-upload-preview">
     @if (displayUrl) {
-      <img [src]="displayUrl" alt="Imagen del vehículo" />
+      <img [src]="displayUrl" (error)="onImageError()" alt="Imagen del vehículo" />
     } @else {
       <div class="image-upload-placeholder">
         <i class="fas fa-image"></i>
