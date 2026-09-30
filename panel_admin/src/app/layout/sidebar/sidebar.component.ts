@@ -14,7 +14,7 @@ import {
   OnDestroy,
   inject,
 } from '@angular/core';
-import { RouteInfo } from './sidebar.metadata';
+import { RouteInfo, filterByPermission } from './sidebar.metadata';
 import { TranslateModule } from '@ngx-translate/core';
 import { FeatherModule } from 'angular-feather';
 import { NgScrollbar } from 'ngx-scrollbar';
@@ -94,7 +94,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
   ngOnInit() {
     if (this.authService.currentUserValue) {
       this.sidebarService.getRouteInfo().subscribe((routes: RouteInfo[]) => {
-        this.sidebarItems = routes.filter((sidebarItem) => sidebarItem);
+        this.sidebarItems = filterByPermission(
+          routes.filter((sidebarItem) => sidebarItem),
+          (codename) => this.authService.hasPermission(codename)
+        );
       });
     }
     this.initLeftSidebar();

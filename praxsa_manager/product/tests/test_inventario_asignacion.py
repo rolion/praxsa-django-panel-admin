@@ -22,9 +22,10 @@ from ..admin_config.report_storage import ReportStorageAdmin
 from ..admin_config.report_utilidad import ReportUtilidadAdmin
 from ..business.inventario import Inventario_Business
 from ..business.pricing import Pricing_Business, build_line_pricing
+from ..business.reportes import Reportes_Business
 from ..helper.pdf import PDFService
 from ..helper.proforma import Proforma_Helper
-from ..models import (Detalle_Nota_Trabajo, Inventario_Movimiento, Proforma_Detail, Window_Film_Reel, inventario,
+from ..models import (Detalle_Nota_Trabajo, Inventario_Movimiento, Nota_Venta, Proforma_Detail, Window_Film_Reel, inventario,
                       inventario_proxy, precio_venta_sucursal, utilidades)
 from ..utils.exception.nohaylaminas import NoHayLaminasDisponibles
 from ..utils.exception.proforma import ProformaException
@@ -249,11 +250,26 @@ class PdfYReportesConRepartoTest(OrdenEstadoBase):
         self.assertEqual(row['total_to_install'], Decimal('10.00'))
         self.assertEqual(row['total_installed'], Decimal('50.00'))
 
-    def test_reporte_de_utilidades_se_genera(self):
+    def test_reporte_de_utilidades_reparte_metros_y_costo_entre_los_dos_lotes(self):
+        """TASK-reportes-utilidad-ventas-diarias: la utilidad (venta - costo de compra) sale de los
+        movimientos por lote, no del FK legado de la linea; una venta cobrada de 50 m repartidos
+        30 + 20 m entre dos lotes aparece en ambos con sus tramos."""
+        nota = self.terminar(self.nota)
+        self.svc.registrar_pago(Nota_Venta.objects.get(nota_trabajo=nota), self.user, 'efec')
+
         admin_utilidad = ReportUtilidadAdmin(model=utilidades, admin_site=AdminSite())
-        rows = list(admin_utilidad.get_queryset(self.request()))
-        self.assertGreaterEqual(len(rows), 1)
-        self.assertTrue(all(row.sum_film_utilidad is not None for row in rows))
+        self.assertEqual({row.pk for row in admin_utilidad.get_queryset(self.request())}, {self.inv.pk, self.inv2.pk})
+
+        lotes = Reportes_Business().calcular_por_lote([self.inv.pk, self.inv2.pk])
+        self.assertEqual(lotes[self.inv.pk]['metros'], Decimal('30.00'))
+        self.assertEqual(lotes[self.inv2.pk]['metros'], Decimal('20.00'))
+        self.assertEqual(lotes[self.inv.pk]['costo_compra'], Decimal('2400.00'))  # 30 m x 80
+        self.assertEqual(lotes[self.inv2.pk]['costo_compra'], Decimal('1600.00'))  # 20 m x 80
+        (venta,) = Reportes_Business().calcular_ventas(Reportes_Business().pagos_cobrados())
+        self.assertEqual(venta['venta_lamina'], Decimal('6000.00'))  # 50 m x 120
+        self.assertEqual(venta['costo_compra'], Decimal('4000.00'))
+        self.assertEqual(venta['utilidad_antes'], Decimal('2000.00'))
+        self.assertFalse(venta['costo_incompleto'])
 
 
 class PrecioYAnchoTest(InventarioBase):

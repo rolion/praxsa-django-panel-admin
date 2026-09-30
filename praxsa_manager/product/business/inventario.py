@@ -14,6 +14,14 @@ class Inventario_Business:
         self.log_debug= logging.getLogger('debug')
         self.user_helper = User_Helper()
 
+    def get_panel_inventario_queryset(self, user, qs):
+        """Alcance de inventario para el reporte de utilidad del Django Admin: admin
+        ve todo; el resto, todas sus sucursales habilitadas (a diferencia del metodo
+        legado, que usa solo la primera); sin sucursal, ninguno."""
+        if self.user_helper.can_view_all_sucursales(user):
+            return qs
+        return qs.filter(sucursal_id__in=self.user_helper.get_enabled_sucursal_ids(user))
+
     def get_inventario_queryset_by_role(self, user, qs):
         try:
             if self.user_helper.can_view_all_sucursales(user):
