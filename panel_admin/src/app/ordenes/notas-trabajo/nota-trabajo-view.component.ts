@@ -3,6 +3,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NgxDatatableModule } from '@swimlane/ngx-datatable';
+import { Observable } from 'rxjs';
 import { AuthService } from '../../core/service/auth.service';
 import { extractApiError } from '../ordenes.errors';
 import {
@@ -12,6 +13,13 @@ import {
   SALES_TYPE_INSTALACION,
 } from '../ordenes.model';
 import { OrdenesService } from '../ordenes.service';
+import { statusClass as badgeClass } from '../ordenes.status';
+import {
+  confirmAnularOrden,
+  confirmCorregirTrabajo,
+  confirmTerminarTrabajo,
+  showErrorAlert,
+} from '../proforma-actions';
 
 /** Nota de trabajo: lectura y edicion in-situ. "Editar nota de trabajo" convierte
  * en inputs solo los campos operativos (codigo de garantia, instalador, salida del
@@ -46,22 +54,92 @@ export class NotaTrabajoViewComponent implements OnInit {
     return this.nota?.sales_type === SALES_TYPE_INSTALACION;
   }
 
-  /** Badge de estado: verde = finalizado, ambar = en ejecucion. */
+  /** Badge de estado de la propia nota de trabajo (En proceso / Terminado / Cancelada). */
   get statusText(): string {
-    return this.nota?.is_finalizada ? 'Finalizado' : 'En ejecución';
+    return this.nota?.status_label ?? '';
   }
 
   get statusClass(): string {
-    return this.nota?.is_finalizada ? 'status-done' : 'status-progress';
+    return badgeClass(this.nota?.status);
+  }
+
+  badge(status: string): string {
+    return 'status-badge ' + badgeClass(status);
   }
 
   get canEdit(): boolean {
+    return !!this.nota && this.nota.status === 'en_proceso' && this.authService.hasPermission('change_nota_trabajo');
+  }
+
+  /** Marcar terminado: exige garantia e instalador en venta con instalacion (el servidor lo vuelve a validar). */
+  get canTerminar(): boolean {
+    return !!this.nota && this.nota.status === 'en_proceso' && this.authService.hasPermission('change_nota_trabajo');
+  }
+
+  /** Por que no se puede terminar todavia (tooltip del boton deshabilitado); vacio si se puede. */
+  get terminarBlockReason(): string {
+    if (!this.nota || !this.isInstalacion) {
+      return '';
+    }
+    const missing: string[] = [];
+    if (!this.nota.codigo_garantia) {
+      missing.push('el código de garantía');
+    }
+    if (!this.nota.instaladar) {
+      missing.push('el instalador');
+    }
+    return missing.length ? `Falta ${missing.join(' y ')}.` : '';
+  }
+
+  get canCorregir(): boolean {
     return (
       !!this.nota &&
-      !this.nota.is_finalizada &&
-      !this.nota.is_close &&
+      this.nota.status === 'terminado' &&
+      this.nota.nota_venta?.status === 'por_cobrar' &&
       this.authService.hasPermission('change_nota_trabajo')
     );
+  }
+
+  get canAnular(): boolean {
+    return (
+      !!this.nota &&
+      this.nota.status === 'en_proceso' &&
+      (this.nota.nota_venta?.status ?? 'por_cobrar') === 'por_cobrar' &&
+      this.authService.hasPermission('delete_nota_trabajo')
+    );
+  }
+
+  async terminar(): Promise<void> {
+    if (!this.nota || !(await confirmTerminarTrabajo(this.nota.proforma_id))) {
+      return;
+    }
+    this.runAction(this.ordenesService.terminarNotaTrabajo(this.nota.id), 'No se pudo marcar el trabajo como terminado', 'Trabajo marcado como terminado.');
+  }
+
+  async corregir(): Promise<void> {
+    if (!this.nota || !(await confirmCorregirTrabajo(this.nota.proforma_id))) {
+      return;
+    }
+    this.runAction(this.ordenesService.corregirNotaTrabajo(this.nota.id), 'No se pudo corregir el trabajo', 'El trabajo volvió a En proceso.');
+  }
+
+  async anular(): Promise<void> {
+    if (!this.nota || !(await confirmAnularOrden(this.nota.proforma_id, 'nota de trabajo'))) {
+      return;
+    }
+    this.runAction(this.ordenesService.anularNotaTrabajo(this.nota.id), 'No se pudo anular la nota de trabajo', 'Nota de trabajo anulada; la proforma volvió a estar vigente.');
+  }
+
+  private runAction(request: Observable<AppNotaTrabajoDetail>, errorTitle: string, okMessage: string): void {
+    this.saveError = '';
+    this.savedMessage = '';
+    request.subscribe({
+      next: (nota) => {
+        this.nota = nota;
+        this.savedMessage = okMessage;
+      },
+      error: (err) => showErrorAlert(errorTitle, extractApiError(err, errorTitle + '.')),
+    });
   }
 
   ngOnInit(): void {

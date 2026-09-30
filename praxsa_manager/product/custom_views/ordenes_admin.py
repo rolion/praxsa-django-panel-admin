@@ -10,30 +10,38 @@ from django.db import transaction
 from django.db.models import Q
 from django.http import FileResponse
 from rest_framework import authentication, generics, permissions, status
-from rest_framework.exceptions import APIException, NotFound
+from rest_framework.exceptions import APIException, NotFound, PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from ..business.orden_estado import Orden_Estado_Business
 from ..business.orden_trabajo import Orden_Trabajo_Business
+from ..business.pago import Pago_Business
 from ..business.pricing import Pricing_Business
 from ..business.proforma import Proforma_Business
 from ..helper.pdf import PDFService
+from ..helper.proforma import Proforma_Helper
 from ..helper.user import User_Helper
-from ..models import Nota_trabajo, Proforma_Detail, Proforma_Header, instalador
+from ..helper import estados
+from ..models import Nota_trabajo, Nota_Venta, Proforma_Detail, Proforma_Header, instalador, pago
 from ..permissions import IsStaffUser
 from ..serializer.ordenes_serializer import (
     NotaTrabajoDetailSerializer,
     NotaTrabajoListSerializer,
     NotaTrabajoUpdateSerializer,
+    NotaVentaDetailSerializer,
+    NotaVentaListSerializer,
+    PagoInputSerializer,
     ProformaDetailSerializer,
     ProformaListSerializer,
     ProformaWriteSerializer,
     ReelCatalogSerializer,
 )
-from ..utils.exception.proforma import ProformaException
+from ..utils.exception.proforma import OrdenEstadoException, ProformaException
 
 _STANDARD_PERMISSIONS = [permissions.IsAuthenticated, IsStaffUser, permissions.DjangoModelPermissions]
 _STAFF_ONLY = [permissions.IsAuthenticated, IsStaffUser]
+estados_globales = Proforma_Helper()
 
 
 class Conflict(APIException):
@@ -48,6 +56,31 @@ def _proformas_in_scope(user):
 
 def _notas_in_scope(user):
     return Orden_Trabajo_Business().get_panel_nota_queryset(user, Nota_trabajo.objects.all())
+
+
+def _notas_venta_in_scope(user):
+    return Pago_Business().get_panel_nota_venta_queryset(user, Nota_Venta.objects.all())
+
+
+def _get_in_scope_or_404(queryset, pk, what):
+    obj = queryset.filter(pk=pk).first()
+    if obj is None:
+        raise NotFound(f'{what} no encontrada.')
+    return obj
+
+
+def _forbid_without_perm(user, codename):
+    if not user.has_perm(f'product.{codename}'):
+        raise PermissionDenied()
+
+
+def _transition(fn, *args, **kwargs):
+    """Ejecuta una transicion del servicio; una transicion invalida o una
+    precondicion de negocio no cumplida responde 409 con el mensaje legible."""
+    try:
+        return fn(*args, **kwargs)
+    except OrdenEstadoException as e:
+        raise Conflict(str(e))
 
 
 def _sucursal_in_scope_or_404(user, raw_sucursal_id):
@@ -113,8 +146,8 @@ class ProformaDetailView(generics.RetrieveUpdateAPIView):
         )
 
     def perform_update(self, serializer):
-        if serializer.instance.is_close:
-            raise Conflict('La proforma está cerrada (ya tiene nota de trabajo) y no se puede editar.')
+        if serializer.instance.status != estados_globales.estado_proforma:
+            raise Conflict('La proforma está aprobada o anulada (ya no es vigente) y no se puede editar.')
         serializer.save()
 
 
@@ -133,8 +166,8 @@ class ProformaGenerateNotaView(APIView):
         try:
             with transaction.atomic():
                 proforma = Proforma_Header.objects.select_for_update().get(pk=pk)
-                if proforma.is_close:
-                    raise Conflict('La proforma ya está cerrada; ya tiene nota de trabajo.')
+                if proforma.status != estados_globales.estado_proforma:
+                    raise Conflict('La proforma ya fue aprobada o está anulada; no se puede generar la nota de trabajo.')
                 nota = Proforma_Business().create_work_note(proforma=proforma, responsable=request.user)
                 if nota is None:
                     raise ProformaException('No se pudo generar la nota de trabajo.')
@@ -219,9 +252,139 @@ class NotaTrabajoDetailView(generics.RetrieveUpdateAPIView):
 
     def perform_update(self, serializer):
         nota = serializer.instance
-        if nota.is_close or hasattr(nota, 'nota_venta'):
-            raise Conflict('La nota de trabajo ya tiene nota de venta y no se puede editar.')
+        if nota.status != estados.NT_EN_PROCESO:
+            raise Conflict('La nota de trabajo no está En proceso y no se puede editar.')
         serializer.save()
+
+
+class ProformaAnularView(APIView):
+    """Anula una proforma vigente (sin nota de trabajo activa)."""
+
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = _STAFF_ONLY
+
+    def post(self, request, pk):
+        _forbid_without_perm(request.user, 'delete_proforma_header')
+        _get_in_scope_or_404(_proformas_in_scope(request.user), pk, 'Proforma')
+        _transition(Orden_Estado_Business().anular_proforma, Proforma_Header.objects.get(pk=pk))
+        proforma = _proformas_in_scope(request.user).prefetch_related('items__car_part', 'items__window_film').get(pk=pk)
+        return Response(ProformaDetailSerializer(proforma).data, status=status.HTTP_200_OK)
+
+
+class _NotaTrabajoActionView(APIView):
+    """Base de las acciones sobre una nota de trabajo (terminar, corregir,
+    anular). `permission_codename` y `service_method` los define cada vista."""
+
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = _STAFF_ONLY
+    permission_codename = None
+    service_method = None
+
+    def post(self, request, pk):
+        _forbid_without_perm(request.user, self.permission_codename)
+        nota = _get_in_scope_or_404(_notas_in_scope(request.user), pk, 'Nota de trabajo')
+        _transition(getattr(Orden_Estado_Business(), self.service_method), nota)
+        nota = _notas_in_scope(request.user).get(pk=pk)
+        return Response(NotaTrabajoDetailSerializer(nota).data, status=status.HTTP_200_OK)
+
+
+class NotaTrabajoTerminarView(_NotaTrabajoActionView):
+    permission_codename = 'change_nota_trabajo'
+    service_method = 'terminar_trabajo'
+
+
+class NotaTrabajoCorregirView(_NotaTrabajoActionView):
+    permission_codename = 'change_nota_trabajo'
+    service_method = 'corregir_trabajo'
+
+
+class NotaTrabajoAnularView(_NotaTrabajoActionView):
+    permission_codename = 'delete_nota_trabajo'
+    service_method = 'anular_nota_trabajo'
+
+
+class NotaVentaListView(generics.ListAPIView):
+    """Lista de Notas de Venta dentro del alcance del usuario. ?status=,
+    ?search= (nº de proforma, cliente, CI/NIT, placa)."""
+
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = _STANDARD_PERMISSIONS
+    serializer_class = NotaVentaListSerializer
+    queryset = Nota_Venta.objects.all()
+
+    def get_queryset(self):
+        queryset = _notas_venta_in_scope(self.request.user)
+        params = self.request.query_params
+        if params.get('status'):
+            queryset = queryset.filter(status=params['status'])
+        search = params.get('search')
+        if search:
+            condition = (
+                Q(name__icontains=search)
+                | Q(ci_nit__icontains=search)
+                | Q(nota_trabajo__car_plate__icontains=search)
+            )
+            if search.isdigit():
+                condition |= Q(nota_trabajo__proforma_id=int(search))
+            queryset = queryset.filter(condition)
+        return queryset
+
+
+class NotaVentaDetailView(generics.RetrieveAPIView):
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = _STANDARD_PERMISSIONS
+    serializer_class = NotaVentaDetailSerializer
+    queryset = Nota_Venta.objects.all()
+
+    def get_queryset(self):
+        return _notas_venta_in_scope(self.request.user)
+
+
+class _NotaVentaActionView(APIView):
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = _STAFF_ONLY
+    permission_codename = None
+
+    def run(self, request, nota_venta):
+        raise NotImplementedError
+
+    def post(self, request, pk):
+        _forbid_without_perm(request.user, self.permission_codename)
+        nota_venta = _get_in_scope_or_404(_notas_venta_in_scope(request.user), pk, 'Nota de venta')
+        _transition(self.run, request, nota_venta)
+        nota_venta = _notas_venta_in_scope(request.user).get(pk=pk)
+        return Response(NotaVentaDetailSerializer(nota_venta).data, status=status.HTTP_200_OK)
+
+
+class NotaVentaPagoView(_NotaVentaActionView):
+    """Registra el pago de la nota de venta (trabajo terminado). El monto lo
+    fija el servidor; cualquier `monto` enviado se ignora."""
+
+    permission_codename = 'add_pago'
+
+    def run(self, request, nota_venta):
+        data = PagoInputSerializer(data=request.data)
+        data.is_valid(raise_exception=True)
+        Orden_Estado_Business().registrar_pago(
+            nota_venta, request.user, data.validated_data['tipo_pago'], data.validated_data.get('registro_contable'),
+        )
+
+
+class NotaVentaAnularPagoView(_NotaVentaActionView):
+    permission_codename = 'delete_pago'
+
+    def run(self, request, nota_venta):
+        pago_obj = pago.objects.filter(nota_venta=nota_venta).first()
+        if pago_obj is None:
+            raise OrdenEstadoException('La nota de venta no tiene un pago registrado.')
+        Orden_Estado_Business().anular_pago(pago_obj)
+
+
+class NotaVentaAnularView(_NotaVentaActionView):
+    permission_codename = 'delete_nota_venta'
+
+    def run(self, request, nota_venta):
+        Orden_Estado_Business().anular_nota_venta(nota_venta)
 
 
 class OrdenesSucursalesView(APIView):

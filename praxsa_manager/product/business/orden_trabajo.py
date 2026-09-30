@@ -1,4 +1,6 @@
-from ..models import Proforma_Header, Proforma_Detail, Sucursal, Nota_trabajo, Detalle_Nota_Trabajo, Nota_Venta
+from decimal import Decimal
+from ..helper import estados
+from ..models import Proforma_Header, Proforma_Detail, Sucursal, Nota_trabajo, Detalle_Nota_Trabajo, Nota_Venta, pago
 from .inventario import Inventario_Business
 from ..helper.user import User_Helper
 from ..utils.exception.proforma import OrdenTrabajo
@@ -45,7 +47,7 @@ class Orden_Trabajo_Business:
     def get_finish_nota_queryset(self, user, qs):
         try:
             qs_result = qs.select_related('proforma','proforma__sucursal','instaladar', 'proforma__car_model_id','proforma__car_model_id__car_brand_id')
-            qs_result = qs_result.filter(proforma__is_delete = False, nota_venta__isnull=False)
+            qs_result = qs_result.filter(proforma__is_delete = False, status=estados.NT_TERMINADO)
             if self.user_helper.can_view_all_sucursales(user):
                 return qs_result
             sucursales = Sucursal.objects.prefetch_related('empleado')
@@ -74,33 +76,39 @@ class Orden_Trabajo_Business:
     def delete_work_note(self, work_note: Nota_trabajo ):
         try:
             with transaction.atomic():
-                nota_venta = Nota_Venta.objects.filter(nota_trabajo = work_note)
-                if(len(nota_venta) > 0):
-                    raise OrdenTrabajo(f'No se puede liminar la nota de trabajo, porque ya existe la nota de venta Nro. {nota_venta[0].id}')
+                nota_venta = Nota_Venta.objects.filter(nota_trabajo = work_note).first()
+                if nota_venta is not None and (nota_venta.status == estados.NV_PAGADA or pago.objects.filter(nota_venta=nota_venta).exists()):
+                    raise OrdenTrabajo(f'No se puede eliminar la nota de trabajo, porque su nota de venta Nro. {nota_venta.id} ya está pagada')
+                if work_note.status == estados.NT_TERMINADO:
+                    raise OrdenTrabajo('No se puede eliminar una nota de trabajo terminada; corrija el trabajo (vuelva a En proceso) antes de eliminarla')
                 summaries = Detalle_Nota_Trabajo.objects.filter(nota_trabajo = work_note)
                 for summary in summaries:
                     summary.delete()
                 proforma = work_note.proforma
-                proforma.is_close = False
 
-                detalles_proforma= Proforma_Detail.objects.filter(proforma_header = proforma)
+                # Si la nota estaba cancelada, el inventario ya se devolvio y detalle.inventario es None.
+                detalles_proforma= Proforma_Detail.objects.filter(proforma_header = proforma).select_related('inventario')
                 for detalle in detalles_proforma:
                     inventario =detalle.inventario
-                    inventario.to_install = inventario.to_install + detalle.length*detalle.quantity
-                    inventario.installed = inventario.installed - detalle.length*detalle.quantity
+                    if inventario is None:
+                        continue
+                    to_return = detalle.length * Decimal(detalle.quantity) if detalle.quantity > 0 else detalle.length
+                    inventario.to_install = inventario.to_install + to_return
+                    inventario.installed = inventario.installed - to_return
                     detalle.inventario = None
                     detalle.save()
                     inventario.save()
+                if nota_venta is not None:
+                    nota_venta.delete()
                 work_note.delete()
-                proforma.save()
-                # Import diferido: proforma.py ya importa este modulo (Orden_Trabajo_Business),
+                # Import diferido: orden_estado.py importa este modulo (Orden_Trabajo_Business),
                 # un import a nivel de modulo aca crearia un ciclo.
-                from .proforma import Proforma_Business
+                from .orden_estado import Orden_Estado_Business
                 # work_note.delete() no limpia el cache en memoria de proforma.nota_trabajo
                 # (quedaria apuntando al registro ya borrado); refresh_from_db lo fuerza a
                 # recalcularse contra la base antes de recomputar el estado.
                 proforma.refresh_from_db()
-                Proforma_Business().refresh_status(proforma)
+                Orden_Estado_Business().refrescar(proforma)
 
         except OrdenTrabajo as e:
             raise e

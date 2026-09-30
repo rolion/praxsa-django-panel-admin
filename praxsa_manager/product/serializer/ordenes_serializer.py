@@ -12,16 +12,19 @@ from rest_framework import serializers
 
 from ..business.pricing import Pricing_Business, build_line_pricing
 from ..business.proforma import Proforma_Business
+from ..helper.pagos import Pagos_Helper
 from ..helper.proforma import Proforma_Helper
 from ..helper.user import User_Helper
 from ..models import (
     Car_Model,
     Car_Part,
     Nota_trabajo,
+    Nota_Venta,
     Proforma_Detail,
     Proforma_Header,
     Sucursal,
     Window_Film,
+    registro_contable_regex,
 )
 from ..utils.exception.proforma import ProformaException
 
@@ -89,11 +92,17 @@ class ProformaDetailSerializer(ProformaListSerializer):
     el formulario de edicion."""
 
     items = ProformaLineSerializer(many=True, read_only=True)
+    nota_venta_id = serializers.SerializerMethodField()
 
     class Meta(ProformaListSerializer.Meta):
         fields = ProformaListSerializer.Meta.fields + [
-            'email', 'ci_nit', 'phone_number', 'car_model_id', 'discount_reason', 'items',
+            'email', 'ci_nit', 'phone_number', 'car_model_id', 'discount_reason', 'items', 'nota_venta_id',
         ]
+
+    def get_nota_venta_id(self, obj):
+        nota = getattr(obj, 'nota_trabajo', None)
+        nota_venta = getattr(nota, 'nota_venta', None) if nota is not None else None
+        return nota_venta.id if nota_venta is not None else None
 
 
 class ProformaLineInputSerializer(serializers.Serializer):
@@ -281,14 +290,15 @@ class NotaTrabajoListSerializer(serializers.ModelSerializer):
     sucursal_name = serializers.SerializerMethodField()
     car_model_name = serializers.SerializerMethodField()
     instalador_name = serializers.SerializerMethodField()
-    is_finalizada = serializers.SerializerMethodField()
+    status_label = serializers.CharField(source='get_status_display', read_only=True)
+    nota_venta = serializers.SerializerMethodField()
 
     class Meta:
         model = Nota_trabajo
         fields = [
             'id', 'proforma_id', 'name', 'car_model_name', 'car_plate', 'instaladar',
             'instalador_name', 'codigo_garantia', 'entrada_vehiculo', 'salida_vehiculo',
-            'sucursal_id', 'sucursal_name', 'is_close', 'is_finalizada',
+            'sucursal_id', 'sucursal_name', 'is_close', 'status', 'status_label', 'nota_venta',
         ]
 
     def get_sucursal_id(self, obj):
@@ -304,8 +314,16 @@ class NotaTrabajoListSerializer(serializers.ModelSerializer):
     def get_instalador_name(self, obj):
         return obj.instaladar.name if obj.instaladar_id else None
 
-    def get_is_finalizada(self, obj):
-        return hasattr(obj, 'nota_venta')
+    def get_nota_venta(self, obj):
+        nota_venta = getattr(obj, 'nota_venta', None)
+        if nota_venta is None:
+            return None
+        return {
+            'id': nota_venta.id,
+            'status': nota_venta.status,
+            'status_label': nota_venta.get_status_display(),
+            'total_price': str(nota_venta.total_price),
+        }
 
 
 class NotaTrabajoDetailSerializer(NotaTrabajoListSerializer):
@@ -374,3 +392,78 @@ class NotaTrabajoUpdateSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         return NotaTrabajoDetailSerializer(instance, context=self.context).data
+
+
+class NotaVentaListSerializer(serializers.ModelSerializer):
+    """Fila del listado de Notas de Venta (estado de cobro + estado del trabajo)."""
+
+    status_label = serializers.CharField(source='get_status_display', read_only=True)
+    nota_trabajo_id = serializers.IntegerField(read_only=True)
+    proforma_id = serializers.SerializerMethodField()
+    sucursal_id = serializers.SerializerMethodField()
+    sucursal_name = serializers.SerializerMethodField()
+    work_status = serializers.CharField(source='nota_trabajo.status', read_only=True)
+    work_status_label = serializers.CharField(source='nota_trabajo.get_status_display', read_only=True)
+
+    class Meta:
+        model = Nota_Venta
+        fields = [
+            'id', 'nota_trabajo_id', 'proforma_id', 'name', 'ci_nit', 'total_price', 'created_on',
+            'status', 'status_label', 'work_status', 'work_status_label', 'sucursal_id', 'sucursal_name',
+        ]
+
+    def _proforma(self, obj):
+        return obj.nota_trabajo.proforma
+
+    def get_proforma_id(self, obj):
+        return obj.nota_trabajo.proforma_id
+
+    def get_sucursal_id(self, obj):
+        proforma = self._proforma(obj)
+        return proforma.sucursal_id if proforma is not None else None
+
+    def get_sucursal_name(self, obj):
+        proforma = self._proforma(obj)
+        return proforma.sucursal.name if proforma is not None and proforma.sucursal_id else None
+
+
+class NotaVentaDetailSerializer(NotaVentaListSerializer):
+    """Detalle de una Nota de Venta, con su pago (si existe)."""
+
+    pago = serializers.SerializerMethodField()
+    car_plate = serializers.SerializerMethodField()
+    sales_type_label = serializers.SerializerMethodField()
+
+    class Meta(NotaVentaListSerializer.Meta):
+        fields = NotaVentaListSerializer.Meta.fields + ['pago', 'car_plate', 'sales_type_label']
+
+    def get_pago(self, obj):
+        pago_obj = getattr(obj, 'pago', None)
+        if pago_obj is None:
+            return None
+        return {
+            'id': pago_obj.id,
+            'monto': str(pago_obj.monto),
+            'tipo_pago': pago_obj.tipo_pago,
+            'tipo_pago_label': pago_obj.get_tipo_pago_display(),
+            'registro_contable': pago_obj.registro_contable,
+            'created_on': pago_obj.created_on,
+            'cerrado': pago_obj.cerrado,
+        }
+
+    def get_car_plate(self, obj):
+        return obj.nota_trabajo.car_plate
+
+    def get_sales_type_label(self, obj):
+        proforma = self._proforma(obj)
+        return proforma.get_sales_type_display() if proforma is not None else None
+
+
+class PagoInputSerializer(serializers.Serializer):
+    """Datos que envia el cliente al registrar un pago. El monto NO se acepta:
+    lo fija el servidor (total de la nota de venta)."""
+
+    tipo_pago = serializers.ChoiceField(choices=Pagos_Helper().types, required=False, default=Pagos_Helper().default_type)
+    registro_contable = serializers.CharField(
+        max_length=7, required=False, allow_blank=True, allow_null=True, validators=[registro_contable_regex]
+    )

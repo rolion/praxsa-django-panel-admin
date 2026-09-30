@@ -82,12 +82,8 @@ class ReportProformaAdmin(admin.ModelAdmin):
 
 
     def get_estado(self, obj):
-        result= Nota_Venta.objects.filter(nota_trabajo=obj)
-        if len(result) > 0:
-           return 'Si'
-        else:
-            return 'No'
-    get_estado.short_description = 'Finalizado'
+        return obj.get_status_display()
+    get_estado.short_description = 'Estado'
     
     def get_created_on_date_format(self, obj):
         return obj.proforma_created_on.strftime("%d-%m-%Y %H:%M:%S")

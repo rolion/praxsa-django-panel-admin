@@ -90,12 +90,8 @@ class ReportNotaTrabajoAdmin(admin.ModelAdmin):
     get_proforma_id.admin_order_field = 'proforma__id'
 
     def get_estado(self, obj):
-        result= Nota_Venta.objects.filter(nota_trabajo=obj)
-        if len(result) > 0:
-           return 'Si'
-        else:
-            return 'No'
-    get_estado.short_description = 'Finalizado'
+        return obj.get_status_display()
+    get_estado.short_description = 'Estado'
     
     def get_entrada_vehiculo_date_format(self, obj):
         return obj.entrada_vehiculo.strftime("%d-%m-%Y %H:%M:%S")
@@ -136,7 +132,7 @@ class ReportNotaTrabajoAdmin(admin.ModelAdmin):
     @admin.action(description="crear nota venta")
     def create_sales_note(self, request: HttpRequest, queryset: QuerySet):
         try:
-            [self.proforma_business.crear_nota_venta( nota_trabajo=qs, user= request.user) for qs in list(queryset)]
+            [self.proforma_business.estado_business.terminar_trabajo(nota_trabajo=qs) for qs in list(queryset)]
         except Exception as e:
             self.message_user(request=request,  message=str(e), level= messages.ERROR)
             

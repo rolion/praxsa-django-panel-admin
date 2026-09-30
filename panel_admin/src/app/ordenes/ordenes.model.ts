@@ -1,5 +1,9 @@
 export type SalesType = 'venta_instalacion' | 'venta_metro_lineal';
-export type ProformaStatus = 'proforma' | 'nota_trabajo' | 'por_cobrar' | 'finalizado';
+/** Estado GLOBAL de la orden (derivado en el servidor). 'finalizado' = trabajo terminado y pagado. */
+export type ProformaStatus = 'proforma' | 'en_trabajo' | 'por_cobrar' | 'finalizado' | 'anulada';
+export type NotaTrabajoStatus = 'en_proceso' | 'terminado' | 'cancelada';
+export type NotaVentaStatus = 'por_cobrar' | 'pagada' | 'anulada';
+export type TipoPago = 'efec' | 'trans';
 
 export const SALES_TYPE_INSTALACION: SalesType = 'venta_instalacion';
 export const SALES_TYPE_METRO_LINEAL: SalesType = 'venta_metro_lineal';
@@ -47,6 +51,7 @@ export interface AppProformaDetail extends AppProforma {
   car_model_id: number | null;
   discount_reason: string | null;
   items: AppProformaLine[];
+  nota_venta_id: number | null;
 }
 
 /** Lo unico que se envia por linea: el servidor calcula precios y subtotales. */
@@ -86,7 +91,9 @@ export interface AppNotaTrabajo {
   sucursal_id: number | null;
   sucursal_name: string | null;
   is_close: boolean;
-  is_finalizada: boolean;
+  status: NotaTrabajoStatus;
+  status_label: string;
+  nota_venta: { id: number; status: NotaVentaStatus; status_label: string; total_price: string } | null;
 }
 
 export interface AppNotaTrabajoDetail extends AppNotaTrabajo {
@@ -123,4 +130,43 @@ export interface OrdenSucursal {
 export interface OrdenInstalador {
   id: number;
   name: string;
+}
+
+export interface AppPago {
+  id: number;
+  monto: string;
+  tipo_pago: TipoPago;
+  tipo_pago_label: string;
+  registro_contable: string | null;
+  created_on: string;
+  cerrado: boolean;
+}
+
+/** Fila del listado de notas de venta. */
+export interface AppNotaVenta {
+  id: number;
+  nota_trabajo_id: number;
+  proforma_id: number | null;
+  name: string;
+  ci_nit: string | null;
+  total_price: string;
+  created_on: string | null;
+  status: NotaVentaStatus;
+  status_label: string;
+  work_status: NotaTrabajoStatus;
+  work_status_label: string;
+  sucursal_id: number | null;
+  sucursal_name: string | null;
+}
+
+export interface AppNotaVentaDetail extends AppNotaVenta {
+  pago: AppPago | null;
+  car_plate: string | null;
+  sales_type_label: string | null;
+}
+
+/** Lo unico que se envia al registrar un pago: el monto lo fija el servidor. */
+export interface PagoPayload {
+  tipo_pago: TipoPago;
+  registro_contable: string;
 }

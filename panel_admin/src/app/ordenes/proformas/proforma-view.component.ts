@@ -6,7 +6,8 @@ import { AuthService } from '../../core/service/auth.service';
 import { extractApiError } from '../ordenes.errors';
 import { AppProformaDetail, SALES_TYPE_INSTALACION } from '../ordenes.model';
 import { OrdenesService } from '../ordenes.service';
-import { confirmGenerateNota, saveBlob, showErrorAlert } from '../proforma-actions';
+import { statusClass } from '../ordenes.status';
+import { confirmAnularProforma, confirmGenerateNota, saveBlob, showErrorAlert } from '../proforma-actions';
 
 @Component({
   selector: 'app-proforma-view',
@@ -26,31 +27,19 @@ export class ProformaViewComponent implements OnInit {
   /** Las columnas no numericas no llevan resumen (el pie solo muestra totales bajo Subtotal). */
   noSummary = (): string => '';
 
-  /** Texto y color del badge de estado: azul = proforma, verde = nota de trabajo generada. */
+  /** Estado global de la orden (derivado en el servidor): el texto viene de `status_label`. */
   get statusText(): string {
-    switch (this.proforma?.status) {
-      case 'nota_trabajo':
-        return 'Nota de trabajo generada';
-      case 'por_cobrar':
-        return 'Por cobrar';
-      case 'finalizado':
-        return 'Finalizado';
-      default:
-        return 'Proforma';
-    }
+    return this.proforma?.status_label ?? '';
   }
 
   get statusClass(): string {
-    switch (this.proforma?.status) {
-      case 'nota_trabajo':
-        return 'status-nota';
-      case 'por_cobrar':
-        return 'status-cobrar';
-      case 'finalizado':
-        return 'status-final';
-      default:
-        return 'status-proforma';
-    }
+    return statusClass(this.proforma?.status);
+  }
+
+  /** La orden existe (nota de trabajo y de venta vigentes) en estos estados. */
+  get hasOrder(): boolean {
+    const status = this.proforma?.status;
+    return status === 'en_trabajo' || status === 'por_cobrar' || status === 'finalizado';
   }
 
   get isInstalacion(): boolean {
@@ -58,11 +47,15 @@ export class ProformaViewComponent implements OnInit {
   }
 
   get canEdit(): boolean {
-    return !!this.proforma && !this.proforma.is_close && this.authService.hasPermission('change_proforma_header');
+    return !!this.proforma && this.proforma.status === 'proforma' && this.authService.hasPermission('change_proforma_header');
   }
 
   get canGenerateNota(): boolean {
-    return !!this.proforma && !this.proforma.is_close && this.authService.hasPermission('add_nota_trabajo');
+    return !!this.proforma && this.proforma.status === 'proforma' && this.authService.hasPermission('add_nota_trabajo');
+  }
+
+  get canAnular(): boolean {
+    return !!this.proforma && this.proforma.status === 'proforma' && this.authService.hasPermission('delete_proforma_header');
   }
 
   ngOnInit(): void {
@@ -91,9 +84,20 @@ export class ProformaViewComponent implements OnInit {
       next: (proforma) => (this.proforma = proforma),
       error: (err) =>
         showErrorAlert(
-          'No se pudo generar la nota de trabajo',
-          extractApiError(err, 'No se pudo generar la nota de trabajo.')
+          'No se pudo aprobar la proforma',
+          extractApiError(err, 'No se pudo aprobar la proforma.')
         ),
+    });
+  }
+
+  async anular(): Promise<void> {
+    if (!this.proforma || !(await confirmAnularProforma(this.proforma.id))) {
+      return;
+    }
+    this.ordenesService.anularProforma(this.proforma.id).subscribe({
+      next: (proforma) => (this.proforma = proforma),
+      error: (err) =>
+        showErrorAlert('No se pudo anular la proforma', extractApiError(err, 'No se pudo anular la proforma.')),
     });
   }
 

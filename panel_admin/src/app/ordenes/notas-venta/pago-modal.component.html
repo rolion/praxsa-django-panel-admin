@@ -1,0 +1,37 @@
+<form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <div class="modal-header">
+    <h4 class="modal-title" id="pago-modal-title">Registrar pago</h4>
+    <button type="button" class="close" aria-label="Close" (click)="activeModal.dismiss()">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <div class="mb-3">
+      <label class="fw-bold" for="pago-monto">Monto a cobrar (Bs)</label>
+      <input id="pago-monto" type="text" class="form-control" [value]="total" readonly />
+      <small class="text-muted">Lo fija el sistema: es el total de la nota de venta.</small>
+    </div>
+    <div class="mb-3">
+      <label class="fw-bold" for="pago-tipo">Tipo de pago</label>
+      <select id="pago-tipo" class="form-select form-control" formControlName="tipo_pago">
+        @for (tipo of tipos; track tipo.value) {
+          <option [value]="tipo.value">{{ tipo.label }}</option>
+        }
+      </select>
+    </div>
+    <div class="mb-3">
+      <label class="fw-bold" for="pago-registro">Registro contable (opcional)</label>
+      <input id="pago-registro" type="text" class="form-control" formControlName="registro_contable" maxlength="7" placeholder="1234/26" />
+      @if (form.get('registro_contable')?.invalid && submitted) {
+        <small class="text-danger">Formato: hasta 4 dígitos, "/" y 2 dígitos (ej. 1234/26)</small>
+      }
+    </div>
+    @if (errorMessage) {
+      <div class="alert alert-danger">{{ errorMessage }}</div>
+    }
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-light" (click)="activeModal.dismiss()" [disabled]="saving">Cancelar</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving">Registrar pago</button>
+  </div>
+</form>

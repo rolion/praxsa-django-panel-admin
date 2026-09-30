@@ -195,6 +195,29 @@
           </div>
         </div>
 
+        @if (nota.nota_venta) {
+          <!-- COBRO -->
+          <div class="card section-card">
+            <div class="section-header"><i class="fas fa-cash-register"></i><h6>Cobro</h6></div>
+            <div class="card-body">
+              <div class="row info-grid">
+                <div class="col-6 col-md-3 info-item">
+                  <span class="info-label">Nota de venta</span>
+                  <span class="info-value"><a [routerLink]="['/ordenes/notas-venta/view', nota.nota_venta.id]">Nº {{ nota.nota_venta.id }}</a></span>
+                </div>
+                <div class="col-6 col-md-3 info-item">
+                  <span class="info-label">Estado del cobro</span>
+                  <span class="info-value"><span [class]="badge(nota.nota_venta.status)">{{ nota.nota_venta.status_label }}</span></span>
+                </div>
+                <div class="col-6 col-md-3 info-item">
+                  <span class="info-label">Total a cobrar</span>
+                  <span class="info-value">{{ nota.nota_venta.total_price }} Bs</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+
         @if (saveError) {
           <div class="alert alert-danger">{{ saveError }}</div>
         }
@@ -211,6 +234,21 @@
             <a [routerLink]="['/ordenes/proformas/view', nota.proforma_id]" class="btn btn-outline-secondary">
               <i class="fas fa-file-invoice"></i> Ver proforma
             </a>
+            @if (canAnular) {
+              <button type="button" class="btn btn-outline-danger" (click)="anular()">
+                <i class="fas fa-ban"></i> Anular nota de trabajo
+              </button>
+            }
+            @if (canCorregir) {
+              <button type="button" class="btn btn-outline-secondary" (click)="corregir()">
+                <i class="fas fa-undo"></i> Corregir trabajo
+              </button>
+            }
+            @if (canTerminar) {
+              <button type="button" class="btn btn-success" (click)="terminar()" [disabled]="!!terminarBlockReason" [attr.title]="terminarBlockReason || null">
+                <i class="fas fa-flag-checkered"></i> Marcar trabajo terminado
+              </button>
+            }
             @if (canEdit) {
               <button type="button" class="btn btn-primary" (click)="startEdit()">
                 <i class="fas fa-pen"></i> Editar nota de trabajo

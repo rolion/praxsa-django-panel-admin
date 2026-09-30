@@ -34,7 +34,9 @@ class NotaTrabajoTest(TestCase):
         rows = self.client.get(URL, **self.headers).json()
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]['proforma_id'], self.nota.proforma_id)
-        self.assertFalse(rows[0]['is_finalizada'])
+        self.assertEqual(rows[0]['status'], 'en_proceso')
+        self.assertEqual(rows[0]['nota_venta']['status'], 'por_cobrar')
+        self.assertNotIn('is_finalizada', rows[0])
         self.assertEqual(rows[0]['sucursal_name'], self.s['sucursal'].name)
         self.assertEqual(rows[0]['sucursal_id'], self.s['sucursal'].id)
 
@@ -100,10 +102,10 @@ class NotaTrabajoTest(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn('instaladar', response.json())
 
-    def test_note_with_nota_venta_cannot_be_edited(self):
-        helpers.create_nota_venta(self.nota, created_by=self.s['user'])
+    def test_note_not_en_proceso_cannot_be_edited(self):
+        Nota_trabajo.objects.filter(pk=self.nota.pk).update(status='terminado')
         self.assertEqual(self._patch({'observaciones': 'x'}).status_code, 409)
-        self.assertTrue(self.client.get(URL, **self.headers).json()[0]['is_finalizada'])
+        self.assertEqual(self.client.get(URL, **self.headers).json()[0]['status'], 'terminado')
 
     def test_requires_change_permission_and_no_create_or_delete(self):
         from .ordenes_helpers import make_staff

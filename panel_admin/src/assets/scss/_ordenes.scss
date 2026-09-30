@@ -8,7 +8,8 @@
 
 // ---------- tarjetas, encabezados, alertas y acciones (ambas raices) ----------
 .proforma-form,
-.orden-view {
+.orden-view,
+.orden-list {
   .section-card {
     border: 1px solid rgba(128, 128, 128, 0.2);
     border-radius: 12px;
@@ -155,6 +156,11 @@
     &.status-final {
       background: #d5ede0;
       color: #0f5132;
+    }
+
+    &.status-void {
+      background: #e6e8ec;
+      color: #5b6470;
     }
   }
 
@@ -404,8 +410,41 @@
   }
 }
 
+// ---------- filtro por estado del listado: mismo aspecto que el buscador de la plantilla
+// (assets/scss/override/_table.scss: input.search-field) ----------
+.orden-list select.status-filter {
+  min-width: 190px;
+  height: 45px;
+  padding: 8px 12px;
+  border-radius: 5px;
+  border: 1px solid #d0d0d0;
+  background-color: #ffffff;
+  color: rgba(0, 0, 0, 0.54);
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #fffefe;
+  }
+
+  &:focus {
+    outline: none;
+    color: #212121;
+  }
+}
+
 // ---------- tema oscuro de la plantilla (body.dark) ----------
 body.dark {
+  .orden-list select.status-filter {
+    color: #ffffff;
+    border: 1px solid #0e0e0e;
+    background-color: #0e0e0e;
+
+    &:focus:hover {
+      background-color: #0f111d;
+    }
+  }
+
   .proforma-form,
   .orden-view {
     .line-alert.warn {

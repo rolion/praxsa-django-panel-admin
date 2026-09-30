@@ -77,7 +77,7 @@ class NotaTrabajoAdmin(admin.ModelAdmin):
     orden_trabajo_busi =Orden_Trabajo_Business()
     proforma_business = Proforma_Business()
     list_per_page = 10
-    actions =["print_nota_trabajo", 'create_sales_note']
+    actions =["print_nota_trabajo", 'terminar_trabajo']
     fieldsets = [('Proforma', {
                                 'classes':[], 
                                 "fields":['proforma', 'codigo_garantia']
@@ -111,12 +111,8 @@ class NotaTrabajoAdmin(admin.ModelAdmin):
     get_nota_venta_id.admin_order_field = 'proforma__id'
 
     def get_estado(self, obj):
-        result= Nota_Venta.objects.filter(nota_trabajo=obj)
-        if len(result) > 0:
-           return 'Si'
-        else:
-            return 'No'
-    get_estado.short_description = 'Finalizado'
+        return obj.get_status_display()
+    get_estado.short_description = 'Estado'
     
     def get_sucursal(self, obj):
         return obj.proforma.sucursal.name
@@ -158,10 +154,10 @@ class NotaTrabajoAdmin(admin.ModelAdmin):
     
     
     @transaction.atomic
-    @admin.action(description="crear nota venta")
-    def create_sales_note(self, request: HttpRequest, queryset: QuerySet):
+    @admin.action(description="Marcar trabajo terminado")
+    def terminar_trabajo(self, request: HttpRequest, queryset: QuerySet):
         try:
-            [self.proforma_business.crear_nota_venta( nota_trabajo=qs, user= request.user) for qs in list(queryset)]
+            [self.proforma_business.estado_business.terminar_trabajo(nota_trabajo=qs) for qs in list(queryset)]
         except Exception as e:
             self.message_user(request=request,  message=str(e), level= messages.ERROR)
             

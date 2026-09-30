@@ -7,6 +7,7 @@ from django.contrib import admin
 from django.db.models.query import QuerySet
 from django.http.request import HttpRequest
 from ..business.pago import Pago_Business
+from ..business.orden_estado import Orden_Estado_Business
 from django.contrib import messages
 from django_admin_listfilter_dropdown.filters import DropdownFilter, RelatedDropdownFilter, ChoiceDropdownFilter
 from rangefilter.filters import (
@@ -40,6 +41,7 @@ class PagosAdmin(admin.ModelAdmin):
     list_per_page = 10
     form = PagosForm
     pago_business = Pago_Business()
+    estado_business = Orden_Estado_Business()
 
     def get_form(self, request, obj=None, **kwargs):
         """
@@ -90,10 +92,20 @@ class PagosAdmin(admin.ModelAdmin):
             nota_venta = request.GET.get("nota_venta", None)
            
             obj.nota_venta =  Nota_Venta.objects.select_related('nota_trabajo').get(id = nota_venta)
-            obj.created_by = request.user
-            obj.created_on = datetime.now()
-            obj.cerrado = False
+            # El servicio valida (nota de trabajo terminada, nota de venta por cobrar),
+            # fija el monto y marca la nota de venta como pagada.
+            self.estado_business.registrar_pago_instancia(obj, request.user)
+            return
         super().save_model(request, obj, form, change)
+
+    def delete_model(self, request, obj):
+        self.estado_business.anular_pago(obj)
+
+    def delete_queryset(self, request, queryset):
+        try:
+            [self.estado_business.anular_pago(qs) for qs in list(queryset)]
+        except Exception as e:
+            self.message_user(request=request,  message=str(e), level= messages.ERROR)
         
     @admin.display(empty_value="", description='Sucursal' )
     def view_proforma_sucursal(self, obj):
@@ -128,6 +140,13 @@ class PagosAdmin(admin.ModelAdmin):
         
         return True
 
+
+    def has_delete_permission(self, request: HttpRequest, obj=None):
+        # Un pago cerrado contablemente no se anula (Orden_Estado_Business.anular_pago);
+        # se oculta la eliminacion en vez de dejar que el servicio falle con un 500.
+        if obj is not None and obj.cerrado:
+            return False
+        return super().has_delete_permission(request, obj)
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
         qs = super().get_queryset(request)

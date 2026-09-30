@@ -108,6 +108,60 @@ describe('extractApiError', () => {
   });
 });
 
+describe('OrdenesService - estados y cobro', () => {
+  let service: OrdenesService;
+  let httpMock: HttpTestingController;
+  const base = `${environment.apiUrl}/product/ordenes`;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    service = TestBed.inject(OrdenesService);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => httpMock.verify());
+
+  const actions: [string, () => unknown, string][] = [
+    ['anularProforma', () => service.anularProforma(5), 'proformas/5/anular/'],
+    ['terminarNotaTrabajo', () => service.terminarNotaTrabajo(3), 'notas-trabajo/3/terminar/'],
+    ['corregirNotaTrabajo', () => service.corregirNotaTrabajo(3), 'notas-trabajo/3/corregir/'],
+    ['anularNotaTrabajo', () => service.anularNotaTrabajo(3), 'notas-trabajo/3/anular/'],
+    ['anularPago', () => service.anularPago(7), 'notas-venta/7/anular-pago/'],
+    ['anularNotaVenta', () => service.anularNotaVenta(7), 'notas-venta/7/anular/'],
+  ];
+
+  actions.forEach(([name, call, path]) => {
+    it(`${name} posts to ${path}`, () => {
+      (call() as { subscribe: () => void }).subscribe();
+      const req = httpMock.expectOne(`${base}/${path}`);
+      expect(req.request.method).toBe('POST');
+      req.flush({});
+    });
+  });
+
+  it('registrarPago posts only tipo_pago and registro_contable (the server fixes the amount)', () => {
+    service.registrarPago(7, { tipo_pago: 'trans', registro_contable: '1234/26' }).subscribe();
+    const req = httpMock.expectOne(`${base}/notas-venta/7/pago/`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ tipo_pago: 'trans', registro_contable: '1234/26' });
+    req.flush({});
+  });
+
+  it('lists and gets notas de venta with optional filters', () => {
+    service.listNotasVenta({ search: 'ana', status: 'por_cobrar' }).subscribe();
+    const list = httpMock.expectOne((r) => r.url === `${base}/notas-venta`);
+    expect(list.request.params.get('search')).toBe('ana');
+    expect(list.request.params.get('status')).toBe('por_cobrar');
+    list.flush([]);
+
+    service.listNotasVenta().subscribe();
+    httpMock.expectOne(`${base}/notas-venta`).flush([]);
+
+    service.getNotaVenta(7).subscribe();
+    httpMock.expectOne(`${base}/notas-venta/7/`).flush({});
+  });
+});
+
 describe('previewSubtotal', () => {
   it('matches the server formula for venta con instalacion', () => {
     // 1.75 * 3 * 120 + 50 * 3

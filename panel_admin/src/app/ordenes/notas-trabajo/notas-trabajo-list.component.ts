@@ -5,6 +5,7 @@ import { DatatableComponent, NgxDatatableModule } from '@swimlane/ngx-datatable'
 import { AuthService } from '../../core/service/auth.service';
 import { AppNotaTrabajo } from '../ordenes.model';
 import { OrdenesService } from '../ordenes.service';
+import { statusClass } from '../ordenes.status';
 
 /** Listado de Notas de Trabajo (Ordenes > Nota de Trabajo). Solo consulta y
  * edicion operativa: las notas nacen de la proforma, no se crean aqui. */
@@ -25,6 +26,10 @@ export class NotasTrabajoListComponent implements OnInit {
   loadingIndicator = true;
   errorMessage = '';
   withoutSucursal = false;
+
+  badge(status: string): string {
+    return 'status-badge ' + statusClass(status);
+  }
 
   get canEdit(): boolean {
     return this.authService.hasPermission('change_nota_trabajo');

@@ -297,7 +297,7 @@ class ProformaUpdateTest(TestCase):
         self.assertEqual(self._patch({'sucursal': self.s['sucursal'].id}).status_code, 200)
 
     def test_closed_proforma_cannot_be_edited(self):
-        Proforma_Header.objects.filter(pk=self.proforma_id).update(is_close=True)
+        Proforma_Header.objects.filter(pk=self.proforma_id).update(status='en_trabajo', is_close=True)
         self.assertEqual(self._patch({'name': 'X'}).status_code, 409)
 
     def test_discount_is_validated_against_stored_total_on_header_patch(self):
@@ -327,7 +327,7 @@ class ProformaGenerateNotaTest(TestCase):
         self.assertEqual(response.status_code, 200, response.content)
         data = response.json()
         self.assertTrue(data['is_close'])
-        self.assertEqual(data['status'], 'nota_trabajo')
+        self.assertEqual(data['status'], 'en_trabajo')
         self.assertIsNotNone(data['nota_trabajo_id'])
         nota = Nota_trabajo.objects.get(pk=data['nota_trabajo_id'])
         self.assertEqual(nota.responsable, self.s['user'])

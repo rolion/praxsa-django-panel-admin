@@ -31,7 +31,7 @@ class NotaVentaAdmin(admin.ModelAdmin):
     search_fields = ['id','nota_trabajo__id','created_on', 'name',]
     form = NotaVentaForm
     list_per_page = 10
-    actions =['gestion_pago', 'print_nota_venta']
+    actions =['gestion_pago', 'anular_nota_venta', 'print_nota_venta']
     proforma_business = Proforma_Business()
     user_business = User_Business()
     user_helper = User_Helper()
@@ -78,12 +78,9 @@ class NotaVentaAdmin(admin.ModelAdmin):
     get_total_pagar.admin_order_field = 'total_price'
     
     def get_estado(self, obj):
-        estado = 'No Pagado'
-        if(hasattr(obj, 'pago') and obj.pago.cerrado):
-             estado = 'Pagado'
-        return estado
+        return obj.get_status_display()
     get_estado.short_description = 'Estado'
-    get_estado.admin_order_field = 'estado'
+    get_estado.admin_order_field = 'status'
     
     @admin.display(empty_value="-", description='Nota Trabajo' )
     def view_nota_trabajo(self, obj):
@@ -126,6 +123,13 @@ class NotaVentaAdmin(admin.ModelAdmin):
             qs = list(queryset)
             if len(qs) > 0:
                 return HttpResponseRedirect(f'/admin/product/pago/add/?nota_venta={qs[0].id}')
+        except Exception as e:
+            self.message_user(request=request,  message=str(e), level= messages.ERROR)
+
+    @admin.action(description="Anular Nota Venta")
+    def anular_nota_venta(self, request: HttpRequest, queryset: QuerySet):
+        try:
+            [self.proforma_business.estado_business.anular_nota_venta(nota_venta=qs) for qs in list(queryset)]
         except Exception as e:
             self.message_user(request=request,  message=str(e), level= messages.ERROR)
 

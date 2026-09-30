@@ -1,6 +1,6 @@
 # ADR-006: Campo `status` persistido en `Proforma_Header`, escrito explícitamente en cada transición existente
 
-**Estado:** Propuesto
+**Estado:** Propuesto (decisiones 2 y 3 reemplazadas parcialmente por [ADR-estados-proforma-nota-trabajo-nota-venta-maquina-de-estados](ADR-estados-proforma-nota-trabajo-nota-venta-maquina-de-estados.md))
 **Task relacionado:** TASK-009
 **Fecha:** 2026-09-23
 

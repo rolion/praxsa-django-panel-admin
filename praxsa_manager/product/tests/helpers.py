@@ -242,7 +242,7 @@ def create_full_pago_chain(user, sucursal=None, inventario=None):
     """Arma proforma -> nota_trabajo -> nota_venta -> pago completos para una sucursal,
     listos para probar el filtrado por sucursal en Pagos/Reportes del admin."""
     header, _ = create_full_proforma(user=user, sucursal=sucursal, inventario=inventario)
-    nota_trabajo = create_nota_trabajo(proforma=header)
+    nota_trabajo = create_nota_trabajo(proforma=header, status='terminado')
     nota_venta = create_nota_venta(nota_trabajo=nota_trabajo, created_by=user, total_price=header.total_price)
     paiment = create_pago(nota_venta=nota_venta, created_by=user)
     return {

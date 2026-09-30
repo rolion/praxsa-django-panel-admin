@@ -1,0 +1,144 @@
+<section class="main-content orden-view">
+  <ul class="breadcrumb breadcrumb-style">
+    <li class="breadcrumb-item">
+      <h5 class="page-title m-b-0">Ver nota de venta</h5>
+    </li>
+    <li class="breadcrumb-item bcrumb-1"><a routerLink="/ordenes/notas-venta"><i class="fas fa-cash-register font-17"></i></a></li>
+    <li class="breadcrumb-item">Órdenes</li>
+    <li class="breadcrumb-item">Nota de Venta</li>
+  </ul>
+  <div class="section-body">
+    @if (loading) {
+      <p>Cargando...</p>
+    } @else if (errorMessage) {
+      <div class="alert alert-danger">{{ errorMessage }}</div>
+    } @else if (nota) {
+      @if (savedMessage) {
+        <div class="alert alert-success py-2">{{ savedMessage }}</div>
+      }
+
+      <!-- DATOS DE LA NOTA DE VENTA -->
+      <div class="card section-card">
+        <div class="section-header"><i class="fas fa-file-invoice-dollar"></i><h6>Datos de la nota de venta</h6></div>
+        <div class="card-body">
+          <div class="row info-grid">
+            <div class="col-6 col-md-3 info-item">
+              <span class="info-label">Nota de venta Nº</span>
+              <span class="info-value">{{ nota.id }}</span>
+            </div>
+            <div class="col-6 col-md-3 info-item">
+              <span class="info-label">Proforma Nº</span>
+              <span class="info-value">
+                @if (nota.proforma_id) {
+                  <a [routerLink]="['/ordenes/proformas/view', nota.proforma_id]">{{ nota.proforma_id }}</a>
+                } @else { <span class="empty-value">—</span> }
+              </span>
+            </div>
+            <div class="col-6 col-md-3 info-item">
+              <span class="info-label">Nota de trabajo Nº</span>
+              <span class="info-value"><a [routerLink]="['/ordenes/notas-trabajo/view', nota.nota_trabajo_id]">{{ nota.nota_trabajo_id }}</a></span>
+            </div>
+            <div class="col-6 col-md-3 info-item">
+              <span class="info-label">Fecha</span>
+              <span class="info-value">
+                @if (nota.created_on) { {{ nota.created_on | date: 'dd/MM/yyyy - HH:mm' }} h } @else { <span class="empty-value">—</span> }
+              </span>
+            </div>
+            <div class="col-6 col-md-3 info-item">
+              <span class="info-label">Cliente</span>
+              <span class="info-value">{{ nota.name }}</span>
+            </div>
+            <div class="col-6 col-md-3 info-item">
+              <span class="info-label">CI/NIT</span>
+              <span class="info-value">
+                @if (nota.ci_nit) { {{ nota.ci_nit }} } @else { <span class="empty-value">—</span> }
+              </span>
+            </div>
+            <div class="col-6 col-md-3 info-item">
+              <span class="info-label">Sucursal</span>
+              <span class="info-value">
+                @if (nota.sucursal_name) { {{ nota.sucursal_name }} } @else { <span class="empty-value">—</span> }
+              </span>
+            </div>
+            <div class="col-6 col-md-3 info-item">
+              <span class="info-label">Placa</span>
+              <span class="info-value">
+                @if (nota.car_plate) { {{ nota.car_plate }} } @else { <span class="empty-value">—</span> }
+              </span>
+            </div>
+            <div class="col-6 col-md-3 info-item">
+              <span class="info-label">Total a cobrar</span>
+              <span class="info-value">{{ nota.total_price }} Bs</span>
+            </div>
+            <div class="col-6 col-md-3 info-item">
+              <span class="info-label">Estado del trabajo</span>
+              <span class="info-value"><span [class]="badge(nota.work_status)">{{ nota.work_status_label }}</span></span>
+            </div>
+            <div class="col-6 col-md-3 info-item">
+              <span class="info-label">Estado del cobro</span>
+              <span class="info-value"><span [class]="badge(nota.status)">{{ nota.status_label }}</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGO -->
+      <div class="card section-card">
+        <div class="section-header"><i class="fas fa-money-bill-wave"></i><h6>Pago</h6></div>
+        <div class="card-body">
+          @if (nota.pago) {
+            <div class="row info-grid">
+              <div class="col-6 col-md-3 info-item">
+                <span class="info-label">Monto</span>
+                <span class="info-value">{{ nota.pago.monto }} Bs</span>
+              </div>
+              <div class="col-6 col-md-3 info-item">
+                <span class="info-label">Tipo de pago</span>
+                <span class="info-value">{{ nota.pago.tipo_pago_label }}</span>
+              </div>
+              <div class="col-6 col-md-3 info-item">
+                <span class="info-label">Registro contable</span>
+                <span class="info-value">
+                  @if (nota.pago.registro_contable) { {{ nota.pago.registro_contable }} } @else { <span class="empty-value">Sin registro</span> }
+                </span>
+              </div>
+              <div class="col-6 col-md-3 info-item">
+                <span class="info-label">Fecha del pago</span>
+                <span class="info-value">{{ nota.pago.created_on | date: 'dd/MM/yyyy - HH:mm' }} h</span>
+              </div>
+              <div class="col-6 col-md-3 info-item">
+                <span class="info-label">Cuenta cerrada</span>
+                <span class="info-value">{{ nota.pago.cerrado ? 'Sí' : 'No' }}</span>
+              </div>
+            </div>
+          } @else {
+            <p class="empty-value mb-0">Aún no se registró el pago.</p>
+          }
+        </div>
+      </div>
+
+      <!-- ACCIONES -->
+      <div class="form-actions">
+        <a routerLink="/ordenes/notas-venta" class="btn btn-link text-muted me-auto"><i class="fas fa-arrow-left"></i> Volver al listado</a>
+        <a [routerLink]="['/ordenes/notas-trabajo/view', nota.nota_trabajo_id]" class="btn btn-outline-secondary">
+          <i class="fas fa-clipboard-list"></i> Ver nota de trabajo
+        </a>
+        @if (canAnular) {
+          <button type="button" class="btn btn-outline-danger" (click)="anular()" [disabled]="!!anularBlockReason" [attr.title]="anularBlockReason || null">
+            <i class="fas fa-ban"></i> Anular nota de venta
+          </button>
+        }
+        @if (canAnularPago) {
+          <button type="button" class="btn btn-outline-danger" (click)="anularPago()">
+            <i class="fas fa-undo"></i> Anular pago
+          </button>
+        }
+        @if (canPay) {
+          <button type="button" class="btn btn-success" (click)="pay()" [disabled]="!!payBlockReason" [attr.title]="payBlockReason || null">
+            <i class="fas fa-money-bill-wave"></i> Registrar pago
+          </button>
+        }
+      </div>
+    }
+  </div>
+</section>
