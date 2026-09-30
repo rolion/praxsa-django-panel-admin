@@ -1,6 +1,6 @@
 # REV-2026-09-30-modulo-ordenes-proforma-nota-trabajo-02: el catálogo de bobinas devuelve números (float), no strings; en edición se pierden las bobinas guardadas
 
-**Status:** Open
+**Status:** Closed (verificado en la corrida 2)
 **Severity:** High
 **Category:** IMPLEMENTATION
 **Related plan:** docs/plans/PLAN-2026-09-29-modulo-ordenes-proforma-nota-trabajo.md (v2)
@@ -38,3 +38,9 @@ Tests que enmascaran el problema: `product/tests/test_ordenes_scope_permissions.
 ## Notas para quien corrija
 - Serializar el catálogo con strings cuantizados a 2 decimales (mismo formato que las líneas), y hacer que el test lo verifique con comparación de strings, no con `Decimal(...)`.
 - Considerar que el frontend compare/arme la clave de bobina con el ancho normalizado (`Number(width).toFixed(2)`) para no depender del formato del servidor, y agregar un spec de edición cuyo catálogo y líneas usen los formatos reales de la API.
+
+## Verificación (corrida 2 de review, 2026-09-30)
+**Resuelto.** `GET ordenes/catalogo/bobinas` serializa con `ReelCatalogSerializer` y el formulario normaliza el ancho de la clave de bobina. Evidencia:
+- Smoke HTTP contra servidor real (51 comprobaciones, 51 PASS), incluida `catalogo bobinas A: strings 50.00 / 1.50 / 120.00`.
+- UI real (compilación de producción + backend real): editar la proforma 3 (metro lineal) conserva la bobina `Carbon 20% - 1.50 m`, sin aviso de bobinas no disponibles, con subtotal `420.00`; al cambiar los metros a 5 la vista previa da `600.00` y el PATCH (200) deja la vista con `600.00`.
+- Tests: `test_bobinas_catalog_has_meters_and_resolved_price` compara strings exactos y `test_bobinas_catalog_width_matches_the_saved_line_width_format` fija que catalogo y linea guardada coinciden; specs `keeps the saved reels when the catalog width arrives as a number` y `sends the width of the reel with 2 decimals`.

@@ -1,6 +1,6 @@
 # TASK-modulo-ordenes-proforma-nota-trabajo: Módulo Órdenes (Proformas y Notas de Trabajo) en el panel admin
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** task/TASK-modulo-ordenes-proforma-nota-trabajo
@@ -24,6 +24,7 @@
 | 2026-09-30 | REVIEW → REVIEW | Documentación al día con los ajustes de interfaz: plan **v2** con changelog (F5, F6, F7 y archivos afectados), `## Implementación` del TASK y sección Changes del PR. Sin cambios de código | usuario |
 | 2026-09-30 | REVIEW → ENGINEERING | Quality Gate: **FAIL**. REV-01 (High, IMPLEMENTATION): `ng build` de producción falla por presupuesto de estilos de componente. REV-02 (High, IMPLEMENTATION): catálogo de bobinas devuelve floats y en edición se pierden las bobinas guardadas. Backend 258 tests OK, frontend sin fallos nuevos (15 preexistentes idénticos en master), verificación en vivo del API sin fallos funcionales | delivery-review |
 | 2026-09-30 | ENGINEERING → REVIEW | Corregidos REV-01 (estilos globales en `assets/scss/_ordenes.scss`, `ng build` de producción ok) y REV-02 (catálogo de bobinas con strings y clave de bobina normalizada). Backend 259 y frontend 167 specs en verde | delivery-engineer |
+| 2026-09-30 | REVIEW → PUBLISH | Quality Gate: **PASS** (corrida 2). REV-01 y REV-02 verificados y cerrados: `ng build` de producción ok; catálogo con strings y edición que conserva las bobinas, comprobado en el navegador contra el backend real. Backend 259 y frontend 167 en verde (15 fallos preexistentes idénticos en master), 51/51 comprobaciones en vivo del API | delivery-review |
 
 ## Investigación
 
@@ -235,6 +236,23 @@ Revisión ejecutada en la **misma sesión** que implementó el código (aislamie
 - Observación preexistente (fuera de alcance): `NotaTrabajoAdmin.get_queryset` hace `qs.filter(sucursal=-1)` para usuarios sin sucursal y falla con `FieldError` (`admin_config/nota_trabajo.py`); no lo toca este PR.
 
 Siguiente etapa: `ENGINEERING` (`/delivery-engineer TASK-modulo-ordenes-proforma-nota-trabajo`), luego nueva revisión.
+
+
+### Corrida 2 (2026-09-30) — Quality Gate: **PASS**
+
+Igual que la corrida 1, se hizo en la **misma sesión** que implementó las correcciones (aislamiento procedimental, no real).
+
+- REV-01 y REV-02: **cerrados** y verificados (ver cada archivo, sección "Verificación").
+- Backend `manage.py test`: 259 OK; `makemigrations --check`: sin cambios.
+- Frontend `ng test --code-coverage`: 167 OK, 15 fallos **idénticos en `master` sin cambios** (comparados por nombre con la línea base de la corrida 1); cobertura de los archivos nuevos 80–100 %.
+- `ng lint` limpio; `ng build` de **producción** completo (0 errores, 0 avisos de presupuesto); `npm audit`: 3 vulnerabilidades en `xlsx`, preexistentes (sin dependencias nuevas).
+- **Verificación en vivo del API** (HTTP real + Postgres descartable): 51/51 comprobaciones PASS, 0 errores 500.
+- **Verificación en navegador contra el backend real** (compilación de producción; login con un usuario de prueba de la base descartable; el navegador se redirigió al backend de la revisión y se bloqueó cualquier llamada al puerto 8000): menú Órdenes; listado acotado a la sucursal; **editar una proforma conserva la bobina** y recalcula la vista previa; alta de una proforma de instalación (precarga de largo y cantidad desde el item, panel de medidas de referencia, descuento); confirmación y **generar nota de trabajo** (badge pasa a "Nota de trabajo generada", desaparecen Editar y Generar); descarga del PDF (`proforma-6.pdf`); **edición in-situ de la nota** (4 campos, "Cambios guardados.", fechas legibles).
+- **No ejecutado** (declarado): `flake8`/`ruff`/`bandit`/`safety`/`mypy`/`coverage.py` no están instalados en el proyecto (revisión manual: cada función nueva de `business/`, `custom_views/`, `serializer/` tiene tests); E2E automatizado con Playwright no aplica (el plan lo descartó con justificación).
+- **Pendiente operativo, no de código**: asignar `add/change_proforma_header` y `add/change_nota_trabajo` a los grupos reales (paso V3); sin eso solo los superusuarios pueden operar.
+- **Observación preexistente, fuera de alcance**: `NotaTrabajoAdmin.get_queryset` (`admin_config/nota_trabajo.py`) falla con `FieldError` para usuarios sin sucursal.
+
+Issues abiertos: ninguno. Siguiente etapa: `PUBLISH` (`/delivery-publish TASK-modulo-ordenes-proforma-nota-trabajo`).
 
 ## Publicación
 _Pendiente_

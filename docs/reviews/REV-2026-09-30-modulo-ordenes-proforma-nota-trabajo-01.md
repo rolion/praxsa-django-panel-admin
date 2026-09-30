@@ -1,6 +1,6 @@
 # REV-2026-09-30-modulo-ordenes-proforma-nota-trabajo-01: `ng build` de producción falla por el presupuesto de estilos de componente
 
-**Status:** Open
+**Status:** Closed (verificado en la corrida 2)
 **Severity:** High
 **Category:** IMPLEMENTATION
 **Related plan:** docs/plans/PLAN-2026-09-29-modulo-ordenes-proforma-nota-trabajo.md (v2)
@@ -35,3 +35,12 @@ Contexto de código nuevo relacionado (deuda menor, mismo origen): `proforma-vie
 ## Notas para quien corrija
 - Reducir/reorganizar el estilo (p. ej. mover lo común a un único archivo compartido y usarlo desde el formulario y las dos vistas) o, si el equipo lo decide, subir el presupuesto de forma explícita y justificada; no dejar el error abierto.
 - Tras el arreglo, volver a correr `npx ng build` (producción), no solo `--configuration development`.
+
+## Verificación (corrida 2 de review, 2026-09-30)
+**Resuelto.** Los estilos de Órdenes pasaron a `panel_admin/src/assets/scss/_ordenes.scss` (global, acotado por `.proforma-form` / `.orden-view`) y se eliminaron los tres estilos de componente. Salida real:
+```
+$ cd panel_admin && npx ng build
+Application bundle generation complete. [8.057 seconds]
+▲ [WARNING] 23 rules skipped due to selector errors:   (keyframes de la plantilla, ajeno a este PR)
+errores: 0   avisos de presupuesto: 0
+```
