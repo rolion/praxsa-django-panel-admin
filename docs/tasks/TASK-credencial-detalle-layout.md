@@ -1,6 +1,6 @@
 # TASK-credencial-detalle-layout: Rediseño de la vista de detalle de credencial (grupos y sucursales como chips)
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** SI
 **Rama:** `claude/credential-detail-layout-248c24` (asignada por el entorno)
@@ -13,6 +13,7 @@
 | 2026-09-30 | INVESTIGATION → PLANNING | Diseño decidido: Bootstrap 5 en lugar de Tailwind, card de 2 columnas, chips diferenciados con límite de 3 y toggle `+N más`; veredicto NEEDS_PLAN, no requiere arquitectura | delivery-design |
 | 2026-09-30 | PLANNING → ENGINEERING | Plan v1 escrito (3 archivos frontend, spec nuevo, sin E2E ni dependencias); PR abierto sobre la rama asignada por el entorno | delivery-plan |
 | 2026-09-30 | ENGINEERING → REVIEW | Implementación completa según plan v1 (componente, plantilla y spec nuevo) | delivery-engineer |
+| 2026-09-30 | REVIEW → PUBLISH | Quality Gate PASS: 271 tests OK y 15 fallas idénticas a la línea base de master, lint y build limpios, verificación manual (desktop, móvil, tema oscuro) sin issues; 0 issues abiertos | delivery-review |
 
 ## Investigación
 
@@ -96,7 +97,11 @@ Pendiente para review: la verificación visual manual (móvil, tema oscuro, cont
 
 
 ## Review
-_Pendiente_
+**PASS** — 0 issues (sin `REV-*`). Detalle de comandos y evidencia en las secciones `## Testing` y `## Review` del PR #57. Corrida en la misma sesión que la implementación (aislamiento procedimental).
+- Tests: 271 OK / 15 fallas idénticas a `origin/master` (263 OK / 15 fallas); +8 tests nuevos.
+- `ng lint` y `ng build` limpios; `npm audit` con 3 vulnerabilidades preexistentes, sin cambios de dependencias.
+- Manual: desktop, móvil 375px, tema oscuro, toggle `+N más` y estados vacíos verificados.
+- Observaciones no bloqueantes: chips `*-subtle` sin adaptar al tema oscuro (cosmético); sin test del error de carga ni de `toggleSucursales()`.
 
 ## Publicación
 _Pendiente_
