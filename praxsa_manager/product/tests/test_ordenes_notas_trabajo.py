@@ -46,6 +46,32 @@ class NotaTrabajoTest(TestCase):
         self.assertEqual(len(detail['proforma_items']), 1)
         self.assertEqual(detail['responsable_name'], self.s['user'].username)
 
+    def test_list_exposes_car_brand_name(self):
+        self.assertIsNotNone(self.nota.car_model_id)
+        row = self.client.get(URL, **self.headers).json()[0]
+        self.assertEqual(row['car_brand_name'], self.nota.car_model.car_brand_id.name)
+        self.assertEqual(row['car_model_name'], self.nota.car_model.name)
+
+    def test_list_car_brand_name_is_null_without_model(self):
+        Nota_trabajo.objects.filter(pk=self.nota.pk).update(car_model=None)
+        row = self.client.get(URL, **self.headers).json()[0]
+        self.assertIsNone(row['car_brand_name'])
+        self.assertIsNone(row['car_model_name'])
+
+    def test_list_car_brand_name_does_not_add_queries_per_row(self):
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        with CaptureQueriesContext(connection) as before:
+            self.client.get(URL, **self.headers)
+        for _ in range(3):
+            header, _detail = helpers.create_full_proforma(self.s['user'], sucursal=self.s['sucursal'])
+            helpers.create_nota_trabajo(header, car_model=header.car_model_id)
+        with CaptureQueriesContext(connection) as after:
+            rows = self.client.get(URL, **self.headers).json()
+        self.assertEqual(len(rows), 4)
+        self.assertEqual(len(after), len(before))
+
     def test_list_search(self):
         self.assertEqual(len(self.client.get(URL, {'search': 'ABC123'}, **self.headers).json()), 1)
         self.assertEqual(len(self.client.get(URL, {'search': str(self.nota.proforma_id)}, **self.headers).json()), 1)

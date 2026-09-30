@@ -13,6 +13,7 @@ import { PagoModalComponent } from './pago-modal.component';
 import { anularBlockReason, payBlockReason } from './nota-venta-rules';
 
 const base = `${environment.apiUrl}/product/ordenes`;
+const ev = (value: string) => ({ target: { value } }) as unknown as Event;
 const tick = () => new Promise<void>((resolve) => setTimeout(resolve));
 
 const venta = (overrides: Partial<AppNotaVentaDetail> = {}): AppNotaVentaDetail => ({
@@ -65,9 +66,11 @@ describe('NotasVentaListComponent', () => {
     if (permissions.length) {
       login(httpMock, permissions);
     }
-    component = TestBed.createComponent(NotasVentaListComponent).componentInstance;
+    const fixture = TestBed.createComponent(NotasVentaListComponent);
+    component = fixture.componentInstance;
     component.ngOnInit();
     httpMock.expectOne(`${base}/notas-venta`).flush(rows);
+    return fixture;
   }
 
   it('loads the rows and filters client side by number, proforma, client and CI/NIT', () => {
@@ -142,6 +145,74 @@ describe('NotasVentaListComponent', () => {
 
     await component.anular(venta({ work_status: 'terminado' }));
     httpMock.expectNone(`${base}/notas-venta/7/anular/`);
+  });
+
+  describe('filtros', () => {
+    const rows = () => [
+      venta({ id: 1, sucursal_id: 1, sucursal_name: 'Central', created_on: '2026-09-01T09:00:00', work_status: 'en_proceso', status: 'por_cobrar' }),
+      venta({ id: 2, sucursal_id: 2, sucursal_name: 'Norte', created_on: '2026-09-15T09:00:00', work_status: 'terminado', status: 'pagada' }),
+      venta({ id: 3, sucursal_id: 2, sucursal_name: 'Norte', created_on: null, work_status: 'terminado', status: 'anulada' }),
+    ];
+    const ids = () => component.rows.map((r) => r.id);
+
+    it('offers the sucursales present in the loaded rows', () => {
+      create(rows());
+      expect(component.sucursalOptions.map((o) => o.label)).toEqual(['Central', 'Norte']);
+    });
+
+    it('filters by sucursal, trabajo and cobro', () => {
+      create(rows());
+      component.setFiltro('sucursal', ev('2'));
+      expect(ids()).toEqual([2, 3]);
+      component.limpiarFiltros();
+      component.setFiltro('trabajo', ev('en_proceso'));
+      expect(ids()).toEqual([1]);
+      component.limpiarFiltros();
+      component.setFiltro('cobro', ev('pagada'));
+      expect(ids()).toEqual([2]);
+    });
+
+    it('filters by date range and excludes null dates while a range is active', () => {
+      create(rows());
+      expect(ids()).toEqual([1, 2, 3]);
+      component.setFiltro('desde', ev('2026-09-10'));
+      expect(ids()).toEqual([2]);
+      component.setFiltro('hasta', ev('2026-09-15'));
+      expect(ids()).toEqual([2]);
+      component.limpiarFiltros();
+      expect(ids()).toEqual([1, 2, 3]);
+    });
+
+    it('reports desde > hasta and does not filter by date', () => {
+      create(rows());
+      component.setFiltro('desde', ev('2026-10-01'));
+      component.setFiltro('hasta', ev('2026-09-01'));
+      expect(component.rangoError).toContain('inicial');
+      expect(ids()).toEqual([1, 2, 3]);
+    });
+
+    it('combines filters with the search (AND)', () => {
+      create(rows());
+      component.filterDatatable(ev('norte'));
+      expect(ids()).toEqual([2, 3]);
+      component.setFiltro('cobro', ev('anulada'));
+      expect(ids()).toEqual([3]);
+    });
+
+    it('distinguishes "no results with the filters" from "no data" and renders the card', () => {
+      const fixture = TestBed.createComponent(NotasVentaListComponent);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+      httpMock.expectOne(`${base}/notas-venta`).flush(rows());
+      component.setFiltro('cobro', ev('pagada'));
+      component.setFiltro('trabajo', ev('en_proceso'));
+      fixture.detectChanges();
+      const text: string = fixture.nativeElement.textContent;
+      expect(text).toContain('No hay resultados con los filtros aplicados.');
+      for (const label of ['Filtros', 'Sucursal', 'Desde', 'Hasta', 'Trabajo', 'Cobro', 'Limpiar']) {
+        expect(text).toContain(label);
+      }
+    });
   });
 });
 

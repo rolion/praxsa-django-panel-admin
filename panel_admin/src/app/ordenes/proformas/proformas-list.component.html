@@ -10,6 +10,64 @@
     <li class="breadcrumb-item">Proforma</li>
   </ul>
   <div class="section-body">
+    <div class="card section-card">
+      <div class="section-header"><i class="fas fa-filter"></i><h6>Filtros</h6></div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-6 col-md-2 mb-2">
+            <label class="info-label" for="pf-sucursal">Sucursal</label>
+            @if (sucursalOptions.length === 1) {
+              <div id="pf-sucursal" class="form-control-plaintext fw-bold">{{ sucursalOptions[0].label }}</div>
+            } @else {
+              <select id="pf-sucursal" class="form-select form-control" [value]="filtros.sucursal" (change)="setFiltro('sucursal', $event)">
+                <option value="">Todas</option>
+                @for (option of sucursalOptions; track option.value) {
+                  <option [value]="option.value">{{ option.label }}</option>
+                }
+              </select>
+            }
+          </div>
+          <div class="col-6 col-md-2 mb-2">
+            <label class="info-label" for="pf-marca">Marca</label>
+            <select id="pf-marca" class="form-select form-control" [value]="filtros.marca" (change)="setFiltro('marca', $event)">
+              <option value="">Todas</option>
+              @for (marca of marcaOptions; track marca) {
+                <option [value]="marca">{{ marca }}</option>
+              }
+            </select>
+          </div>
+          <div class="col-6 col-md-2 mb-2">
+            <label class="info-label" for="pf-modelo">Modelo</label>
+            <select id="pf-modelo" class="form-select form-control" [value]="filtros.modelo" (change)="setFiltro('modelo', $event)">
+              <option value="">Todos</option>
+              @for (modelo of modeloOptions; track modelo) {
+                <option [value]="modelo">{{ modelo }}</option>
+              }
+            </select>
+          </div>
+          <div class="col-6 col-md-2 mb-2">
+            <label class="info-label" for="pf-desde">Desde</label>
+            <input id="pf-desde" type="date" class="form-control" [value]="filtros.desde" (change)="setFiltro('desde', $event)" />
+          </div>
+          <div class="col-6 col-md-2 mb-2">
+            <label class="info-label" for="pf-hasta">Hasta</label>
+            <input id="pf-hasta" type="date" class="form-control" [value]="filtros.hasta" (change)="setFiltro('hasta', $event)" />
+          </div>
+          <div class="col-6 col-md-2 mb-2">
+            <label class="info-label" for="pf-estado">Estado</label>
+            <select id="pf-estado" class="form-select form-control" aria-label="Filtrar por estado" [value]="statusFilter" (change)="onStatusChange($event)">
+              @for (option of statusOptions; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        @if (rangoError) {
+          <div class="text-danger mb-2">{{ rangoError }}</div>
+        }
+        <button type="button" class="btn btn-outline-secondary" [disabled]="!hasActiveFilters" (click)="limpiarFiltros()">Limpiar</button>
+      </div>
+    </div>
     <div class="row clearfix">
       <div class="col-12">
         <div class="card">
@@ -33,13 +91,6 @@
                             (keyup)="filterDatatable($event)" aria-label="Search box" />
                         </div>
                       </div>
-                      <div class="ms-2">
-                        <select class="browser-default status-filter" aria-label="Filtrar por estado" [value]="statusFilter" (change)="onStatusChange($event)">
-                          @for (option of statusOptions; track option.value) {
-                            <option [value]="option.value">{{ option.label }}</option>
-                          }
-                        </select>
-                      </div>
                       @if (canCreate) {
                         <div class="header-buttons-left">
                           <div class="tbl-btn-style">
@@ -59,8 +110,10 @@
             }
             @if (withoutSucursal) {
               <div class="alert alert-warning m-3">Asigne una sucursal al usuario para ver y crear proformas.</div>
-            } @else if (!loadingIndicator && rows.length === 0 && !errorMessage) {
+            } @else if (!loadingIndicator && data.length === 0 && !errorMessage) {
               <div class="alert alert-info m-3">No hay proformas para mostrar.</div>
+            } @else if (!loadingIndicator && rows.length === 0 && !errorMessage) {
+              <div class="alert alert-info m-3">No hay resultados con los filtros aplicados.</div>
             }
             <ngx-datatable
               class="material"

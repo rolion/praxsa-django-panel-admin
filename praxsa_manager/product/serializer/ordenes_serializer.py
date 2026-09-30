@@ -289,6 +289,7 @@ class NotaTrabajoListSerializer(serializers.ModelSerializer):
     sucursal_id = serializers.SerializerMethodField()
     sucursal_name = serializers.SerializerMethodField()
     car_model_name = serializers.SerializerMethodField()
+    car_brand_name = serializers.SerializerMethodField()
     instalador_name = serializers.SerializerMethodField()
     status_label = serializers.CharField(source='get_status_display', read_only=True)
     nota_venta = serializers.SerializerMethodField()
@@ -296,7 +297,7 @@ class NotaTrabajoListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Nota_trabajo
         fields = [
-            'id', 'proforma_id', 'name', 'car_model_name', 'car_plate', 'instaladar',
+            'id', 'proforma_id', 'name', 'car_model_name', 'car_brand_name', 'car_plate', 'instaladar',
             'instalador_name', 'codigo_garantia', 'entrada_vehiculo', 'salida_vehiculo',
             'sucursal_id', 'sucursal_name', 'is_close', 'status', 'status_label', 'nota_venta',
         ]
@@ -310,6 +311,9 @@ class NotaTrabajoListSerializer(serializers.ModelSerializer):
 
     def get_car_model_name(self, obj):
         return obj.car_model.name if obj.car_model_id else None
+
+    def get_car_brand_name(self, obj):
+        return obj.car_model.car_brand_id.name if obj.car_model_id else None
 
     def get_instalador_name(self, obj):
         return obj.instaladar.name if obj.instaladar_id else None

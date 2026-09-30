@@ -38,16 +38,18 @@ class Orden_Trabajo_Business:
         sucursal, ninguna. Ver ADR-modulo-ordenes-proforma-nota-trabajo-alcance-permisos."""
         qs = qs.filter(proforma__is_delete=False).select_related(
             'proforma', 'proforma__sucursal', 'proforma__car_model_id',
-            'instaladar', 'car_model', 'responsable', 'nota_venta',
+            'instaladar', 'car_model', 'car_model__car_brand_id', 'responsable', 'nota_venta',
         )
         if self.user_helper.can_view_all_sucursales(user):
             return qs
         return qs.filter(proforma__sucursal_id__in=self.user_helper.get_enabled_sucursal_ids(user))
 
-    def get_finish_nota_queryset(self, user, qs):
+    def get_finish_nota_queryset(self, user, qs, solo_terminadas=True):
         try:
             qs_result = qs.select_related('proforma','proforma__sucursal','instaladar', 'proforma__car_model_id','proforma__car_model_id__car_brand_id')
-            qs_result = qs_result.filter(proforma__is_delete = False, status=estados.NT_TERMINADO)
+            qs_result = qs_result.filter(proforma__is_delete = False)
+            if solo_terminadas:
+                qs_result = qs_result.filter(status=estados.NT_TERMINADO)
             if self.user_helper.can_view_all_sucursales(user):
                 return qs_result
             sucursales = Sucursal.objects.prefetch_related('empleado')
