@@ -4,7 +4,7 @@
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** task/TASK-reportes-utilidad-ventas-diarias
-**Pull Request:** _sin abrir todavía_
+**Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/54
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
