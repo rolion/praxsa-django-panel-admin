@@ -18,6 +18,7 @@
 | 2026-09-30 | PLANNING → ENGINEERING | Plan aprobado por el usuario al invocar la implementación | delivery-engineer |
 | 2026-09-30 | ENGINEERING → REVIEW | Implementación completa (backend + panel_admin); pendiente verificación formal y prueba manual con datos reales | delivery-engineer |
 | 2026-09-30 | REVIEW → PUBLISH | Quality Gate PASS: 0 issues, suites y verificaciones ejecutadas (evidencia en el PR #54) | delivery-review |
+| 2026-09-30 | PUBLISH (sin cambio de etapa) | Descripción del PR completada; cambio sensible (permisos + ADR): a la espera de aprobación humana explícita para el merge | delivery-publish |
 
 ## Investigación
 
@@ -156,4 +157,7 @@ Implementado según el plan v1 (commit `4a658d8` sobre el PR #54). Backend `prax
 - Pendiente humano antes de publicar: revisión visual de las pantallas con usuarios reales y ejecutar `asignar_permisos_reportes --dry-run` y luego el real en cada ambiente.
 
 ## Publicación
-_Pendiente_
+- PR: https://github.com/rolion/praxsa-django-panel-admin/pull/54
+- Estado: **Listo para aprobación humana** (no mergeado). Sensible: autorización/permisos y 2 ADR.
+- Verificado: rama sin cambios locales; único commit posterior al review es este registro del TASK (solo docs); sin secretos ni temporales en el diff; PR `MERGEABLE`.
+- Antes/tras el merge: ejecutar `asignar_permisos_reportes --dry-run` y luego el real en cada ambiente.
