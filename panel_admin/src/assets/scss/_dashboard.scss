@@ -351,6 +351,11 @@
     }
   }
 
+  // Texto secundario de la plantilla (#98a6ad, 2.5:1): gris con contraste AA en tema claro (REV-...-03).
+  .text-muted {
+    color: #5f6b7d !important;
+  }
+
   // Boton principal del panel de proformas: texto blanco con contraste AA (REV-...-02).
   .dash-convert {
     border-color: #1e7e34;

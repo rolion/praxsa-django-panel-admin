@@ -1,6 +1,6 @@
 # TASK-dashboard-taller-laminas: Dashboard del panel para el taller de láminas (KPIs, gráficas, stock crítico, cola de instalaciones, últimas proformas)
 
-**Etapa actual:** PUBLISH
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** task/TASK-dashboard-taller-laminas
@@ -19,6 +19,7 @@
 | 2026-09-30 | REVIEW → ENGINEERING | Quality Gate FAIL: 1 issue High (valores KPI ilegibles en tema oscuro) y 1 Low (contraste del botón Convertir a venta), ambos IMPLEMENTATION; `view_proxy_pagos`, equivalencia con Reportes y alcance verificados en vivo | delivery-review |
 | 2026-09-30 | ENGINEERING → REVIEW | Corregidos REV-01 (contraste de cifras y enlaces en tema oscuro) y REV-02 (contraste del botón Convertir a venta) | delivery-engineer |
 | 2026-09-30 | REVIEW → PUBLISH | Quality Gate PASS en el re-review sobre `02e9153`: REV-01 y REV-02 resueltos; queda abierto REV-03 (Low) | delivery-review |
+| 2026-09-30 | PUBLISH → ENGINEERING → REVIEW | A pedido del usuario se corrige REV-03 (`.text-muted` en tema claro) antes de publicar | delivery-engineer |
 
 ## Investigación
 
@@ -181,6 +182,8 @@ Implementado el plan v1 (fases 0 a 5) con los valores por defecto de las pregunt
 - REV-01: bloque `body.dark .dashboard` (cifras de KPI, links, textos secundarios y `btn-link` con colores claros) y el gris secundario base pasa de `#8a93a2` a `#5f6b7d`.
 - REV-02: `.dash-convert` con verde `#1e7e34` y texto blanco (contraste 5.1:1 medido en el navegador).
 - Verificación propia (no es el Quality Gate): `ng build`, `ng lint` y `ng test` igual que antes (14 fallos previos, 290 OK); medición de contraste en el dashboard real en tema oscuro: 0 textos bajo 4.5:1. Observación sin corregir (fuera de alcance): en tema claro los textos `.text-muted` y links de la plantilla quedan en 2.5–3.8:1; es el estilo global de la plantilla.
+
+**Corrección de REV-03 (a pedido del usuario, antes de publicar):** solo `panel_admin/src/assets/scss/_dashboard.scss`: `.dashboard .text-muted { color: #5f6b7d !important; }` (5.4:1 sobre blanco; el `!important` es necesario porque la plantilla fija el color con él). El bloque `body.dark` sigue ganando en tema oscuro (8.3:1). Verificación propia (no es el Quality Gate): `ng build` OK; `getComputedStyle` sobre el CSS compilado da `rgb(95,107,125)` en claro y `rgb(170,180,200)` en oscuro. Requiere nuevo review para cerrar REV-03 y reconfirmar PASS.
 
 ## Review
 **Resultado: PASS** (2026-09-30, delivery-review, re-review sobre `02e9153`; aislamiento de contexto procedimental: sesión nueva, solo artefactos y diff). La primera revisión (sobre `0aec4e4`) fue FAIL por REV-01 y REV-02. Evidencia completa en `## Testing` y `## Review` del [PR #56](https://github.com/rolion/praxsa-django-panel-admin/pull/56).
