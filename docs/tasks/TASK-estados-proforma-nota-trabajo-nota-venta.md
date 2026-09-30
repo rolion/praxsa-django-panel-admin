@@ -1,6 +1,6 @@
 # TASK-estados-proforma-nota-trabajo-nota-venta: Revisar y reorganizar estados y transiciones de Proforma, Nota de Trabajo y Nota de Venta
 
-**Etapa actual:** REVIEW
+**Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** task/TASK-estados-proforma-nota-trabajo-nota-venta
@@ -15,6 +15,7 @@
 | 2026-09-30 02:10 UTC | PLANNING → ENGINEERING | Plan v1 escrito y PR abierto; queda pendiente de aprobación humana del plan antes de implementar. Permisos por grupo indicados por el usuario incorporados (Admin/Caja/Vendedor: add_pago, delete_pago; Admin/Almacen: change_proforma_header, change_nota_trabajo) | delivery-plan |
 | 2026-09-30 02:40 UTC | ENGINEERING → PLANNING → ENGINEERING | Plan v2 pedido por el usuario (no por engineer/review): comando idempotente de permisos, permisos por acción (aprobar/anular proforma: Vendedor y Admin; anular nota de trabajo: Almacen y Admin; anular nota de venta: Caja, Vendedor y Admin), `reabrir` reemplazado por anular nota de trabajo/venta. ADR de API/máquina de estados y DDR actualizados (Actualización 1) sin reabrir ARCHITECTURE: no cambia el modelo de datos y los permisos no son custom (se usan `delete_*` estándar) | delivery-plan |
 | 2026-09-30 02:14 UTC | ENGINEERING → REVIEW | Implementación completa según plan v2.1 (backend, Django Admin, API, comando de permisos y panel). Vendedor también edita proformas (indicado por el usuario). Autoverificación: 333 tests backend y 221 frontend en verde (15 fallas preexistentes en specs "should create" de la plantilla, idénticas en `origin/master`), `ng build` y `ng lint` limpios, migración ensayada en Postgres real | delivery-engineer |
+| 2026-09-30 02:40 UTC | REVIEW → ENGINEERING | Quality Gate FAIL: sin issues Critical/High, pero REV-01 (Medium) y REV-02 (Low) abiertos y verificaciones del plan sin ejecutar (verificación en vivo, ensayo de migración con datos reales), por lo que no se puede emitir PASS | delivery-review |
 
 ## Investigación
 
@@ -152,7 +153,14 @@ Implementado según el plan v2.1 (PR [#51](https://github.com/rolion/praxsa-djan
 **Pendiente para revisión/publicación**: verificación en vivo con `runserver` + `ng serve` (usuarios de distintos grupos/sucursales, Django Admin y reportes), ensayo de `migrate`/reverso con una copia de datos reales y ejecución de `asignar_permisos_estados` en cada ambiente.
 
 ## Review
-_Pendiente_
+**Resultado: FAIL** (2026-09-30, delivery-review; aislamiento procedimental, no real). Sin issues Critical/High; no se emite PASS porque quedaron verificaciones aplicables sin ejecutar.
+
+Issues abiertos:
+- [REV-01](../reviews/REV-2026-09-30-estados-proforma-nota-trabajo-nota-venta-01.md) — Medium, IMPLEMENTATION: Django Admin responde 500 al eliminar un pago cerrado.
+- [REV-02](../reviews/REV-2026-09-30-estados-proforma-nota-trabajo-nota-venta-02.md) — Low, IMPLEMENTATION: `ProformaAdmin.delete_proforma` huérfano llama a un método eliminado.
+
+Verificaciones ejecutadas: backend 345 tests OK; frontend 221 OK / 15 FAILED (specs "should create" de plantilla, archivos no tocados por el PR, `No provider for ActivatedRoute`); `ng lint` limpio; `ng build` OK; `makemigrations --check` y `manage.py check` limpios.
+Verificaciones NO ejecutadas: verificación en vivo (`runserver` + `ng serve`, Django Admin y reportes) y ensayo de `migrate`/reverso sobre copia de datos reales (la BD de desarrollo estaba en uso por otra sesión y no hay `pg_dump`/`psql`); bandit/safety/flake8/ruff/mypy/coverage.py no instalados.
 
 ## Publicación
 _Pendiente_
