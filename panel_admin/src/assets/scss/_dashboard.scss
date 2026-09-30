@@ -67,7 +67,7 @@
   .dash-empty {
     padding: 2.5rem 1rem;
     text-align: center;
-    color: #8a93a2;
+    color: #5f6b7d;
 
     &.dash-empty-ok {
       color: #17743a;
@@ -143,7 +143,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.03em;
-    color: #8a93a2;
+    color: #5f6b7d;
   }
 
   .dash-kpi-value {
@@ -173,7 +173,7 @@
     }
 
     &.delta-flat {
-      color: #8a93a2;
+      color: #5f6b7d;
     }
   }
 
@@ -349,5 +349,41 @@
     .dash-toolbar-actions .form-select {
       flex: 1 1 100%;
     }
+  }
+
+  // Boton principal del panel de proformas: texto blanco con contraste AA (REV-...-02).
+  .dash-convert {
+    border-color: #1e7e34;
+    background-color: #1e7e34;
+    color: #ffffff;
+
+    &:hover:not(:disabled),
+    &:focus-visible {
+      border-color: #176028;
+      background-color: #176028;
+      color: #ffffff;
+    }
+  }
+}
+
+// ---------- tema oscuro de la plantilla (body.dark): legibilidad de cifras y textos secundarios ----------
+body.dark .dashboard {
+  .dash-kpi-value,
+  .dash-kpi,
+  a.dash-link {
+    color: #e6e9f2;
+  }
+
+  .dash-kpi-label,
+  .dash-kpi-sub,
+  .dash-empty,
+  .delta-flat,
+  .text-muted,
+  .dash-toolbar-info {
+    color: #aab4c8 !important;
+  }
+
+  .btn-link {
+    color: #a9b8ff;
   }
 }

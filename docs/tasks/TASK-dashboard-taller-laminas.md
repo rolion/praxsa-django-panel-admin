@@ -1,6 +1,6 @@
 # TASK-dashboard-taller-laminas: Dashboard del panel para el taller de láminas (KPIs, gráficas, stock crítico, cola de instalaciones, últimas proformas)
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** task/TASK-dashboard-taller-laminas
@@ -17,6 +17,7 @@
 | 2026-09-30 | PLANNING → ENGINEERING | Plan v1 escrito y PR #56 abierto; queda a la espera de la aprobación humana del plan y de las 6 preguntas abiertas antes de implementar | delivery-plan |
 | 2026-09-30 | ENGINEERING → REVIEW | Implementación completa de las fases 1 a 5 del plan v1 (backend, API, servicio, pantalla); la verificación en vivo contra el backend real (paso 20) queda para review/usuario | delivery-engineer |
 | 2026-09-30 | REVIEW → ENGINEERING | Quality Gate FAIL: 1 issue High (valores KPI ilegibles en tema oscuro) y 1 Low (contraste del botón Convertir a venta), ambos IMPLEMENTATION; `view_proxy_pagos`, equivalencia con Reportes y alcance verificados en vivo | delivery-review |
+| 2026-09-30 | ENGINEERING → REVIEW | Corregidos REV-01 (contraste de cifras y enlaces en tema oscuro) y REV-02 (contraste del botón Convertir a venta) | delivery-engineer |
 
 ## Investigación
 
@@ -174,6 +175,11 @@ Implementado el plan v1 (fases 0 a 5) con los valores por defecto de las pregunt
 **Pendiente de review/usuario:** verificación en vivo con el backend real (Admin, Caja y un usuario sin `view_proxy_pagos`; empleado de una y de dos sucursales; total del mes contra Reportes → Ventas diarias; "Convertir a venta" con éxito y con error de stock); confirmar los umbrales de stock con negocio; ejecutar `asignar_permisos_reportes --dry-run` en cada ambiente.
 
 **Deuda técnica señalada:** las 14 specs "should create" rotas son previas y no se arreglaron (fuera de alcance); `dashboard2` y sus assets de demo siguen sin uso.
+
+**Corrección tras Quality Gate FAIL (2026-09-30):** solo `panel_admin/src/assets/scss/_dashboard.scss`.
+- REV-01: bloque `body.dark .dashboard` (cifras de KPI, links, textos secundarios y `btn-link` con colores claros) y el gris secundario base pasa de `#8a93a2` a `#5f6b7d`.
+- REV-02: `.dash-convert` con verde `#1e7e34` y texto blanco (contraste 5.1:1 medido en el navegador).
+- Verificación propia (no es el Quality Gate): `ng build`, `ng lint` y `ng test` igual que antes (14 fallos previos, 290 OK); medición de contraste en el dashboard real en tema oscuro: 0 textos bajo 4.5:1. Observación sin corregir (fuera de alcance): en tema claro los textos `.text-muted` y links de la plantilla quedan en 2.5–3.8:1; es el estilo global de la plantilla.
 
 ## Review
 **Resultado: FAIL** (2026-09-30, delivery-review, sobre `0aec4e4`; aislamiento de contexto procedimental). Evidencia completa en `## Testing` y `## Review` del [PR #56](https://github.com/rolion/praxsa-django-panel-admin/pull/56).
