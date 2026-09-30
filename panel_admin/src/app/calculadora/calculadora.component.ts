@@ -148,7 +148,11 @@ export class CalculadoraComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.onSessionExpired());
     this.loadCatalogs();
-    this.openAccessFromRoute();
+    // Escucha los parametros (no el snapshot): el componente se reutiliza si ya estamos en
+    // /calculadora y el SessionGuard redirige aqui desde /mis-proformas.
+    this.route.queryParamMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((params) => this.openAccessFromRoute(!!params.get('acceso')));
   }
 
   // ---- sesion ----
@@ -165,8 +169,8 @@ export class CalculadoraComponent implements OnInit {
   }
 
   /** `?acceso=1` (lo pone `SessionGuard` al entrar a `/mis-proformas` sin sesion). */
-  private openAccessFromRoute(): void {
-    if (this.route.snapshot.queryParamMap.get('acceso') && !this.authService.isLoggedIn) {
+  private openAccessFromRoute(requested: boolean): void {
+    if (requested && !this.authService.isLoggedIn) {
       this.accesoModal.open('login', 'Inicia sesión o crea tu cuenta para ver tus proformas.').then((ok) => {
         this.router.navigate(ok && this.authService.isClient ? ['/mis-proformas'] : ['/calculadora'], {
           replaceUrl: true,

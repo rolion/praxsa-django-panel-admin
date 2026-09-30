@@ -54,7 +54,7 @@
               <ng-template let-value="value" ngx-datatable-cell-template>{{ value || '—' }}</ng-template>
             </ngx-datatable-column>
             <ngx-datatable-column name="Total" prop="total_price" [width]="140" cellClass="text-end" headerClass="text-end">
-              <ng-template let-value="value" ngx-datatable-cell-template>{{ formatBs(+value) }}</ng-template>
+              <ng-template let-value="value" ngx-datatable-cell-template><div class="w-100 text-end">{{ formatBs(+value) }}</div></ng-template>
             </ngx-datatable-column>
           </ngx-datatable>
         }

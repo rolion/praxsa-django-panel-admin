@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 import { AuthService } from '@core';
 import { User } from '../core/models/user';
 import { environment } from '../../environments/environment';
@@ -52,8 +52,11 @@ describe('CalculadoraComponent', () => {
   const CLIENT = { token: 't', isStaff: false } as User;
   const STAFF = { token: 't', isStaff: true } as User;
 
+  let queryParams$: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
+
   function setup(options: { session?: User; sucursales?: unknown[]; query?: Record<string, string> } = {}) {
     localStorage.clear();
+    queryParams$ = new BehaviorSubject(convertToParamMap(options.query ?? {}));
     acceso = { open: jasmine.createSpy('open').and.resolveTo(false) };
     toastr = { success: jasmine.createSpy('success') };
     TestBed.configureTestingModule({
@@ -64,7 +67,7 @@ describe('CalculadoraComponent', () => {
         provideRouter([]),
         { provide: AccesoModalService, useValue: acceso },
         { provide: ToastrService, useValue: toastr },
-        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap(options.query ?? {}) } } },
+        { provide: ActivatedRoute, useValue: { queryParamMap: queryParams$ } },
       ],
     });
     httpMock = TestBed.inject(HttpTestingController);
@@ -256,7 +259,7 @@ describe('CalculadoraComponent', () => {
           provideHttpClient(), provideHttpClientTesting(), provideRouter([]),
           { provide: AccesoModalService, useValue: { open: () => Promise.resolve(false) } },
           { provide: ToastrService, useValue: { success: () => undefined } },
-          { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: convertToParamMap({}) } } },
+          { provide: ActivatedRoute, useValue: { queryParamMap: of(convertToParamMap({})) } },
         ],
       });
       httpMock = TestBed.inject(HttpTestingController);
@@ -476,6 +479,31 @@ describe('CalculadoraComponent', () => {
   });
 
   describe('acceso desde la ruta (?acceso=1)', () => {
+    it('opens the modal when the param appears AFTER the screen is already shown (guard redirect from /mis-proformas)', async () => {
+      setup();
+      expect(acceso.open).not.toHaveBeenCalled();
+      queryParams$.next(convertToParamMap({ acceso: '1' }));
+      expect(acceso.open).toHaveBeenCalledWith('login', jasmine.stringContaining('ver tus proformas'));
+      await fixture.whenStable();
+    });
+
+    it('does not open the modal when there is already a session', () => {
+      setup({ session: CLIENT, query: { acceso: '1' } });
+      expect(acceso.open).not.toHaveBeenCalled();
+    });
+
+    it('after signing in through the modal it goes to "Mis proformas"', async () => {
+      setup();
+      acceso.open.and.callFake(() => {
+        setSession(CLIENT);
+        return Promise.resolve(true);
+      });
+      queryParams$.next(convertToParamMap({ acceso: '1' }));
+      await fixture.whenStable();
+      httpMock.match(`${base}/client/me`).forEach((r) => r.flush(profile));
+      expect(router.navigate).toHaveBeenCalledWith(['/mis-proformas'], { replaceUrl: true });
+    });
+
     it('opens the modal for an anonymous visitor and goes to "Mis proformas" after signing in', async () => {
       setup({ query: { acceso: '1' } });
       expect(acceso.open).toHaveBeenCalledWith('login', jasmine.stringContaining('ver tus proformas'));
