@@ -4,7 +4,7 @@
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** NO
 **Rama:** task/TASK-mejora-inventario-bobinas
-**Pull Request:** _sin abrir todavía_
+**Pull Request:** [#52](https://github.com/rolion/praxsa-django-panel-admin/pull/52)
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
