@@ -4,7 +4,7 @@
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** NO
 **Rama:** `task/TASK-filtros-busqueda-reportes`
-**Pull Request:** _sin abrir todavía_
+**Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/55
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
