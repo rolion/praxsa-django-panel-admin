@@ -4,7 +4,7 @@
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** `claude/pricing-calculator-screen-b5e976` (asignada por el entorno)
-**Pull Request:** _sin abrir todavía_
+**Pull Request:** [#60](https://github.com/rolion/praxsa-django-panel-admin/pull/60)
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
