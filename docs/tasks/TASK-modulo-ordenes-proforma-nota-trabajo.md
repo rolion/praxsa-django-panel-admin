@@ -25,6 +25,7 @@
 | 2026-09-30 | REVIEW → ENGINEERING | Quality Gate: **FAIL**. REV-01 (High, IMPLEMENTATION): `ng build` de producción falla por presupuesto de estilos de componente. REV-02 (High, IMPLEMENTATION): catálogo de bobinas devuelve floats y en edición se pierden las bobinas guardadas. Backend 258 tests OK, frontend sin fallos nuevos (15 preexistentes idénticos en master), verificación en vivo del API sin fallos funcionales | delivery-review |
 | 2026-09-30 | ENGINEERING → REVIEW | Corregidos REV-01 (estilos globales en `assets/scss/_ordenes.scss`, `ng build` de producción ok) y REV-02 (catálogo de bobinas con strings y clave de bobina normalizada). Backend 259 y frontend 167 specs en verde | delivery-engineer |
 | 2026-09-30 | REVIEW → PUBLISH | Quality Gate: **PASS** (corrida 2). REV-01 y REV-02 verificados y cerrados: `ng build` de producción ok; catálogo con strings y edición que conserva las bobinas, comprobado en el navegador contra el backend real. Backend 259 y frontend 167 en verde (15 fallos preexistentes idénticos en master), 51/51 comprobaciones en vivo del API | delivery-review |
+| 2026-09-30 | PUBLISH → PUBLISH | Verificaciones de publicación ok (árbol limpio, sin commits de código sin revisar, sin secretos ni temporales, PR `MERGEABLE`) y descripción del PR completada con la trazabilidad total. Cambio sensible (permisos, precios, inventario, 2 ADR): queda **listo para aprobación humana explícita**; no se mergea en esta invocación | delivery-publish |
 
 ## Investigación
 
@@ -255,4 +256,14 @@ Igual que la corrida 1, se hizo en la **misma sesión** que implementó las corr
 Issues abiertos: ninguno. Siguiente etapa: `PUBLISH` (`/delivery-publish TASK-modulo-ordenes-proforma-nota-trabajo`).
 
 ## Publicación
-_Pendiente_
+
+- **Pull Request:** [#50](https://github.com/rolion/praxsa-django-panel-admin/pull/50) — `task/TASK-modulo-ordenes-proforma-nota-trabajo` → `master`. Estado de GitHub: abierto, no borrador, `MERGEABLE` / `CLEAN`, al día con `master` (0 commits de atraso).
+- **Estado: Listo para aprobación humana. No se mergeó.**
+- **Verificaciones de publicación (2026-09-30):**
+  - Quality Gate `PASS` (corrida 2) con REV-01 y REV-02 cerrados; sin issues abiertos.
+  - Árbol de trabajo limpio; `HEAD` (`4b8683b`) coincide con el commit del PR.
+  - Los únicos commits posteriores al último cambio de código revisado (`1ec91ed`) son de documentación (`docs/reviews/*`, este TASK), sin código sin revisar.
+  - El diff (48 archivos) corresponde al plan v2: sin cambios en modelos, migraciones, `Forms/`, `admin_config/` ni `InvoiceView`; sin archivos temporales, logs, artefactos de build ni `.env`; el escaneo de secretos no encontró credenciales (la única coincidencia es el token de prueba `abc123` de un spec).
+  - Descripción del PR completa: Summary, Task, Related plan (v2), DDR, Related ADRs, Architecture decisions, Changes, Testing, Review y Known limitations.
+- **Aprobación humana explícita requerida** (categorías sensibles): **autorización/permisos** (alcance por sucursal, permisos Django por acción, `permissions` en el login), **lógica de precios** y **descuento de inventario** al generar la nota de trabajo; respaldado por [ADR api-y-calculo](../adr/ADR-modulo-ordenes-proforma-nota-trabajo-api-y-calculo.md) y [ADR alcance-permisos](../adr/ADR-modulo-ordenes-proforma-nota-trabajo-alcance-permisos.md). No hay migraciones ni cambios de infraestructura.
+- **Antes/después del merge (operativo):** asignar `add/change_proforma_header` y `add/change_nota_trabajo` a los grupos reales; confirmar con negocio `origen`, stock no bloqueante e item con instalación 0 (ver Known limitations del PR).
