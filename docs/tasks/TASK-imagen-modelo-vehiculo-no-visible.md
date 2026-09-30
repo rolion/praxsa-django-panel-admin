@@ -16,6 +16,7 @@
 | 2026-09-30 21:30 UTC | REVIEW → PUBLISH | Quality Gate PASS (2 issues no bloqueantes: REV-01 Medium, REV-02 Low) | delivery-review |
 | 2026-09-30 22:00 UTC | PUBLISH → PLANNING → ENGINEERING | REV-01 (PLAN, Medium): plan v2 añade ajuste de nginx; incorpora REV-02 | delivery-plan |
 | 2026-09-30 22:30 UTC | ENGINEERING → REVIEW | Implementación de plan v2 completa (REV-01, REV-02) | delivery-engineer |
+| 2026-09-30 23:00 UTC | REVIEW → REVIEW | Re-review: todo verde salvo `nginx -t` no ejecutable; sin PASS, etapa se mantiene | delivery-review |
 
 ## Investigación
 
@@ -103,11 +104,18 @@ Según plan v1, sin desvíos. (Las preguntas abiertas del plan —dev vs. stg/pr
 - **No verificado:** `nginx -t` (el daemon de Docker no estaba corriendo); comportamiento real tras nginx-proxy en stg/prod (requiere despliegue).
 
 ## Review
-**Resultado: PASS** — backend 48/48 (módulo) y 522/522 (suite completa); Angular 333/347 (14 fallos preexistentes "should create" de la plantilla, ajenos al diff); `ng lint` y `ng build` OK. flake8/bandit/mypy/coverage.py no instalados (no ejecutados). `npm audit`: 79 vulnerabilidades preexistentes. Smoke manual en navegador real: pendiente.
+**Corrida 2 (re-review de plan v2, 2026-09-30): INCOMPLETA — sin PASS** (sin issues Critical/High; una verificación exigida por el plan no se pudo ejecutar).
 
-Issues abiertos (no bloqueantes):
-- [REV-01](../reviews/REV-2026-09-30-imagen-modelo-vehiculo-no-visible-01.md) — Medium / PLAN: nginx interno con `listen 80` reenvía `X-Forwarded-Proto $scheme`=http; `SECURE_PROXY_SSL_HEADER` probablemente no produzca `https` en prod/stg.
-- [REV-02](../reviews/REV-2026-09-30-imagen-modelo-vehiculo-no-visible-02.md) — Low / IMPLEMENTATION: `imageFailed` no se resetea en `load()`.
+Ejecutado: backend `test_vehicles_module` 48/48; suite completa `manage.py test` 522/522; Angular `ng test --code-coverage` 334 OK / 14 FAILED (los mismos 14 "should create" preexistentes de la plantilla, ajenos al diff); cobertura global Statements 73.71%, Branches 68.42%; `ng lint` limpio; `ng build` OK; `npm audit`: vulnerabilidades preexistentes (el PR no toca package.json). flake8/bandit/mypy/coverage.py no instalados.
+
+**No ejecutado:** `nginx -t` sobre `nginx.conf.prod|stg` (Docker daemon apagado, nginx no instalado). Es criterio de aceptación de plan v2; por eso no se declara PASS. Revisión manual: `map` en contexto `http`, sintaxis válida, `proxy_set_header` solo en el bloque del panel. Tampoco se hizo el smoke manual en navegador ni se verificó `https` real en stg/prod.
+
+Issues:
+- [REV-01](../reviews/REV-2026-09-30-imagen-modelo-vehiculo-no-visible-01.md) — Medium / PLAN: código resuelto en plan v2; pendiente `nginx -t`.
+- [REV-02](../reviews/REV-2026-09-30-imagen-modelo-vehiculo-no-visible-02.md) — Low: Resuelto (spec de reintento).
+- [REV-03](../reviews/REV-2026-09-30-imagen-modelo-vehiculo-no-visible-03.md) — Low / IMPLEMENTATION: comentario de `settings.py` dice que nginx "siempre fija" el header; ya no es cierto. No bloquea.
+
+Siguiente: levantar Docker Desktop (o instalar nginx) y volver a correr `/delivery-review`; o autorizar explícitamente en el chat omitir `nginx -t` para pasar a PUBLISH.
 
 ## Publicación
 _Pendiente_

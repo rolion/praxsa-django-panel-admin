@@ -1,6 +1,6 @@
 # REV-2026-09-30-imagen-modelo-vehiculo-no-visible-02: `imageFailed` de `model-view` no se resetea al recargar el modelo
 
-**Status:** Open
+**Status:** Resolved (plan v2, commit b509b68; verificado por spec de reintento en model-view)
 **Severity:** Low
 **Category:** IMPLEMENTATION
 **Related plan:** docs/plans/PLAN-2026-09-30-imagen-modelo-vehiculo-no-visible.md (v1)
