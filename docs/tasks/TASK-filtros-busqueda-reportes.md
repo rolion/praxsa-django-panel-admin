@@ -20,6 +20,7 @@
 | 2026-09-30 | PLANNING → ENGINEERING | Plan v2 listo para implementar (pendiente de aprobación humana) | delivery-plan |
 | 2026-09-30 | ENGINEERING → REVIEW | Fase 2 (panel Angular) implementada según plan v2 | delivery-engineer |
 | 2026-09-30 | REVIEW → PUBLISH | Quality Gate PASS (2 observaciones Low abiertas; verificación manual en navegador pendiente) | delivery-review |
+| 2026-09-30 | PUBLISH → PUBLISH | PR #55 con descripción completa; pendiente de aprobación humana para el merge | delivery-publish |
 
 ## Investigación
 
@@ -170,7 +171,7 @@ Limitación: esta revisión corrió en la **misma sesión** que implementó el c
 
 
 ## Publicación
-_Pendiente_
+[PR #55](https://github.com/rolion/praxsa-django-panel-admin/pull/55) — **Listo para aprobación humana** (no mergeado). Quality Gate: PASS (ver `## Review`). Pendiente antes del merge: verificación manual de las tres listas del panel contra el backend real.
 
 ## Hallazgo post-implementación (DESIGN_REVIEW_REQUIRED / PLAN_UPDATE_REQUIRED)
 Al probar, el solicitante confirmó que **no ve los filtros porque las pantallas que quería filtrar son las listas del panel Angular** (`panel_admin/src/app/ordenes/proformas`, `notas-trabajo`, `notas-venta`), no los reportes del Django Admin. La investigación asumió el Django Admin (hipótesis sin confirmar: "el alcance es solo el Django Admin", ver Hipótesis) y el plan v1 se construyó sobre eso.
