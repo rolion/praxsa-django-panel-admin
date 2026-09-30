@@ -4,7 +4,7 @@
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** `task/TASK-agrupacion-menu-instalador-precio-sucursal`
-**Pull Request:** _sin abrir todavía_
+**Pull Request:** [#53](https://github.com/rolion/praxsa-django-panel-admin/pull/53)
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
