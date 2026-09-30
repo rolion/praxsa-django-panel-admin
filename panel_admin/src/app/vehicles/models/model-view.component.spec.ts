@@ -78,6 +78,28 @@ describe('ModelViewComponent', () => {
     expect(fixture.nativeElement.querySelector('.fa-image')).toBeTruthy();
   });
 
+  it('reintenta la imagen del modelo al recargarlo tras un fallo', () => {
+    const fixture = TestBed.createComponent(ModelViewComponent);
+    fixture.detectChanges();
+    httpMock
+      .expectOne(`${base}/models/5/`)
+      .flush({ ...sampleModel, image: 'http://localhost:8000/media/car_models/x.jpg' });
+    httpMock.expectOne(`${base}/models/5/items/`).flush([sampleItem]);
+    fixture.detectChanges();
+    fixture.nativeElement.querySelector('img').dispatchEvent(new Event('error'));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('img')).toBeNull();
+
+    fixture.componentInstance.load();
+    httpMock
+      .expectOne(`${base}/models/5/`)
+      .flush({ ...sampleModel, image: 'http://localhost:8000/media/car_models/x.jpg' });
+    httpMock.expectOne(`${base}/models/5/items/`).flush([sampleItem]);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('img')).toBeTruthy();
+  });
+
   it('carga el modelo y sus items', () => {
     const fixture = createAndLoad();
     const component = fixture.componentInstance;

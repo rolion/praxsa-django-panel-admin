@@ -1,6 +1,6 @@
 # TASK-imagen-modelo-vehiculo-no-visible: La imagen del vehículo no se visualiza en el listado ni en la vista de Modelo
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** NO
 **Rama:** task/TASK-imagen-modelo-vehiculo-no-visible
@@ -15,6 +15,7 @@
 | 2026-09-30 21:00 UTC | ENGINEERING → REVIEW | Implementación completa según plan v1 | delivery-engineer |
 | 2026-09-30 21:30 UTC | REVIEW → PUBLISH | Quality Gate PASS (2 issues no bloqueantes: REV-01 Medium, REV-02 Low) | delivery-review |
 | 2026-09-30 22:00 UTC | PUBLISH → PLANNING → ENGINEERING | REV-01 (PLAN, Medium): plan v2 añade ajuste de nginx; incorpora REV-02 | delivery-plan |
+| 2026-09-30 22:30 UTC | ENGINEERING → REVIEW | Implementación de plan v2 completa (REV-01, REV-02) | delivery-engineer |
 
 ## Investigación
 
@@ -94,6 +95,12 @@ Según plan v1, sin desvíos. (Las preguntas abiertas del plan —dev vs. stg/pr
 - Sigue pendiente el task aparte para que los tests backend usen un `MEDIA_ROOT` temporal (ver Out of scope del plan).
 - No verificado: comportamiento en stg/prod ni bloqueo por contenido mixto en un navegador real.
 
+
+**Plan v2 (REV-01 / REV-02)**
+- `nginx/nginx.conf.prod` y `.stg`: `map $http_x_forwarded_proto $forwarded_proto` (fallback a `$scheme`) y `proxy_set_header X-Forwarded-Proto $forwarded_proto;` solo en el bloque del panel.
+- `model-view`: `imageFailed = false` al inicio de `load()` + spec de reintento tras recarga.
+- Autoverificación (no es el Quality Gate): specs `vehicles/models` + `image-upload` 25 OK; `ng lint` limpio.
+- **No verificado:** `nginx -t` (el daemon de Docker no estaba corriendo); comportamiento real tras nginx-proxy en stg/prod (requiere despliegue).
 
 ## Review
 **Resultado: PASS** — backend 48/48 (módulo) y 522/522 (suite completa); Angular 333/347 (14 fallos preexistentes "should create" de la plantilla, ajenos al diff); `ng lint` y `ng build` OK. flake8/bandit/mypy/coverage.py no instalados (no ejecutados). `npm audit`: 79 vulnerabilidades preexistentes. Smoke manual en navegador real: pendiente.
