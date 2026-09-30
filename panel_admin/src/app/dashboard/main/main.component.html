@@ -1,4 +1,4 @@
-<section class="main-content">
+<section class="main-content dashboard">
   <ul class="breadcrumb breadcrumb-style ">
     <li class="breadcrumb-item">
       <h5 class="page-title m-b-0">Dashboard</h5>
@@ -9,743 +9,334 @@
     </li>
     <li class="breadcrumb-item">Dashboard</li>
   </ul>
+
   <div class="section-body">
-    <div class="row ">
-      <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 col-xs-12">
-        <div class="card">
-          <div class="card-statistic-4">
-            <div class="align-items-center justify-content-between">
-              <div class="row ">
-                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 left-grid-spacing">
-                  <div class="card-content">
-                    <h6>New Booking</h6>
-                    <h2 class="mb-3 font-18">258</h2>
-                    <p class="mb-0"><span class="col-green">42%</span></p>
-                  </div>
-                  <ngb-progressbar type="success" [value]="42" height=".3rem"></ngb-progressbar>
-                </div>
-                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 right-grid-spacing">
-                  <div class="banner-img">
-                    <img src="assets/images/banner/1.png" alt="">
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+    <div class="dash-toolbar">
+      <div class="dash-toolbar-info">
+        @if (sucursales.length === 1) {
+          <span><i class="fas fa-store"></i> Sucursal: <strong>{{ sucursales[0].name }}</strong></span>
+        }
+        @if (kpis.data) {
+          <span class="text-muted">Actualizado {{ fechaHora(kpis.data.generado) }}</span>
+        }
       </div>
-      <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 col-xs-12">
-        <div class="card">
-          <div class="card-statistic-4">
-            <div class="align-items-center justify-content-between">
-              <div class="row ">
-                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 left-grid-spacing">
-                  <div class="card-content">
-                    <h6> Customers</h6>
-                    <h2 class="mb-3 font-18">1,287</h2>
-                    <p class="mb-0"><span class="col-orange">33%</span></p>
-                  </div>
-                  <ngb-progressbar type="warning" [value]="33" height=".3rem"></ngb-progressbar>
-                </div>
-                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 right-grid-spacing">
-                  <div class="banner-img">
-                    <img src="assets/images/banner/2.png" alt="">
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 col-xs-12">
-        <div class="card">
-          <div class="card-statistic-4">
-            <div class="align-items-center justify-content-between">
-              <div class="row ">
-                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 left-grid-spacing">
-                  <div class="card-content">
-                    <h6>New Project</h6>
-                    <h2 class="mb-3 font-18">128</h2>
-                    <p class="mb-0"><span class="col-blue">25%</span>
-                    </p>
-                  </div>
-                  <ngb-progressbar type="info" [value]="25" height=".3rem"></ngb-progressbar>
-                </div>
-                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 right-grid-spacing">
-                  <div class="banner-img">
-                    <img src="assets/images/banner/3.png" alt="">
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 col-xs-12">
-        <div class="card">
-          <div class="card-statistic-4">
-            <div class="align-items-center justify-content-between">
-              <div class="row ">
-                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 left-grid-spacing">
-                  <div class="card-content">
-                    <h6>Revenue</h6>
-                    <h2 class="mb-3 font-18">$48,697</h2>
-                    <p class="mb-0"><span class="col-red">65%</span></p>
-                  </div>
-                  <ngb-progressbar type="danger" [value]="65" height=".3rem"></ngb-progressbar>
-                </div>
-                <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6 right-grid-spacing">
-                  <div class="banner-img">
-                    <img src="assets/images/banner/4.png" alt="">
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div class="dash-toolbar-actions">
+        @if (showSucursalSelector) {
+          <select class="form-select form-select-sm" aria-label="Sucursal" [ngModel]="sucursal" (ngModelChange)="setSucursal($event)">
+            <option [ngValue]="null">Todas las sucursales</option>
+            @for (s of sucursales; track s.id) {
+              <option [ngValue]="s.id">{{ s.name }}</option>
+            }
+          </select>
+        }
+        <select class="form-select form-select-sm" aria-label="Período de las gráficas" [ngModel]="meses" (ngModelChange)="setMeses($event)">
+          @for (p of periodos; track p) {
+            <option [ngValue]="p">Últimos {{ p }} meses</option>
+          }
+        </select>
+        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="loadAll()">
+          <i class="fas fa-sync-alt"></i> Actualizar
+        </button>
       </div>
     </div>
-    <div class="row">
-      <div class="col-md-12 col-lg-6 col-xl-6 ">
-        <div class="card">
-          <div class="card-header">
-            <h4>Chart Sample</h4>
-          </div>
-          <div class="card-body">
-            <apx-chart [series]="lineChartOptions.series!" [chart]="lineChartOptions.chart!"
-              [xaxis]="lineChartOptions.xaxis!" [stroke]="lineChartOptions.stroke!" [colors]="lineChartOptions.colors!"
-              [dataLabels]="lineChartOptions.dataLabels!" [legend]="lineChartOptions.legend!"
-              [tooltip]="lineChartOptions.tooltip!" [markers]="lineChartOptions.markers!"
-              [grid]="lineChartOptions.grid!" [yaxis]="lineChartOptions.yaxis!" [title]="lineChartOptions.title!"
-              [fill]="lineChartOptions.fill!">
-            </apx-chart>
-          </div>
-        </div>
+
+    @if (kpis.data?.sin_sucursal) {
+      <div class="alert alert-warning" role="alert">
+        Tu usuario no tiene una sucursal asignada: no hay datos para mostrar. Pide al administrador que te asigne una.
       </div>
-      <div class="col-md-12 col-lg-6 col-xl-6 ">
-        <div class="card">
-          <div class="card-header">
-            <h4>Chart Sample</h4>
-          </div>
-          <div class="card-body">
-            <apx-chart [series]="barChartOptions.series!" [chart]="barChartOptions.chart!"
-              [dataLabels]="barChartOptions.dataLabels!" [stroke]="barChartOptions.stroke!"
-              [colors]="barChartOptions.colors!" [title]="barChartOptions.title!" [grid]="barChartOptions.grid!"
-              [tooltip]="barChartOptions.tooltip!" [plotOptions]="barChartOptions.plotOptions!"
-              [yaxis]="barChartOptions.yaxis!" [xaxis]="barChartOptions.xaxis!"></apx-chart>
-          </div>
-        </div>
-      </div>
-    </div>
+    }
+
     <div class="row">
-      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
-        <div class="card">
-          <div class="card-header">
-            <h4>Traffic Sources</h4>
+      <!-- KPIs -->
+      @if (kpis.loading && !kpis.data) {
+        @for (i of [1, 2, 3, 4]; track i) {
+          <div class="col-xl-3 col-md-6">
+            <div class="card dash-kpi"><div class="dash-skeleton" style="height: 96px"></div></div>
           </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-sm-12">
-                <div class="d-flex justify-content-between mt-2 text-dark mb-2">
-                  <div><span class="fw-bold">3487</span> Hits</div>
-                  <div>Target: 10000</div>
-                </div>
-                <div class="progress traffic-bar mb-2">
-                  <div class="progress-bar bg-red" style="width: 33%"></div>
-                  <div class="progress-bar bg-blue" style="width: 25%"></div>
-                  <div class="progress-bar bg-amber" style="width: 12%"></div>
-                  <div class="progress-bar bg-purple" style="width: 10%"></div>
-                  <div class="progress-bar bg-green" style="width: 7%"></div>
-                  <div class="progress-bar bg-blue-grey" style="width: 13%"></div>
+        }
+      } @else if (kpis.error && !kpis.data) {
+        <div class="col-12">
+          <div class="card"><div class="card-body dash-error">
+            <span><i class="fas fa-exclamation-circle"></i> {{ kpis.error }}</span>
+            <button type="button" class="btn btn-sm btn-outline-primary" (click)="loadKpis()">Reintentar</button>
+          </div></div>
+        </div>
+      } @else if (kpis.data; as k) {
+        @if (k.ventas; as ventas) {
+          <div class="col-xl-3 col-md-6">
+            <a class="card dash-kpi dash-kpi-ventas dash-link" routerLink="/ordenes/notas-venta">
+              <div class="dash-kpi-icon bg-success-soft"><i class="fas fa-dollar-sign"></i></div>
+              <div class="dash-kpi-body">
+                <div class="dash-kpi-label">Ventas del mes</div>
+                <div class="dash-kpi-value">{{ bs(ventas.mes) }}</div>
+                <div class="dash-kpi-sub">
+                  <span class="dash-delta" [class]="variacion(ventas.variacion).clase">
+                    {{ variacion(ventas.variacion).icono }} {{ variacion(ventas.variacion).texto }}
+                  </span>
+                  <span class="text-muted">vs. {{ bs(ventas.mes_anterior) }} mes anterior</span>
                 </div>
               </div>
-              <div class="col-sm-12">
-                <div class="search-traffic">
-                  <div class="d-flex justify-content-between mb-1 mt-2">
-                    <div class="fw-bold">SOURCE</div>
-                    <div class="fw-bold">TOTAL</div>
-                  </div>
-                  <div class="d-flex justify-content-between traffic-source">
-                    <div><span><i class="fa fa-circle col-red msr-2"></i></span>Google Search</div>
-                    <div>33%</div>
-                  </div>
-                  <div class="d-flex justify-content-between traffic-source">
-                    <div><span><i class="fa fa-circle col-blue msr-2"></i></span>Social Media</div>
-                    <div>25%</div>
-                  </div>
-                  <div class="d-flex justify-content-between traffic-source">
-                    <div><span><i class="fa fa-circle col-amber msr-2"></i></span>Referrals</div>
-                    <div>12%</div>
-                  </div>
-                  <div class="d-flex justify-content-between traffic-source">
-                    <div><span><i class="fa fa-circle col-purple msr-2"></i></span>Direct Access</div>
-                    <div>10%</div>
-                  </div>
-                  <div class="d-flex justify-content-between traffic-source">
-                    <div><span><i class="fa fa-circle col-green msr-2"></i></span>Bing Search</div>
-                    <div>7%</div>
-                  </div>
-                  <div class="d-flex justify-content-between traffic-source">
-                    <div><span><i class="fa fa-circle col-blue-grey msr-2"></i></span>Email Marketing</div>
-                    <div>13%</div>
-                  </div>
-                </div>
+            </a>
+          </div>
+        }
+        <div class="col-md-6" [class.col-xl-3]="!!k.ventas" [class.col-xl-4]="!k.ventas">
+          <a class="card dash-kpi dash-link" routerLink="/ordenes/proformas">
+            <div class="dash-kpi-icon bg-primary-soft"><i class="fas fa-file-invoice"></i></div>
+            <div class="dash-kpi-body">
+              <div class="dash-kpi-label">Proformas activas</div>
+              <div class="dash-kpi-value">{{ bs(k.proformas_activas.monto) }}</div>
+              <div class="dash-kpi-sub text-muted">{{ k.proformas_activas.cantidad }} sin cerrar</div>
+            </div>
+          </a>
+        </div>
+        <div class="col-md-6" [class.col-xl-3]="!!k.ventas" [class.col-xl-4]="!k.ventas">
+          <div class="card dash-kpi">
+            <div class="dash-kpi-icon bg-warning-soft"><i class="fas fa-percent"></i></div>
+            <div class="dash-kpi-body">
+              <div class="dash-kpi-label">Tasa de conversión</div>
+              <div class="dash-kpi-value">{{ porcentaje(k.conversion.porcentaje) }}</div>
+              <div class="dash-kpi-sub text-muted">{{ k.conversion.convertidas }} de {{ k.conversion.emitidas }} proformas del mes</div>
+              <ngb-progressbar type="warning" [value]="k.conversion.porcentaje ? +k.conversion.porcentaje : 0" height=".3rem"></ngb-progressbar>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6" [class.col-xl-3]="!!k.ventas" [class.col-xl-4]="!k.ventas">
+          <a class="card dash-kpi dash-link" routerLink="/ordenes/notas-trabajo">
+            <div class="dash-kpi-icon bg-info-soft"><i class="fas fa-car"></i></div>
+            <div class="dash-kpi-body">
+              <div class="dash-kpi-label">Instalaciones del día</div>
+              <div class="dash-kpi-value">{{ k.instalaciones.en_taller + k.instalaciones.terminadas_hoy }}</div>
+              <div class="dash-kpi-sub text-muted">
+                {{ k.instalaciones.en_taller }} en taller · {{ k.instalaciones.terminadas_hoy }} terminadas hoy
               </div>
             </div>
-          </div>
+          </a>
         </div>
-      </div>
-      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
-        <div class="card gradient-bottom">
-          <div class="card-header">
-            <h4>Top 5 Products</h4>
-          </div>
-          <div class="card-body" id="top-5-scroll">
-            <ng-scrollbar style="height: 320px" visibility="hover">
-              <ul class="list-unstyled list-unstyled-border">
-                <li class="product-list">
-                  <img class="msr-3 rounded" width="55" src="assets/images/products/product-3.png" alt="product">
-                  <div class="set-flex">
-                    <div class="float-end">
-                      <div class="font-weight-600 text-muted text-small">112 Sales</div>
-                    </div>
-                    <div class="fw-bold font-15">Mobile</div>
-                    <div class="mt-1">
-                      <div class="budget-price">
-                        <div class="budget-price-square bg-primary" style="width: 60%;"></div>
-                        <div class="budget-price-label">$24,897</div>
-                      </div>
-                      <div class="budget-price">
-                        <div class="budget-price-square bg-danger" style="width: 40%;"></div>
-                        <div class="budget-price-label">$18,865</div>
-                      </div>
-                    </div>
-                  </div>
-                </li>
-                <li class="product-list">
-                  <img class="msr-3 rounded" width="55" src="assets/images/products/product-4.png" alt="product">
-                  <div class="set-flex">
-                    <div class="float-end">
-                      <div class="font-weight-600 text-muted text-small">49 Sales</div>
-                    </div>
-                    <div class="fw-bold font-15">Laptop</div>
-                    <div class="mt-1">
-                      <div class="budget-price">
-                        <div class="budget-price-square bg-primary" style="width: 78%;"></div>
-                        <div class="budget-price-label">$74,568</div>
-                      </div>
-                      <div class="budget-price">
-                        <div class="budget-price-square bg-danger" style="width: 55%;"></div>
-                        <div class="budget-price-label">$65,892</div>
-                      </div>
-                    </div>
-                  </div>
-                </li>
-                <li class="product-list">
-                  <img class="msr-3 rounded" width="55" src="assets/images/products/product-1.png" alt="product">
-                  <div class="set-flex">
-                    <div class="float-end">
-                      <div class="font-weight-600 text-muted text-small">63 Sales</div>
-                    </div>
-                    <div class="fw-bold font-15">Headphone</div>
-                    <div class="mt-1">
-                      <div class="budget-price">
-                        <div class="budget-price-square bg-primary" style="width: 38%;"></div>
-                        <div class="budget-price-label">$2,859</div>
-                      </div>
-                      <div class="budget-price">
-                        <div class="budget-price-square bg-danger" style="width: 25%;"></div>
-                        <div class="budget-price-label">$1,872</div>
-                      </div>
-                    </div>
-                  </div>
-                </li>
-                <li class="product-list">
-                  <img class="msr-3 rounded" width="55" src="assets/images/products/product-2.png" alt="product">
-                  <div class="set-flex">
-                    <div class="float-end">
-                      <div class="font-weight-600 text-muted text-small">28 Sales</div>
-                    </div>
-                    <div class="fw-bold font-15">Tablet</div>
-                    <div class="mt-1">
-                      <div class="budget-price">
-                        <div class="budget-price-square bg-primary" style="width: 48%;"></div>
-                        <div class="budget-price-label">$11,238</div>
-                      </div>
-                      <div class="budget-price">
-                        <div class="budget-price-square bg-danger" style="width: 33%;"></div>
-                        <div class="budget-price-label">$7,564</div>
-                      </div>
-                    </div>
-                  </div>
-                </li>
-                <li class="product-list">
-                  <img class="msr-3 rounded" width="55" src="assets/images/products/product-5.png" alt="product">
-                  <div class="set-flex">
-                    <div class="float-end">
-                      <div class="font-weight-600 text-muted text-small">19 Sales</div>
-                    </div>
-                    <div class="fw-bold font-15">Camera</div>
-                    <div class="mt-1">
-                      <div class="budget-price">
-                        <div class="budget-price-square bg-primary" style="width: 91%;"></div>
-                        <div class="budget-price-label">$7,285</div>
-                      </div>
-                      <div class="budget-price">
-                        <div class="budget-price-square bg-danger" style="width: 74%;"></div>
-                        <div class="budget-price-label">$5,147</div>
-                      </div>
-                    </div>
-                  </div>
-                </li>
-              </ul>
-            </ng-scrollbar>
-          </div>
-          <div class="card-footer pt-3 d-flex justify-content-center">
-            <div class="budget-price justify-content-center">
-              <div class="budget-price-square bg-primary" data-width="20"></div>
-              <div class="budget-price-label">Selling Price</div>
-            </div>
-            <div class="budget-price justify-content-center">
-              <div class="budget-price-square bg-danger" data-width="20"></div>
-              <div class="budget-price-label">Product Cost</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+      }
+
+      <!-- Proformas vs ventas -->
+      <div class="col-lg-6 dash-order-charts">
         <div class="card">
-          <div class="card-header">
-            <h4>Chart Data</h4>
+          <div class="card-header"><h4>Proformas cotizadas vs. ventas reales</h4></div>
+          <div class="card-body">
+            @if (serie.loading && !serie.data) {
+              <div class="dash-skeleton" style="height: 320px"></div>
+            } @else if (serie.error && !serie.data) {
+              <div class="dash-error">
+                <span><i class="fas fa-exclamation-circle"></i> {{ serie.error }}</span>
+                <button type="button" class="btn btn-sm btn-outline-primary" (click)="loadSerie()">Reintentar</button>
+              </div>
+            } @else if (serie.data; as s) {
+              @if (serieVacia) {
+                <div class="dash-empty">Aún no hay proformas ni ventas en el período.</div>
+              } @else if (lineOptions; as o) {
+                <apx-chart [series]="o.series" [chart]="o.chart" [xaxis]="o.xaxis" [yaxis]="o.yaxis" [stroke]="o.stroke"
+                  [colors]="o.colors" [dataLabels]="o.dataLabels" [legend]="o.legend" [tooltip]="o.tooltip"
+                  [markers]="o.markers" [grid]="o.grid"></apx-chart>
+                <p class="visually-hidden">{{ resumenSerie(s) }}</p>
+              }
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Consumo por lamina -->
+      <div class="col-lg-6 dash-order-charts">
+        <div class="card">
+          <div class="card-header"><h4>Consumo por lámina (metros)</h4></div>
+          <div class="card-body">
+            @if (consumo.loading && !consumo.data) {
+              <div class="dash-skeleton" style="height: 320px"></div>
+            } @else if (consumo.error && !consumo.data) {
+              <div class="dash-error">
+                <span><i class="fas fa-exclamation-circle"></i> {{ consumo.error }}</span>
+                <button type="button" class="btn btn-sm btn-outline-primary" (click)="loadConsumo()">Reintentar</button>
+              </div>
+            } @else if (consumo.data; as c) {
+              @if (!c.series.length) {
+                <div class="dash-empty">Aún no hay consumo de lámina en el período.</div>
+              } @else if (barOptions; as o) {
+                <apx-chart [series]="o.series" [chart]="o.chart" [xaxis]="o.xaxis" [yaxis]="o.yaxis" [stroke]="o.stroke"
+                  [colors]="o.colors" [dataLabels]="o.dataLabels" [legend]="o.legend" [tooltip]="o.tooltip"
+                  [plotOptions]="o.plotOptions" [grid]="o.grid"></apx-chart>
+              }
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Items mas solicitados -->
+      <div class="col-lg-5 dash-order-charts">
+        <div class="card">
+          <div class="card-header"><h4>Ítems más solicitados</h4></div>
+          <div class="card-body">
+            @if (items.loading && !items.data) {
+              <div class="dash-skeleton" style="height: 300px"></div>
+            } @else if (items.error && !items.data) {
+              <div class="dash-error">
+                <span><i class="fas fa-exclamation-circle"></i> {{ items.error }}</span>
+                <button type="button" class="btn btn-sm btn-outline-primary" (click)="loadItems()">Reintentar</button>
+              </div>
+            } @else if (items.data; as i) {
+              @if (!i.items.length) {
+                <div class="dash-empty">Aún no hay ítems cotizados en el período.</div>
+              } @else if (donutOptions; as o) {
+                <apx-chart [series]="o.series" [chart]="o.chart" [labels]="o.labels" [colors]="o.colors"
+                  [legend]="o.legend" [dataLabels]="o.dataLabels" [plotOptions]="o.plotOptions" [tooltip]="o.tooltip"></apx-chart>
+              }
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Stock critico -->
+      <div class="col-lg-7 dash-order-stock">
+        <div class="card dash-stock">
+          <div class="card-header dash-stock-header">
+            <h4>Stock crítico de rollos</h4>
+            @if (stock.data; as s) {
+              <span class="dash-counters">
+                <span class="dash-badge stock-critico"><i class="fas fa-times-circle"></i> {{ s.contadores.criticos }} críticos</span>
+                <span class="dash-badge stock-bajo"><i class="fas fa-exclamation-triangle"></i> {{ s.contadores.bajos }} bajos</span>
+              </span>
+            }
+            <button type="button" class="btn btn-sm btn-link" (click)="toggleStockTodos()">
+              {{ stockTodos ? 'Ver solo alertas' : 'Ver todos' }}
+            </button>
           </div>
           <div class="card-body">
-            <apx-chart [series]="stackBarChart.series!" [chart]="stackBarChart.chart!"
-              [dataLabels]="stackBarChart.dataLabels!" [plotOptions]="stackBarChart.plotOptions!"
-              [grid]="stackBarChart.grid!" [responsive]="stackBarChart.responsive!" [xaxis]="stackBarChart.xaxis!"
-              [legend]="stackBarChart.legend!" [fill]="stackBarChart.fill!"></apx-chart>
-            <div class="row text-center ml-0 msr-0 pb-3">
-              <div class="col-6 border-right">
-                <div class="h4 fw-bold mb-0">30%</div><span class="small text-gray">Last week</span>
+            @if (stock.loading && !stock.data) {
+              <div class="dash-skeleton" style="height: 200px"></div>
+            } @else if (stock.error && !stock.data) {
+              <div class="dash-error">
+                <span><i class="fas fa-exclamation-circle"></i> {{ stock.error }}</span>
+                <button type="button" class="btn btn-sm btn-outline-primary" (click)="loadStock()">Reintentar</button>
               </div>
-              <div class="col-6">
-                <div class="h4 fw-bold mb-0">70%</div><span class="small text-gray">Last month</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-12 col-sm-12 col-md-12 col-lg-8 col-xl-8">
-        <div class="card">
-          <div class="card-header">
-            <h4>Assign Project List</h4>
-          </div>
-          <div class="card-body">
-            <ng-scrollbar style="height: 450px" visibility="hover">
-              <div class="table-responsive">
-                <table class="table table-striped">
-                  <thead>
-                    <tr>
-                      <th>Cust.</th>
-                      <th>Project</th>
-                      <th>Assign Date</th>
-                      <th>Team</th>
-                      <th>Priority</th>
-                      <th>Status</th>
-                      <th>Edit</th>
-                    </tr>
-                  </thead>
-                  <tr>
-                    <td class="table-img"><img src="assets/images/users/user-8.png" alt="">
-                    </td>
-                    <td>
-                      <h6 class="pb-0 mb-0 font-13">Wordpress Website</h6>
-                      <p class="m-0 pt-0 font-12">
-                        Assigned to<span class="col-green fw-bold"> Airi Satou</span>
-                      </p>
-                    </td>
-                    <td>20-02-2018</td>
-                    <td class="text-truncate">
-                      <ul class="list-unstyled order-list m-b-0">
-                        <li class="team-member team-member-sm"><img class="rounded-circle"
-                            src="assets/images/users/user-8.png" alt="user" data-toggle="tooltip" title=""
-                            data-original-title="Wildan Ahdian"></li>
-                        <li class="team-member team-member-sm"><img class="rounded-circle"
-                            src="assets/images/users/user-9.png" alt="user" data-toggle="tooltip" title=""
-                            data-original-title="John Deo"></li>
-                        <li class="team-member team-member-sm"><img class="rounded-circle"
-                            src="assets/images/users/user-10.png" alt="user" data-toggle="tooltip" title=""
-                            data-original-title="Sarah Smith"></li>
-                        <li class="avatar avatar-sm"><span class="badge badge-primary">+4</span></li>
-                      </ul>
-                    </td>
-                    <td>
-                      <div class="badge-outline col-red">High</div>
-                    </td>
-                    <td class="align-middle">
-                      <div class="progress-text">50%</div>
-                      <!-- <ngb-progressbar type="success" [value]="50" height=".3rem" class="p-0"></ngb-progressbar> -->
-                    </td>
-                    <td>
-                      <a data-toggle="tooltip" title="" data-original-title="Edit"><i
-                          class="fas fa-pencil-alt m-1"></i></a>
-                      <a data-toggle="tooltip" title="" data-original-title="Delete"><i
-                          class="far fa-trash-alt m-1"></i></a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="table-img"><img src="assets/images/users/user-1.png" alt="">
-                    </td>
-                    <td>
-                      <h6 class="pb-0 mb-0 font-13">Android Game App</h6>
-                      <p class="m-0 pt-0 font-12">
-                        Assigned to<span class="col-green fw-bold"> Sarah Smith</span>
-                      </p>
-                    </td>
-                    <td>22-05-2019</td>
-                    <td class="text-truncate">
-                      <ul class="list-unstyled order-list m-b-0">
-                        <li class="team-member team-member-sm"><img class="rounded-circle"
-                            src="assets/images/users/user-4.png" alt="user" data-toggle="tooltip" title=""
-                            data-original-title="Wildan Ahdian"></li>
-                        <li class="team-member team-member-sm"><img class="rounded-circle"
-                            src="assets/images/users/user-7.png" alt="user" data-toggle="tooltip" title=""
-                            data-original-title="John Deo"></li>
-                        <li class="team-member team-member-sm"><img class="rounded-circle"
-                            src="assets/images/users/user-2.png" alt="user" data-toggle="tooltip" title=""
-                            data-original-title="Sarah Smith"></li>
-                        <li class="avatar avatar-sm"><span class="badge badge-primary">+4</span></li>
-                      </ul>
-                    </td>
-                    <td>
-                      <div class="badge-outline col-green">Low</div>
-                    </td>
-                    <td class="align-middle">
-                      <div class="progress-text">55%</div>
-                      <!-- <ngb-progressbar type="info" [value]="55" height=".3rem" class="p-0"></ngb-progressbar> -->
-                    </td>
-                    <td>
-                      <a data-toggle="tooltip" title="" data-original-title="Edit"><i
-                          class="fas fa-pencil-alt m-1"></i></a>
-                      <a data-toggle="tooltip" title="" data-original-title="Delete"><i
-                          class="far fa-trash-alt m-1"></i></a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="table-img"><img src="assets/images/users/user-2.png" alt="">
-                    </td>
-                    <td>
-                      <h6 class="pb-0 mb-0 font-13">Java Web Service</h6>
-                      <p class="m-0 pt-0 font-12">
-                        Assigned to<span class="col-green fw-bold"> Cara Stevens</span>
-                      </p>
-                    </td>
-                    <td>11-04-2019</td>
-                    <td class="text-truncate">
-                      <ul class="list-unstyled order-list m-b-0">
-                        <li class="team-member team-member-sm"><img class="rounded-circle"
-                            src="assets/images/users/user-3.png" alt="user" data-toggle="tooltip" title=""
-                            data-original-title="Wildan Ahdian"></li>
-                        <li class="team-member team-member-sm"><img class="rounded-circle"
-                            src="assets/images/users/user-7.png" alt="user" data-toggle="tooltip" title=""
-                            data-original-title="John Deo"></li>
-                        <li class="team-member team-member-sm"><img class="rounded-circle"
-                            src="assets/images/users/user-8.png" alt="user" data-toggle="tooltip" title=""
-                            data-original-title="Sarah Smith"></li>
-                        <li class="avatar avatar-sm"><span class="badge badge-primary">+4</span></li>
-                      </ul>
-                    </td>
-                    <td>
-                      <div class="badge-outline col-blue">Medium</div>
-                    </td>
-                    <td class="align-middle">
-                      <div class="progress-text">70%</div>
-                      <!-- <ngb-progressbar type="warning" [value]="70" height=".3rem" class="p-0"></ngb-progressbar> -->
-                    </td>
-                    <td>
-                      <a data-toggle="tooltip" title="" data-original-title="Edit"><i
-                          class="fas fa-pencil-alt m-1"></i></a>
-                      <a data-toggle="tooltip" title="" data-original-title="Delete"><i
-                          class="far fa-trash-alt m-1"></i></a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="table-img"><img src="assets/images/users/user-9.png" alt="">
-                    </td>
-                    <td>
-                      <h6 class="pb-0 mb-0 font-13">Wedding IOS App</h6>
-                      <p class="m-0 pt-0 font-12">
-                        Assigned to<span class="col-green fw-bold"> John Doe</span>
-                      </p>
-                    </td>
-                    <td>19-05-2019</td>
-                    <td class="text-truncate">
-                      <ul class="list-unstyled order-list m-b-0">
-                        <li class="team-member team-member-sm"><img class="rounded-circle"
-                            src="assets/images/users/user-2.png" alt="user" data-toggle="tooltip" title=""
-                            data-original-title="Wildan Ahdian"></li>
-                        <li class="team-member team-member-sm"><img class="rounded-circle"
-                            src="assets/images/users/user-10.png" alt="user" data-toggle="tooltip" title=""
-                            data-original-title="John Deo"></li>
-                        <li class="team-member team-member-sm"><img class="rounded-circle"
-                            src="assets/images/users/user-4.png" alt="user" data-toggle="tooltip" title=""
-                            data-original-title="Sarah Smith"></li>
-                        <li class="avatar avatar-sm"><span class="badge badge-primary">+4</span></li>
-                      </ul>
-                    </td>
-                    <td>
-                      <div class="badge-outline col-red">High</div>
-                    </td>
-                    <td class="align-middle">
-                      <div class="progress-text">45%</div>
-                      <!-- <ngb-progressbar type="primary" [value]="45" height=".3rem" class="p-0"></ngb-progressbar> -->
-                    </td>
-                    <td>
-                      <a data-toggle="tooltip" title="" data-original-title="Edit"><i
-                          class="fas fa-pencil-alt m-1"></i></a>
-                      <a data-toggle="tooltip" title="" data-original-title="Delete"><i
-                          class="far fa-trash-alt m-1"></i></a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="table-img"><img src="assets/images/users/user-5.png" alt="">
-                    </td>
-                    <td>
-                      <h6 class="pb-0 mb-0 font-13">Blize Admin Template</h6>
-                      <p class="m-0 pt-0 font-12">
-                        Assigned to<span class="col-green fw-bold"> Ashton Cox</span>
-                      </p>
-                    </td>
-                    <td>25-07-2019</td>
-                    <td class="text-truncate">
-                      <ul class="list-unstyled order-list m-b-0">
-                        <li class="team-member team-member-sm"><img class="rounded-circle"
-                            src="assets/images/users/user-1.png" alt="user" data-toggle="tooltip" title=""
-                            data-original-title="Wildan Ahdian"></li>
-                        <li class="team-member team-member-sm"><img class="rounded-circle"
-                            src="assets/images/users/user-5.png" alt="user" data-toggle="tooltip" title=""
-                            data-original-title="John Deo"></li>
-                        <li class="team-member team-member-sm"><img class="rounded-circle"
-                            src="assets/images/users/user-7.png" alt="user" data-toggle="tooltip" title=""
-                            data-original-title="Sarah Smith"></li>
-                        <li class="avatar avatar-sm"><span class="badge badge-primary">+4</span></li>
-                      </ul>
-                    </td>
-                    <td>
-                      <div class="badge-outline col-blue">Medium</div>
-                    </td>
-                    <td class="align-middle">
-                      <div class="progress-text">67%</div>
-                      <!-- <ngb-progressbar type="danger" [value]="67" height=".3rem" class="p-0"></ngb-progressbar> -->
-                    </td>
-                    <td>
-                      <a data-toggle="tooltip" title="" data-original-title="Edit"><i
-                          class="fas fa-pencil-alt m-1"></i></a>
-                      <a data-toggle="tooltip" title="" data-original-title="Delete"><i
-                          class="far fa-trash-alt m-1"></i></a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="table-img"><img src="assets/images/users/user-4.png" alt="">
-                    </td>
-                    <td>
-                      <h6 class="pb-0 mb-0 font-13">React js website</h6>
-                      <p class="m-0 pt-0 font-12">
-                        Assigned to<span class="col-green fw-bold"> Sarah Smith </span>
-                      </p>
-                    </td>
-                    <td>11-08-2019</td>
-                    <td class="text-truncate">
-                      <ul class="list-unstyled order-list m-b-0">
-                        <li class="team-member team-member-sm"><img class="rounded-circle"
-                            src="assets/images/users/user-5.png" alt="user" data-toggle="tooltip" title=""
-                            data-original-title="Wildan Ahdian"></li>
-                        <li class="team-member team-member-sm"><img class="rounded-circle"
-                            src="assets/images/users/user-8.png" alt="user" data-toggle="tooltip" title=""
-                            data-original-title="John Deo"></li>
-                        <li class="team-member team-member-sm"><img class="rounded-circle"
-                            src="assets/images/users/user-3.png" alt="user" data-toggle="tooltip" title=""
-                            data-original-title="Sarah Smith"></li>
-                        <li class="avatar avatar-sm"><span class="badge badge-primary">+4</span></li>
-                      </ul>
-                    </td>
-                    <td>
-                      <div class="badge-outline col-green">Low</div>
-                    </td>
-                    <td class="align-middle">
-                      <div class="progress-text">41%</div>
-                      <!-- <ngb-progressbar type="success" [value]="41" height=".3rem" class="p-0"></ngb-progressbar> -->
-                    </td>
-                    <td>
-                      <a data-toggle="tooltip" title="" data-original-title="Edit"><i
-                          class="fas fa-pencil-alt m-1"></i></a>
-                      <a data-toggle="tooltip" title="" data-original-title="Delete"><i
-                          class="far fa-trash-alt m-1"></i></a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="table-img"><img src="assets/images/users/user-10.png" alt="">
-                    </td>
-                    <td>
-                      <h6 class="pb-0 mb-0 font-13">SEO improvement</h6>
-                      <p class="m-0 pt-0 font-12">
-                        Assigned to<span class="col-green fw-bold"> Janak Gandhi</span>
-                      </p>
-                    </td>
-                    <td>22-02-2018</td>
-                    <td class="text-truncate">
-                      <ul class="list-unstyled order-list m-b-0">
-                        <li class="team-member team-member-sm"><img class="rounded-circle"
-                            src="assets/images/users/user-3.png" alt="user" data-toggle="tooltip" title=""
-                            data-original-title="Wildan Ahdian"></li>
-                        <li class="team-member team-member-sm"><img class="rounded-circle"
-                            src="assets/images/users/user-9.png" alt="user" data-toggle="tooltip" title=""
-                            data-original-title="John Deo"></li>
-                        <li class="team-member team-member-sm"><img class="rounded-circle"
-                            src="assets/images/users/user-1.png" alt="user" data-toggle="tooltip" title=""
-                            data-original-title="Sarah Smith"></li>
-                        <li class="avatar avatar-sm"><span class="badge badge-primary">+4</span></li>
-                      </ul>
-                    </td>
-                    <td>
-                      <div class="badge-outline col-red">High</div>
-                    </td>
-                    <td class="align-middle">
-                      <div class="progress-text">70%</div>
-                      <!-- <ngb-progressbar type="info" [value]="70" height=".3rem" class="p-0"></ngb-progressbar> -->
-                    </td>
-                    <td>
-                      <a data-toggle="tooltip" title="" data-original-title="Edit"><i
-                          class="fas fa-pencil-alt m-1"></i></a>
-                      <a data-toggle="tooltip" title="" data-original-title="Delete"><i
-                          class="far fa-trash-alt m-1"></i></a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td class="table-img"><img src="assets/images/users/user-6.png" alt="">
-                    </td>
-                    <td>
-                      <h6 class="pb-0 mb-0 font-13">Laravel Website</h6>
-                      <p class="m-0 pt-0 font-12">
-                        Assigned to<span class="col-green fw-bold"> Mili Rain</span>
-                      </p>
-                    </td>
-                    <td>31-03-2019</td>
-                    <td class="text-truncate">
-                      <ul class="list-unstyled order-list m-b-0">
-                        <li class="team-member team-member-sm"><img class="rounded-circle"
-                            src="assets/images/users/user-4.png" alt="user" data-toggle="tooltip" title=""
-                            data-original-title="Wildan Ahdian"></li>
-                        <li class="team-member team-member-sm"><img class="rounded-circle"
-                            src="assets/images/users/user-7.png" alt="user" data-toggle="tooltip" title=""
-                            data-original-title="John Deo"></li>
-                        <li class="team-member team-member-sm"><img class="rounded-circle"
-                            src="assets/images/users/user-2.png" alt="user" data-toggle="tooltip" title=""
-                            data-original-title="Sarah Smith"></li>
-                        <li class="avatar avatar-sm"><span class="badge badge-primary">+4</span></li>
-                      </ul>
-                    </td>
-                    <td>
-                      <div class="badge-outline col-green">Low</div>
-                    </td>
-                    <td class="align-middle">
-                      <div class="progress-text">55%</div>
-                      <!-- <ngb-progressbar type="warning" [value]="55" height=".3rem" class="p-0"></ngb-progressbar> -->
-                    </td>
-                    <td>
-                      <a data-toggle="tooltip" title="" data-original-title="Edit"><i
-                          class="fas fa-pencil-alt m-1"></i></a>
-                      <a data-toggle="tooltip" title="" data-original-title="Delete"><i
-                          class="far fa-trash-alt m-1"></i></a>
-                    </td>
-                  </tr>
-                </table>
-              </div>
-            </ng-scrollbar>
-          </div>
-        </div>
-      </div>
-      <div class="col-12 col-sm-12 col-md-12 col-lg-4 col-xl-4">
-        <div class="card">
-          <div class="card-header">
-            <h4>Documents</h4>
-          </div>
-          <div class="card-body">
-            <div class="doc-file-type">
-              <ng-scrollbar style="height: 370px" visibility="hover">
-                <ul class="list-unstyled">
-                  <li class="d-flex mb-3">
-                    <span class="msr-3 img-icon primary-rgba text-primary"><i class="far fa-file-word"></i></span>
-                    <div class="set-flex">
-                      <h5 class="font-16 mb-1">Java Programming</h5>
-                      <p class="text-muted font-12">.doc, 4.3 MB</p>
-                    </div>
-                    <div class="ms-auto">
-                      <td>
-                        <i class="far fa-trash-alt psr-3"></i>
-                        <i class="far fa-arrow-alt-circle-down"></i>
-                      </td>
-                    </div>
-                  </li>
-                  <li class="d-flex mb-3">
-                    <span class="msr-3 img-icon success-rgba text-success"><i class="far fa-file-excel"></i></span>
-                    <div class="set-flex">
-                      <h5 class="font-16 mb-1">Angular Theory</h5>
-                      <p class="text-muted font-12">.xls, 2.5 MB</p>
-                    </div>
-                    <div class="ms-auto">
-                      <td>
-                        <i class="far fa-trash-alt psr-3"></i>
-                        <i class="far fa-arrow-alt-circle-down"></i>
-                      </td>
-                    </div>
-                  </li>
-                  <li class="d-flex mb-3">
-                    <span class="msr-3 img-icon danger-rgba text-danger"><i class="far fa-file-pdf"></i></span>
-                    <div class="set-flex">
-                      <h5 class="font-16 mb-1">Maths Sums Solution</h5>
-                      <p class="text-muted font-12">.pdf, 10.5 MB</p>
-                    </div>
-                    <div class="ms-auto">
-                      <td>
-                        <i class="far fa-trash-alt psr-3"></i>
-                        <i class="far fa-arrow-alt-circle-down"></i>
-                      </td>
-                    </div>
-                  </li>
-                  <li class="d-flex mb-3">
-                    <span class="msr-3 img-icon info-rgba text-info"><i class="far fa-file-archive"></i></span>
-                    <div class="set-flex">
-                      <h5 class="font-16 mb-1">Submit Science Journal</h5>
-                      <p class="text-muted font-12">.zip, 53.2 MB</p>
-                    </div>
-                    <div class="ms-auto">
-                      <td>
-                        <i class="far fa-trash-alt psr-3"></i>
-                        <i class="far fa-arrow-alt-circle-down"></i>
-                      </td>
-                    </div>
-                  </li>
-                  <li class="d-flex mb-3">
-                    <span class="msr-3 img-icon primary-rgba text-primary"><i class="far fa-file-word"></i></span>
-                    <div class="set-flex">
-                      <h5 class="font-16 mb-1">Marketing Instructions</h5>
-                      <p class="text-muted font-12">.doc, 5.3 MB</p>
-                    </div>
-                    <div class="ms-auto">
-                      <td>
-                        <i class="far fa-trash-alt psr-3"></i>
-                        <i class="far fa-arrow-alt-circle-down"></i>
-                      </td>
-                    </div>
-                  </li>
+            } @else if (stock.data; as s) {
+              @if (!s.filas.length) {
+                <div class="dash-empty dash-empty-ok"><i class="fas fa-check-circle"></i> Sin alertas de stock: todo en nivel OK.</div>
+              } @else {
+                <ul class="dash-stock-list list-unstyled">
+                  @for (f of s.filas; track f.sucursal_id + '-' + f.lamina_id + '-' + f.ancho) {
+                    <li>
+                      <a class="dash-stock-row dash-link" [class]="stockInfo(f.estado).clase" routerLink="/almacen/inventario">
+                        <div class="dash-stock-main">
+                          <div class="fw-bold">{{ f.lamina }} · {{ f.ancho }} m</div>
+                          <div class="text-muted small">
+                            @if (showStockSucursal) { {{ f.sucursal }} · }{{ f.rollos }} rollos · {{ f.metros }} m disponibles
+                          </div>
+                        </div>
+                        <ngb-progressbar class="dash-stock-bar" [type]="stockInfo(f.estado).barra"
+                          [value]="stockPercent(f, s.umbrales.bajo)" height=".4rem"></ngb-progressbar>
+                        <span class="dash-badge" [class]="stockInfo(f.estado).clase">
+                          <i class="fas" [class]="stockInfo(f.estado).icon"></i> {{ stockInfo(f.estado).label }}
+                        </span>
+                      </a>
+                    </li>
+                  }
                 </ul>
-              </ng-scrollbar>
-              <div class="text-center p-t-20">
-                <button class="btn btn-primary">View More</button>
+              }
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Cola de taller -->
+      <div class="col-lg-8 dash-order-cola">
+        <div class="card">
+          <div class="card-header"><h4>Cola de instalaciones / órdenes en taller</h4></div>
+          <div class="card-body">
+            @if (cola.loading && !cola.data) {
+              <div class="dash-skeleton" style="height: 220px"></div>
+            } @else if (cola.error && !cola.data) {
+              <div class="dash-error">
+                <span><i class="fas fa-exclamation-circle"></i> {{ cola.error }}</span>
+                <button type="button" class="btn btn-sm btn-outline-primary" (click)="loadCola()">Reintentar</button>
               </div>
-            </div>
+            } @else if (cola.data; as c) {
+              @if (!c.filas.length) {
+                <div class="dash-empty">Sin órdenes en taller.</div>
+              } @else {
+                <div class="table-responsive">
+                  <table class="table table-striped dash-table">
+                    <thead>
+                      <tr>
+                        <th>Cliente</th>
+                        <th>Vehículo / Placa</th>
+                        <th>Lámina instalada</th>
+                        <th>Estado</th>
+                        <th>Técnico asignado</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (f of c.filas; track f.nota_trabajo_id) {
+                        <tr>
+                          <td>{{ f.cliente }}</td>
+                          <td>
+                            <div>{{ f.modelo || '—' }}</div>
+                            <div class="text-muted small">{{ f.placa || 'Sin placa' }}</div>
+                          </td>
+                          <td [title]="f.laminas.join(', ')">{{ laminasTexto(f) }}</td>
+                          <td><span class="status-badge" [class]="statusClass(f.status)">{{ f.status_label }}</span></td>
+                          <td>
+                            @if (f.instalador) { {{ f.instalador }} } @else { <span class="text-muted fst-italic">No asignado</span> }
+                          </td>
+                          <td><a [routerLink]="['/ordenes/notas-trabajo/view', f.nota_trabajo_id]">Ver</a></td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+                <div class="dash-foot">
+                  <a routerLink="/ordenes/notas-trabajo">Ver todas las notas de trabajo ({{ c.total }})</a>
+                </div>
+              }
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Ultimas proformas -->
+      <div class="col-lg-4 dash-order-recientes">
+        <div class="card">
+          <div class="card-header"><h4>Últimas proformas emitidas</h4></div>
+          <div class="card-body">
+            @if (recientes.loading && !recientes.data) {
+              <div class="dash-skeleton" style="height: 220px"></div>
+            } @else if (recientes.error && !recientes.data) {
+              <div class="dash-error">
+                <span><i class="fas fa-exclamation-circle"></i> {{ recientes.error }}</span>
+                <button type="button" class="btn btn-sm btn-outline-primary" (click)="loadRecientes()">Reintentar</button>
+              </div>
+            } @else if (recientes.data; as r) {
+              @if (!r.proformas.length) {
+                <div class="dash-empty">Sin proformas recientes.</div>
+              } @else {
+                <ul class="dash-recientes list-unstyled">
+                  @for (p of r.proformas; track p.id) {
+                    <li>
+                      <div class="dash-reciente-main">
+                        <a [routerLink]="['/ordenes/proformas/view', p.id]" class="fw-bold">Proforma {{ p.id }}</a>
+                        <span class="status-badge" [class]="statusClass(p.status)">{{ p.status_label }}</span>
+                      </div>
+                      <div class="text-muted small">{{ p.name }} · {{ p.car_model_name || 'Sin modelo' }}{{ p.car_plate ? ' · ' + p.car_plate : '' }}</div>
+                      <div class="dash-reciente-foot">
+                        <span><strong>{{ bs(p.total_a_pagar) }}</strong> <span class="text-muted small">· {{ fechaHora(p.proforma_created_on) }}</span></span>
+                        @if (canConvert(p)) {
+                          <button type="button" class="btn btn-sm btn-success dash-convert" title="Aprobar y generar orden"
+                            [disabled]="converting !== null" (click)="convertir(p)">
+                            @if (converting === p.id) { <span class="spinner-border spinner-border-sm" role="status"></span> }
+                            Convertir a venta
+                          </button>
+                        }
+                      </div>
+                    </li>
+                  }
+                </ul>
+                <div class="dash-foot"><a routerLink="/ordenes/proformas">Ver todas las proformas</a></div>
+              }
+            }
           </div>
         </div>
       </div>
