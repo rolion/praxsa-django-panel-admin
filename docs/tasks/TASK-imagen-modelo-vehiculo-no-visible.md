@@ -1,6 +1,6 @@
 # TASK-imagen-modelo-vehiculo-no-visible: La imagen del vehículo no se visualiza en el listado ni en la vista de Modelo
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** NO
 **Rama:** task/TASK-imagen-modelo-vehiculo-no-visible
@@ -17,6 +17,7 @@
 | 2026-09-30 22:00 UTC | PUBLISH → PLANNING → ENGINEERING | REV-01 (PLAN, Medium): plan v2 añade ajuste de nginx; incorpora REV-02 | delivery-plan |
 | 2026-09-30 22:30 UTC | ENGINEERING → REVIEW | Implementación de plan v2 completa (REV-01, REV-02) | delivery-engineer |
 | 2026-09-30 23:00 UTC | REVIEW → REVIEW | Re-review: todo verde salvo `nginx -t` no ejecutable; sin PASS, etapa se mantiene | delivery-review |
+| 2026-09-30 23:20 UTC | REVIEW → PUBLISH | Quality Gate PASS con omisión autorizada por el usuario de `nginx -t` | delivery-review |
 
 ## Investigación
 
@@ -104,7 +105,7 @@ Según plan v1, sin desvíos. (Las preguntas abiertas del plan —dev vs. stg/pr
 - **No verificado:** `nginx -t` (el daemon de Docker no estaba corriendo); comportamiento real tras nginx-proxy en stg/prod (requiere despliegue).
 
 ## Review
-**Corrida 2 (re-review de plan v2, 2026-09-30): INCOMPLETA — sin PASS** (sin issues Critical/High; una verificación exigida por el plan no se pudo ejecutar).
+**Corrida 2 (re-review de plan v2, 2026-09-30): PASS con omisión autorizada de `nginx -t`** (ver nota de autorización al final de esta sección; antes de la autorización estaba INCOMPLETA) (sin issues Critical/High; una verificación exigida por el plan no se pudo ejecutar).
 
 Ejecutado: backend `test_vehicles_module` 48/48; suite completa `manage.py test` 522/522; Angular `ng test --code-coverage` 334 OK / 14 FAILED (los mismos 14 "should create" preexistentes de la plantilla, ajenos al diff); cobertura global Statements 73.71%, Branches 68.42%; `ng lint` limpio; `ng build` OK; `npm audit`: vulnerabilidades preexistentes (el PR no toca package.json). flake8/bandit/mypy/coverage.py no instalados.
 
@@ -115,7 +116,7 @@ Issues:
 - [REV-02](../reviews/REV-2026-09-30-imagen-modelo-vehiculo-no-visible-02.md) — Low: Resuelto (spec de reintento).
 - [REV-03](../reviews/REV-2026-09-30-imagen-modelo-vehiculo-no-visible-03.md) — Low / IMPLEMENTATION: comentario de `settings.py` dice que nginx "siempre fija" el header; ya no es cierto. No bloquea.
 
-Siguiente: levantar Docker Desktop (o instalar nginx) y volver a correr `/delivery-review`; o autorizar explícitamente en el chat omitir `nginx -t` para pasar a PUBLISH.
+**Falla ignorada con autorización explícita:** el usuario (chat, 2026-09-30) autorizó omitir `nginx -t` y pasar a `/delivery-publish`. Riesgo aceptado: un error de sintaxis en `nginx.conf.prod|stg` solo se detectaría al desplegar. Recomendado correrlo antes del despliegue.
 
 ## Publicación
 _Pendiente_
