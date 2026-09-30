@@ -1,6 +1,6 @@
 # TASK-filtros-busqueda-reportes: Filtros de búsqueda en reportes Proforma, Nota Trabajo y Nota Venta
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** NO
 **Rama:** `task/TASK-filtros-busqueda-reportes`
@@ -13,6 +13,7 @@
 | 2026-09-30 | INVESTIGATION → INVESTIGATION | Aclaraciones del solicitante incorporadas | delivery-investigate |
 | 2026-09-30 | INVESTIGATION → PLANNING | Plan v1 escrito y PR abierto | delivery-plan |
 | 2026-09-30 | PLANNING → ENGINEERING | Plan listo para implementar (pendiente de aprobación humana) | delivery-plan |
+| 2026-09-30 | ENGINEERING → REVIEW | Implementación completa según plan v1 | delivery-engineer |
 
 ## Investigación
 
@@ -115,7 +116,21 @@ _No aplica según veredicto_
 [docs/plans/PLAN-2026-09-30-filtros-busqueda-reportes.md](../plans/PLAN-2026-09-30-filtros-busqueda-reportes.md) — versión vigente: **v1**.
 
 ## Implementación
-_Pendiente_
+Implementado según plan v1, sin desvíos de alcance.
+
+- `admin_config/filtros_reportes.py` (nuevo): `sucursal_en_alcance_filter(path)` (opciones desde `User_Helper.get_sucursales_in_scope`) y `estado_filter(titulo)` (títulos "Estado"/"Cobro"/"Trabajo").
+- `reporte_proforma.py`: filtros sucursal, marca, modelo, estado y rango de fecha; el default de fecha ("hoy") ahora se calcula por request.
+- `report_nota_trabajo.py`: filtros sucursal, marca, modelo, instalador, estado y cobro (`nota_venta__status`); sin rango de fecha por defecto; llama a `get_finish_nota_queryset(..., solo_terminadas=False)`.
+- `business/orden_trabajo.py`: `get_finish_nota_queryset(user, qs, solo_terminadas=True)` (default conserva el comportamiento anterior).
+- `nota_venta.py`: filtros sucursal, fecha, trabajo (estado de la nota de trabajo) y cobro; `get_queryset` devuelve `qs.none()` en vez de `qs.filter(sucursal=-1)`.
+- Ventas Diaria sin cambios.
+- Tests: `tests/test_reportes_filtros_admin.py` (17 casos, integración con el cliente de admin). Corrida propia de `manage.py test product`: 478 tests OK (no es el Quality Gate).
+
+**Hallazgos durante la implementación**
+- Django solo acepta parámetros con rutas relacionadas si están en `list_filter` como campo; por eso el filtro de sucursal usa el parámetro simple `sucursal` en vez de `<ruta>__id__exact`.
+- Al listar notas sin `entrada_vehiculo` (ahora visibles), `get_entrada_vehiculo_date_format` fallaba con `None`; se corrigió mostrando `-` (cambio mínimo necesario, no estaba en el plan).
+
+**Deuda técnica / pendiente:** alcance por sucursal legado (`sucursales[0]`) y Admin sin sucursal en `NotaVentaAdmin` siguen fuera de alcance (ADR-002). Sin verificación manual en el admin real todavía (recomendada en el plan).
 
 ## Review
 _Pendiente_

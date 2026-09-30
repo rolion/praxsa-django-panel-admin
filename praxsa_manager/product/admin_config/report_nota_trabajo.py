@@ -16,7 +16,9 @@ from django.http import FileResponse
 import io
 from datetime import datetime
 from django_admin_listfilter_dropdown.filters import DropdownFilter, RelatedDropdownFilter, ChoiceDropdownFilter
+from .filtros_reportes import estado_filter, sucursal_en_alcance_filter
 from rangefilter.filters import (
+    DateTimeRangeFilter,
     DateRangeFilterBuilder,
     DateTimeRangeFilterBuilder,
     NumericRangeFilterBuilder,
@@ -39,13 +41,14 @@ class ReportNotaTrabajoAdmin(admin.ModelAdmin):
               ]
     list_filter = [
         ('proforma__sales_type', ChoiceDropdownFilter),
-        ('entrada_vehiculo', 
-         DateTimeRangeFilterBuilder(
-                title="Fecha Entrada Vehiculo",
-                default_start=datetime(2020, 1, 1),
-                default_end=datetime(2030, 1, 1),
-            ),),
-        ('proforma__sucursal', RelatedDropdownFilter),]
+        ('entrada_vehiculo', DateTimeRangeFilter),
+        sucursal_en_alcance_filter('proforma__sucursal'),
+        ('car_model__car_brand_id', RelatedDropdownFilter),
+        ('car_model', RelatedDropdownFilter),
+        ('instaladar', RelatedDropdownFilter),
+        ('status', estado_filter('Estado')),
+        ('nota_venta__status', estado_filter('Cobro')),
+    ]
     search_fields = ['id',
                      'instaladar__name',
                      'car_plate',
@@ -58,6 +61,10 @@ class ReportNotaTrabajoAdmin(admin.ModelAdmin):
     proforma_business = Proforma_Business()
     list_per_page = 10
     # actions =["print_nota_trabajo", 'create_sales_note']
+
+    # -- sin rango por defecto: las notas en proceso pueden no tener fecha de entrada
+    def get_rangefilter_entrada_vehiculo_title(self, request, field_path):
+        return 'Fecha Entrada Vehiculo'
 
     def get_sucursal(self, obj):
         return obj.proforma.sucursal.name
@@ -94,13 +101,15 @@ class ReportNotaTrabajoAdmin(admin.ModelAdmin):
     get_estado.short_description = 'Estado'
     
     def get_entrada_vehiculo_date_format(self, obj):
+        if obj.entrada_vehiculo is None:
+            return '-'
         return obj.entrada_vehiculo.strftime("%d-%m-%Y %H:%M:%S")
     get_entrada_vehiculo_date_format.short_description = 'Fecha Ingreso'
     get_entrada_vehiculo_date_format.admin_order_field = 'entrada_vehiculo'
     
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
         qs = super().get_queryset(request)
-        result = self.orden_trabajo_busi.get_finish_nota_queryset(user = request.user, qs=qs)
+        result = self.orden_trabajo_busi.get_finish_nota_queryset(user = request.user, qs=qs, solo_terminadas=False)
         if result is None:
             self.message_user(request=request,  message=str('Asigne una sucursal al usuario'), level= messages.ERROR)
             return qs.filter(proforma__sucursal = -1)

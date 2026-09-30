@@ -18,6 +18,8 @@ from django.http import FileResponse
 from django.urls import reverse
 from django.utils.html import format_html
 import io
+from rangefilter.filters import DateTimeRangeFilter
+from .filtros_reportes import estado_filter, sucursal_en_alcance_filter
         
     
 class NotaVentaAdmin(admin.ModelAdmin):
@@ -28,6 +30,12 @@ class NotaVentaAdmin(admin.ModelAdmin):
                     'view_notas_created_on',
                     'get_estado'
                     ]
+    list_filter = [
+        sucursal_en_alcance_filter('nota_trabajo__proforma__sucursal'),
+        ('created_on', DateTimeRangeFilter),
+        ('nota_trabajo__status', estado_filter('Trabajo')),
+        ('status', estado_filter('Cobro')),
+    ]
     search_fields = ['id','nota_trabajo__id','created_on', 'name',]
     form = NotaVentaForm
     list_per_page = 10
@@ -54,6 +62,9 @@ class NotaVentaAdmin(admin.ModelAdmin):
                 }),
                 ]
     
+    def get_rangefilter_created_on_title(self, request, field_path):
+        return 'Fecha'
+
     def get_nota_venta_id(self, obj):
         # link para ver la nota de trabajo
         link = reverse("admin:product_nota_venta_change", args=[ obj.id])
@@ -113,7 +124,7 @@ class NotaVentaAdmin(admin.ModelAdmin):
         result = self.proforma_business.get_nota_venta_queryset_by_role(user = request.user, qs=qs)
         if result is None:
             self.message_user(request=request,  message=str('Asigne una sucursal al usuario'), level= messages.ERROR)
-            return qs.filter(sucursal = -1)
+            return qs.none()
         return  result
     
 

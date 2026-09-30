@@ -16,10 +16,12 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django.http import FileResponse
 import io
-from datetime import datetime
+from datetime import datetime, time
 from datetime import timedelta
 from django_admin_listfilter_dropdown.filters import DropdownFilter, RelatedDropdownFilter, ChoiceDropdownFilter
+from .filtros_reportes import estado_filter, sucursal_en_alcance_filter
 from rangefilter.filters import (
+    DateTimeRangeFilter,
     DateRangeFilterBuilder,
     DateTimeRangeFilterBuilder,
     NumericRangeFilterBuilder,
@@ -42,13 +44,12 @@ class ReportProformaAdmin(admin.ModelAdmin):
               ]
     list_filter = [
         ('sales_type', ChoiceDropdownFilter),
-        ('sucursal', RelatedDropdownFilter),
-        ('proforma_created_on', 
-         DateTimeRangeFilterBuilder(
-                title="Creado en",
-                default_start=datetime.now().replace(hour=0, minute=0, second=0),
-                default_end=datetime.now().replace(hour=23, minute=59, second=59) ,
-            ),),]
+        sucursal_en_alcance_filter('sucursal'),
+        ('car_model_id__car_brand_id', RelatedDropdownFilter),
+        ('car_model_id', RelatedDropdownFilter),
+        ('status', estado_filter('Estado')),
+        ('proforma_created_on', DateTimeRangeFilter),
+    ]
     search_fields = ["id", 'sales_type', 'proforma_created_on', 'name', 'email', 'car_model_id__name', 'car_plate',]
     form = SaleHeaderForm
     orden_trabajo_busi =Orden_Trabajo_Business()
@@ -56,6 +57,14 @@ class ReportProformaAdmin(admin.ModelAdmin):
     list_per_page = 10
     # actions =["print_nota_trabajo", 'create_sales_note']
     
+    # -- filtro de fecha: por defecto el dia de hoy, calculado en cada request
+    def get_rangefilter_proforma_created_on_title(self, request, field_path):
+        return 'Creado en'
+
+    def get_rangefilter_proforma_created_on_default(self, request):
+        hoy = datetime.now().date()
+        return datetime.combine(hoy, time.min), datetime.combine(hoy, time.max)
+
     def get_proforma_id(self, obj):
         # link para ver la nota de trabajo
         link = reverse("admin:product_proforma_header_change", args=[ obj.id])
