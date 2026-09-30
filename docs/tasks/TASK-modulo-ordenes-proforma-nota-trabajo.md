@@ -1,6 +1,6 @@
 # TASK-modulo-ordenes-proforma-nota-trabajo: Módulo Órdenes (Proformas y Notas de Trabajo) en el panel admin
 
-**Etapa actual:** REVIEW
+**Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** task/TASK-modulo-ordenes-proforma-nota-trabajo
@@ -22,6 +22,7 @@
 | 2026-09-29 | REVIEW → REVIEW | Rediseño de "Ver nota de trabajo" pedido por el usuario, con el mismo sistema visual que Ver proforma (tarjetas, grid, badge En ejecución/Finalizado, fechas legibles, vacíos tenues, tablas ngx-datatable y barra de acciones); estilos compartidos en `orden-view.shared.scss`. DDR actualizado. Solo presentación | usuario |
 | 2026-09-30 | REVIEW → REVIEW | Edición in-situ de la nota de trabajo pedida por el usuario: el botón "Editar nota de trabajo" convierte en inputs los 4 campos operativos dentro de las tarjetas; barra inferior Cancelar/Guardar cambios. Se elimina el componente separado `nota-trabajo-edit` (la ruta `/edit/:id` abre la misma vista en modo edición). Sin cambios de API. DDR actualizado | usuario |
 | 2026-09-30 | REVIEW → REVIEW | Documentación al día con los ajustes de interfaz: plan **v2** con changelog (F5, F6, F7 y archivos afectados), `## Implementación` del TASK y sección Changes del PR. Sin cambios de código | usuario |
+| 2026-09-30 | REVIEW → ENGINEERING | Quality Gate: **FAIL**. REV-01 (High, IMPLEMENTATION): `ng build` de producción falla por presupuesto de estilos de componente. REV-02 (High, IMPLEMENTATION): catálogo de bobinas devuelve floats y en edición se pierden las bobinas guardadas. Backend 258 tests OK, frontend sin fallos nuevos (15 preexistentes idénticos en master), verificación en vivo del API sin fallos funcionales | delivery-review |
 
 ## Investigación
 
@@ -210,7 +211,24 @@ Implementado según el plan (v1 + ajustes de interfaz de la v2), sin desvíos de
 - **No ejecutado**: la verificación manual en vivo (paso V2 del plan) contra backend real con usuarios de distintas sucursales/permisos; queda pendiente antes de dar el task por bueno.
 
 ## Review
-_Pendiente_
+
+### Corrida 1 (2026-09-30) — Quality Gate: **FAIL**
+
+Revisión ejecutada en la **misma sesión** que implementó el código (aislamiento procedimental, no real); se rehízo desde artefactos (TASK, plan v2, ADR, diff `origin/master...HEAD`) y ejecutando comandos.
+
+**Issues abiertos**
+- [REV-2026-09-30-modulo-ordenes-proforma-nota-trabajo-01](../reviews/REV-2026-09-30-modulo-ordenes-proforma-nota-trabajo-01.md) — **High, IMPLEMENTATION**: `ng build` de producción falla (presupuesto `anyComponentStyle` de `proforma-form.component.scss`: 4.42 kB > 4.00 kB) y hay 2 avisos más. Las verificaciones previas solo usaron `--configuration development`.
+- [REV-2026-09-30-modulo-ordenes-proforma-nota-trabajo-02](../reviews/REV-2026-09-30-modulo-ordenes-proforma-nota-trabajo-02.md) — **High, IMPLEMENTATION**: el catálogo de bobinas devuelve números (`1.5`, `120.0`) en vez de strings; en edición la clave de bobina no coincide con la de las líneas guardadas (`1|1.5` vs `1|1.50`) y se pierden las bobinas. Detectado con el servidor real; los tests lo enmascaraban.
+
+**Resultado de verificaciones** (detalle y salidas en el `## Review` / `## Testing` del PR #50)
+- Backend `manage.py test`: 258 OK; `makemigrations --check`: sin cambios.
+- Frontend `ng test --code-coverage`: 165 OK, 15 fallos **idénticos en `master` sin cambios** (preexistentes, no de este PR); cobertura de los archivos nuevos de `ordenes/`: 80–100 % de sentencias.
+- `ng lint` limpio; `ng build` (producción) **falla** (REV-01); `ng build --configuration development` ok.
+- Verificación en vivo (HTTP real contra `runserver` + Postgres descartable, 51 comprobaciones): comportamiento funcional correcto (precios recalculados, alcance por sucursal, permisos, generar nota + inventario, PDF ambos tipos, edición, CORS); las únicas discrepancias fueron de formato numérico (REV-02). Proformas del panel visibles y abribles en Django Admin.
+- **No ejecutado**: verificación en navegador de la UI contra el backend real (solo se revisó la UI con datos simulados); herramientas de lint/seguridad de Python (`flake8`, `ruff`, `bandit`, `mypy`, `coverage` no están instaladas).
+- Observación preexistente (fuera de alcance): `NotaTrabajoAdmin.get_queryset` hace `qs.filter(sucursal=-1)` para usuarios sin sucursal y falla con `FieldError` (`admin_config/nota_trabajo.py`); no lo toca este PR.
+
+Siguiente etapa: `ENGINEERING` (`/delivery-engineer TASK-modulo-ordenes-proforma-nota-trabajo`), luego nueva revisión.
 
 ## Publicación
 _Pendiente_
