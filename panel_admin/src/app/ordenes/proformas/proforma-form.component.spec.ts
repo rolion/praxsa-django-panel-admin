@@ -372,4 +372,59 @@ describe('ProformaFormComponent', () => {
       expect(router.navigate).toHaveBeenCalledWith(['/ordenes/proformas/view', 5]);
     });
   });
+  describe('cotizacion de la calculadora (history.state)', () => {
+    const draft = {
+      version: 1,
+      sucursal: 1,
+      carModelId: 9,
+      lines: [{ carPartId: 5, windowFilm: 3, width: '1.50', length: '1.20', quantity: 2 }],
+    };
+
+    afterEach(() => history.replaceState(null, ''));
+
+    it('preloads sucursal, model, items and lines from a valid draft', () => {
+      history.replaceState({ cotizacion: draft }, '');
+      setup();
+      httpMock.expectOne(`${ordenes}/catalogo/sucursales`).flush([sucursal]);
+      httpMock.expectOne(`${vehicles}/models/9/items/`).flush(parts);
+      httpMock.expectOne((r) => r.url === `${ordenes}/catalogo/bobinas`).flush(reels);
+
+      expect(component.form.getRawValue().sucursal).toBe(1);
+      expect(component.form.getRawValue().car_model_id).toBe(9);
+      expect(component.items.length).toBe(1);
+      expect(component.lines.length).toBe(1);
+      expect(component.lines.at(0).value).toEqual({
+        car_part: 5,
+        reel: '3|1.50',
+        length: '1.20',
+        quantity: 2,
+      });
+      expect(component.lines.at(0).get('reel')?.value).toBe(component.reelKey(3, '1.50'));
+    });
+
+    it('opens an empty form when there is no draft (regression of the plain create)', () => {
+      setupCreate();
+      expect(component.form.getRawValue().car_model_id).toBeNull();
+      expect(component.lines.length).toBe(1);
+      expect(component.lines.at(0).get('reel')?.value).toBeNull();
+    });
+
+    it('ignores an invalid draft', () => {
+      history.replaceState({ cotizacion: { ...draft, version: 99 } }, '');
+      setupCreate();
+      expect(component.form.getRawValue().car_model_id).toBeNull();
+      expect(component.lines.at(0).get('reel')?.value).toBeNull();
+    });
+
+    it('clears the line reel with the existing notice when the reel is no longer available', () => {
+      history.replaceState({ cotizacion: { ...draft, lines: [{ ...draft.lines[0], windowFilm: 77 }] } }, '');
+      setup();
+      httpMock.expectOne(`${ordenes}/catalogo/sucursales`).flush([sucursal]);
+      httpMock.expectOne(`${vehicles}/models/9/items/`).flush(parts);
+      httpMock.expectOne((r) => r.url === `${ordenes}/catalogo/bobinas`).flush(reels);
+
+      expect(component.lines.at(0).get('reel')?.value).toBeNull();
+      expect(component.infoMessage).toContain('ya no están disponibles');
+    });
+  });
 });

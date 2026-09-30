@@ -100,4 +100,22 @@ describe('HeaderComponent', () => {
     expect(el.querySelector('.dropdown-title')?.textContent?.trim()).toBe('Ana');
     expect(el.textContent).toContain('Logout');
   });
+  it('default variant has no logo', () => {
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('.header-brand')).toBeNull();
+    expect(el.querySelector('.navbar-minimal')).toBeNull();
+  });
+
+  it('minimal variant shows the logo, hides the sidebar toggle and keeps fullscreen and the user menu', () => {
+    fixture.componentRef.setInput('minimal', true);
+    fixture.detectChanges();
+
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('.header-brand img')?.getAttribute('src')).toContain('praxsa-admin-logo.png');
+    expect(el.querySelector('.navbar-minimal')).not.toBeNull();
+    expect(el.querySelector('i-feather[name="menu"]')).toBeNull();
+    expect(el.querySelector('i-feather[name="maximize"]')).not.toBeNull();
+    expect(el.querySelector('i-feather[name="user"]')).not.toBeNull();
+    expect(el.textContent).toContain('Logout');
+  });
 });

@@ -1,6 +1,7 @@
 import { Route } from '@angular/router';
 import { MainLayoutComponent } from './layout/app-layout/main-layout/main-layout.component';
 import { AuthGuard } from './core/guard/auth.guard';
+import { MinimalLayoutComponent } from './layout/app-layout/minimal-layout/minimal-layout.component';
 import { AuthLayoutComponent } from './layout/app-layout/auth-layout/auth-layout.component';
 import { Page404Component } from './authentication/page404/page404.component';
 
@@ -63,6 +64,14 @@ export const APP_ROUTE: Route[] = [
                     import('./reportes/reportes.routes').then((m) => m.REPORTES_ROUTE),
             },
         ],
+    },
+    {
+        // Calculadora de precios: layout sin sidebar (ADR-pricing-calculator-screen-layout-sin-sidebar).
+        path: 'calculadora',
+        component: MinimalLayoutComponent,
+        canActivate: [AuthGuard],
+        loadChildren: () =>
+            import('./calculadora/calculadora.routes').then((m) => m.CALCULADORA_ROUTE),
     },
     {
         path: 'authentication',

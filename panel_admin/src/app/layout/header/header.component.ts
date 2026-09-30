@@ -5,9 +5,10 @@ import {
   OnInit,
   Renderer2,
   AfterViewInit,
-  inject
+  inject,
+  input
 } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { NgbDropdown, NgbDropdownToggle, NgbDropdownMenu } from '@ng-bootstrap/ng-bootstrap';
 import { FeatherModule } from 'angular-feather';
 import { AuthService, InConfiguration, LanguageService, LocalStorageService, RightSidebarService } from '@core';
@@ -23,6 +24,7 @@ import { ConfigService } from '@config/config.service';
         NgbDropdown,
         NgbDropdownToggle,
         NgbDropdownMenu,
+        RouterLink,
     ],
     providers: [RightSidebarService]
 })
@@ -32,6 +34,8 @@ export class HeaderComponent implements OnInit, AfterViewInit {
   isOpenSidebar?: boolean;
   docElement?: HTMLElement;
   isFullScreen = false;
+  /** Variante sin sidebar (layout minimo): muestra el logo y oculta el toggle del menu lateral. */
+  minimal = input(false);
 
   private document = inject(DOCUMENT);
   private renderer = inject(Renderer2);
