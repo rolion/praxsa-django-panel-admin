@@ -8,6 +8,7 @@ import { LaminaCreateComponent } from './laminas/lamina-create.component';
 import { LaminaEditComponent } from './laminas/lamina-edit.component';
 import { LaminaViewComponent } from './laminas/lamina-view.component';
 import { LaminasListComponent } from './laminas/laminas-list.component';
+import { PreciosSucursalListComponent } from './precios-sucursal/precios-sucursal-list.component';
 
 export const ALMACEN_ROUTE: Route[] = [
   { path: 'laminas', component: LaminasListComponent },
@@ -19,4 +20,5 @@ export const ALMACEN_ROUTE: Route[] = [
   { path: 'inventario/create', component: InventarioCreateComponent },
   { path: 'inventario/view/:id', component: InventarioViewComponent },
   { path: 'inventario/edit/:id', component: InventarioEditComponent },
+  { path: 'precios-sucursal', component: PreciosSucursalListComponent },
 ];

@@ -383,6 +383,9 @@ class NotaTrabajoUpdateSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         instaladar = attrs.get('instaladar')
         proforma = self.instance.proforma if self.instance is not None else None
+        cambia_instalador = self.instance is None or instaladar != self.instance.instaladar
+        if instaladar is not None and cambia_instalador and not instaladar.is_active:
+            raise serializers.ValidationError({'instaladar': 'El instalador está inactivo.'})
         if instaladar is not None and proforma is not None and proforma.sucursal_id:
             if not instaladar.sucursal.filter(pk=proforma.sucursal_id).exists():
                 raise serializers.ValidationError(

@@ -62,6 +62,23 @@ export interface InventarioCreatePayload {
   nro_lote?: string | null;
 }
 
+export interface AppPrecioSucursal {
+  id: number;
+  sucursal: number;
+  sucursal_name: string;
+  lamina: number;
+  lamina_name: string;
+  width: string;
+  precio_venta: string;
+}
+
+export interface PrecioSucursalPayload {
+  sucursal: number;
+  lamina: number;
+  width: string;
+  precio_venta: string;
+}
+
 export interface AppSucursal {
   id: number;
   name: string;
