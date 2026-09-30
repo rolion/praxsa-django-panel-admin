@@ -1,6 +1,6 @@
 # TASK-pricing-calculator-screen: Pantalla "Calculadora de precios" para staff/asesores en panel_admin
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** `claude/pricing-calculator-screen-b5e976` (asignada por el entorno)
@@ -18,6 +18,7 @@
 | 2026-09-30 | INVESTIGATION → ARCHITECTURE (via DESIGN) | Diseño del flujo de cliente resuelto en un DDR nuevo que reemplaza al de la v1: calculadora navegable sin sesión, modal de acceso (login y registro en 2 etapas), encabezado con Calculadora/Proformas, guardado directo con datos de la cuenta y lista Mis proformas de solo lectura; el veredicto NEEDS_ARCHITECTURE exige decidir aislamiento de sesión/autorización, registro con username y placa, catálogos y contrato de listado | delivery-design |
 | 2026-09-30 | ARCHITECTURE → PLANNING | Decisiones tomadas en 3 ADR nuevos: sesión de cliente con aislamiento por guards y barrera de servidor existente (sin tocar el login del panel), registro y API de cliente aditivos (endpoint nuevo, `Client.car_plate` con migración, perfil y lista propios, `POST invoice` para guardar), y catálogo público para la calculadora; el ADR de cotización v1 queda reemplazado en parte | delivery-architect |
 | 2026-09-30 | PLANNING → ENGINEERING | Plan **v2** escrito sobre el mismo PR #60: backend aditivo (migración `0115` con `Client.car_plate`, registro/perfil/lista de cliente, catálogo público con `is_active` e imagen), guards y manejo de 401, módulo `cliente/` (modal de acceso en 2 etapas, Mis proformas), calculadora con catálogo público y acciones según sesión; sin E2E (verificación manual en vivo obligatoria) y sin dependencias nuevas; primer paso: sincronizar la rama con `origin/master` (9 commits detrás) | delivery-plan |
+| 2026-09-30 | ENGINEERING → REVIEW | Implementación completa del plan v2 (backend aditivo + frontend de cliente); suites propias en verde (backend 550, frontend 443 con los 14 `should create` preexistentes), `ng lint`/`ng build` limpios; verificación manual contra el backend real pendiente | delivery-engineer |
 
 ## Investigación
 
@@ -213,7 +214,34 @@ Hoy un asesor arma una cotización creando directamente una proforma en `/ordene
   - v1 (calculadora de staff) ya implementada en este PR; v2 la conserva como base. Preguntas abiertas no bloqueantes: flujo/menú de staff, login por correo, CI/NIT, tasa del registro, WhatsApp y formato de importes.
 
 ## Implementación
+### Plan v2 (flujo de cliente) — implementado 2026-09-30
 
+Implementado según [PLAN v2](../plans/PLAN-2026-09-30-pricing-calculator-screen.md), sobre la base de la v1 (más abajo). Sin dependencias nuevas.
+
+**Fase 0:** `origin/master` mergeado a la rama (9 commits, sin conflictos; incluye PR #58).
+**Fase 1 — Backend (`praxsa_manager/product/`):**
+- `Client.car_plate` (`CharField(max_length=10, blank=True, default='')`) + migración `0115_client_car_plate` (solo `AddField`, reversible; `makemigrations --check` limpio).
+- `serializer/client_register_serializer.py` (`ClientRegisterSerializer`): correo único sin distinguir mayúsculas, `username` opcional (por defecto el correo; único sin distinguir mayúsculas, sin espacios, distinto de cualquier usuario existente), `validate_password` de Django con el usuario, teléfono `^\+?\d{7,11}$`, placa ≤ 10, creación atómica de `User` (nunca staff/superuser/grupos/permisos; campos no declarados se ignoran) y `Client` (`ci_nit` vacío).
+- `custom_views/client_api.py`: `POST client/register` (`AllowAny`, `ClientRegisterThrottle` scope `client_register`, sin token en la respuesta), `GET client/me` (404 sin `Client`), `GET client/proformas` (propias, `is_delete=False`, `select_related` → 2 consultas constantes, fecha ISO, total string). Rutas en `urls.py`; tasa `client_register: 10/hour` en `settings.py`.
+- `get_calculator_info`: solo activos (marcas, modelos, partes y láminas) e `image` absoluta (o `null`) en cada modelo, sin quitar claves.
+**Fase 2 — Sesión y aislamiento:** `AuthService` (`isLoggedIn`/`isStaff`/`isClient`, `sessionExpired$`, `notifySessionExpired`); `StaffGuard` (layout de administración) y `SessionGuard` (`/mis-proformas`); `ErrorInterceptor` diferenciado (staff: recarga como antes; cliente: sin recarga + evento; 401 anónimo: sin recarga); `app.routes.ts` (`StaffGuard` en `MainLayoutComponent`, `/calculadora` pública, `/mis-proformas`).
+**Fase 3 — `cliente/`:** modelo, `ClienteService` (register, me, proformas, `POST invoice`), modal de acceso (login + registro en 2 etapas, usuario sugerido = correo, confirmación solo en cliente, errores del servidor por campo y regreso a la etapa 1, login automático, 429), `AccesoModalService` (un solo modal, no se cierra mientras envía) y `MisProformasComponent` (`ngx-datatable` de solo lectura, estados cargando/vacío/error, fila resaltada).
+**Fase 4 — Calculadora y encabezado:** `CalculadoraService` con los catálogos públicos y adaptadores puros (`mapCatalog`/`mapModelParts`/`mapInventory`); acciones según sesión (anónimo → modal; cliente → `client/me` + `POST invoice` + toast + `/mis-proformas`; staff con permiso → camino v1; 401 → reabre el modal y reintenta conservando la cotización); "A nombre de / Placa" en el resumen; `?acceso=1`; encabezado con estado de sesión (anónimo: Iniciar sesión/Crear cuenta; cliente: Calculadora · Proformas; staff: Calculadora · Panel) y logout al destino correcto.
+
+**Pruebas escritas (según el plan):** backend `tests/test_client_api.py` (28 casos de integración: registro, unicidad, contraseñas, privilegios ignorados, throttle, login del panel no-staff, `client/me`, `client/proformas` incl. aislamiento y nº de consultas, flujo `POST invoice` → lista, 403 del token de cliente en 12 endpoints de administración, `calculator_info` sin inactivos y con imagen, `create_client` legado intacto). Frontend: `staff-session.guard.spec.ts`, `error.interceptor.spec.ts`, `cliente.service.spec.ts`, `acceso-modal.component.spec.ts`, `mis-proformas.component.spec.ts`, `calculadora.component.spec.ts` (reescrito: catálogo público y flujos anónimo/cliente/staff/sesión vencida), `calculadora.helpers.spec.ts` (adaptadores) y `header.component.spec.ts` (variante mínima por actor). Sin E2E (decidido en el plan).
+
+**Corridas propias (no son el Quality Gate):** `manage.py test` completo: 550 OK. `ng test`: 443 OK y 14 fallos, todos `should create` de specs de la plantilla ajenos al cambio (idénticos al estado previo). `ng lint` limpio; `ng build` de producción ok (la advertencia "23 rules skipped due to selector errors" es de la plantilla). En el navegador (servidor en 4201 contra el backend de desarrollo ya en ejecución, que no tiene aún los endpoints nuevos): encabezado anónimo, modal de registro (validación de etapa 1, sugerencia de usuario, etapa 2 y "las contraseñas no coinciden") y el redireccionamiento de un cliente que escribe `#/users` hacia `#/calculadora` sin sidebar.
+
+**Pendiente (no hecho, exige confirmación del usuario):** la verificación manual obligatoria del plan contra el backend real con los endpoints nuevos (aplicar la migración `0115` y crear cuentas de prueba en la base de desarrollo). Sin ella no se comprobaron de punta a punta el registro real, el guardado con `POST invoice` y la lista `client/proformas`.
+
+**Deuda / notas:**
+- El `ErrorInterceptor` ahora no recarga ante un 401 sin cabecera `Authorization` (antes recargaba siempre); el caso de staff con token sigue igual.
+- `POST invoice` sigue sin validar ancho/metros en servidor (aceptado por ADR); `proforma_created_on` es `auto_now`.
+- `AuthGuard` ya no se usa en las rutas (queda el archivo y su spec).
+- Tras un login de staff por el modal del encabezado se navega a `/dashboard/main`.
+- La regla de "Recomendada", el WhatsApp por sucursal, el formato de importes, el login por correo y el ítem de menú de staff siguen como en el plan.
+
+### Plan v1 (calculadora de staff) — implementado previamente
 Implementado según [PLAN v1](../plans/PLAN-2026-09-30-pricing-calculator-screen.md), sin desvíos de alcance, sin dependencias nuevas y sin cambios de backend.
 
 **Fase 1 — Layout:** `MinimalLayoutComponent` (`layout/app-layout/minimal-layout/`), `input()` `minimal` en `HeaderComponent` (logo, sin toggle; default `false` intacto), ruta hermana `calculadora` con `AuthGuard` en `app.routes.ts`, y `assets/scss/_calculadora.scss` (`.layout-minimal`, íconos del header visibles sobre fondo blanco, estilos de la pantalla).
