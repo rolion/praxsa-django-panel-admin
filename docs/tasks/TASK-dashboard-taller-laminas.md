@@ -1,10 +1,10 @@
 # TASK-dashboard-taller-laminas: Dashboard del panel para el taller de láminas (KPIs, gráficas, stock crítico, cola de instalaciones, últimas proformas)
 
-**Etapa actual:** PLANNING
+**Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** task/TASK-dashboard-taller-laminas
-**Pull Request:** _sin abrir todavía_
+**Pull Request:** [#56](https://github.com/rolion/praxsa-django-panel-admin/pull/56)
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
@@ -14,6 +14,7 @@
 | 2026-09-30 | ARCHITECTURE → PLANNING | ADR de API/alcance y de definiciones de métricas registrados; usuario resolvió venta=pagada, categoría=por nombre de lámina, servicio=ítems, stock=regla fija; sin migraciones | delivery-architect |
 | 2026-09-30 | PLANNING → ARCHITECTURE | El plan no se escribió: master trajo el PR #54 (módulo de reportes) que contradice dos decisiones de los ADR (cálculo único de ventas cobradas y permiso `view_proxy_pagos` para ver ventas). Requiere revisar los ADR con `/delivery-architect` | delivery-plan |
 | 2026-09-30 | ARCHITECTURE → PLANNING | ADR de API/alcance y de métricas revisados tras el PR #54 (ventas cobradas y permiso `view_proxy_pagos` reutilizados de Reportes; alcance con `get_panel_pago_queryset`/`get_panel_inventario_queryset`; `sin_sucursal`); DDR ajustado | delivery-architect |
+| 2026-09-30 | PLANNING → ENGINEERING | Plan v1 escrito y PR #56 abierto; queda a la espera de la aprobación humana del plan y de las 6 preguntas abiertas antes de implementar | delivery-plan |
 
 ## Investigación
 
