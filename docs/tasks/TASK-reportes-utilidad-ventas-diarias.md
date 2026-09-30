@@ -1,6 +1,6 @@
 # TASK-reportes-utilidad-ventas-diarias: Investigar y mejorar los reportes "Reporte Utilidades" y "Reporte Ventas Diaria" (solo lectura)
 
-**Etapa actual:** PLANNING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** task/TASK-reportes-utilidad-ventas-diarias
@@ -15,6 +15,8 @@
 | 2026-09-30 | DESIGN → ARCHITECTURE | DDR escrito: menú Reportes con Ventas Diarias y Utilidad en panel_admin (filtros de servidor, tarjetas de totales, ngx-datatable). Veredicto NEEDS_ARCHITECTURE | delivery-design |
 | 2026-09-30 | ARCHITECTURE → PLANNING | 2 ADR escritos: cálculo único en `business/reportes.py` + API de solo lectura, y permisos (`view_proxy_pagos` Admin/Caja, `view_utilidades` Admin). Decisiones del usuario: instalación aparte de la utilidad; roles indicados | delivery-architect |
 | 2026-09-30 | PLANNING (plan v1 escrito) | Plan v1 y PR abiertos; pendiente aprobación humana del plan. Se detectó que la base estaba desactualizada respecto de `origin/master` (#52) y se corrigió la fuente del costo en el ADR | delivery-plan |
+| 2026-09-30 | PLANNING → ENGINEERING | Plan aprobado por el usuario al invocar la implementación | delivery-engineer |
+| 2026-09-30 | ENGINEERING → REVIEW | Implementación completa (backend + panel_admin); pendiente verificación formal y prueba manual con datos reales | delivery-engineer |
 
 ## Investigación
 
@@ -112,7 +114,36 @@ Ver "Hechos encontrados". En síntesis: Ventas Diaria lista pagos con datos de l
 - [PLAN-2026-09-30-reportes-utilidad-ventas-diarias](../plans/PLAN-2026-09-30-reportes-utilidad-ventas-diarias.md) — **v1**. 21 pasos en 5 fases (cálculo → alcance/API/permisos → Django Admin → frontend → cierre). Sin E2E (justificado en el plan); sin dependencias nuevas. Ajuste al planificar: la base `origin/master` ya integra #52 (una línea puede consumir varias filas de inventario), por lo que el costo sale de `Inventario_Movimiento` con fallback legado; el ADR de cálculo se actualizó (Actualización 1).
 
 ## Implementación
-_Pendiente_
+Implementado según el plan v1 (commit `4a658d8` sobre el PR #54). Backend `praxsa_manager/product/` y frontend `panel_admin/`.
+
+**Backend**
+- `business/reportes.py` (nuevo): cálculo único. Costo por fila de inventario con movimientos (egresos − devoluciones) y fallback al lote de la línea; `costo_incompleto`; utilidad antes/después de descuento; instalación aparte; desgloses por tipo de venta, tipo de pago y lámina; `calcular_por_lote` para el Django Admin. Número constante de consultas.
+- API `GET product/reportes/ventas-diarias` y `reportes/utilidad` (`custom_views/reportes_admin.py`, `serializer/reportes_serializer.py`, `urls.py`): permiso `view_proxy_pagos` / `view_utilidades` (403), alcance por sucursal (404 si es ajena, `sin_sucursal`), rango obligatorio de máx. 366 días. El serializer de Ventas Diarias no tiene campos de costo.
+- `permissions.py`: `TienePermisoReporte`. `business/pago.py` y `business/inventario.py`: métodos nuevos de alcance del panel (los legados no se tocaron).
+- Django Admin: `report_daily_sell.py` y `report_utilidad.py` reescritos sobre `Reportes_Business`, sin agregar/cambiar/borrar; totales del filtro como mensaje sobre la tabla; el filtro de fecha de Ventas Diaria ahora se calcula por request (hoy) y no al importar.
+- Comando `asignar_permisos_reportes` (`--dry-run`, idempotente).
+
+**Frontend**
+- Módulo `app/reportes/` (servicio, modelos, base común de filtros, pantallas Ventas Diarias y Utilidad), estilos `_reportes.scss`, ruta `reportes`.
+- Sidebar: `permission` opcional por item y `filterByPermission`; grupo "Reportes" en `routes.json`.
+
+**Pruebas escritas (las corrí como verificación propia; la verificación formal es de `delivery-review`)**
+- Backend: 58 nuevas (`test_reportes_calculo`, `test_reportes_api`, `test_reportes_admin`, `test_asignar_permisos_reportes`). Suite `product`: 461 tests OK; `makemigrations --check` sin cambios.
+- Frontend: 28 nuevas (servicio/filtros, ambas pantallas, `filterByPermission`). `ng lint` y `npm run build` sin errores.
+- Comprobación visual con una API falsa local (fixtures, sin tocar ninguna base): Admin ve ambos reportes; Caja ve solo Ventas Diarias y en `/reportes/utilidad` recibe el aviso de sin permiso. **No se hizo la verificación manual con datos reales que pide el plan** (ver más abajo).
+
+**Desvíos del plan (sin cambio de alcance ni de arquitectura)**
+- El redondeo a centavos es **por línea** (no por venta): las ventas y los totales son suma de líneas ya redondeadas; sigue cuadrando `bruto − descuento = cobrado`.
+- Totales del Django Admin como mensaje (`message_user`) en vez de una plantilla propia.
+- "Reporte Utilidades" del Admin solo lista lotes con ventas cobradas.
+- El comando aplica los permisos a **todos** los grupos cuyo nombre coincida sin distinguir mayúsculas (en la base de desarrollo existen `Admin` y `admin`, y `Almacen` y `almacen`), a diferencia de `asignar_permisos_estados`, que toma solo el primero.
+- Se modificaron dos cosas de tests existentes por cambio de contrato: `create_full_pago_chain` ahora deja la nota de venta `pagada` (un pago existente implica venta cobrada) y `create_inventario` acepta `precio_compra_mtr_lineal`; y `test_reporte_de_utilidades_se_genera` (usaba la anotación `sum_film_utilidad` que ya no existe) se reemplazó por una prueba con flujo real de aprobación, línea repartida en dos lotes (30 + 20 m), pago y cálculo de costo por lote.
+- Verificado el paso 2 del plan: los permisos `view_proxy_pagos` y `view_utilidades` existen bajo `product`.
+
+**Deuda técnica / observaciones**
+- 15 specs de Angular de la plantilla demo (`should create` de Footer, Dashboard, páginas de ejemplo, `SidebarComponent`, etc.) fallan en la suite completa; no los toqué. Para `SidebarComponent` se comprobó que falla igual sin mis cambios (error de `FeatherModule` sin íconos). Por eso el filtrado del sidebar se prueba solo como función pura (`filterByPermission`), no con el componente montado.
+- Sin ordenamiento por columnas calculadas en el Django Admin (las columnas de base de datos sí ordenan).
+- Pendiente para el revisor/usuario: verificación manual con ventas reales (comparar cobrado/costo/utilidad a mano con 3-4 ventas: con y sin instalación, con descuento y una con lote repartido) y con usuarios Admin, Caja y Vendedor de dos sucursales; ejecutar `asignar_permisos_reportes --dry-run` y luego el comando real en cada ambiente.
 
 ## Review
 _Pendiente_
