@@ -1,0 +1,355 @@
+<section class="main-content proforma-form">
+  <ul class="breadcrumb breadcrumb-style">
+    <li class="breadcrumb-item">
+      <h5 class="page-title m-b-0">{{ isEdit ? 'Editar proforma ' + editId : 'Nueva proforma' }}</h5>
+    </li>
+    <li class="breadcrumb-item bcrumb-1"><a routerLink="/ordenes/proformas"><i class="fas fa-file-invoice font-17"></i></a></li>
+    <li class="breadcrumb-item">Órdenes</li>
+    <li class="breadcrumb-item">Proforma</li>
+  </ul>
+  <div class="section-body">
+    @if (loading) {
+      <p>Cargando...</p>
+    } @else {
+      <form [formGroup]="form" (ngSubmit)="save()">
+
+        <!-- 1. VENTA -->
+        <div class="card section-card">
+          <div class="section-header"><i class="fas fa-tag"></i><h6>Venta</h6></div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="fw-bold" for="sales-type">Tipo de venta</label>
+                <div class="input-group" [class.is-locked]="isEdit">
+                  <span class="input-group-text"><i class="fas" [class.fa-lock]="isEdit" [class.fa-shopping-cart]="!isEdit"></i></span>
+                  <select class="form-select form-control" formControlName="sales_type" id="sales-type">
+                    <option [ngValue]="SALES_TYPE_INSTALACION">Venta con instalación</option>
+                    <option [ngValue]="SALES_TYPE_METRO_LINEAL">Venta por metro lineal</option>
+                  </select>
+                </div>
+                @if (isEdit) {
+                  <small class="form-text text-muted"><i class="fas fa-lock"></i> No se puede cambiar al editar.</small>
+                }
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="fw-bold" for="sucursal">Sucursal</label>
+                <div class="input-group" [class.is-locked]="form.get('sucursal')?.disabled">
+                  <span class="input-group-text"><i class="fas" [class.fa-lock]="form.get('sucursal')?.disabled" [class.fa-store]="!form.get('sucursal')?.disabled"></i></span>
+                  <select class="form-select form-control" formControlName="sucursal" id="sucursal" (change)="onSucursalChange()">
+                    <option [ngValue]="null" disabled>Seleccione una sucursal</option>
+                    @for (sucursal of sucursales; track sucursal.id) {
+                      <option [ngValue]="sucursal.id">{{ sucursal.name }}</option>
+                    }
+                  </select>
+                </div>
+                @if (isEdit) {
+                  <small class="form-text text-muted"><i class="fas fa-lock"></i> No se puede cambiar al editar.</small>
+                }
+                @if (form.get('sucursal')?.invalid && submitted) {
+                  <small class="form-text text-danger">La sucursal es obligatoria</small>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. CLIENTE -->
+        <div class="card section-card">
+          <div class="section-header"><i class="fas fa-user"></i><h6>Cliente</h6></div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="fw-bold" for="name">Nombre completo</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="fas fa-user"></i></span>
+                  <input id="name" type="text" class="form-control" formControlName="name" maxlength="400" placeholder="Nombre y apellido" />
+                </div>
+                @if (form.get('name')?.invalid && submitted) {
+                  <small class="form-text text-danger">El nombre es obligatorio</small>
+                }
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="fw-bold" for="email">Email</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                  <input id="email" type="email" class="form-control" formControlName="email" placeholder="correo@ejemplo.com" />
+                </div>
+                @if (form.get('email')?.invalid && submitted) {
+                  <small class="form-text text-danger">Ingrese un email válido</small>
+                }
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="fw-bold" for="ci-nit">CI/NIT</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="fas fa-id-card"></i></span>
+                  <input id="ci-nit" type="text" class="form-control" formControlName="ci_nit" />
+                </div>
+                @if (form.get('ci_nit')?.invalid && submitted) {
+                  <small class="form-text text-danger">El CI/NIT es obligatorio</small>
+                }
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="fw-bold" for="phone">Teléfono</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                  <input id="phone" type="text" class="form-control" formControlName="phone_number" placeholder="70000000" />
+                </div>
+                @if (form.get('phone_number')?.invalid && submitted) {
+                  <small class="form-text text-danger">Ingrese un teléfono válido (7 a 11 dígitos, puede llevar +)</small>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. VEHICULO -->
+        <div class="card section-card">
+          <div class="section-header"><i class="fas fa-car"></i><h6>Vehículo</h6></div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="fw-bold" for="car-model">Modelo @if (!isInstalacion) { <span class="text-muted fw-normal">(Opcional)</span> }</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="fas fa-car-side"></i></span>
+                  <select id="car-model" class="form-select form-control" formControlName="car_model_id" (change)="onModelChange()">
+                    <option [ngValue]="null" [disabled]="isInstalacion">{{ isInstalacion ? 'Seleccione un modelo' : 'Sin modelo' }}</option>
+                    @for (model of models; track model.id) {
+                      <option [ngValue]="model.id">{{ model.car_brand_name }} - {{ model.name }}</option>
+                    }
+                  </select>
+                </div>
+                @if (form.get('car_model_id')?.invalid && submitted) {
+                  <small class="form-text text-danger">El modelo es obligatorio</small>
+                }
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="fw-bold" for="plate">{{ isInstalacion ? 'Placa' : 'Placa (opcional)' }}</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="fas fa-hashtag"></i></span>
+                  <input id="plate" type="text" class="form-control" formControlName="car_plate" maxlength="10" placeholder="ABC123" />
+                </div>
+                @if (form.get('car_plate')?.invalid && submitted) {
+                  <small class="form-text text-danger">La placa es obligatoria (máximo 10 caracteres)</small>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. DETALLE DE ITEMS -->
+        <div class="card section-card">
+          <div class="section-header">
+            <i class="fas fa-list"></i><h6>Detalle de items</h6>
+            <button type="button" class="btn btn-sm btn-outline-primary ms-auto" (click)="addLine()">
+              <i class="fas fa-plus"></i> Agregar item
+            </button>
+          </div>
+          <div class="card-body">
+            @if (infoMessage) {
+              <div class="line-alert warn mb-3"><i class="fas fa-exclamation-triangle"></i><span>{{ infoMessage }}</span></div>
+            }
+            <div class="table-responsive">
+              <table class="table table-sm align-middle proforma-lines mb-0">
+                <thead>
+                  <tr>
+                    @if (isInstalacion) {
+                      <th style="min-width: 150px">Item</th>
+                    }
+                    <th style="min-width: 210px">Lámina (bobina)</th>
+                    <th class="text-end col-ro" style="width: 80px">Ancho <i class="fas fa-lock"></i></th>
+                    <th class="text-end" style="width: 110px">{{ isInstalacion ? 'Largo (m)' : 'Metros' }}</th>
+                    @if (isInstalacion) {
+                      <th class="text-end" style="width: 100px">Cantidad</th>
+                    }
+                    <th class="text-end col-ro" style="width: 110px">Precio lámina <i class="fas fa-lock"></i></th>
+                    @if (isInstalacion) {
+                      <th class="text-end col-ro" style="width: 110px">Instalación <i class="fas fa-lock"></i></th>
+                    }
+                    <th class="text-end col-ro" style="width: 110px">Subtotal <i class="fas fa-lock"></i></th>
+                    <th style="width: 50px"></th>
+                  </tr>
+                </thead>
+                <tbody formArrayName="items">
+                  @for (line of lines.controls; track line; let i = $index) {
+                    <tr [formGroupName]="i" [class.row-danger]="widthWarning(i)" [class.row-warn]="!widthWarning(i) && stockWarning(i)">
+                      @if (isInstalacion) {
+                        <td>
+                          <select class="form-select form-control form-control-sm" formControlName="car_part" (change)="onItemChange(i)" aria-label="Item">
+                            <option [ngValue]="null" disabled>Seleccione</option>
+                            @for (item of items; track item.id) {
+                              <option [ngValue]="item.car_part_id">{{ item.car_part_name }}</option>
+                            }
+                          </select>
+                          @if (line.get('car_part')?.invalid && submitted) {
+                            <small class="text-danger">Seleccione un item</small>
+                          }
+                        </td>
+                      }
+                      <td>
+                        <select class="form-select form-control form-control-sm" formControlName="reel" aria-label="Lámina (bobina)">
+                          <option [ngValue]="null" disabled>Seleccione</option>
+                          @for (reel of reels; track reelKey(reel.window_film, reel.width)) {
+                            <option [ngValue]="reelKey(reel.window_film, reel.width)">
+                              {{ reel.window_film_name }} - {{ reel.width }} m ({{ reel.available_meters }} m disp.)
+                            </option>
+                          }
+                        </select>
+                        @if (line.get('reel')?.invalid && submitted) {
+                          <small class="text-danger">Seleccione una bobina</small>
+                        }
+                      </td>
+                      <td class="text-end cell-ro">{{ reelOf(i)?.width || '—' }}</td>
+                      <td>
+                        <input type="number" step="0.01" min="0" class="form-control form-control-sm text-end" formControlName="length" aria-label="Largo" />
+                        @if (line.get('length')?.invalid && submitted) {
+                          <small class="text-danger">Mayor a 0</small>
+                        }
+                      </td>
+                      @if (isInstalacion) {
+                        <td>
+                          <input type="number" step="1" min="1" class="form-control form-control-sm text-end" formControlName="quantity" aria-label="Cantidad" />
+                          @if (line.get('quantity')?.invalid && submitted) {
+                            <small class="text-danger">Mínimo 1</small>
+                          }
+                        </td>
+                      }
+                      <td class="text-end cell-ro">{{ reelOf(i) ? reelOf(i)!.unit_price : '—' }}</td>
+                      @if (isInstalacion) {
+                        <td class="text-end cell-ro">{{ itemOf(i) ? itemOf(i)!.installation_price : '—' }}</td>
+                      }
+                      <td class="text-end cell-ro fw-bold">{{ lineSubtotal(i).toFixed(2) }}</td>
+                      <td class="text-center">
+                        @if (lines.length > 1) {
+                          <button type="button" class="btn btn-tbl-delete h-auto" title="Quitar item" (click)="removeLine(i)">
+                            <i class="far fa-trash-alt"></i>
+                          </button>
+                        }
+                      </td>
+                    </tr>
+                    @if (widthWarning(i) || stockWarning(i)) {
+                      <tr class="alert-row">
+                        <td [attr.colspan]="columnCount">
+                          @if (widthWarning(i); as warning) {
+                            <div class="line-alert danger"><i class="fas fa-ban"></i><span>{{ warning }}</span></div>
+                          }
+                          @if (stockWarning(i); as warning) {
+                            <div class="line-alert warn"><i class="fas fa-exclamation-triangle"></i><span>{{ warning }}</span></div>
+                          }
+                        </td>
+                      </tr>
+                    }
+                  }
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td [attr.colspan]="columnCount - 2" class="text-end fw-bold">Total</td>
+                    <td class="text-end fw-bold total-cell">{{ total.toFixed(2) }}</td>
+                    <td></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            <small class="form-text text-muted d-block mt-2">
+              <i class="fas fa-lock"></i> Ancho y precios se toman de la bobina y del item; el servidor recalcula los importes al guardar.
+            </small>
+          </div>
+        </div>
+
+        <!-- REFERENCIA DE MEDIDAS DEL MODELO (solo lectura) -->
+        @if (hasReference) {
+          <div class="card section-card reference-card">
+            <div class="section-header">
+              <i class="fas fa-ruler-combined"></i><h6>Medidas de referencia del modelo</h6>
+              <button type="button" class="btn btn-sm btn-link ms-auto" (click)="toggleReference()">
+                <i class="fas" [class.fa-chevron-up]="showReference" [class.fa-chevron-down]="!showReference"></i>
+                {{ showReference ? 'Ocultar' : 'Mostrar' }}
+              </button>
+            </div>
+            @if (showReference) {
+              <div class="card-body">
+                <p class="reference-note mb-2">
+                  <i class="fas fa-info-circle"></i>
+                  Medidas de referencia del vehículo seleccionado. Utiliza estos datos para calcular los metros a vender.
+                </p>
+                <div class="table-responsive">
+                  <table class="table table-sm align-middle mb-0 reference-table">
+                    <thead>
+                      <tr>
+                        <th>Item / Pieza</th>
+                        <th class="text-end">Ancho requerido (m)</th>
+                        <th class="text-end">Largo sugerido (m)</th>
+                        <th style="width: 130px"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of items; track item.id) {
+                        <tr>
+                          <td>{{ item.car_part_name }}</td>
+                          <td class="text-end">{{ item.width }}</td>
+                          <td class="text-end">{{ item.length }}</td>
+                          <td class="text-end">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="copyMeasure(item)" title="Copiar medida (ancho x largo)">
+                              <i class="far" [class.fa-copy]="copiedItemId !== item.id" [class.fa-check-circle]="copiedItemId === item.id"></i>
+                              {{ copiedItemId === item.id ? 'Copiado' : 'Copiar medida' }}
+                            </button>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- 5. DESCUENTO Y TOTALES -->
+        <div class="card section-card">
+          <div class="section-header"><i class="fas fa-calculator"></i><h6>Descuento y totales</h6></div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-lg-7 mb-3">
+                <div class="mb-3">
+                  <label class="fw-bold" for="discount">Descuento (Bs)</label>
+                  <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-percent"></i></span>
+                    <input id="discount" type="number" step="0.01" min="0" class="form-control" formControlName="discount" />
+                  </div>
+                  <small class="form-text text-muted">Máximo 50 % del total.</small>
+                </div>
+                <div class="mb-2">
+                  <label class="fw-bold" for="discount-reason">Motivo del descuento</label>
+                  <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-comment-dots"></i></span>
+                    <input id="discount-reason" type="text" class="form-control" formControlName="discount_reason" placeholder="Obligatorio si hay descuento" />
+                  </div>
+                </div>
+                @if (discountError && submitted) {
+                  <div class="line-alert danger mt-2"><i class="fas fa-ban"></i><span>{{ discountError }}</span></div>
+                }
+              </div>
+              <div class="col-lg-5 mb-3">
+                <div class="summary-card">
+                  <div class="summary-row"><span>Total</span><span>{{ total.toFixed(2) }} Bs</span></div>
+                  <div class="summary-row"><span>Descuento</span><span>− {{ discountValue.toFixed(2) }} Bs</span></div>
+                  <div class="summary-row summary-total"><span>Total a pagar</span><span>{{ totalAPagar.toFixed(2) }} Bs</span></div>
+                  <small class="summary-note">Vista previa: el servidor recalcula al guardar y puede ajustar los importes.</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        @if (errorMessage) {
+          <div class="line-alert danger mb-3"><i class="fas fa-ban"></i><span>{{ errorMessage }}</span></div>
+        }
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="saving">
+            <i class="fas fa-save"></i> {{ isEdit ? 'Guardar cambios' : 'Crear proforma' }}
+          </button>
+          <a routerLink="/ordenes/proformas" class="btn btn-outline-secondary">Cancelar</a>
+        </div>
+      </form>
+    }
+  </div>
+</section>

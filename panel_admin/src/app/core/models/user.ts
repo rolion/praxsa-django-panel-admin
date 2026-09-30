@@ -6,4 +6,7 @@ export class User {
   token!: string;
   isStaff!: boolean;
   groups!: string[];
+  /** Permisos Django efectivos (`app_label.codename`). Ausente en sesiones
+   * guardadas antes de que el login los devolviera. */
+  permissions?: string[];
 }

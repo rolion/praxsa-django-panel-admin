@@ -41,6 +41,17 @@ from .custom_views.almacen_admin import (
     WindowFilmReelToggleActiveView,
     WindowFilmToggleActiveView,
 )
+from .custom_views.ordenes_admin import (
+    NotaTrabajoDetailView,
+    NotaTrabajoListView,
+    OrdenesBobinasView,
+    OrdenesInstaladoresView,
+    OrdenesSucursalesView,
+    ProformaDetailView,
+    ProformaGenerateNotaView,
+    ProformaListCreateView,
+    ProformaPdfView,
+)
 app_name = 'product'
 urlpatterns = [
     path('get_car_part_info/<int:car_model_id>/<int:sucursal_id>', views.get_car_part_info, name= 'get_car_part_info'),
@@ -91,5 +102,15 @@ urlpatterns = [
     path('almacen/inventario', InventarioListView.as_view()),
     path('almacen/inventario/<int:pk>/', InventarioUpdateView.as_view()),
     path('almacen/inventario/<int:pk>/toggle-active/', InventarioToggleActiveView.as_view()),
+    # Modulo Ordenes: Proformas y Notas de Trabajo (panel_admin/)
+    path('ordenes/proformas', ProformaListCreateView.as_view()),
+    path('ordenes/proformas/<int:pk>/', ProformaDetailView.as_view()),
+    path('ordenes/proformas/<int:pk>/generar-nota-trabajo/', ProformaGenerateNotaView.as_view()),
+    path('ordenes/proformas/<int:pk>/pdf/', ProformaPdfView.as_view()),
+    path('ordenes/notas-trabajo', NotaTrabajoListView.as_view()),
+    path('ordenes/notas-trabajo/<int:pk>/', NotaTrabajoDetailView.as_view()),
+    path('ordenes/catalogo/sucursales', OrdenesSucursalesView.as_view()),
+    path('ordenes/catalogo/bobinas', OrdenesBobinasView.as_view()),
+    path('ordenes/catalogo/instaladores', OrdenesInstaladoresView.as_view()),
 ]
 urlpatterns = format_suffix_patterns(urlpatterns)

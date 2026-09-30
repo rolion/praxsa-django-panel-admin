@@ -52,6 +52,11 @@ export const APP_ROUTE: Route[] = [
                 loadChildren: () =>
                     import('./almacen/almacen.routes').then((m) => m.ALMACEN_ROUTE),
             },
+            {
+                path: 'ordenes',
+                loadChildren: () =>
+                    import('./ordenes/ordenes.routes').then((m) => m.ORDENES_ROUTE),
+            },
         ],
     },
     {

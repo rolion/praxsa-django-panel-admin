@@ -3,6 +3,7 @@ import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { AuthService } from './auth.service';
+import { LocalStorageService } from './storage.service';
 import { User } from '../models/user';
 import { environment } from '../../../environments/environment';
 
@@ -61,8 +62,35 @@ describe('AuthService', () => {
       token: 'abc123',
       isStaff: true,
       groups: ['admin'],
+      permissions: [],
     });
     expect(service.currentUserValue.token).toBe('abc123');
+  });
+
+  it('stores the effective permissions returned by the login and hasPermission matches them', () => {
+    service.login('admin', 'secret123').subscribe();
+    httpMock
+      .expectOne(loginUrl)
+      .flush({
+        token: 'abc123', user_id: 1, username: 'admin', name: 'Ana', lastname: 'Gomez',
+        is_staff: true, groups: ['admin'],
+        permissions: ['product.add_proforma_header', 'product.change_nota_trabajo'],
+      });
+
+    expect(service.currentUserValue.permissions).toEqual([
+      'product.add_proforma_header', 'product.change_nota_trabajo',
+    ]);
+    expect(service.hasPermission('add_proforma_header')).toBe(true);
+    expect(service.hasPermission('product.change_nota_trabajo')).toBe(true);
+    expect(service.hasPermission('change_proforma_header')).toBe(false);
+  });
+
+  it('hasPermission is false without a logged-in user or for a session saved without permissions', () => {
+    expect(service.hasPermission('add_proforma_header')).toBe(false);
+    TestBed.inject(LocalStorageService).set('currentUser', { id: 1, token: 't', groups: ['admin'] });
+    const restored = TestBed.runInInjectionContext(() => new AuthService());
+    expect(restored.currentUserValue.token).toBe('t');
+    expect(restored.hasPermission('add_proforma_header')).toBe(false);
   });
 
   it('falls back to username as firstName when the backend name is empty', () => {
