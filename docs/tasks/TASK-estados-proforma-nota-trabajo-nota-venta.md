@@ -13,6 +13,7 @@
 | 2026-09-30 01:19 UTC | INVESTIGATION → ARCHITECTURE (via DESIGN) | Diseño de UX resuelto en DDR (vocabulario unificado de estados, estado global derivado, acción "Marcar trabajo terminado", pantallas nuevas de Nota de Venta y modal de pago); veredicto NEEDS_ARCHITECTURE exige definir el modelo de estados, transiciones en servidor, migración de datos y endpoints | delivery-design |
 | 2026-09-30 01:25 UTC | ARCHITECTURE → PLANNING | Decisiones tomadas: estado explícito por documento con servicio único de transiciones, nota de venta creada con la nota de trabajo, migración reversible con backfill (acordado con el usuario), endpoints de acción y de lectura con permisos Django estándar; sin anticipos | delivery-architect |
 | 2026-09-30 02:10 UTC | PLANNING → ENGINEERING | Plan v1 escrito y PR abierto; queda pendiente de aprobación humana del plan antes de implementar. Permisos por grupo indicados por el usuario incorporados (Admin/Caja/Vendedor: add_pago, delete_pago; Admin/Almacen: change_proforma_header, change_nota_trabajo) | delivery-plan |
+| 2026-09-30 02:40 UTC | ENGINEERING → PLANNING → ENGINEERING | Plan v2 pedido por el usuario (no por engineer/review): comando idempotente de permisos, permisos por acción (aprobar/anular proforma: Vendedor y Admin; anular nota de trabajo: Almacen y Admin; anular nota de venta: Caja, Vendedor y Admin), `reabrir` reemplazado por anular nota de trabajo/venta. ADR de API/máquina de estados y DDR actualizados (Actualización 1) sin reabrir ARCHITECTURE: no cambia el modelo de datos y los permisos no son custom (se usan `delete_*` estándar) | delivery-plan |
 
 ## Investigación
 
@@ -118,10 +119,10 @@ Ver la tabla de estados/transiciones propuesta en la respuesta de chat de esta i
 - [ADR-estados-proforma-nota-trabajo-nota-venta-maquina-de-estados](../adr/ADR-estados-proforma-nota-trabajo-nota-venta-maquina-de-estados.md) — Propuesto. Estado explícito en `Nota_trabajo` y `Nota_Venta`; `Proforma_Header.status` como estado global derivado (`proforma|en_trabajo|por_cobrar|finalizado|anulada`); nota de venta nace con la nota de trabajo; servicio único de transiciones con tabla declarativa; `is_close` queda como legado derivado; migración `0111` con backfill y reverso real. Reemplaza parcialmente ADR-006-proforma-status-field.
 - [ADR-estados-proforma-nota-trabajo-nota-venta-api-y-permisos](../adr/ADR-estados-proforma-nota-trabajo-nota-venta-api-y-permisos.md) — Propuesto. 7 endpoints de acción, listado/detalle de notas de venta con alcance por sucursal, monto fijado por servidor, permisos Django estándar, cambio de contrato (`status`, sin `is_finalizada`).
 - Decisiones del usuario incorporadas: sin anticipos (hoy tampoco se puede pagar sin nota de venta, aunque `salida_vehiculo` no se validaba; ahora se valida); backfill de notas de venta `por_cobrar` para notas de trabajo abiertas.
-- Pendiente para el plan: asignar permisos `add_pago`, `delete_pago`, `change_proforma_header`, `change_nota_trabajo` a los grupos reales (decisión de negocio sobre qué rol cobra, anula y reabre).
+- Permisos por rol definidos por el usuario (ver matriz en el plan v2 y ADR de API, Actualización 1); asignación con el comando idempotente `asignar_permisos_estados`.
 
 ## Plan
-- [PLAN-2026-09-30-estados-proforma-nota-trabajo-nota-venta](../plans/PLAN-2026-09-30-estados-proforma-nota-trabajo-nota-venta.md) — **v1**. 6 fases (modelo+migración 0111, servicio de transiciones, Django Admin, API, frontend, permisos por grupo y verificación en vivo). E2E Playwright: no corresponde (ver plan).
+- [PLAN-2026-09-30-estados-proforma-nota-trabajo-nota-venta](../plans/PLAN-2026-09-30-estados-proforma-nota-trabajo-nota-venta.md) — **v2** (v1 → v2: comando `asignar_permisos_estados`, matriz de permisos por acción, anular nota de trabajo/venta en lugar de reabrir). 6 fases (modelo+migración 0111, servicio de transiciones, Django Admin, API, frontend, permisos por grupo y verificación en vivo). E2E Playwright: no corresponde (ver plan).
 
 ## Implementación
 _Pendiente_

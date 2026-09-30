@@ -4,6 +4,13 @@
 **Task relacionado:** TASK-estados-proforma-nota-trabajo-nota-venta
 **Fecha:** 2026-09-30
 
+## Actualización 1 (2026-09-30, anulaciones por rol)
+
+- Desaparece el botón **"Reabrir"** de la proforma. Su lugar lo toma **"Anular nota de trabajo"** (vista de la nota de trabajo; visible con `delete_nota_trabajo`, es decir Almacen y Admin; solo con NT `En proceso` y NV `Por cobrar`). Su confirmación (SweetAlert2) explica que cancela la nota de trabajo y la de venta, devuelve el inventario y deja la proforma **Vigente** para editarla o reaprobarla.
+- Se agrega **"Anular nota de venta"** en el listado y la vista de la nota de venta (visible con `delete_nota_venta`: Caja, Vendedor y Admin). Solo habilitado con NV `Por cobrar` y trabajo `En proceso`; con trabajo `Terminado` queda **deshabilitado con tooltip** "El trabajo ya está terminado; corrija el trabajo antes de anular" (es una precondición de negocio, no un permiso). Misma confirmación y mismo efecto que anular la nota de trabajo.
+- **"Aprobar y generar orden"** se muestra a quien tiene `add_nota_trabajo` (Vendedor y Admin) y **"Anular"** (proforma vigente) a quien tiene `delete_proforma_header` (Vendedor y Admin). Almacen no ve esos dos botones.
+- La nota explícita de seguridad sigue vigente: la barrera real es el servidor (ver ADR de API y permisos).
+
 ## Contexto
 
 La investigación del task mostró que "Finalizado" significa tres cosas distintas según la pantalla (proforma = existe un pago; nota de venta = pago cerrado; nota de trabajo = existe la nota de venta), que el panel muestra el estado de la proforma como texto plano en el listado y como badge solo en la vista (`proformas-list.component.html:81` vs. `_ordenes.scss:131-155`), y que **el panel no tiene pantallas de Nota de Venta ni de Pago** (hoy solo existen en Django Admin). La propuesta preliminar del task (no vinculante, la decisión de modelo es de `delivery-architect`) plantea un estado explícito por documento y una nota de venta que nace junto con la nota de trabajo en `por_cobrar`.
@@ -49,7 +56,7 @@ Regla de rotulado que corrige el problema de la investigación: **la palabra "Fi
 - **Badges de estado**: extender `.status-badge` de `assets/scss/_ordenes.scss:131-155` con una sola clase neutra nueva (`status-void`) para anulados/cancelados; no se crea otro sistema de colores. Cita de tokens/utilidades: `reference.md:91` (`utilities.html`).
 - **Vistas de detalle**: el mismo sistema de tarjetas grid etiqueta-gris / valor-negrita del DDR de Órdenes (Actualizaciones 4 y 6), tanto para Nota de Venta como para el bloque Cobro dentro de la nota de trabajo.
 - **Registrar pago**: **modal** (patrón `NgbModal` de `@ng-bootstrap/ng-bootstrap`, ya instalado, `reference.md:8-15`) con 3 campos: tipo de pago (select: Efectivo / Tarjeta-QR), registro contable (texto, opcional, 7 caracteres como el modelo `pago`) y monto (**solo lectura**, igual al total de la nota de venta). Validación reactiva con el mismo patrón de mensajes de `form-validation.html` (`reference.md:87`) y `alert alert-danger` para el error del servidor. Confirmación previa con SweetAlert2, como el resto de acciones críticas del panel.
-- **Acciones con confirmación** ("Aprobar y generar orden", "Marcar trabajo terminado", "Anular"): SweetAlert2 explicando el efecto (descuenta inventario / registra salida del vehículo / devuelve inventario), igual que "Generar nota de trabajo" hoy (`proformas-list.component.ts`, `generateNota`).
+- **Acciones con confirmación** ("Aprobar y generar orden", "Marcar trabajo terminado", "Anular", "Anular nota de trabajo", "Anular nota de venta"): SweetAlert2 explicando el efecto (descuenta inventario / registra salida del vehículo / devuelve inventario), igual que "Generar nota de trabajo" hoy (`proformas-list.component.ts`, `generateNota`).
 - **Filtro por estado en el listado de proformas**: un `<select>` compacto al lado del buscador, con el estilo de `form-select` que usan los formularios del módulo (`form-elements.html`, `reference.md:86`).
 
 ## Alternativas consideradas
@@ -66,7 +73,7 @@ Regla de rotulado que corrige el problema de la investigación: **la palabra "Fi
 | Situación | Comportamiento visual |
 |---|---|
 | Proforma **vigente** | Ver, Editar, "Aprobar y generar orden", PDF, Anular |
-| Proforma **aprobada** (con orden) | Solo Ver y PDF; Editar oculto; "Reabrir" solo si la nota de trabajo está `En proceso` y la nota de venta `Por cobrar` (con confirmación explícita de que cancela ambas y devuelve inventario) |
+| Proforma **aprobada** (con orden) | Solo Ver y PDF; Editar oculto; sin "Reabrir" (se hace anulando la nota de trabajo o la de venta, ver Actualización 1) |
 | Nota de trabajo **En proceso** | Ver, Editar in-situ, **Marcar trabajo terminado** (exige garantía e instalador si es venta con instalación; si faltan, el botón queda deshabilitado con tooltip que indica qué falta, y el servidor igual lo rechaza) |
 | Nota de trabajo **Terminado** con nota de venta **Por cobrar** | Solo Ver y "Corregir trabajo" (vuelve a En proceso); Editar in-situ oculto hasta corregir |
 | Nota de trabajo con nota de venta **Pagada** | Solo Ver; sin Editar ni Corregir |

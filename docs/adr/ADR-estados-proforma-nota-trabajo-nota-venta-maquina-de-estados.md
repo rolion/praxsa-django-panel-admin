@@ -4,6 +4,10 @@
 **Task relacionado:** TASK-estados-proforma-nota-trabajo-nota-venta
 **Fecha:** 2026-09-30
 
+## Actualización 1 (2026-09-30, anulaciones por rol)
+
+El usuario pidió que Almacen/Admin puedan anular la nota de trabajo y Caja/Vendedor/Admin la nota de venta, y respondió el alcance: **anular la nota de trabajo equivale a reabrir** (NT `cancelada`, NV `anulada`, inventario devuelto, proforma vuelve a `proforma`), y **anular la nota de venta solo se permite con la NT `en_proceso` y cancela también la NT** (misma operación, otro permiso). En el servicio, `reabrir_proforma` se reemplaza por dos métodos públicos `anular_nota_trabajo` y `anular_nota_venta` que comparten una única cancelación interna de la orden; ambos exigen NT `en_proceso` y NV `por_cobrar`. Con trabajo `terminado` no se puede anular ninguna de las dos: primero `corregir_trabajo`. Quien quiera anular una nota de venta pagada debe antes anular el pago. No cambian los estados ni el modelo de datos.
+
 ## Contexto
 
 La investigación del task (`docs/tasks/TASK-estados-proforma-nota-trabajo-nota-venta.md`) encontró que hoy:
@@ -46,7 +50,7 @@ Nuevo `Orden_Estado_Business` (`business/orden_estado.py`) y una tabla declarati
 | `corregir_trabajo` | NT `terminado→en_proceso` | NV en `por_cobrar` | — |
 | `registrar_pago` | NV `por_cobrar→pagada` | NT `terminado` (**única** precondición de anticipos); no existe `pago` | Crea `pago` con `monto = nota_venta.total_price` **calculado en servidor** (se ignora cualquier monto del cliente), `cerrado=False`, `created_by` |
 | `anular_pago` | NV `pagada→por_cobrar` | `pago.cerrado == False` | Elimina el `pago` (registrado en el log) |
-| `reabrir_proforma` | Proforma aprobada→vigente; NT `en_proceso→cancelada`; NV `por_cobrar→anulada` | NT `en_proceso` y NV `por_cobrar` | Devuelve inventario (lógica actual de `abrir_proforma`) |
+| `anular_nota_trabajo` / `anular_nota_venta` (reemplazan a `reabrir_proforma`; misma cancelación interna, distinto permiso) | Proforma aprobada→vigente; NT `en_proceso→cancelada`; NV `por_cobrar→anulada` | NT `en_proceso` y NV `por_cobrar` | Devuelve inventario (lógica actual de `abrir_proforma`) |
 | `anular_proforma` | Proforma vigente→`anulada` | Sin nota de trabajo vigente | Marca la anulación (no usa `is_delete`, que sigue siendo el borrado oculto) |
 | `cerrar_pago` (contable) | `pago.cerrado=True` | `pago` existente | Solo el flag; no cambia ningún estado |
 
@@ -59,7 +63,7 @@ Los métodos legados de negocio (`create_work_note`, `abrir_proforma`, `crear_no
 - `is_finalizada` (`ordenes_serializer.py:307-308`) se elimina de la API y se reemplaza por `status`/`status_label` de la NT más un resumen `nota_venta {id, status, status_label, total_price}`.
 - `get_finish_nota_queryset` (`orden_trabajo.py:45-60`, filtro `nota_venta__isnull=False`) pasa a filtrar por `status`.
 - `delete_work_note` (borrado físico desde Django Admin, `orden_trabajo.py:74-109`) deja de bloquear por "existe nota de venta" (ahora siempre existe): bloquea si la NV está `pagada`/tiene `pago`; en otro caso elimina NV y NT como hoy y devuelve el inventario.
-- Si la proforma se reabre y se edita, el snapshot no queda viejo: reabrir anula la NV y volver a aprobar la **reutiliza y refresca** (decisión abierta en la investigación).
+- Si la proforma se reabre y se edita, el snapshot no queda viejo: anular la nota de trabajo/venta anula la NV y volver a aprobar la **reutiliza y refresca** (decisión abierta en la investigación).
 
 ### 4. Migración de datos
 
@@ -71,7 +75,7 @@ Una migración `0111_…` (la última es `0110_inventario_is_active`), **aditiva
 
 ### 5. Django Admin
 
-Las acciones de los tres `ModelAdmin` se reconectan al servicio (misma lógica, un solo camino): "crear/actualizar nota trabajo"→`aprobar_proforma`, "abrir proforma"→`reabrir_proforma`, "crear nota venta" se retira de `NotaTrabajoAdmin` y se reemplaza por "Marcar trabajo terminado", "Gestionar Pago"→`registrar_pago`, "concluir transaccion"→`cerrar_pago`. Los tres `get_estado` pasan a leer `status`. Los tests `tests/test_proforma_status_field.py` (paridad con `get_estado`, hoy `:62-148`) se sustituyen por tests de la tabla de transiciones y de la función de estado global.
+Las acciones de los tres `ModelAdmin` se reconectan al servicio (misma lógica, un solo camino): "crear/actualizar nota trabajo"→`aprobar_proforma`, "abrir proforma"→`anular_nota_trabajo`, "crear nota venta" se retira de `NotaTrabajoAdmin` y se reemplaza por "Marcar trabajo terminado", "Gestionar Pago"→`registrar_pago`, "concluir transaccion"→`cerrar_pago`. Los tres `get_estado` pasan a leer `status`. Los tests `tests/test_proforma_status_field.py` (paridad con `get_estado`, hoy `:62-148`) se sustituyen por tests de la tabla de transiciones y de la función de estado global.
 
 ## Alternativas consideradas
 
