@@ -34,7 +34,7 @@
                         </div>
                       </div>
                       <div class="ms-2">
-                        <select class="form-select form-select-sm" aria-label="Filtrar por estado" [value]="statusFilter" (change)="onStatusChange($event)">
+                        <select class="browser-default status-filter" aria-label="Filtrar por estado" [value]="statusFilter" (change)="onStatusChange($event)">
                           @for (option of statusOptions; track option.value) {
                             <option [value]="option.value">{{ option.label }}</option>
                           }
