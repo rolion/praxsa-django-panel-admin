@@ -48,6 +48,15 @@ from .custom_views.almacen_admin import (
     WindowFilmReelToggleActiveView,
     WindowFilmToggleActiveView,
 )
+from .custom_views.dashboard_admin import (
+    DashboardColaTallerView,
+    DashboardConsumoLaminasView,
+    DashboardItemsSolicitadosView,
+    DashboardKpisView,
+    DashboardProformasRecientesView,
+    DashboardProformasVsVentasView,
+    DashboardStockCriticoView,
+)
 from .custom_views.reportes_admin import ReporteUtilidadView, ReporteVentasDiariasView
 from .custom_views.ordenes_admin import (
     NotaTrabajoAnularView,
@@ -145,5 +154,13 @@ urlpatterns = [
     path('ordenes/catalogo/instaladores', OrdenesInstaladoresView.as_view()),
     path('reportes/ventas-diarias', ReporteVentasDiariasView.as_view()),
     path('reportes/utilidad', ReporteUtilidadView.as_view()),
+    # Dashboard del panel (solo lectura)
+    path('dashboard/kpis', DashboardKpisView.as_view()),
+    path('dashboard/proformas-vs-ventas', DashboardProformasVsVentasView.as_view()),
+    path('dashboard/consumo-laminas', DashboardConsumoLaminasView.as_view()),
+    path('dashboard/items-solicitados', DashboardItemsSolicitadosView.as_view()),
+    path('dashboard/stock-critico', DashboardStockCriticoView.as_view()),
+    path('dashboard/cola-taller', DashboardColaTallerView.as_view()),
+    path('dashboard/proformas-recientes', DashboardProformasRecientesView.as_view()),
 ]
 urlpatterns = format_suffix_patterns(urlpatterns)
