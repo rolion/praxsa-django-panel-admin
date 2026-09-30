@@ -1,6 +1,6 @@
 # TASK-pricing-calculator-screen: Pantalla "Calculadora de precios" para staff/asesores en panel_admin
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** `claude/pricing-calculator-screen-b5e976` (asignada por el entorno)
@@ -13,6 +13,7 @@
 | 2026-09-30 | INVESTIGATION → ARCHITECTURE (via DESIGN) | Diseño de UI resuelto en DDR (layout sin sidebar, stepper, tabla de ítems, resumen sticky, estados); veredicto NEEDS_ARCHITECTURE exige decidir layout/rutas, cálculo de la cotización, paso de datos a la proforma y regla de "Recomendada" | delivery-design |
 | 2026-09-30 | ARCHITECTURE → PLANNING | Decisiones tomadas en 2 ADR: layout mínimo como ruta hermana con variante del header, y cotización como vista previa en cliente con la API existente (sin backend), borrador por `history.state` hacia el formulario de proforma; "Recomendada" y WhatsApp por sucursal diferidos | delivery-architect |
 | 2026-09-30 | PLANNING → ENGINEERING | Plan v1 escrito (solo frontend `panel_admin/`: layout mínimo, módulo `calculadora/`, preload del borrador en el formulario de proforma, ítem de menú; sin backend ni dependencias; sin E2E, con verificación manual en vivo); PR abierto sobre la rama asignada por el entorno | delivery-plan |
+| 2026-09-30 | ENGINEERING → REVIEW | Implementación completa según plan v1 (5 fases, solo frontend `panel_admin/`); specs propios en verde, `ng lint` y `ng build` limpios; verificación en vivo con API simulada (escritorio y móvil) | delivery-engineer |
 
 ## Investigación
 
@@ -115,7 +116,26 @@ Hoy un asesor arma una cotización creando directamente una proforma en `/ordene
 - [PLAN-2026-09-30-pricing-calculator-screen](../plans/PLAN-2026-09-30-pricing-calculator-screen.md) — **v1**. 5 fases (layout, modelo/helpers/servicio, pantalla, acciones y enlace con la proforma, entrada y verificación). Preguntas abiertas no bloqueantes: número de WhatsApp, ubicación en el menú y formato de importes.
 
 ## Implementación
-_Pendiente_
+
+Implementado según [PLAN v1](../plans/PLAN-2026-09-30-pricing-calculator-screen.md), sin desvíos de alcance, sin dependencias nuevas y sin cambios de backend.
+
+**Fase 1 — Layout:** `MinimalLayoutComponent` (`layout/app-layout/minimal-layout/`), `input()` `minimal` en `HeaderComponent` (logo, sin toggle; default `false` intacto), ruta hermana `calculadora` con `AuthGuard` en `app.routes.ts`, y `assets/scss/_calculadora.scss` (`.layout-minimal`, íconos del header visibles sobre fondo blanco, estilos de la pantalla).
+**Fases 2-3 — Módulo `calculadora/`:** `calculadora.model.ts`, `calculadora.helpers.ts` (aptitud de bobinas, formato `Bs`, mensaje/URL de WhatsApp, borrador), `calculadora.service.ts` (fachada sobre `OrdenesService`/`VehiclesService`), `CalculadoraComponent` (ReactiveForms + signals, estados inicial/cargando/sin resultados/error/activo, stepper, exclusión/restauración de ítems, resumen sticky) y `calculadora.routes.ts`.
+**Fase 4 — Acciones:** WhatsApp con `environment.whatsappNumber`; "Crear Proforma" (oculto sin `add_proforma_header`) navega con el borrador en `history.state`; `ProformaFormComponent` lo precarga solo en alta (sucursal, modelo, ítems, líneas) y cae al formulario vacío si falta o es inválido.
+**Fase 5:** ítem "Calculadora de precios" bajo Órdenes en `assets/data/routes.json`; `whatsappNumber: '+59178181012'` (valor de `proforma/`, pendiente de confirmar) en ambos `environment`.
+
+**Ajustes sobre el plan (sin cambiar alcance):** barra inferior con total y acción principal en pantallas < lg (estaba en el DDR), filas apiladas en < md (la plantilla fuerza `min-width: 800px` a tablas responsive en xs, `override/_table.scss:589-594`, se anula solo para esta tabla), y `catalogsLoaded` para no mostrar "sin sucursal" antes de que lleguen los catálogos.
+
+**Pruebas escritas:** `calculadora.helpers.spec.ts` (unitarias), `calculadora.component.spec.ts` (componente + `HttpTestingController`), `minimal-layout.component.spec.ts`, casos nuevos en `header.component.spec.ts` (default vs. `minimal`) y `proforma-form.component.spec.ts` (precarga de borrador, sin borrador, borrador inválido, bobina ya no disponible). Sin E2E (decidido en el plan).
+
+**Corridas propias (no son el Quality Gate):** `ng lint` limpio; `ng build` de producción ok; `ng test`: 368 OK y 14 fallos, todos `should create` de specs de la plantilla ajenos al cambio (Sidebar, Footer, Signup, Page404/500, demos de menú); ninguno en archivos tocados. Verificación en vivo en el navegador con el API simulado en la página (sin tocar la base de desarrollo ni credenciales reales): layout sin sidebar, filtro de láminas aptas, total 388 + 110 = 498, exclusión, enlace de WhatsApp, precarga del formulario de proforma y vista móvil sin scroll horizontal.
+
+**Deuda / pendientes señalados (no resueltos aquí):**
+- Regla y badge "Recomendada" diferidos (ADR); el espacio existe y solo se renderiza si `FilmOption.recommended` llega a ser `true`.
+- Número de WhatsApp global en `environment` (por sucursal requeriría campo nuevo + ADR); formato `Bs 2.090` aislado en `formatBs`; ubicación del menú bajo Órdenes: los tres a confirmar con negocio.
+- No verificado visualmente: tema oscuro y RTL de `.layout-minimal`; tampoco se probó contra el backend real (solo API simulada). La verificación manual contra el backend de desarrollo con usuarios con y sin permiso sigue pendiente para `delivery-review`.
+- `ng build` emite la advertencia "23 rules skipped due to selector errors" (selectores `%` de la plantilla); no proviene de los estilos nuevos.
+- Sigue habiendo dos calculadoras (esta y la de `proforma/`), aceptado por el ADR.
 
 ## Review
 _Pendiente_
