@@ -1,6 +1,6 @@
 # REV-2026-09-30-estados-proforma-nota-trabajo-nota-venta-02: Método huérfano `ProformaAdmin.delete_proforma` apunta a un método de negocio eliminado
 
-**Status:** Open
+**Status:** Closed (corrida 2, 2026-09-30: verificado)
 **Severity:** Low
 **Category:** IMPLEMENTATION
 **Related plan:** docs/plans/PLAN-2026-09-30-estados-proforma-nota-trabajo-nota-venta.md (v2.1)

@@ -1,6 +1,6 @@
 # REV-2026-09-30-estados-proforma-nota-trabajo-nota-venta-01: Django Admin responde 500 al eliminar un pago cerrado (y al fallar el alta de un pago)
 
-**Status:** Open
+**Status:** Closed (corrida 2, 2026-09-30: verificado)
 **Severity:** Medium
 **Category:** IMPLEMENTATION
 **Related plan:** docs/plans/PLAN-2026-09-30-estados-proforma-nota-trabajo-nota-venta.md (v2.1)
