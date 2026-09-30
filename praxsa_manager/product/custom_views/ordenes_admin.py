@@ -28,6 +28,7 @@ from ..serializer.ordenes_serializer import (
     ProformaDetailSerializer,
     ProformaListSerializer,
     ProformaWriteSerializer,
+    ReelCatalogSerializer,
 )
 from ..utils.exception.proforma import ProformaException
 
@@ -243,7 +244,8 @@ class OrdenesBobinasView(APIView):
 
     def get(self, request):
         sucursal_id = _sucursal_in_scope_or_404(request.user, request.query_params.get('sucursal'))
-        return Response(Pricing_Business().get_reel_catalog(sucursal_id))
+        catalog = Pricing_Business().get_reel_catalog(sucursal_id)
+        return Response(ReelCatalogSerializer(catalog, many=True).data)
 
 
 class OrdenesInstaladoresView(APIView):

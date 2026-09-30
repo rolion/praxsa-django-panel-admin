@@ -34,7 +34,6 @@ import { OrdenesService } from '../ordenes.service';
   standalone: true,
   imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './proforma-form.component.html',
-  styleUrl: './proforma-form.component.scss',
 })
 export class ProformaFormComponent implements OnInit {
   private fb = inject(FormBuilder);
@@ -187,8 +186,11 @@ export class ProformaFormComponent implements OnInit {
 
   // ---- catalogos dependientes ----
 
-  reelKey(windowFilm: number, width: string): string {
-    return `${windowFilm}|${width}`;
+  /** Clave de una bobina (lamina + ancho). El ancho se normaliza a 2 decimales para que
+   * catalogo y lineas guardadas coincidan aunque lleguen como `1.5` o `"1.50"`
+   * (REV-2026-09-30-modulo-ordenes-proforma-nota-trabajo-02). */
+  reelKey(windowFilm: number, width: string | number): string {
+    return `${windowFilm}|${Number(width).toFixed(2)}`;
   }
 
   onSucursalChange(): void {

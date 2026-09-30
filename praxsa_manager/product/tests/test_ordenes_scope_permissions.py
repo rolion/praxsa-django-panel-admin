@@ -157,9 +157,29 @@ class CatalogTest(TestCase):
         rows = response.json()
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]['window_film'], self.s['film'].id)
-        self.assertEqual(Decimal(rows[0]['width']), Decimal('1.50'))
-        self.assertEqual(Decimal(rows[0]['available_meters']), Decimal('50.00'))
-        self.assertEqual(Decimal(rows[0]['unit_price']), Decimal('150.00'))
+        # Strings con 2 decimales (no floats): mismo formato que las lineas de proforma,
+        # porque el frontend arma la clave de bobina con el ancho (REV-...-02).
+        self.assertEqual(rows[0]['width'], '1.50')
+        self.assertEqual(rows[0]['available_meters'], '50.00')
+        self.assertEqual(rows[0]['unit_price'], '150.00')
+        self.assertIsInstance(rows[0]['width'], str)
+        self.assertIsInstance(rows[0]['unit_price'], str)
+
+    def test_bobinas_catalog_width_matches_the_saved_line_width_format(self):
+        created = self.client.post(
+            '/product/ordenes/proformas',
+            {
+                'sales_type': 'venta_metro_lineal', 'sucursal': self.s['sucursal'].id, 'name': 'Ana',
+                'email': 'a@test.com', 'ci_nit': '1', 'phone_number': '70000001', 'discount': '0',
+                'items': [{'window_film': self.s['film'].id, 'width': '1.50', 'length': '2'}],
+            },
+            content_type='application/json', **self.headers,
+        ).json()
+        catalog = self.client.get(
+            '/product/ordenes/catalogo/bobinas', {'sucursal': self.s['sucursal'].id}, **self.headers
+        ).json()
+
+        self.assertEqual(catalog[0]['width'], created['items'][0]['width'])
 
     def test_bobinas_catalog_excludes_inactive_and_empty_stock(self):
         self.s['inventario'].to_install = Decimal('0')

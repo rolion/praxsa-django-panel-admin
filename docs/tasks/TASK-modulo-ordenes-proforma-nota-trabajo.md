@@ -1,6 +1,6 @@
 # TASK-modulo-ordenes-proforma-nota-trabajo: Módulo Órdenes (Proformas y Notas de Trabajo) en el panel admin
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** task/TASK-modulo-ordenes-proforma-nota-trabajo
@@ -23,6 +23,7 @@
 | 2026-09-30 | REVIEW → REVIEW | Edición in-situ de la nota de trabajo pedida por el usuario: el botón "Editar nota de trabajo" convierte en inputs los 4 campos operativos dentro de las tarjetas; barra inferior Cancelar/Guardar cambios. Se elimina el componente separado `nota-trabajo-edit` (la ruta `/edit/:id` abre la misma vista en modo edición). Sin cambios de API. DDR actualizado | usuario |
 | 2026-09-30 | REVIEW → REVIEW | Documentación al día con los ajustes de interfaz: plan **v2** con changelog (F5, F6, F7 y archivos afectados), `## Implementación` del TASK y sección Changes del PR. Sin cambios de código | usuario |
 | 2026-09-30 | REVIEW → ENGINEERING | Quality Gate: **FAIL**. REV-01 (High, IMPLEMENTATION): `ng build` de producción falla por presupuesto de estilos de componente. REV-02 (High, IMPLEMENTATION): catálogo de bobinas devuelve floats y en edición se pierden las bobinas guardadas. Backend 258 tests OK, frontend sin fallos nuevos (15 preexistentes idénticos en master), verificación en vivo del API sin fallos funcionales | delivery-review |
+| 2026-09-30 | ENGINEERING → REVIEW | Corregidos REV-01 (estilos globales en `assets/scss/_ordenes.scss`, `ng build` de producción ok) y REV-02 (catálogo de bobinas con strings y clave de bobina normalizada). Backend 259 y frontend 167 specs en verde | delivery-engineer |
 
 ## Investigación
 
@@ -194,7 +195,7 @@ Implementado según el plan (v1 + ajustes de interfaz de la v2), sin desvíos de
 - **Formulario de proforma:** tarjetas por sección con íconos, campos bloqueados en gris con candado, detalle como tabla de una fila por línea con el Total bajo Subtotal, alertas por línea (roja de ancho, amarilla de stock), resumen de totales a la derecha y botones primario/secundario (`proforma-form.component.html/.scss`).
 - **Metro lineal:** el modelo de vehículo se muestra como opcional y se guarda si se elige (la API ya lo aceptaba); panel colapsable de solo lectura con las medidas de referencia del modelo y botón "Copiar medida".
 - **Ver proforma:** tarjetas Venta/Cliente/Vehículo/Detalle, fecha `dd/MM/yyyy - HH:mm h`, badge de estado, detalle en `ngx-datatable` con Total, Descuento y Total a pagar (destacado) bajo Subtotal, y barra de acciones jerarquizada.
-- **Ver nota de trabajo:** mismo sistema visual (estilos compartidos en `orden-view.shared.scss`), badge En ejecución/Finalizado, vacíos tenues y dos tablas `ngx-datatable`.
+- **Ver nota de trabajo:** mismo sistema visual (estilos compartidos, ahora en `assets/scss/_ordenes.scss`), badge En ejecución/Finalizado, vacíos tenues y dos tablas `ngx-datatable`.
 - **Edición in-situ de la nota de trabajo:** "Editar nota de trabajo" convierte en inputs los 4 campos operativos dentro de las tarjetas, con "Cancelar" (restaura) y "Guardar cambios". Se **eliminó** el componente `nota-trabajo-edit`; la ruta `/ordenes/notas-trabajo/edit/:id` abre la misma vista en modo edición.
 - **Verificación visual:** cada pantalla se revisó en el navegador con datos de muestra y el backend simulado (no contra el backend real). Frontend: 165 specs pasan; siguen fallando los 15 de la plantilla ya mencionados.
 
@@ -209,6 +210,11 @@ Implementado según el plan (v1 + ajustes de interfaz de la v2), sin desvíos de
 - Un `Car_Model_Part.installation_price` en 0 (el formulario de Vehículos lo oculta y el default es 0) se acepta en la API con instalación 0; el `CarModelPartForm` del admin pedía `installation_price >= 1` sobre el valor enviado por el navegador. Conviene confirmar con negocio si un item con instalación 0 es válido.
 - 15 specs de la plantilla (`should create` de Blank, Dashboard2, Sidebar, Footer, etc.) fallan por falta de provider de `ActivatedRoute`; no tocan archivos de este task.
 - **No ejecutado**: la verificación manual en vivo (paso V2 del plan) contra backend real con usuarios de distintas sucursales/permisos; queda pendiente antes de dar el task por bueno.
+
+### Correcciones de la corrida 1 de review (2026-09-30)
+- **REV-01 (build de producción):** los estilos de Órdenes pasan de estilos de componente (`proforma-form.component.scss`, `proforma-view.component.scss`, `orden-view.shared.scss`, ya eliminados) a un único archivo global `panel_admin/src/assets/scss/_ordenes.scss` (importado en `style.scss`), acotado por las clases raíz `.proforma-form` y `.orden-view`, con el tema oscuro como `body.dark`. Se quitó el `styleUrl` de los tres componentes y "Ver proforma" pasa a la raíz `.orden-view` (con `orden-table`), eliminando la duplicación de reglas. `npx ng build` (producción) termina sin errores ni avisos de presupuesto; queda solo el aviso de 23 reglas de la plantilla (`%` de keyframes), ajeno a este PR.
+- **REV-02 (catálogo de bobinas):** `OrdenesBobinasView` serializa con el nuevo `ReelCatalogSerializer` (strings con 2 decimales, igual que las líneas). El frontend normaliza el ancho de la clave de bobina (`Number(width).toFixed(2)`), por lo que una proforma guardada se recarga en edición con sus bobinas. Tests: el catálogo se compara como string (no con `Decimal(...)`), un test nuevo fija que el ancho del catálogo coincide con el de la línea guardada, y 2 specs nuevos cubren la edición con catálogo numérico y el ancho enviado con 2 decimales.
+- **Verificación propia**: backend 259 tests OK, sin migraciones; frontend 167 specs OK (15 preexistentes de la plantilla siguen fallando, idénticos en `master`); `ng lint` limpio; `ng build` de producción ok; revisión visual de formulario en edición y de "Ver proforma" con la compilación de producción (estilos y bobina conservada). No es evidencia del Quality Gate: queda para `delivery-review`.
 
 ## Review
 

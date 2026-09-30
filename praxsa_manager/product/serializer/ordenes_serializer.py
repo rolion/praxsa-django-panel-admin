@@ -260,6 +260,19 @@ class ProformaWriteSerializer(serializers.ModelSerializer):
         return ProformaDetailSerializer(instance, context=self.context).data
 
 
+class ReelCatalogSerializer(serializers.Serializer):
+    """Fila del catalogo de bobinas (lamina + ancho con stock). Los importes y
+    medidas viajan como strings con 2 decimales, igual que las lineas de proforma
+    (un Response con Decimal crudo los codificaria como float, ver
+    REV-2026-09-30-modulo-ordenes-proforma-nota-trabajo-02)."""
+
+    window_film = serializers.IntegerField()
+    window_film_name = serializers.CharField()
+    width = serializers.DecimalField(max_digits=10, decimal_places=2)
+    available_meters = serializers.DecimalField(max_digits=14, decimal_places=2)
+    unit_price = serializers.DecimalField(max_digits=10, decimal_places=2)
+
+
 class NotaTrabajoListSerializer(serializers.ModelSerializer):
     """Fila del listado de Notas de Trabajo."""
 

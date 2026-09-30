@@ -22,7 +22,6 @@ import { OrdenesService } from '../ordenes.service';
   standalone: true,
   imports: [RouterLink, NgxDatatableModule, DatePipe, ReactiveFormsModule],
   templateUrl: './nota-trabajo-view.component.html',
-  styleUrl: '../orden-view.shared.scss',
 })
 export class NotaTrabajoViewComponent implements OnInit {
   private route = inject(ActivatedRoute);

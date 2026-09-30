@@ -13,7 +13,6 @@ import { confirmGenerateNota, saveBlob, showErrorAlert } from '../proforma-actio
   standalone: true,
   imports: [RouterLink, NgxDatatableModule, DatePipe],
   templateUrl: './proforma-view.component.html',
-  styleUrl: './proforma-view.component.scss',
 })
 export class ProformaViewComponent implements OnInit {
   private route = inject(ActivatedRoute);

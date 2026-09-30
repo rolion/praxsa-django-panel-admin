@@ -33,6 +33,8 @@
 @use "_helpers";
 /* Custom Style */
 @use "_custom";
+/* Modulo Ordenes (proforma / nota de trabajo) */
+@use "_ordenes";
 
 /*                 [4. Components ]                   			*/
 @use "_components";

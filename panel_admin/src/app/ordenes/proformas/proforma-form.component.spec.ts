@@ -325,6 +325,32 @@ describe('ProformaFormComponent', () => {
       expect(component.total).toBe(388);
     });
 
+    it('keeps the saved reels when the catalog width arrives as a number (1.5) and the line as "1.50"', () => {
+      setupEdit(proforma);
+      const numericCatalog = [
+        { window_film: 3, window_film_name: 'Carbon', width: 1.5, available_meters: 50, unit_price: 120 },
+      ] as unknown as ReelCatalogItem[];
+      httpMock.expectOne((r) => r.url === `${ordenes}/catalogo/bobinas`).flush(numericCatalog);
+      httpMock.expectOne(`${vehicles}/models/9/items/`).flush(parts);
+
+      expect(component.lines.at(0).get('reel')?.value).toBe('3|1.50');
+      expect(component.reelOf(0)).toBeDefined();
+      expect(component.infoMessage).toBe('');
+      expect(component.total).toBe(388);
+    });
+
+    it('sends the width of the reel with 2 decimals', () => {
+      setupEdit(proforma);
+      httpMock.expectOne((r) => r.url === `${ordenes}/catalogo/bobinas`).flush(reels);
+      httpMock.expectOne(`${vehicles}/models/9/items/`).flush(parts);
+
+      component.save();
+
+      const req = httpMock.expectOne(`${ordenes}/proformas/5/`);
+      expect(req.request.body.items[0].width).toBe('1.50');
+      req.flush(proforma);
+    });
+
     it('sends a PATCH without sales type or sucursal', () => {
       setupEdit(proforma);
       httpMock.expectOne((r) => r.url === `${ordenes}/catalogo/bobinas`).flush(reels);

@@ -67,7 +67,7 @@ Implementar en el orden backend → login/permisos → frontend, con cada paso v
 **Frontend (`panel_admin/src/`)**
 - `assets/data/routes.json` (grupo "Órdenes"), `app/app.routes.ts` (ruta lazy `ordenes`).
 - `app/core/models/user.ts` y `app/core/service/auth.service.ts` (+ spec): `permissions`, `hasPermission`.
-- Nuevo módulo `app/ordenes/`: `ordenes.routes.ts`, `ordenes.model.ts`, `ordenes.service.ts` (+ spec), `proformas/proformas-list.component.*`, `proformas/proforma-form.component.*` (crear y editar), `proformas/proforma-view.component.*`, `notas-trabajo/notas-trabajo-list.component.*`, `notas-trabajo/nota-trabajo-view.component.*` (lectura y edición in-situ; la ruta `edit/:id` abre esta misma vista en modo edición, **ya no hay componente de edición separado**), estilos `proformas/proforma-form.component.scss`, `proformas/proforma-view.component.scss` y `orden-view.shared.scss` (+ specs).
+- Nuevo módulo `app/ordenes/`: `ordenes.routes.ts`, `ordenes.model.ts`, `ordenes.service.ts` (+ spec), `proformas/proformas-list.component.*`, `proformas/proforma-form.component.*` (crear y editar), `proformas/proforma-view.component.*`, `notas-trabajo/notas-trabajo-list.component.*`, `notas-trabajo/nota-trabajo-view.component.*` (lectura y edición in-situ; la ruta `edit/:id` abre esta misma vista en modo edición, **ya no hay componente de edición separado**), estilos globales acotados por clase raíz en `assets/scss/_ordenes.scss` (importado desde `assets/scss/style.scss`; **no** son estilos de componente, por el presupuesto `anyComponentStyle` de `angular.json`, ver REV-01) (+ specs).
 
 ## Implementation steps
 
@@ -198,4 +198,5 @@ Ninguna. SweetAlert2, `ngx-datatable` y Bootstrap ya están en `panel_admin/`. (
 
 ## Changelog
 - **v2** (2026-09-30): se actualizan F5, F6, F7 y "Files/components affected" para reflejar lo implementado tras los ajustes de interfaz pedidos por el usuario después de ver las pantallas: formulario en tarjetas con detalle en tabla de una fila por línea y total bajo Subtotal; modelo de vehículo opcional en metro lineal con panel de medidas de referencia; "Ver proforma" con tarjetas, badge y `ngx-datatable` con resumen de totales; "Ver nota de trabajo" con el mismo sistema visual; edición in-situ de la nota (se elimina el componente `nota-trabajo-edit`). Solicitado por el usuario (no por `delivery-review`). Sin cambios en backend, API, ADR, migraciones ni dependencias; `## Test strategy` y los criterios de aceptación 1 a 12 siguen vigentes (los specs de frontend se ampliaron para los nuevos comportamientos).
+- **v2 (nota de la corrida de review 1, 2026-09-30)**: sin cambio de alcance. Correcciones de implementación por REV-01 (estilos movidos a `assets/scss/_ordenes.scss` para que `ng build` de producción compile) y REV-02 (el catálogo de bobinas serializa strings y el frontend normaliza el ancho de la clave de bobina). Se actualiza solo la lista de archivos afectados.
 - **v1** (2026-09-29): plan inicial.
