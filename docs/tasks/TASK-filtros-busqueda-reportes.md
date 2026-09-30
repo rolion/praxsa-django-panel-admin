@@ -1,6 +1,6 @@
 # TASK-filtros-busqueda-reportes: Filtros de búsqueda en reportes Proforma, Nota Trabajo y Nota Venta
 
-**Etapa actual:** DESIGN
+**Etapa actual:** PLANNING
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** SI
 **Rama:** `task/TASK-filtros-busqueda-reportes`
@@ -15,6 +15,7 @@
 | 2026-09-30 | PLANNING → ENGINEERING | Plan listo para implementar (pendiente de aprobación humana) | delivery-plan |
 | 2026-09-30 | ENGINEERING → REVIEW | Implementación completa según plan v1 | delivery-engineer |
 | 2026-09-30 | REVIEW → DESIGN | DESIGN_REVIEW_REQUIRED: el solicitante indica que las pantallas objetivo son las listas del panel Angular (Órdenes), no el Django Admin | delivery-engineer |
+| 2026-09-30 | DESIGN → PLANNING | DDR de filtros en listados del panel Angular emitido; veredicto NEEDS_PLAN se mantiene (plan v2 requerido) | delivery-design |
 
 ## Investigación
 
@@ -108,7 +109,7 @@
 **NO** — Los filtros se agregan como filtros laterales estándar del Django Admin ya usado en los mismos reportes, sin pantallas ni flujos nuevos. Si se decidiera llevar estos reportes al panel Angular (`panel_admin/`), habría que reabrir esta decisión.
 
 ## Diseño
-_No aplica_
+[DDR-filtros-busqueda-reportes-filtros-listados-ordenes](../design/DDR-filtros-busqueda-reportes-filtros-listados-ordenes.md): tarjeta "Filtros" sobre los listados de Proformas, Notas de Trabajo y Notas de Venta del panel Angular, con filtrado en el cliente (mismo patrón visual de Reportes), sin dependencias nuevas.
 
 ## Arquitectura
 _No aplica según veredicto_
