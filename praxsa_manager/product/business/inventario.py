@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from ..models import Inventario_Movimiento, Sucursal, Window_Film, inventario, precio_venta_sucursal
+from ..models import Inventario_Movimiento, Proforma_Header, Sucursal, Window_Film, inventario, precio_venta_sucursal
 from django.db import transaction
 from django.db.models import Sum, F, OuterRef, Subquery
 from ..utils.exception.nohaylaminas import NoHayLaminasDisponibles
@@ -104,8 +104,13 @@ class Inventario_Business:
         devoluciones ya hechas); si no tiene movimientos pero si `inventario`
         (orden aprobada antes de existir el registro de movimientos), devuelve
         a esa fila `length * quantity`. Devuelve los metros devueltos; 0 si no
-        habia nada que devolver (un detalle ya devuelto es idempotente)."""
+        habia nada que devolver (un detalle ya devuelto es idempotente), tambien
+        ante llamadas simultaneas: primero se bloquea la proforma del detalle (mismo
+        orden de bloqueo que Orden_Estado_Business._bloquear; ya bloqueada por quien
+        llama, no espera) y recien despues se calcula el neto. Necesario porque
+        delete_work_note no bloquea la proforma por su cuenta."""
         with transaction.atomic():
+            Proforma_Header.objects.select_for_update().get(pk=detalle.proforma_header_id)
             net = {}
             movimientos = list(Inventario_Movimiento.objects.filter(proforma_detail=detalle).values_list('tipo', 'inventario_id', 'metros'))
             for tipo, inventario_id, metros in movimientos:

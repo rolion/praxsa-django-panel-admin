@@ -3,23 +3,29 @@ movimientos, devolucion fila por fila, regla de ancho exacto, precio
 determinista, validacion de metros, catalogo sin N+1, unicidad de precios y
 concurrencia (ADR-mejora-inventario-bobinas-asignacion-y-movimientos /
 -regla-ancho-y-precio)."""
+import io
 import threading
 from datetime import timedelta
 from decimal import Decimal
 
+from django.contrib.admin.sites import AdminSite
 from django.core.management import call_command
 from django.db import IntegrityError, connection, transaction
 from django.db.migrations.executor import MigrationExecutor
-from django.test import TestCase, TransactionTestCase
+from django.test import RequestFactory, TestCase, TransactionTestCase
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
 from . import helpers
 from .test_orden_estado_service import OrdenEstadoBase
+from ..admin_config.report_storage import ReportStorageAdmin
+from ..admin_config.report_utilidad import ReportUtilidadAdmin
 from ..business.inventario import Inventario_Business
 from ..business.pricing import Pricing_Business, build_line_pricing
+from ..helper.pdf import PDFService
 from ..helper.proforma import Proforma_Helper
-from ..models import Inventario_Movimiento, Proforma_Detail, Window_Film_Reel, inventario, precio_venta_sucursal
+from ..models import (Detalle_Nota_Trabajo, Inventario_Movimiento, Proforma_Detail, Window_Film_Reel, inventario,
+                      inventario_proxy, precio_venta_sucursal, utilidades)
 from ..utils.exception.nohaylaminas import NoHayLaminasDisponibles
 from ..utils.exception.proforma import ProformaException
 
@@ -209,6 +215,47 @@ class CicloDeLaOrdenConRepartoTest(OrdenEstadoBase):
         self.assertEqual(self.reload_header().status, 'proforma')
 
 
+class PdfYReportesConRepartoTest(OrdenEstadoBase):
+    """Criterio de aceptacion 10 del plan: la hoja de trabajo en PDF y los reportes de
+    almacen y utilidades siguen funcionando con una linea repartida en dos lotes
+    (REV-2026-09-30-mejora-inventario-bobinas-02). Solo verifica que se generan y que los
+    saldos agregados son correctos; que muestren todos los lotes esta diferido."""
+
+    def setUp(self):
+        super().setUp()
+        inventario.objects.filter(pk=self.inv.pk).update(
+            to_install=Decimal('30.00'), nro_lote='L100', date=timezone.now() - timedelta(days=5))
+        self.inv2 = helpers.create_inventario(sucursal=self.sucursal, bobina=self.inv.bobina, to_install=Decimal('30.00'))
+        inventario.objects.filter(pk=self.inv2.pk).update(nro_lote='L200')
+        Proforma_Detail.objects.filter(pk=self.detail.pk).update(length=Decimal('25.00'), quantity=2)  # 50 m
+        self.nota = self.aprobar()
+
+    def request(self):
+        request = RequestFactory().get('/admin/')
+        request.user = self.user
+        return request
+
+    def test_pdf_de_la_hoja_de_trabajo(self):
+        buffer = io.BytesIO()
+        resumen = Detalle_Nota_Trabajo.objects.select_related('window_film', 'nota_trabajo__proforma').filter(nota_trabajo=self.nota)
+        detalle = Proforma_Detail.objects.filter(proforma_header=self.nota.proforma).select_related('inventario')
+        PDFService(buffer=buffer).create_nota_trabajo(detail=resumen, nota_trabajo=self.nota, proforma_detail=detalle)
+        self.assertGreater(len(buffer.getvalue()), 500)
+
+    def test_reporte_de_almacen_suma_los_dos_lotes(self):
+        admin_storage = ReportStorageAdmin(model=inventario_proxy, admin_site=AdminSite())
+        list(admin_storage.get_queryset(self.request()))
+        (row,) = list(admin_storage.aggregated_result)
+        self.assertEqual(row['total_to_install'], Decimal('10.00'))
+        self.assertEqual(row['total_installed'], Decimal('50.00'))
+
+    def test_reporte_de_utilidades_se_genera(self):
+        admin_utilidad = ReportUtilidadAdmin(model=utilidades, admin_site=AdminSite())
+        rows = list(admin_utilidad.get_queryset(self.request()))
+        self.assertGreaterEqual(len(rows), 1)
+        self.assertTrue(all(row.sum_film_utilidad is not None for row in rows))
+
+
 class PrecioYAnchoTest(InventarioBase):
     def setUp(self):
         super().setUp()
@@ -393,3 +440,38 @@ class ConcurrenciaTest(TransactionTestCase):
         self.assertEqual(refreshed.to_install, Decimal('10.00'))
         self.assertEqual(refreshed.installed, Decimal('20.00'))
         self.assertEqual(sum(m.metros for m in Inventario_Movimiento.objects.filter(tipo='egreso')), Decimal('20.00'))
+
+    def test_dos_devoluciones_concurrentes_del_mismo_detalle_devuelven_una_sola_vez(self):
+        """REV-2026-09-30-mejora-inventario-bobinas-01: delete_work_note no bloquea la
+        proforma, asi que la propia devolucion debe ser segura ante llamadas simultaneas."""
+        user, _ = helpers.create_user_with_token()
+        sucursal = helpers.create_sucursal(user)
+        film = helpers.create_window_film()
+        reel = helpers.create_window_film_reel(window_film=film, width=Decimal('1.50'))
+        row = helpers.create_inventario(sucursal=sucursal, bobina=reel, to_install=Decimal('30.00'))
+        _header, detail = helpers.create_full_proforma(user=user, sucursal=sucursal, window_film=film)
+        Inventario_Business().reduce_inventory(sucursal, film, Decimal('1.50'), Decimal('10.00'), proforma_detail=detail)
+        barrier = threading.Barrier(2)
+        errors = []
+
+        def worker():
+            try:
+                barrier.wait(timeout=10)
+                with transaction.atomic():
+                    Inventario_Business().return_detail_to_inventory(detail)
+            except Exception as e:  # pragma: no cover - deja evidencia en el assert
+                errors.append(repr(e))
+            finally:
+                connection.close()
+
+        threads = [threading.Thread(target=worker) for _ in range(2)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(timeout=30)
+
+        self.assertEqual(errors, [])
+        refreshed = inventario.objects.get(pk=row.pk)
+        self.assertEqual((refreshed.to_install, refreshed.installed), (Decimal('30.00'), Decimal('0.00')))
+        devoluciones = Inventario_Movimiento.objects.filter(proforma_detail=detail, tipo='devolucion')
+        self.assertEqual(sum(m.metros for m in devoluciones), Decimal('10.00'))
