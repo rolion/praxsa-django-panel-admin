@@ -1,6 +1,6 @@
 # TASK-dashboard-taller-laminas: Dashboard del panel para el taller de láminas (KPIs, gráficas, stock crítico, cola de instalaciones, últimas proformas)
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** task/TASK-dashboard-taller-laminas
@@ -18,6 +18,7 @@
 | 2026-09-30 | ENGINEERING → REVIEW | Implementación completa de las fases 1 a 5 del plan v1 (backend, API, servicio, pantalla); la verificación en vivo contra el backend real (paso 20) queda para review/usuario | delivery-engineer |
 | 2026-09-30 | REVIEW → ENGINEERING | Quality Gate FAIL: 1 issue High (valores KPI ilegibles en tema oscuro) y 1 Low (contraste del botón Convertir a venta), ambos IMPLEMENTATION; `view_proxy_pagos`, equivalencia con Reportes y alcance verificados en vivo | delivery-review |
 | 2026-09-30 | ENGINEERING → REVIEW | Corregidos REV-01 (contraste de cifras y enlaces en tema oscuro) y REV-02 (contraste del botón Convertir a venta) | delivery-engineer |
+| 2026-09-30 | REVIEW → PUBLISH | Quality Gate PASS en el re-review sobre `02e9153`: REV-01 y REV-02 resueltos; queda abierto REV-03 (Low) | delivery-review |
 
 ## Investigación
 
@@ -182,13 +183,13 @@ Implementado el plan v1 (fases 0 a 5) con los valores por defecto de las pregunt
 - Verificación propia (no es el Quality Gate): `ng build`, `ng lint` y `ng test` igual que antes (14 fallos previos, 290 OK); medición de contraste en el dashboard real en tema oscuro: 0 textos bajo 4.5:1. Observación sin corregir (fuera de alcance): en tema claro los textos `.text-muted` y links de la plantilla quedan en 2.5–3.8:1; es el estilo global de la plantilla.
 
 ## Review
-**Resultado: FAIL** (2026-09-30, delivery-review, sobre `0aec4e4`; aislamiento de contexto procedimental). Evidencia completa en `## Testing` y `## Review` del [PR #56](https://github.com/rolion/praxsa-django-panel-admin/pull/56).
+**Resultado: PASS** (2026-09-30, delivery-review, re-review sobre `02e9153`; aislamiento de contexto procedimental: sesión nueva, solo artefactos y diff). La primera revisión (sobre `0aec4e4`) fue FAIL por REV-01 y REV-02. Evidencia completa en `## Testing` y `## Review` del [PR #56](https://github.com/rolion/praxsa-django-panel-admin/pull/56).
 
-- Issues abiertos: [REV-2026-09-30-dashboard-taller-laminas-01](../reviews/REV-2026-09-30-dashboard-taller-laminas-01.md) (High, IMPLEMENTATION: cifras de KPI y "Ver todos" ilegibles en tema oscuro; AC 10) y [REV-...-02](../reviews/REV-2026-09-30-dashboard-taller-laminas-02.md) (Low, IMPLEMENTATION: contraste de "Convertir a venta").
-- Backend `python manage.py test product`: 500 OK; `makemigrations --check`: sin cambios. Frontend: `ng test` 290 OK / 14 FAILED (los mismos 14 `should create` que fallan en `origin/master`, que además falla `MainComponent`); `ng lint` y `ng build` OK.
-- En vivo (backend y `ng serve` de la rama, Admin): 7 widgets con datos reales, sin errores; ventas del mes = `totales.cobrado` de Ventas Diarias; sin `view_proxy_pagos` el API devuelve `null` (9 perfiles); móvil sin scroll horizontal.
-- No verificado: "Convertir a venta" de extremo a extremo (escribe en el DB de desarrollo), UI con un usuario sin permiso de ventas, empleado con dos sucursales (solo tests automáticos), umbrales de stock con negocio.
-- Sin herramientas de lint/seguridad de backend instaladas (flake8, ruff, mypy, bandit, safety); `npm audit` reporta 3 vulnerabilidades previas (package.json sin cambios).
+- Resueltos: [REV-01](../reviews/REV-2026-09-30-dashboard-taller-laminas-01.md) (cifras KPI y "Ver todos" en tema oscuro: ahora 14.3:1) y [REV-02](../reviews/REV-2026-09-30-dashboard-taller-laminas-02.md) (botón "Convertir a venta": ahora 5.1:1).
+- Abierto, no bloqueante: [REV-03](../reviews/REV-2026-09-30-dashboard-taller-laminas-03.md) (Low, IMPLEMENTATION: `.text-muted` con 2.5:1 en tema claro, heredado de la plantilla).
+- Backend `python manage.py test product`: 500 OK; `makemigrations --check`: sin cambios. Frontend `ng test`: 290 OK / 14 FAILED (los mismos 14 `should create` que fallan en `origin/master`); `ng lint` y `ng build` OK.
+- El contraste se midió sobre el CSS compilado real y el markup del dashboard en una página de prueba (no en la app con login); el comportamiento de datos/permisos no cambió desde la primera revisión (el diff posterior es solo `_dashboard.scss`).
+- No verificado: "Convertir a venta" de extremo a extremo, UI con usuario sin permiso de ventas, empleado con dos sucursales, umbrales de stock con negocio, herramientas de lint/seguridad de backend (no instaladas).
 
 ## Publicación
 _Pendiente_

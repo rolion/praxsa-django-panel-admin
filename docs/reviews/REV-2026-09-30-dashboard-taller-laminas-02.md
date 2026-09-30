@@ -1,6 +1,6 @@
 # REV-2026-09-30-dashboard-taller-laminas-02: Botón "Convertir a venta" con contraste insuficiente
 
-**Status:** Open
+**Status:** Resolved (verificado en el re-review sobre 02e9153)
 **Severity:** Low
 **Category:** IMPLEMENTATION
 **Related plan:** docs/plans/PLAN-2026-09-30-dashboard-taller-laminas.md (v1)

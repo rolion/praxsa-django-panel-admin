@@ -1,6 +1,6 @@
 # REV-2026-09-30-dashboard-taller-laminas-01: Valores de KPI y "Ver todos" ilegibles en tema oscuro
 
-**Status:** Open
+**Status:** Resolved (verificado en el re-review sobre 02e9153)
 **Severity:** High
 **Category:** IMPLEMENTATION
 **Related plan:** docs/plans/PLAN-2026-09-30-dashboard-taller-laminas.md (v1)
