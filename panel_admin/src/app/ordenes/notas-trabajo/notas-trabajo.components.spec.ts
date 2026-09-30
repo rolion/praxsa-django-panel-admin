@@ -99,6 +99,48 @@ describe('NotaTrabajoViewComponent', () => {
     expect(component.canEdit).toBe(false);
   });
 
+  it('shows the status badge: en ejecucion until the nota de venta exists, then finalizado', () => {
+    const component = TestBed.createComponent(NotaTrabajoViewComponent).componentInstance;
+    component.ngOnInit();
+    httpMock.expectOne(`${base}/notas-trabajo/3/`).flush(nota());
+
+    expect(component.statusText).toBe('En ejecución');
+    expect(component.statusClass).toBe('status-progress');
+
+    component.nota = nota({ is_finalizada: true });
+    expect(component.statusText).toBe('Finalizado');
+    expect(component.statusClass).toBe('status-done');
+  });
+
+  it('renders cards, formatted dates, muted empty values and the detail tables', () => {
+    const fixture = TestBed.createComponent(NotaTrabajoViewComponent);
+    const component = fixture.componentInstance;
+    const data = nota({
+      entrada_vehiculo: '2025-08-05T04:16:51',
+      proforma_items: [{
+        id: 1, car_part: 5, car_part_name: 'Parabrisas', window_film: 3, window_film_name: 'Carbon',
+        width: '1.50', length: '1.20', quantity: 2, window_film_price: '120.00',
+        installation_price: '50.00', sub_total: '388.00',
+      }],
+      resumen: [{ window_film_name: 'Carbon', width: '1.50', length: '2.40' }],
+    });
+    component.ngOnInit();
+    httpMock.expectOne(`${base}/notas-trabajo/3/`).flush(data);
+    fixture.detectChanges(); // ngOnInit del ciclo de vida: segunda carga
+    httpMock.match(`${base}/notas-trabajo/3/`).forEach((req) => req.flush(data));
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelectorAll('.section-card').length).toBe(5);
+    expect(element.querySelectorAll('ngx-datatable').length).toBe(2);
+    expect(element.querySelector('table')).toBeNull();
+    const text = element.textContent || '';
+    expect(text).toContain('05/08/2025 - 04:16 h');
+    expect(text).toContain('Sin código');
+    expect(text).toContain('Aún no registrada');
+    expect(text).toContain('Sin observaciones');
+  });
+
   it('cannot edit without permission', () => {
     const component = TestBed.createComponent(NotaTrabajoViewComponent).componentInstance;
     component.ngOnInit();
