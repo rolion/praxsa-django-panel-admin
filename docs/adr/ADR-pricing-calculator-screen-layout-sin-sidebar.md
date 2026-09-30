@@ -1,6 +1,6 @@
 # ADR-pricing-calculator-screen-layout-sin-sidebar: Layout mínimo (header con logo, sin sidebar) como ruta hermana, reutilizando `app-header` con una variante
 
-**Estado:** Propuesto
+**Estado:** Propuesto (vigente; se extiende en ADR-pricing-calculator-screen-sesion-cliente-aislamiento: rutas de cliente bajo este layout, variante de header con menú y estado de sesión)
 **Task relacionado:** TASK-pricing-calculator-screen
 **Fecha:** 2026-09-30
 

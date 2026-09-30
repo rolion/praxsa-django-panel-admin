@@ -1,6 +1,6 @@
 # ADR-pricing-calculator-screen-cotizacion-en-cliente: La cotización es una vista previa calculada en el cliente con la API existente; "Crear Proforma" recibe un borrador por `history.state`; "Recomendada" y WhatsApp por sucursal quedan diferidos
 
-**Estado:** Propuesto
+**Estado:** Reemplazado por ADR-pricing-calculator-screen-catalogo-publico-calculadora (punto 1, fuente de datos) y ADR-pricing-calculator-screen-registro-y-api-cliente (puntos 5 y 6, guardado). Siguen vigentes los puntos 2, 3, 4, 7, 8 y 9 (vista previa en cliente con `ordenes.calc.ts`, filtro de aptitud, ReactiveForms + signals, WhatsApp, "Recomendada" diferida, imagen)
 **Task relacionado:** TASK-pricing-calculator-screen
 **Fecha:** 2026-09-30
 

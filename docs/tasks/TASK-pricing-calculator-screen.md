@@ -1,6 +1,6 @@
 # TASK-pricing-calculator-screen: Pantalla "Calculadora de precios" para staff/asesores en panel_admin
 
-**Etapa actual:** ARCHITECTURE
+**Etapa actual:** PLANNING
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** `claude/pricing-calculator-screen-b5e976` (asignada por el entorno)
@@ -16,6 +16,7 @@
 | 2026-09-30 | ENGINEERING → REVIEW | Implementación completa según plan v1 (5 fases, solo frontend `panel_admin/`); specs propios en verde, `ng lint` y `ng build` limpios; verificación en vivo con API simulada (escritorio y móvil) | delivery-engineer |
 | 2026-09-30 | REVIEW → INVESTIGATION | Cambio de alcance pedido por el usuario tras ver la v1: la calculadora es para cliente final (login/registro en modal por etapas, menú superior Calculadora/Proformas, lista de proformas de solo lectura, sin sidebar ni acceso a administración), dentro de `panel_admin/` y con la placa en la cuenta. Reinvestigación de cuentas de cliente, sesión y contratos; el DDR/ADR/plan v1 quedan pendientes de revisión | delivery-investigate |
 | 2026-09-30 | INVESTIGATION → ARCHITECTURE (via DESIGN) | Diseño del flujo de cliente resuelto en un DDR nuevo que reemplaza al de la v1: calculadora navegable sin sesión, modal de acceso (login y registro en 2 etapas), encabezado con Calculadora/Proformas, guardado directo con datos de la cuenta y lista Mis proformas de solo lectura; el veredicto NEEDS_ARCHITECTURE exige decidir aislamiento de sesión/autorización, registro con username y placa, catálogos y contrato de listado | delivery-design |
+| 2026-09-30 | ARCHITECTURE → PLANNING | Decisiones tomadas en 3 ADR nuevos: sesión de cliente con aislamiento por guards y barrera de servidor existente (sin tocar el login del panel), registro y API de cliente aditivos (endpoint nuevo, `Client.car_plate` con migración, perfil y lista propios, `POST invoice` para guardar), y catálogo público para la calculadora; el ADR de cotización v1 queda reemplazado en parte | delivery-architect |
 
 ## Investigación
 
@@ -190,6 +191,17 @@ Hoy un asesor arma una cotización creando directamente una proforma en `/ordene
 **Pendientes de negocio (no resolubles desde el código):** regla de "Recomendada", número de WhatsApp (global vs. por sucursal), texto/formato de importes y ubicación de la entrada al menú.
 
 ## Arquitectura
+### Vigente tras el cambio de alcance (2026-09-30)
+- [ADR-pricing-calculator-screen-sesion-cliente-aislamiento](../adr/ADR-pricing-calculator-screen-sesion-cliente-aislamiento.md) — un solo login/sesión (`isStaff` discrimina); guard de staff en el layout de administración, `/calculadora` pública y `/mis-proformas` con guard de sesión; barrera real en servidor (`IsStaffUser`, sin cambios); 401 de cliente sin recarga (reabre el modal); staff conserva el camino de la v1; login solo por usuario.
+- [ADR-pricing-calculator-screen-registro-y-api-cliente](../adr/ADR-pricing-calculator-screen-registro-y-api-cliente.md) — `POST product/client/register` (username opcional, contraseña validada, throttle), `Client.car_plate` con migración `0115` aditiva, `GET client/me`, `GET client/proformas` (propias, sin `is_delete`), guardado con `POST invoice` existente; `create_client` e `invoice/all` intactos.
+- [ADR-pricing-calculator-screen-catalogo-publico-calculadora](../adr/ADR-pricing-calculator-screen-catalogo-publico-calculadora.md) — la calculadora usa `get_calculator_info` / `get_model_parts` / `get_inventory` públicos (con `is_active` e imagen agregados de forma aditiva).
+- [ADR-pricing-calculator-screen-layout-sin-sidebar](../adr/ADR-pricing-calculator-screen-layout-sin-sidebar.md) — sigue vigente (layout mínimo y variante de header); se extiende por el ADR de sesión.
+
+**Rollback:** backend aditivo (migración reversible, endpoints nuevos independientes, cambio de una línea en el catálogo público) y frontend revertible quitando guard/rutas/modal; sin cambios de infraestructura. Despliegue: backend primero, frontend después.
+
+**Decisiones tomadas por defecto (a confirmar con negocio):** el staff mantiene el flujo de la v1 y su ítem de menú; login por "Usuario" (no por correo); CI/NIT no se pide y se envía `null`; sin columna de estado ni detalle en la lista del cliente; el servidor no agrega aquí las reglas de ancho/metros a `POST invoice` (deuda explícita).
+
+### Versión anterior (v1, actor staff)
 - [ADR-pricing-calculator-screen-layout-sin-sidebar](../adr/ADR-pricing-calculator-screen-layout-sin-sidebar.md) — `MinimalLayoutComponent` + ruta hermana `calculadora`; `app-header` con variante mínima (logo, sin toggle de sidebar) vía `input()` con default que preserva el comportamiento actual; offset del sidebar neutralizado con clase propia.
 - [ADR-pricing-calculator-screen-cotizacion-en-cliente](../adr/ADR-pricing-calculator-screen-cotizacion-en-cliente.md) — sin cambios de backend; total como vista previa con `ordenes.calc.ts`; `ReactiveForms` + signals en `calculadora/`; borrador por `history.state` al formulario de proforma; permiso `add_proforma_header` solo como UX; WhatsApp con número global en `environment`; "Recomendada" diferida.
 
