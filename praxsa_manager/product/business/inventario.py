@@ -50,10 +50,10 @@ class Inventario_Business:
         return result
     
     def reduce_inventory(self, sucursal, windows_film, width, length_to_reduce):
-        query = inventario.objects.select_related('bobina', 'sucursal', 'bobina__window_film')
-        query = query.filter(sucursal = sucursal, 
-                             bobina__window_film = windows_film, 
-                             bobina__width = width, 
+        query = inventario.objects.select_for_update().select_related('bobina', 'sucursal', 'bobina__window_film')
+        query = query.filter(sucursal = sucursal,
+                             bobina__window_film = windows_film,
+                             bobina__width = width,
                              to_install__gte = length_to_reduce)
         query = query.order_by('bobina__width','date')[:1]
         self.log_debug.info(f'{sucursal}, {windows_film}, {width}, {length_to_reduce}')
@@ -72,7 +72,7 @@ class Inventario_Business:
     
     def return_to_inventory(self, detail_inventory, length_to_add):
         try:
-            inv = inventario.objects.select_related('bobina', 'sucursal')
+            inv = inventario.objects.select_for_update().select_related('bobina', 'sucursal')
             inv = inv.get(id = detail_inventory.id)
             inv.to_install = inv.to_install + length_to_add
             inv.installed = inv.installed - length_to_add
