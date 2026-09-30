@@ -18,6 +18,7 @@
 | 2026-09-30 22:30 UTC | ENGINEERING → REVIEW | Implementación de plan v2 completa (REV-01, REV-02) | delivery-engineer |
 | 2026-09-30 23:00 UTC | REVIEW → REVIEW | Re-review: todo verde salvo `nginx -t` no ejecutable; sin PASS, etapa se mantiene | delivery-review |
 | 2026-09-30 23:20 UTC | REVIEW → PUBLISH | Quality Gate PASS con omisión autorizada por el usuario de `nginx -t` | delivery-review |
+| 2026-09-30 23:30 UTC | PUBLISH (sin cambio) | PR completo; pendiente de aprobación humana por cambio de infraestructura | delivery-publish |
 
 ## Investigación
 
@@ -119,4 +120,4 @@ Issues:
 **Falla ignorada con autorización explícita:** el usuario (chat, 2026-09-30) autorizó omitir `nginx -t` y pasar a `/delivery-publish`. Riesgo aceptado: un error de sintaxis en `nginx.conf.prod|stg` solo se detectaría al desplegar. Recomendado correrlo antes del despliegue.
 
 ## Publicación
-_Pendiente_
+PR: https://github.com/rolion/praxsa-django-panel-admin/pull/58 — **Listo para aprobación humana** (no mergeado). Cambio sensible por infraestructura (nginx prod/stg): requiere aprobación explícita en el chat antes del merge. Falla ignorada registrada en el PR: `nginx -t` no ejecutado (autorizado por el usuario).
