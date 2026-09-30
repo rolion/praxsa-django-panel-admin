@@ -16,6 +16,7 @@
 | 2026-09-30 | PLANNING → ENGINEERING | Plan v1 escrito (backend primero, frontend después, un solo PR); el usuario confirmó que solo `admin` escribe y los demás roles solo leen | delivery-plan |
 | 2026-09-30 | ENGINEERING → REVIEW | Plan v1 implementado sin desvíos de alcance (backend + frontend). Verificación propia: backend 371/371, `makemigrations --check` limpio, `ng build`/`ng lint` limpios, frontend 235/250 con las mismas 15 fallas de componentes demo de la plantilla | delivery-engineer |
 | 2026-09-30 | REVIEW → PUBLISH | Quality Gate PASS: backend 371/371, frontend sin fallas nuevas, prueba en vivo correcta; 1 issue Low abierto (REV-01, estético, no bloqueante) | delivery-review |
+| 2026-09-30 | PUBLISH (sin cambio de etapa) | Descripción del PR completada; cambio sensible (permisos + migración): pendiente de aprobación humana para merge | delivery-publish |
 
 ## Investigación
 
@@ -142,4 +143,4 @@ Plan v1 implementado tal cual, sin desvíos de alcance.
 - Siguiente: `/delivery-publish TASK-agrupacion-menu-instalador-precio-sucursal`.
 
 ## Publicación
-_Pendiente_
+PR [#53](https://github.com/rolion/praxsa-django-panel-admin/pull/53) — **Listo para aprobación humana** (no mergeado). Cambio sensible: permisos por grupo (autorización) y migración `0112` de BD, respaldado por el ADR `ADR-agrupacion-menu-instalador-precio-sucursal-api-permisos-borrado`. Al desplegar: migrar y ejecutar `python manage.py asignar_permisos_instalador_precio`.
