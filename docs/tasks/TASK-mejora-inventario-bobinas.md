@@ -1,6 +1,6 @@
 # TASK-mejora-inventario-bobinas: Evaluar y mejorar el manejo del inventario de bobinas
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** NO
 **Rama:** task/TASK-mejora-inventario-bobinas
@@ -14,6 +14,7 @@
 | 2026-09-30 | PLANNING → INVESTIGATION | Re-investigación pedida por el usuario tras traer master (PR #51: máquina de estados de la orden, `orden_estado.py`, migración 0111). Cambian los llamadores del descuento/devolución; los ADR de este task deben revisarse con `/delivery-architect` | delivery-investigate |
 | 2026-09-30 | ARCHITECTURE → PLANNING | ADR revisados tras la re-investigación (PR #51): asignación integrada en `Orden_Estado_Business`, devolución unificada, orden de bloqueo definido, migraciones separadas | delivery-architect |
 | 2026-09-30 | PLANNING → ENGINEERING | Plan v1 escrito y PR abierto; queda a la espera de la aprobación humana del plan y de la respuesta a las 4 preguntas abiertas antes de implementar | delivery-plan |
+| 2026-09-30 | ENGINEERING → REVIEW | Implementación completa de las fases 1 a 6 del plan v1; fase 7.2 (verificación en vivo) queda para review/usuario | delivery-engineer |
 
 ## Investigación
 
@@ -121,7 +122,38 @@ Supuestos de negocio pendientes de confirmar (marcados en los ADR): repartir una
 - [PLAN-2026-09-30-mejora-inventario-bobinas](../plans/PLAN-2026-09-30-mejora-inventario-bobinas.md) — **v1**. 7 fases (modelo de movimientos, lógica de asignación/devolución, conectar llamadores, ancho/precio/validación, unicidad de precios, limpieza, verificación en vivo). E2E: no corresponde (backend puro, contrato de API sin cambios). Sin dependencias nuevas.
 
 ## Implementación
-_Pendiente_
+Fases 1 a 6 del [plan v1](../plans/PLAN-2026-09-30-mejora-inventario-bobinas.md), sin desvíos de alcance.
+
+**Modelo y migraciones**
+- `Inventario_Movimiento` (`models.py`) con `CheckConstraint metros > 0`; migración `0112_inventario_movimiento` (aditiva, reversible).
+- `UniqueConstraint(sucursal, lamina, width)` en `precio_venta_sucursal`; migración `0113_precio_venta_sucursal_unico` con verificación previa que aborta con el listado de duplicados y sin modificar datos; el reverso elimina la restricción.
+
+**Lógica (`business/inventario.py`)**
+- `eligible_rows`: criterio único de filas vendibles (sucursal habilitada, fila y bobina activas, saldo > 0, ancho exacto), orden FIFO `date`, `id`.
+- `reduce_inventory`: reparte FIFO entre filas con `select_for_update(of=('self',))`, un `egreso` por fila, falla sin efectos parciales si no alcanza. Nuevo contrato de retorno: lista de `(fila, metros)`.
+- `return_detail_to_inventory`: devuelve el neto por fila desde los movimientos (idempotente); fallback a `detalle.inventario` para órdenes anteriores a los movimientos; log de error si no hay nada que devolver.
+- Eliminado `return_to_inventory` y el código muerto (`get_inventory_film_available_film_by_sucursal`, `is_window_film_available`, `available_window_film_reel_in_inventory_to_sell`, `get_inventory_window_film`), `helper/inventory.py`, `business/bobina.py` y `is_inventory_valid`/`update_inventory` del formulario.
+
+**Llamadores**
+- `orden_estado.aprobar_proforma`: usa las asignaciones; `detalle.inventario` queda en la primera fila usada.
+- `orden_estado._cancelar_orden` y `orden_trabajo.delete_work_note`: usan la operación única de devolución (esta última la omite si la nota ya estaba cancelada).
+
+**Precio, ancho y catálogo (`business/pricing.py`)**
+- `resolve_unit_price`: ancho exacto, override de sucursal o precio de la fila FIFO, en `Decimal` sin `float`.
+- `build_line_pricing`: rechaza (400) si los metros elegibles no alcanzan para `largo * cantidad` (metro lineal: solo `largo`).
+- `get_reel_catalog`: dos consultas constantes (filas elegibles y overrides).
+- `views.get_inventory` conserva `width__gte` y su respuesta; solo se quitó el `print`.
+
+**Pruebas** (`tests/test_inventario_asignacion.py`, 27 casos; suite completa `product`: 374 OK): asignación (una fila, FIFO multi-fila, suma insuficiente, no elegibles, sucursal deshabilitada), devolución (fila por fila, idempotencia, fallback anterior, sin nada), ciclo de la orden con reparto (aprobar/anular/re-aprobar/borrar desde admin/borrar cancelada/stock insuficiente), precio y ancho, validación de metros, catálogo (contenido y consultas constantes), unicidad, migración 0113 (con y sin duplicados, reverso) y concurrencia con dos hilos en Postgres. Ajustes a pruebas existentes: `test_invoice_pricing` (el ancho 1.00 sin bobina exacta ahora da 400; se pide el ancho de la bobina y se añade el caso de rechazo) y `test_orden_estado_migration` (`ACTUAL` pasa a `0113` para que el tearDown no deje la base de pruebas sin las tablas nuevas).
+
+**Decisiones de negocio aplicadas por defecto (sin respuesta del usuario todavía):** se permite repartir una necesidad entre varios lotes y el precio por defecto es el de la fila FIFO. Si el negocio exige un solo rollo por necesidad, la asignación y el catálogo deben cambiar.
+
+**Deuda técnica / límites señalados**
+- Utilidad por lote (`report_utilidad.py:63-68`) y `nro_lote` del PDF (`helper/pdf.py:299`) siguen leyendo solo la primera fila usada.
+- La validación de metros es por línea: varias líneas de la misma bobina en una proforma se validan por separado; la garantía real es la asignación bajo bloqueo al aprobar.
+- Ajustes manuales del `PATCH almacen/inventario` no generan movimientos.
+- Quedó un comentario obsoleto en `Forms/car_model_part.py` que menciona un método ya eliminado (código ya comentado).
+- **Pendiente:** verificación en vivo (fase 7.2 del plan: panel y Django Admin con stock repartido, PDF y reporte de utilidades) — no ejecutada por el engineer.
 
 ## Review
 _Pendiente_

@@ -4,7 +4,6 @@ from django.forms import ModelForm
 from ..models import Proforma_Detail, Car_Model_Part
 from django.core.exceptions import ValidationError
 from ..helper.proforma import Proforma_Helper
-from ..helper.inventory import Inventory_helper
 from ..business.inventario import Inventario_Business
 from ..business.pricing import Pricing_Business, calculate_subtotal_venta_instalacion, calculate_subtotal_venta_metro_lineal
 
@@ -16,7 +15,6 @@ class CarModelPartForm(ModelForm):
 
     disponibilidad = forms.IntegerField(required=False, initial = 0, disabled=True)
     proforma_helper = Proforma_Helper()
-    inv_helper = Inventory_helper()
     inv_bussiness = Inventario_Business()
     pricing_business = Pricing_Business()
 
@@ -25,9 +23,6 @@ class CarModelPartForm(ModelForm):
     
     def is_proforma_installed(self, proforma):
         return proforma.sales_status == self.proforma_helper.inst
-    
-    def is_inventory_valid(self, sucursal, lamina, mtr_to_install, width):
-        return self.inv_helper.get_bobina_by_sucursal_lamina_width(sucursal_id=sucursal, lamina_id=lamina,width=width, length_to_sell= mtr_to_install )
     
     def clean_sub_total(self):
         cleaned_data = super().clean()
@@ -145,9 +140,6 @@ class CarModelPartForm(ModelForm):
         #     self.add_error('window_film','no hay disponibilidad de lamina')
 
         return cleaned_data
-
-    def update_inventory(self, sucursal, bobina, length_to_reduce):
-        self.inv_helper.update_inventory(sucursal_id= sucursal, bobina= bobina, length_to_reduce=length_to_reduce)
 
     class Meta:
         model = Proforma_Detail
