@@ -1,6 +1,6 @@
 # TASK-filtros-busqueda-reportes: Filtros de búsqueda en reportes Proforma, Nota Trabajo y Nota Venta
 
-**Etapa actual:** PLANNING
+**Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** SI
 **Rama:** `task/TASK-filtros-busqueda-reportes`
@@ -16,6 +16,8 @@
 | 2026-09-30 | ENGINEERING → REVIEW | Implementación completa según plan v1 | delivery-engineer |
 | 2026-09-30 | REVIEW → DESIGN | DESIGN_REVIEW_REQUIRED: el solicitante indica que las pantallas objetivo son las listas del panel Angular (Órdenes), no el Django Admin | delivery-engineer |
 | 2026-09-30 | DESIGN → PLANNING | DDR de filtros en listados del panel Angular emitido; veredicto NEEDS_PLAN se mantiene (plan v2 requerido) | delivery-design |
+| 2026-09-30 | PLANNING → PLANNING | Plan v2: agrega Fase 2 (panel Angular) tras DESIGN_REVIEW_REQUIRED | delivery-plan |
+| 2026-09-30 | PLANNING → ENGINEERING | Plan v2 listo para implementar (pendiente de aprobación humana) | delivery-plan |
 
 ## Investigación
 
@@ -115,7 +117,7 @@
 _No aplica según veredicto_
 
 ## Plan
-[docs/plans/PLAN-2026-09-30-filtros-busqueda-reportes.md](../plans/PLAN-2026-09-30-filtros-busqueda-reportes.md) — versión vigente: **v1**.
+[docs/plans/PLAN-2026-09-30-filtros-busqueda-reportes.md](../plans/PLAN-2026-09-30-filtros-busqueda-reportes.md) — versión vigente: **v2** (Fase 1 Django Admin ya implementada; Fase 2 panel Angular pendiente).
 
 ## Implementación
 Implementado según plan v1, sin desvíos de alcance.
