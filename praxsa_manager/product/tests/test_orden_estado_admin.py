@@ -4,7 +4,7 @@ from decimal import Decimal
 from unittest import mock
 
 from django.contrib.admin.sites import AdminSite
-from django.test import RequestFactory
+from django.test import Client, RequestFactory
 
 from . import helpers
 from .test_orden_estado_service import OrdenEstadoBase
@@ -114,3 +114,20 @@ class AdminPagosTest(OrdenEstadoBase):
         self.assertFalse(pago.objects.filter(nota_venta=self.nv).exists())
         self.assertEqual(Nota_Venta.objects.get(pk=self.nv.pk).status, estados.NV_POR_COBRAR)
         self.assertEqual(self.reload_header().status, 'por_cobrar')
+
+    def test_eliminar_un_pago_cerrado_desde_admin_no_da_500(self):
+        self.terminar(self.nota)
+        registrado = self.svc.registrar_pago(self.nv, self.user, 'efec')
+        self.svc.cerrar_pago(registrado)
+        self.user.is_superuser = True
+        self.user.is_staff = True
+        self.user.save()
+        client = Client(raise_request_exception=False)
+        client.force_login(self.user)
+
+        response = client.post(f'/admin/product/pago/{registrado.pk}/delete/', {'post': 'yes'})
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(pago.objects.filter(pk=registrado.pk).exists())
+        self.assertEqual(Nota_Venta.objects.get(pk=self.nv.pk).status, estados.NV_PAGADA)
+

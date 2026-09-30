@@ -208,14 +208,6 @@ class ProformaAdmin(admin.ModelAdmin):
                     message=str('Algo salio mal, contactar al adminsitrador')
                 )
     
-    @admin.action(description="Eliminar Proforma")
-    def delete_proforma(self, request: HttpRequest, queryset: QuerySet):
-        try:
-            [self.proforma_business.delete_proforma(user= request.user, proforma=qs) for qs in list(queryset)]
-        except Exception as e:
-            self.log_debug.info(str(e))
-            self.message_user(request=request,  message=str(e), level= messages.ERROR)
-
     @admin.action(description="anular nota de trabajo (reabrir proforma)")
     def open_proforma(self, request: HttpRequest, queryset: QuerySet):
         try:

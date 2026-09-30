@@ -1,6 +1,6 @@
 # TASK-estados-proforma-nota-trabajo-nota-venta: Revisar y reorganizar estados y transiciones de Proforma, Nota de Trabajo y Nota de Venta
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** task/TASK-estados-proforma-nota-trabajo-nota-venta
@@ -16,6 +16,7 @@
 | 2026-09-30 02:40 UTC | ENGINEERING → PLANNING → ENGINEERING | Plan v2 pedido por el usuario (no por engineer/review): comando idempotente de permisos, permisos por acción (aprobar/anular proforma: Vendedor y Admin; anular nota de trabajo: Almacen y Admin; anular nota de venta: Caja, Vendedor y Admin), `reabrir` reemplazado por anular nota de trabajo/venta. ADR de API/máquina de estados y DDR actualizados (Actualización 1) sin reabrir ARCHITECTURE: no cambia el modelo de datos y los permisos no son custom (se usan `delete_*` estándar) | delivery-plan |
 | 2026-09-30 02:14 UTC | ENGINEERING → REVIEW | Implementación completa según plan v2.1 (backend, Django Admin, API, comando de permisos y panel). Vendedor también edita proformas (indicado por el usuario). Autoverificación: 333 tests backend y 221 frontend en verde (15 fallas preexistentes en specs "should create" de la plantilla, idénticas en `origin/master`), `ng build` y `ng lint` limpios, migración ensayada en Postgres real | delivery-engineer |
 | 2026-09-30 02:40 UTC | REVIEW → ENGINEERING | Quality Gate FAIL: sin issues Critical/High, pero REV-01 (Medium) y REV-02 (Low) abiertos y verificaciones del plan sin ejecutar (verificación en vivo, ensayo de migración con datos reales), por lo que no se puede emitir PASS | delivery-review |
+| 2026-09-30 03:00 UTC | ENGINEERING → REVIEW | REV-01 y REV-02 corregidos (autoverificación: 346 tests backend OK); quedan pendientes la verificación en vivo y el ensayo de migración con datos reales señalados en el review | delivery-engineer |
 
 ## Investigación
 
@@ -151,6 +152,11 @@ Implementado según el plan v2.1 (PR [#51](https://github.com/rolion/praxsa-djan
 **Deuda técnica señalada (no resuelta)**: `is_close` sigue en los tres modelos como campo legado; `Proforma_Header.status` denormalizado sin constraint en base; no hay auditoría de transiciones; listados sin paginación en servidor; el cierre contable del pago solo existe en Django Admin; `Almacen` vs `Almacén` depende del ambiente (el comando lo detecta).
 
 **Pendiente para revisión/publicación**: verificación en vivo con `runserver` + `ng serve` (usuarios de distintos grupos/sucursales, Django Admin y reportes), ensayo de `migrate`/reverso con una copia de datos reales y ejecución de `asignar_permisos_estados` en cada ambiente.
+
+**Corrección de REV-01 y REV-02 (post-review)**
+- REV-01: `PagosAdmin.has_delete_permission` devuelve `False` para pagos `cerrado=True`, así que Django Admin responde 403 en vez de 500; test de regresión vía `Client` en `tests/test_orden_estado_admin.py`. El alta (`save_model`) sigue apoyándose en `PagosForm.clean`, que valida antes de llegar al servicio.
+- REV-02: se eliminó el método huérfano `ProformaAdmin.delete_proforma`.
+- Autoverificación: 346 tests backend OK. Sigue pendiente lo que el review marcó como no ejecutado (verificación en vivo, ensayo de `migrate`/reverso con datos reales).
 
 ## Review
 **Resultado: FAIL** (2026-09-30, delivery-review; aislamiento procedimental, no real). Sin issues Critical/High; no se emite PASS porque quedaron verificaciones aplicables sin ejecutar.

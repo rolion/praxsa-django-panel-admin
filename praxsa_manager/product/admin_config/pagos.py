@@ -141,6 +141,13 @@ class PagosAdmin(admin.ModelAdmin):
         return True
 
 
+    def has_delete_permission(self, request: HttpRequest, obj=None):
+        # Un pago cerrado contablemente no se anula (Orden_Estado_Business.anular_pago);
+        # se oculta la eliminacion en vez de dejar que el servicio falle con un 500.
+        if obj is not None and obj.cerrado:
+            return False
+        return super().has_delete_permission(request, obj)
+
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
         qs = super().get_queryset(request)
         qs = qs.select_related('nota_venta',
