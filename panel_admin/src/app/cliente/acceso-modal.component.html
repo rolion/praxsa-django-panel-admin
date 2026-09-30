@@ -1,0 +1,165 @@
+<div class="acceso-modal">
+  <div class="modal-header">
+    <h4 class="modal-title" id="acceso-modal-title">
+      @if (mode() === 'login') {
+        Iniciar sesión
+      } @else {
+        Crear cuenta
+      }
+    </h4>
+    <button type="button" class="close" aria-label="Cerrar" [disabled]="busy()" (click)="close()">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+
+  @if (mode() === 'login') {
+    <form [formGroup]="loginForm" (ngSubmit)="login()" novalidate>
+      <div class="modal-body">
+        @if (message) {
+          <div class="alert alert-info">{{ message }}</div>
+        }
+        <div class="mb-3">
+          <label class="fw-bold" for="acceso-usuario">Usuario</label>
+          <input id="acceso-usuario" type="text" class="form-control" formControlName="username" autocomplete="username" />
+          <small class="text-muted">Si no cambiaste tu usuario al registrarte, es tu correo.</small>
+          @if (invalid(loginForm, 'username', submittedLogin)) {
+            <small class="text-danger d-block">El usuario es obligatorio.</small>
+          }
+        </div>
+        <div class="mb-3">
+          <label class="fw-bold" for="acceso-clave">Contraseña</label>
+          <div class="input-group">
+            <input
+              id="acceso-clave"
+              [type]="showPassword() ? 'text' : 'password'"
+              class="form-control"
+              formControlName="password"
+              autocomplete="current-password"
+            />
+            <button type="button" class="btn btn-outline-secondary" (click)="togglePassword()" [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+              <i class="fas" [class.fa-eye]="!showPassword()" [class.fa-eye-slash]="showPassword()"></i>
+            </button>
+          </div>
+          @if (invalid(loginForm, 'password', submittedLogin)) {
+            <small class="text-danger d-block">La contraseña es obligatoria.</small>
+          }
+        </div>
+        @if (errorMessage()) {
+          <div class="alert alert-danger mb-0">{{ errorMessage() }}</div>
+        }
+      </div>
+      <div class="modal-footer justify-content-between">
+        <button type="button" class="btn btn-link p-0" [disabled]="busy()" (click)="setMode('register')">¿No tienes cuenta? Crear cuenta</button>
+        <button type="submit" class="btn btn-primary" [disabled]="busy()">
+          @if (busy()) {
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+          }
+          Ingresar
+        </button>
+      </div>
+    </form>
+  } @else {
+    <div class="modal-body">
+      @if (message) {
+        <div class="alert alert-info">{{ message }}</div>
+      }
+      <ol class="acceso-steps" aria-label="Progreso del registro">
+        <li [class.active]="step() === 1" [class.done]="step() > 1">
+          <span class="step-dot">@if (step() > 1) { <i class="fas fa-check"></i> } @else { 1 }</span>
+          <span>Tus datos</span>
+        </li>
+        <li [class.active]="step() === 2">
+          <span class="step-dot">2</span>
+          <span>Tu acceso</span>
+        </li>
+      </ol>
+
+      @if (step() === 1) {
+        <form [formGroup]="step1" (ngSubmit)="nextStep()" novalidate id="acceso-step1">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="fw-bold" for="reg-nombre">Nombre</label>
+              <input id="reg-nombre" type="text" class="form-control" formControlName="name" autocomplete="given-name" (input)="clearServerError('name')" />
+              @if (invalid(step1, 'name', submittedStep1)) { <small class="text-danger">El nombre es obligatorio.</small> }
+              @if (serverErrors()['name']) { <small class="text-danger d-block">{{ serverErrors()['name'] }}</small> }
+            </div>
+            <div class="col-md-6">
+              <label class="fw-bold" for="reg-apellido">Apellido</label>
+              <input id="reg-apellido" type="text" class="form-control" formControlName="lastname" autocomplete="family-name" (input)="clearServerError('lastname')" />
+              @if (invalid(step1, 'lastname', submittedStep1)) { <small class="text-danger">El apellido es obligatorio.</small> }
+              @if (serverErrors()['lastname']) { <small class="text-danger d-block">{{ serverErrors()['lastname'] }}</small> }
+            </div>
+            <div class="col-12">
+              <label class="fw-bold" for="reg-correo">Correo</label>
+              <input id="reg-correo" type="email" class="form-control" formControlName="email" autocomplete="email" (input)="clearServerError('email')" />
+              @if (invalid(step1, 'email', submittedStep1)) { <small class="text-danger">Ingresa un correo válido.</small> }
+              @if (serverErrors()['email']) { <small class="text-danger d-block">{{ serverErrors()['email'] }}</small> }
+            </div>
+            <div class="col-md-6">
+              <label class="fw-bold" for="reg-telefono">Teléfono</label>
+              <input id="reg-telefono" type="tel" class="form-control" formControlName="phone_number" autocomplete="tel" placeholder="70000000" (input)="clearServerError('phone_number')" />
+              @if (invalid(step1, 'phone_number', submittedStep1)) { <small class="text-danger">Ingresa entre 7 y 11 dígitos.</small> }
+              @if (serverErrors()['phone_number']) { <small class="text-danger d-block">{{ serverErrors()['phone_number'] }}</small> }
+            </div>
+            <div class="col-md-6">
+              <label class="fw-bold" for="reg-placa">Placa del vehículo</label>
+              <input id="reg-placa" type="text" class="form-control text-uppercase" formControlName="car_plate" maxlength="10" placeholder="ABC123" (input)="clearServerError('car_plate')" />
+              @if (invalid(step1, 'car_plate', submittedStep1)) { <small class="text-danger">La placa es obligatoria (máx. 10 caracteres).</small> }
+              @if (serverErrors()['car_plate']) { <small class="text-danger d-block">{{ serverErrors()['car_plate'] }}</small> }
+            </div>
+          </div>
+        </form>
+      } @else {
+        <form [formGroup]="step2" (ngSubmit)="register()" novalidate id="acceso-step2">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="fw-bold" for="reg-usuario">Nombre de usuario</label>
+              <input id="reg-usuario" type="text" class="form-control" formControlName="username" autocomplete="username" (input)="clearServerError('username')" />
+              <small class="text-muted">Puedes usar tu correo.</small>
+              @if (invalid(step2, 'username', submittedStep2)) { <small class="text-danger d-block">El usuario es obligatorio y no puede tener espacios.</small> }
+              @if (serverErrors()['username']) { <small class="text-danger d-block">{{ serverErrors()['username'] }}</small> }
+            </div>
+            <div class="col-md-6">
+              <label class="fw-bold" for="reg-clave">Contraseña</label>
+              <div class="input-group">
+                <input id="reg-clave" [type]="showPassword() ? 'text' : 'password'" class="form-control" formControlName="password" autocomplete="new-password" (input)="clearServerError('password')" />
+                <button type="button" class="btn btn-outline-secondary" (click)="togglePassword()" [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+                  <i class="fas" [class.fa-eye]="!showPassword()" [class.fa-eye-slash]="showPassword()"></i>
+                </button>
+              </div>
+              <small class="text-muted">Mínimo 8 caracteres; evita contraseñas comunes o solo numéricas.</small>
+              @if (invalid(step2, 'password', submittedStep2)) { <small class="text-danger d-block">La contraseña debe tener al menos 8 caracteres.</small> }
+              @if (serverErrors()['password']) { <small class="text-danger d-block">{{ serverErrors()['password'] }}</small> }
+            </div>
+            <div class="col-md-6">
+              <label class="fw-bold" for="reg-confirmar">Confirmar contraseña</label>
+              <input id="reg-confirmar" [type]="showPassword() ? 'text' : 'password'" class="form-control" formControlName="confirm" autocomplete="new-password" />
+              @if (invalid(step2, 'confirm', submittedStep2)) { <small class="text-danger d-block">Confirma tu contraseña.</small> }
+              @if (step2.hasError('mismatch') && (step2.get('confirm')?.touched || submittedStep2)) {
+                <small class="text-danger d-block">Las contraseñas no coinciden.</small>
+              }
+            </div>
+          </div>
+        </form>
+      }
+
+      @if (errorMessage()) {
+        <div class="alert alert-danger mt-3 mb-0">{{ errorMessage() }}</div>
+      }
+    </div>
+    <div class="modal-footer justify-content-between">
+      @if (step() === 1) {
+        <button type="button" class="btn btn-link p-0" (click)="setMode('login')">¿Ya tienes cuenta? Iniciar sesión</button>
+        <button type="submit" form="acceso-step1" class="btn btn-primary">Siguiente</button>
+      } @else {
+        <button type="button" class="btn btn-light" [disabled]="busy()" (click)="previousStep()">Atrás</button>
+        <button type="submit" form="acceso-step2" class="btn btn-primary" [disabled]="busy()">
+          @if (busy()) {
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+          }
+          Crear cuenta
+        </button>
+      }
+    </div>
+  }
+</div>

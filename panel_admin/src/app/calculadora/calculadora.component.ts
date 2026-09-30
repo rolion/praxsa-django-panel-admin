@@ -1,14 +1,23 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { ActivatedRoute, Router } from '@angular/router';
+import { ToastrService } from 'ngx-toastr';
+import { forkJoin, switchMap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthService } from '@core';
-import { SALES_TYPE_INSTALACION, OrdenSucursal, ReelCatalogItem } from '../ordenes/ordenes.model';
+import { AccesoModalService } from '../cliente/acceso-modal.service';
+import { ClientProfile, InvoicePayload } from '../cliente/cliente.model';
+import { ClienteService } from '../cliente/cliente.service';
+import { extractApiError } from '../ordenes/ordenes.errors';
+import { SALES_TYPE_INSTALACION, ReelCatalogItem } from '../ordenes/ordenes.model';
 import { previewSubtotal, round2 } from '../ordenes/ordenes.calc';
-import { AppCarBrand, AppCarModel, AppCarModelPart } from '../vehicles/vehicles.model';
+import { AppCarModelPart } from '../vehicles/vehicles.model';
 import {
+  CalcBrand,
+  CalcModel,
+  CalcSucursal,
   CalculadoraState,
   CotizacionDraft,
   EmptyReason,
@@ -26,16 +35,16 @@ import {
 } from './calculadora.helpers';
 import { CalculadoraService } from './calculadora.service';
 
-/** Calculadora de precios (staff): cotiza antes de crear la proforma.
- * Sucursal/Marca/Modelo -> items del modelo + bobinas de la sucursal -> lamina por
- * item -> total. Los importes son VISTA PREVIA (el servidor recalcula al crear la
- * proforma: ADR-pricing-calculator-screen-cotizacion-en-cliente).
+/** Calculadora de precios: cotiza sin sesion y, al guardar, pide login/registro en un modal
+ * (DDR-pricing-calculator-screen-flujo-cliente).
+ * Sucursal/Marca/Modelo -> items del modelo + bobinas de la sucursal -> lamina por item ->
+ * total. Los importes son VISTA PREVIA: el servidor recalcula al guardar la proforma.
  *
- * API real que se consume (todas ya existen, ver `CalculadoraService`):
- *  - GET product/ordenes/catalogo/sucursales
- *  - GET product/vehicles/brands ; GET product/vehicles/models?car_brand_id=
- *  - GET product/vehicles/models/<id>/items/
- *  - GET product/ordenes/catalogo/bobinas?sucursal= (precio por metro y stock) */
+ * API real que se consume (ver `CalculadoraService` y `ClienteService`):
+ *  - publica:  GET product/calculator_info, product/model_parts/<id>, product/get_inventory/<sucursal>/0/0
+ *  - cliente:  GET product/client/me  y  POST product/invoice (guardar la proforma)
+ * Staff con permiso `add_proforma_header` conserva el camino de la v1: abre el formulario
+ * interno de Ordenes con la cotizacion precargada. */
 @Component({
   selector: 'app-calculadora',
   templateUrl: './calculadora.component.html',
@@ -44,17 +53,22 @@ import { CalculadoraService } from './calculadora.service';
 export class CalculadoraComponent implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private destroyRef = inject(DestroyRef);
   private service = inject(CalculadoraService);
-  private authService = inject(AuthService);
+  private clienteService = inject(ClienteService);
+  private accesoModal = inject(AccesoModalService);
+  private toastr = inject(ToastrService);
+  authService = inject(AuthService);
 
   readonly formatBs = formatBs;
   readonly stepLabels = ['Vehículo', 'Láminas', 'Proforma'];
 
   // ---- catalogos y estado ----
-  sucursales = signal<OrdenSucursal[]>([]);
-  brands = signal<AppCarBrand[]>([]);
-  models = signal<AppCarModel[]>([]);
+  sucursales = signal<CalcSucursal[]>([]);
+  brands = signal<CalcBrand[]>([]);
+  private allModels = signal<CalcModel[]>([]);
+  models = signal<CalcModel[]>([]);
   items = signal<AppCarModelPart[]>([]);
   reels = signal<ReelCatalogItem[]>([]);
   state = signal<CalculadoraState>('initial');
@@ -64,6 +78,11 @@ export class CalculadoraComponent implements OnInit {
   catalogsLoaded = signal(false);
   /** Se marca al pulsar "Crear Proforma" (paso 3 del stepper). */
   creating = signal(false);
+  /** Guardando la proforma (deshabilita el boton: evita doble envio). */
+  saving = signal(false);
+  saveError = signal('');
+  /** Perfil del cliente con sesion (solo en memoria, ADR-003). */
+  profile = signal<ClientProfile | null>(null);
   /** Valor de las filas del FormArray, como signal para que `quote` se recalcule solo. */
   private linesValue = signal<LineFormValue[]>([]);
   private selectedModelId = signal<number | null>(null);
@@ -78,8 +97,10 @@ export class CalculadoraComponent implements OnInit {
   lines: FormArray<FormGroup> = this.fb.array<FormGroup>([]);
 
   // ---- derivados ----
-  get canCreate(): boolean {
-    return this.authService.hasPermission('add_proforma_header');
+  /** "Crear Proforma" lo ve quien no tiene sesion y el cliente; el staff solo con permiso. La
+   * barrera real es el POST (token + permisos), ver ADR-pricing-calculator-screen-sesion-cliente-aislamiento. */
+  get showCreate(): boolean {
+    return !this.authService.isStaff || this.authService.hasPermission('add_proforma_header');
   }
 
   selectedModel = computed(() => this.models().find((m) => m.id === this.selectedModelId()) ?? null);
@@ -120,17 +141,49 @@ export class CalculadoraComponent implements OnInit {
 
   ngOnInit(): void {
     this.lines.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.syncLines());
+    // El perfil se carga al tener sesion de cliente (inicio o login desde el encabezado/modal).
+    this.authService.currentUser.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => this.refreshProfile());
+    // Sesion de cliente vencida (401): reabre el modal y reintenta guardar sin perder la cotizacion.
+    this.authService.sessionExpired$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.onSessionExpired());
     this.loadCatalogs();
+    this.openAccessFromRoute();
+  }
+
+  // ---- sesion ----
+
+  private refreshProfile(): void {
+    if (!this.authService.isClient) {
+      this.profile.set(null);
+      return;
+    }
+    this.clienteService.me().subscribe({
+      next: (profile) => this.profile.set(profile),
+      error: () => this.profile.set(null),
+    });
+  }
+
+  /** `?acceso=1` (lo pone `SessionGuard` al entrar a `/mis-proformas` sin sesion). */
+  private openAccessFromRoute(): void {
+    if (this.route.snapshot.queryParamMap.get('acceso') && !this.authService.isLoggedIn) {
+      this.accesoModal.open('login', 'Inicia sesión o crea tu cuenta para ver tus proformas.').then((ok) => {
+        this.router.navigate(ok && this.authService.isClient ? ['/mis-proformas'] : ['/calculadora'], {
+          replaceUrl: true,
+        });
+      });
+    }
   }
 
   // ---- carga de catalogos ----
 
   loadCatalogs(): void {
     this.errorMessage.set('');
-    forkJoin({ sucursales: this.service.sucursales(), brands: this.service.brands() }).subscribe({
-      next: ({ sucursales, brands }) => {
+    this.service.catalog().subscribe({
+      next: ({ sucursales, brands, models }) => {
         this.sucursales.set(sucursales);
         this.brands.set(brands);
+        this.allModels.set(models);
         if (sucursales.length === 1) {
           // Con una sola sucursal se fija y se muestra como solo lectura.
           this.filters.get('sucursal')?.setValue(sucursales[0].id);
@@ -153,18 +206,14 @@ export class CalculadoraComponent implements OnInit {
     const brandId = this.filters.getRawValue().brand as number | null;
     this.filters.get('model')?.setValue(null);
     this.selectedModelId.set(null);
-    this.models.set([]);
-    this.filters.get('model')?.disable();
     this.resetItems();
     this.state.set('initial');
-    if (brandId) {
-      this.service.modelsByBrand(Number(brandId)).subscribe({
-        next: (models) => {
-          this.models.set(models);
-          this.filters.get('model')?.enable();
-        },
-        error: () => this.fail('No se pudieron cargar los modelos.'),
-      });
+    const models = brandId ? this.allModels().filter((m) => m.brand_id === Number(brandId)) : [];
+    this.models.set(models);
+    if (models.length > 0) {
+      this.filters.get('model')?.enable();
+    } else {
+      this.filters.get('model')?.disable();
     }
   }
 
@@ -220,6 +269,7 @@ export class CalculadoraComponent implements OnInit {
     this.items.set([]);
     this.reels.set([]);
     this.creating.set(false);
+    this.saveError.set('');
     this.lines.clear({ emitEvent: false });
     this.syncLines();
   }
@@ -293,7 +343,7 @@ export class CalculadoraComponent implements OnInit {
 
   private vehicleLabel(): string {
     const model = this.selectedModel();
-    return model ? `${model.car_brand_name} ${model.name}` : '';
+    return model ? `${model.brand_name} ${model.name}` : '';
   }
 
   /** Enlace `wa.me` con el mensaje prearmado. El numero es global
@@ -318,7 +368,7 @@ export class CalculadoraComponent implements OnInit {
     }
   }
 
-  /** Borrador que recibe el formulario de proforma (sin datos del cliente). */
+  /** Borrador de la cotizacion (lo recibe el formulario interno en el camino de staff). */
   buildDraft(): CotizacionDraft | null {
     const sucursal = this.selectedSucursalId();
     const carModelId = this.selectedModelId();
@@ -337,14 +387,120 @@ export class CalculadoraComponent implements OnInit {
     return lines.length ? { version: 1, sucursal, carModelId, lines } : null;
   }
 
-  /** Paso 3: abre el formulario de alta con la cotizacion precargada. La barrera
-   * real del permiso es el POST de proformas; aqui solo se oculta el boton. */
+  /** Cuerpo de `POST product/invoice` con los datos de la cuenta. Los importes son los de
+   * la vista previa: el servidor los ignora y recalcula (ADR-004). */
+  buildInvoice(profile: ClientProfile): InvoicePayload | null {
+    const sucursal = this.selectedSucursalId();
+    const carModelId = this.selectedModelId();
+    const quote = this.quote();
+    if (!sucursal || !carModelId || quote.pricedCount === 0) {
+      return null;
+    }
+    return {
+      name: `${profile.name} ${profile.lastname}`.trim(),
+      email: profile.email,
+      car_plate: profile.car_plate,
+      car_model_id: carModelId,
+      total_price: quote.total.toFixed(2),
+      phone_number: profile.phone_number,
+      ci_nit: profile.ci_nit ? profile.ci_nit : null,
+      sucursal,
+      carPartItems: quote.lines
+        .filter((l) => l.film && !l.excluded)
+        .map((l) => ({
+          car_part: l.item.car_part_id,
+          width: (l.film as FilmOption).width,
+          length: l.item.length,
+          quantity: l.item.quantity,
+          window_film: (l.film as FilmOption).windowFilm,
+          installation_price: l.item.installation_price,
+          window_film_price: (l.film as FilmOption).unitPrice,
+          sub_total: l.subtotal.toFixed(2),
+        })),
+    };
+  }
+
+  /** "Crear Proforma": staff (con permiso) -> formulario interno; resto -> guardar con la
+   * cuenta del cliente, pidiendo login/registro si no hay sesion. */
   createProforma(): void {
-    const draft = this.buildDraft();
-    if (!draft || !this.canCreate) {
+    if (this.saving() || !this.canAct) {
       return;
     }
+    if (this.authService.isStaff) {
+      const draft = this.buildDraft();
+      if (draft && this.authService.hasPermission('add_proforma_header')) {
+        this.creating.set(true);
+        this.router.navigate(['/ordenes/proformas/create'], { state: draftToState(draft) });
+      }
+      return;
+    }
+    this.saveAsClient();
+  }
+
+  private async saveAsClient(): Promise<void> {
+    this.saveError.set('');
     this.creating.set(true);
-    this.router.navigate(['/ordenes/proformas/create'], { state: draftToState(draft) });
+    if (!this.authService.isClient) {
+      const ok = await this.accesoModal.open('login', 'Inicia sesión o crea tu cuenta para guardar tu proforma.');
+      if (!ok) {
+        this.creating.set(false);
+        return;
+      }
+      if (this.authService.isStaff) {
+        this.creating.set(false);
+        this.saveError.set('Las proformas de personal se crean desde el panel de Órdenes.');
+        return;
+      }
+    }
+    this.submitInvoice();
+  }
+
+  private submitInvoice(): void {
+    this.saving.set(true);
+    this.clienteService
+      .me()
+      .pipe(
+        switchMap((profile) => {
+          this.profile.set(profile);
+          const payload = this.buildInvoice(profile);
+          if (!payload) {
+            throw new Error('Cotización vacía');
+          }
+          return this.clienteService.createInvoice(payload);
+        })
+      )
+      .subscribe({
+        next: ({ id }) => {
+          this.saving.set(false);
+          this.toastr.success(`Proforma ${id} guardada`);
+          this.router.navigate(['/mis-proformas'], { state: { savedId: id } });
+        },
+        error: (err: HttpErrorResponse) => {
+          this.saving.set(false);
+          if (err.status === 401) {
+            // La sesion vencio: el evento `sessionExpired$` reabre el modal y reintenta.
+            return;
+          }
+          this.creating.set(false);
+          this.saveError.set(
+            err.status === 404
+              ? 'Tu cuenta no tiene un perfil de cliente. Crea una cuenta para guardar tu proforma.'
+              : extractApiError(err, 'No se pudo guardar la proforma. Inténtalo de nuevo.')
+          );
+        },
+      });
+  }
+
+  private async onSessionExpired(): Promise<void> {
+    if (!this.creating()) {
+      return;
+    }
+    this.saving.set(false);
+    const ok = await this.accesoModal.open('login', 'Tu sesión venció. Inicia sesión para guardar tu proforma.');
+    if (ok && this.authService.isClient) {
+      this.submitInvoice();
+    } else {
+      this.creating.set(false);
+    }
   }
 }

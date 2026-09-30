@@ -5,6 +5,34 @@ import { AppCarModelPart } from '../vehicles/vehicles.model';
  * `AppCarBrand`, `AppCarModel`, `AppCarModelPart`, `ReelCatalogItem`): no se
  * duplican con otro nombre. */
 
+/* Catalogo publico de la calculadora (ADR-pricing-calculator-screen-catalogo-publico-calculadora):
+ * tipos propios y livianos para sucursal/marca/modelo, adaptados de `calculator_info`. */
+export interface CalcSucursal {
+  id: number;
+  name: string;
+  address: string;
+}
+
+export interface CalcBrand {
+  id: number;
+  name: string;
+}
+
+export interface CalcModel {
+  id: number;
+  name: string;
+  brand_id: number;
+  brand_name: string;
+  /** URL absoluta de la imagen o `null`. */
+  image: string | null;
+}
+
+export interface CalcCatalog {
+  sucursales: CalcSucursal[];
+  brands: CalcBrand[];
+  models: CalcModel[];
+}
+
 /** Lamina (bobina = lamina + ancho) que se puede elegir para un item. */
 export interface FilmOption {
   /** Clave `lamina|ancho` (ancho a 2 decimales), igual que `ProformaFormComponent.reelKey`. */

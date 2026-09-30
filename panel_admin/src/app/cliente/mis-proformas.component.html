@@ -1,0 +1,64 @@
+<section class="main-content pricing-calculator mis-proformas">
+  <div class="container-fluid">
+    <div class="calc-head">
+      <h4 class="calc-title"><i class="fas fa-file-invoice"></i> Mis proformas</h4>
+      <a routerLink="/calculadora" class="btn btn-outline-primary">
+        <i class="fas fa-calculator"></i> Nueva cotización
+      </a>
+    </div>
+
+    <div class="card section-card">
+      <div class="card-body">
+        @if (loading()) {
+          <div class="placeholder-glow" data-state="loading" aria-busy="true">
+            @for (n of [1, 2, 3, 4]; track n) {
+              <div class="skeleton-row">
+                <span class="placeholder col-1"></span>
+                <span class="placeholder col-2"></span>
+                <span class="placeholder col-3"></span>
+                <span class="placeholder col-2 ms-auto"></span>
+              </div>
+            }
+          </div>
+        } @else if (errorMessage()) {
+          <div class="calc-empty" data-state="error">
+            <div class="line-alert danger"><i class="fas fa-ban"></i><span>{{ errorMessage() }}</span></div>
+            <button type="button" class="btn btn-outline-primary btn-sm mt-2" (click)="load()">Reintentar</button>
+          </div>
+        } @else if (rows().length === 0) {
+          <div class="calc-empty" data-state="empty">
+            <i class="fas fa-folder-open fa-3x"></i>
+            <p>Aún no tienes proformas.</p>
+            <a routerLink="/calculadora" class="btn btn-primary">Ir a la calculadora</a>
+          </div>
+        } @else {
+          <ngx-datatable
+            class="material"
+            data-state="list"
+            [rows]="rows()"
+            [rowClass]="rowClass"
+            columnMode="force"
+            [headerHeight]="50"
+            [footerHeight]="50"
+            rowHeight="auto"
+            [limit]="10"
+          >
+            <ngx-datatable-column name="Nº" prop="id" [width]="80"></ngx-datatable-column>
+            <ngx-datatable-column name="Fecha" prop="date" [width]="120">
+              <ng-template let-value="value" ngx-datatable-cell-template>{{ value | date: 'dd/MM/yyyy' }}</ng-template>
+            </ngx-datatable-column>
+            <ngx-datatable-column name="Vehículo" prop="car_model_name">
+              <ng-template let-row="row" ngx-datatable-cell-template>{{ vehicle(row) || '—' }}</ng-template>
+            </ngx-datatable-column>
+            <ngx-datatable-column name="Placa" prop="car_plate" [width]="120">
+              <ng-template let-value="value" ngx-datatable-cell-template>{{ value || '—' }}</ng-template>
+            </ngx-datatable-column>
+            <ngx-datatable-column name="Total" prop="total_price" [width]="140" cellClass="text-end" headerClass="text-end">
+              <ng-template let-value="value" ngx-datatable-cell-template>{{ formatBs(+value) }}</ng-template>
+            </ngx-datatable-column>
+          </ngx-datatable>
+        }
+      </div>
+    </div>
+  </div>
+</section>

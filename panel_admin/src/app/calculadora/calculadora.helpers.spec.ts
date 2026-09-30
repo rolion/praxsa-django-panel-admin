@@ -7,6 +7,9 @@ import {
   filmOptionsFor,
   formatBs,
   isReelEligible,
+  mapCatalog,
+  mapInventory,
+  mapModelParts,
   parseDraft,
   reelKey,
 } from './calculadora.helpers';
@@ -131,6 +134,51 @@ describe('calculadora.helpers', () => {
       expect(parseDraft({ cotizacion: { ...draft, sucursal: 'x' } })).toBeNull();
       expect(parseDraft({ cotizacion: { ...draft, lines: [] } })).toBeNull();
       expect(parseDraft({ cotizacion: { ...draft, lines: [{ carPartId: 5 }] } })).toBeNull();
+    });
+  });
+  describe('adaptadores del catalogo publico', () => {
+    it('mapCatalog: adapts sucursales (addres -> address), brands and models with brand name and image', () => {
+      const catalog = mapCatalog({
+        brands: [{ id: 1, name: 'Toyota' }],
+        models: [
+          { id: 9, name: 'Hilux', brand_id: 1, image: 'http://x/y.png' },
+          { id: 10, name: 'Sin imagen', brand_id: 1 },
+          { id: 11, name: 'Huerfano', brand_id: 99, image: null },
+        ],
+        sucursales: [{ id: 1, name: 'Central', addres: 'Calle 1' }, { id: 2, name: 'Sur' }],
+      });
+      expect(catalog.sucursales).toEqual([
+        { id: 1, name: 'Central', address: 'Calle 1' },
+        { id: 2, name: 'Sur', address: '' },
+      ]);
+      expect(catalog.brands).toEqual([{ id: 1, name: 'Toyota' }]);
+      expect(catalog.models[0]).toEqual({ id: 9, name: 'Hilux', brand_id: 1, brand_name: 'Toyota', image: 'http://x/y.png' });
+      expect(catalog.models[1].image).toBeNull();
+      expect(catalog.models[2].brand_name).toBe('');
+    });
+
+    it('mapCatalog tolerates an empty response', () => {
+      expect(mapCatalog({})).toEqual({ sucursales: [], brands: [], models: [] });
+    });
+
+    it('mapModelParts: normalizes decimals to 2-decimal strings and renames the part fields', () => {
+      const parts = mapModelParts({
+        car_parts: [{ id: 1, width: '1.5', length: 1.2, quantity: 2, part_id: 5, part_name: 'Parabrisas', installation_price: 50 }],
+      });
+      expect(parts).toEqual([
+        { id: 1, car_part_id: 5, car_part_name: 'Parabrisas', width: '1.50', length: '1.20', quantity: 2, installation_price: '50.00' },
+      ]);
+      expect(mapModelParts({})).toEqual([]);
+    });
+
+    it('mapInventory: converts the inventory rows to reel catalog items', () => {
+      const reels = mapInventory({
+        inventario: [{ bobina_film_id: 3, bobina_film_name: 'Carbon', bobina_width: '1.5', bobina_metros_disponibles: 48.5, bobina_price: 120 }],
+      });
+      expect(reels).toEqual([
+        { window_film: 3, window_film_name: 'Carbon', width: '1.50', available_meters: '48.50', unit_price: '120.00' },
+      ]);
+      expect(mapInventory({})).toEqual([]);
     });
   });
 });

@@ -37,10 +37,40 @@ body .layout-minimal {
     height: 38px;
     width: auto;
   }
+
+  // Menu superior del cliente (Calculadora / Proformas) y acceso sin sesion.
+  .header-links {
+    flex-direction: row;
+    gap: 0.25rem;
+    margin-left: 1.25rem;
+
+    .nav-link {
+      color: #555556;
+      font-weight: 600;
+      padding: 0.4rem 0.75rem;
+      border-radius: 0.375rem;
+
+      &.active,
+      &:hover {
+        color: #4f6bed;
+        background: rgba(79, 107, 237, 0.1);
+      }
+    }
+  }
+
+  .header-access {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
 }
 
 body.dark .layout-minimal .navbar.navbar-minimal {
   background-color: #2a2d3e;
+
+  .header-links .nav-link {
+    color: #fff;
+  }
 
   .nav-link .feather,
   .nav-link i-feather {
@@ -417,5 +447,87 @@ body.dark .layout-minimal .navbar.navbar-minimal {
       min-width: 0;
       width: 100%;
     }
+  }
+}
+
+// Fila recien guardada en "Mis proformas".
+.pricing-calculator .mis-proformas .saved-row,
+.mis-proformas .datatable-body-row.saved-row {
+  background: rgba(30, 142, 90, 0.14) !important;
+  transition: background 0.4s ease;
+}
+
+// Modal de acceso (login / registro en 2 etapas): vive fuera de `.pricing-calculator`.
+.acceso-modal {
+  .acceso-steps {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    list-style: none;
+    margin: 0 0 1.25rem;
+    padding: 0;
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #8a8f9c;
+      font-weight: 600;
+
+      & + li::before {
+        content: '';
+        display: inline-block;
+        width: 28px;
+        height: 2px;
+        background: rgba(128, 128, 128, 0.35);
+        margin-right: 0.5rem;
+      }
+    }
+
+    .step-dot {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 2px solid rgba(128, 128, 128, 0.45);
+      font-size: 0.78rem;
+    }
+
+    li.active {
+      color: #4f6bed;
+
+      .step-dot {
+        background: #4f6bed;
+        border-color: #4f6bed;
+        color: #fff;
+      }
+    }
+
+    li.done {
+      color: #1e8e5a;
+
+      .step-dot {
+        background: #1e8e5a;
+        border-color: #1e8e5a;
+        color: #fff;
+      }
+    }
+  }
+}
+
+@media (max-width: 575px) {
+  body .layout-minimal .header-links {
+    margin-left: 0.5rem;
+
+    .nav-link {
+      padding: 0.3rem 0.45rem;
+      font-size: 0.85rem;
+    }
+  }
+
+  body .layout-minimal .header-brand-logo {
+    height: 30px;
   }
 }

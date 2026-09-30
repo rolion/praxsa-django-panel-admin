@@ -1,6 +1,7 @@
 import { AppCarModelPart } from '../vehicles/vehicles.model';
 import { ReelCatalogItem } from '../ordenes/ordenes.model';
 import {
+  CalcCatalog,
   COTIZACION_DRAFT_VERSION,
   COTIZACION_STATE_KEY,
   CotizacionDraft,
@@ -122,4 +123,79 @@ export function parseDraft(state: unknown): CotizacionDraft | null {
     carModelId: raw.carModelId as number,
     lines,
   };
+}
+
+// ---- adaptadores del catalogo publico (calculator_info / model_parts / get_inventory) ----
+
+/** Respuesta de `GET product/calculator_info`. */
+export interface PublicCalculatorInfo {
+  brands?: { id: number; name: string }[];
+  models?: { id: number; name: string; brand_id: number; image?: string | null }[];
+  sucursales?: { id: number; name: string; addres?: string }[];
+}
+
+/** Respuesta de `GET product/model_parts/<id>`. `width`/`length` llegan como string decimal
+ * e `installation_price` como float; se normalizan a string con 2 decimales (vista previa,
+ * nunca autoritativo). */
+export interface PublicModelPartsResponse {
+  car_parts?: {
+    id: number;
+    width: string | number;
+    length: string | number;
+    quantity: number;
+    part_id: number;
+    part_name: string;
+    installation_price: number | string;
+  }[];
+}
+
+/** Respuesta de `GET product/get_inventory/<sucursal>/0/0` (todas las bobinas con stock). */
+export interface PublicInventoryResponse {
+  inventario?: {
+    bobina_film_id: number;
+    bobina_film_name: string;
+    bobina_width: string | number;
+    bobina_metros_disponibles: number | string;
+    bobina_price: number | string;
+  }[];
+}
+
+const money = (value: number | string): string => Number(value).toFixed(2);
+
+export function mapCatalog(raw: PublicCalculatorInfo): CalcCatalog {
+  const brands = (raw.brands ?? []).map((b) => ({ id: b.id, name: b.name }));
+  const brandName = new Map(brands.map((b) => [b.id, b.name]));
+  return {
+    sucursales: (raw.sucursales ?? []).map((s) => ({ id: s.id, name: s.name, address: s.addres ?? '' })),
+    brands,
+    models: (raw.models ?? []).map((m) => ({
+      id: m.id,
+      name: m.name,
+      brand_id: m.brand_id,
+      brand_name: brandName.get(m.brand_id) ?? '',
+      image: m.image ?? null,
+    })),
+  };
+}
+
+export function mapModelParts(raw: PublicModelPartsResponse): AppCarModelPart[] {
+  return (raw.car_parts ?? []).map((p) => ({
+    id: p.id,
+    car_part_id: p.part_id,
+    car_part_name: p.part_name,
+    width: money(p.width),
+    length: money(p.length),
+    quantity: p.quantity,
+    installation_price: money(p.installation_price),
+  }));
+}
+
+export function mapInventory(raw: PublicInventoryResponse): ReelCatalogItem[] {
+  return (raw.inventario ?? []).map((r) => ({
+    window_film: r.bobina_film_id,
+    window_film_name: r.bobina_film_name,
+    width: money(r.bobina_width),
+    available_meters: money(r.bobina_metros_disponibles),
+    unit_price: money(r.bobina_price),
+  }));
 }

@@ -1,9 +1,20 @@
 <nav class="navbar navbar-expand-lg main-navbar sticky" [class.navbar-minimal]="minimal()">
   <div class="form-inline me-auto">
     @if (minimal()) {
-      <a routerLink="/dashboard/main" class="header-brand">
+      <a routerLink="/calculadora" class="header-brand">
         <img alt="PRAXSA Admin" src="assets/images/praxsa-admin-logo.png" class="header-brand-logo" />
       </a>
+      <!-- Menu superior del cliente (DDR-pricing-calculator-screen-flujo-cliente): solo con sesion -->
+      @if (isLoggedIn()) {
+        <ul class="navbar-nav header-links">
+          <li><a routerLink="/calculadora" routerLinkActive="active" class="nav-link">Calculadora</a></li>
+          @if (isStaff()) {
+            <li><a routerLink="/dashboard/main" class="nav-link">Panel</a></li>
+          } @else {
+            <li><a routerLink="/mis-proformas" routerLinkActive="active" class="nav-link">Proformas</a></li>
+          }
+        </ul>
+      }
     } @else {
       <ul class="navbar-nav msr-3">
         <li>
@@ -14,12 +25,20 @@
       </ul>
     }
 </div>
+@if (minimal() && !isLoggedIn()) {
+  <ul class="navbar-nav navbar-right header-access">
+    <li><button type="button" class="btn btn-primary btn-sm" (click)="openAcceso('login')">Iniciar sesión</button></li>
+    <li><button type="button" class="btn btn-link btn-sm" (click)="openAcceso('register')">Crear cuenta</button></li>
+  </ul>
+} @else {
 <ul class="navbar-nav navbar-right">
+        @if (!minimal()) {
         <li> <a class="nav-link nav-link-lg
           collapse-btn" (click)="callFullscreen()">
           <i-feather name="maximize"></i-feather>
         </a>
       </li>
+        }
 <li ngbDropdown><a ngbDropdownToggle data-toggle="dropdown"
   class="nav-link dropdown-toggle nav-link-lg nav-link-user">
   <i-feather name="user" class="collapse-btn"></i-feather></a>
@@ -33,4 +52,5 @@ Logout
 </div>
 </li>
 </ul>
+}
 </nav>

@@ -197,7 +197,7 @@
           </div>
           <div class="card-body">
             @if (selectedModel(); as model) {
-              <h6 class="mb-0">{{ model.car_brand_name }} {{ model.name }}</h6>
+              <h6 class="mb-0">{{ model.brand_name }} {{ model.name }}</h6>
               <small class="text-muted">{{ selectedSucursal()?.name }}</small>
             } @else {
               <h6 class="mb-0 text-muted">Sin vehículo seleccionado</h6>
@@ -219,9 +219,23 @@
               <strong data-testid="total">{{ formatBs(quote().total) }}</strong>
             </div>
 
-            @if (canCreate) {
-              <button type="button" class="btn btn-primary w-100 mb-2" [disabled]="!canAct" (click)="createProforma()">
-                <i class="fas fa-file-invoice"></i> Crear Proforma
+            @if (profile(); as account) {
+              <p class="calc-account small text-muted mb-3">
+                A nombre de: <strong>{{ account.name }} {{ account.lastname }}</strong>
+                @if (account.car_plate) { · Placa <strong>{{ account.car_plate }}</strong> }
+              </p>
+            }
+            @if (saveError()) {
+              <div class="line-alert danger mb-2" role="alert"><i class="fas fa-ban"></i><span>{{ saveError() }}</span></div>
+            }
+            @if (showCreate) {
+              <button type="button" class="btn btn-primary w-100 mb-2" [disabled]="!canAct || saving()" (click)="createProforma()">
+                @if (saving()) {
+                  <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                } @else {
+                  <i class="fas fa-file-invoice"></i>
+                }
+                Crear Proforma
               </button>
             }
             <button type="button" class="btn btn-success w-100" [disabled]="!canAct" (click)="openWhatsapp()">
@@ -239,8 +253,8 @@
       <small class="text-muted d-block">Total</small>
       <strong>{{ formatBs(quote().total) }}</strong>
     </div>
-    @if (canCreate) {
-      <button type="button" class="btn btn-primary" [disabled]="!canAct" (click)="createProforma()">Crear Proforma</button>
+    @if (showCreate) {
+      <button type="button" class="btn btn-primary" [disabled]="!canAct || saving()" (click)="createProforma()">Crear Proforma</button>
     } @else {
       <button type="button" class="btn btn-success" [disabled]="!canAct" (click)="openWhatsapp()">WhatsApp</button>
     }
