@@ -1,6 +1,6 @@
 # TASK-pricing-calculator-screen: Pantalla "Calculadora de precios" para staff/asesores en panel_admin
 
-**Etapa actual:** PLANNING
+**Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** `claude/pricing-calculator-screen-b5e976` (asignada por el entorno)
@@ -17,6 +17,7 @@
 | 2026-09-30 | REVIEW → INVESTIGATION | Cambio de alcance pedido por el usuario tras ver la v1: la calculadora es para cliente final (login/registro en modal por etapas, menú superior Calculadora/Proformas, lista de proformas de solo lectura, sin sidebar ni acceso a administración), dentro de `panel_admin/` y con la placa en la cuenta. Reinvestigación de cuentas de cliente, sesión y contratos; el DDR/ADR/plan v1 quedan pendientes de revisión | delivery-investigate |
 | 2026-09-30 | INVESTIGATION → ARCHITECTURE (via DESIGN) | Diseño del flujo de cliente resuelto en un DDR nuevo que reemplaza al de la v1: calculadora navegable sin sesión, modal de acceso (login y registro en 2 etapas), encabezado con Calculadora/Proformas, guardado directo con datos de la cuenta y lista Mis proformas de solo lectura; el veredicto NEEDS_ARCHITECTURE exige decidir aislamiento de sesión/autorización, registro con username y placa, catálogos y contrato de listado | delivery-design |
 | 2026-09-30 | ARCHITECTURE → PLANNING | Decisiones tomadas en 3 ADR nuevos: sesión de cliente con aislamiento por guards y barrera de servidor existente (sin tocar el login del panel), registro y API de cliente aditivos (endpoint nuevo, `Client.car_plate` con migración, perfil y lista propios, `POST invoice` para guardar), y catálogo público para la calculadora; el ADR de cotización v1 queda reemplazado en parte | delivery-architect |
+| 2026-09-30 | PLANNING → ENGINEERING | Plan **v2** escrito sobre el mismo PR #60: backend aditivo (migración `0115` con `Client.car_plate`, registro/perfil/lista de cliente, catálogo público con `is_active` e imagen), guards y manejo de 401, módulo `cliente/` (modal de acceso en 2 etapas, Mis proformas), calculadora con catálogo público y acciones según sesión; sin E2E (verificación manual en vivo obligatoria) y sin dependencias nuevas; primer paso: sincronizar la rama con `origin/master` (9 commits detrás) | delivery-plan |
 
 ## Investigación
 
@@ -208,7 +209,8 @@ Hoy un asesor arma una cotización creando directamente una proforma en `/ordene
 **Rollback:** ambos cambios son aditivos (sin migraciones ni cambios de contrato); basta quitar la ruta/ítem de menú y la lectura opcional del borrador.
 
 ## Plan
-- [PLAN-2026-09-30-pricing-calculator-screen](../plans/PLAN-2026-09-30-pricing-calculator-screen.md) — **v1**. 5 fases (layout, modelo/helpers/servicio, pantalla, acciones y enlace con la proforma, entrada y verificación). Preguntas abiertas no bloqueantes: número de WhatsApp, ubicación en el menú y formato de importes.
+- [PLAN-2026-09-30-pricing-calculator-screen](../plans/PLAN-2026-09-30-pricing-calculator-screen.md) — **v2** (vigente). 6 fases: 0 sincronizar con master; 1 backend (migración, registro, perfil y lista de cliente, `get_calculator_info`); 2 sesión y aislamiento (guards, `ErrorInterceptor`); 3 módulo `cliente/` (modal de acceso, Mis proformas); 4 calculadora y encabezado; 5 verificación (incluye prueba manual en vivo). Sin E2E automatizado ni dependencias nuevas.
+  - v1 (calculadora de staff) ya implementada en este PR; v2 la conserva como base. Preguntas abiertas no bloqueantes: flujo/menú de staff, login por correo, CI/NIT, tasa del registro, WhatsApp y formato de importes.
 
 ## Implementación
 
