@@ -14,7 +14,7 @@ const detail = (overrides: Partial<AppProformaDetail> = {}): AppProformaDetail =
     sucursal: 1, sucursal_name: 'Central', car_model_name: null, car_brand_name: null, car_plate: '',
     total_price: '420.00', discount: '0.00', total_a_pagar: '420.00',
     proforma_created_on: '2026-09-29T10:00:00', status: 'proforma', status_label: 'Proforma',
-    is_close: false, nota_trabajo_id: null, email: 'a@b.com', ci_nit: '1', phone_number: '70000001',
+    is_close: false, nota_trabajo_id: null, nota_venta_id: null, email: 'a@b.com', ci_nit: '1', phone_number: '70000001',
     car_model_id: null, discount_reason: '', items: [], ...overrides,
   }) as AppProformaDetail;
 
@@ -85,17 +85,18 @@ describe('ProformaViewComponent', () => {
     expect(component.noSummary()).toBe('');
   });
 
-  it('maps the status to the badge text and class', () => {
+  it('maps the status to the badge class and shows the server label', () => {
     create(detail());
     const cases: [string, string, string][] = [
       ['proforma', 'Proforma', 'status-proforma'],
-      ['nota_trabajo', 'Nota de trabajo generada', 'status-nota'],
-      ['por_cobrar', 'Por cobrar', 'status-cobrar'],
+      ['en_trabajo', 'En trabajo', 'status-progress'],
+      ['por_cobrar', 'Por Cobrar', 'status-cobrar'],
       ['finalizado', 'Finalizado', 'status-final'],
+      ['anulada', 'Anulada', 'status-void'],
     ];
-    for (const [status, text, cssClass] of cases) {
-      component.proforma = detail({ status: status as never });
-      expect(component.statusText).toBe(text);
+    for (const [status, label, cssClass] of cases) {
+      component.proforma = detail({ status: status as never, status_label: label });
+      expect(component.statusText).toBe(label);
       expect(component.statusClass).toBe(cssClass);
     }
   });
@@ -117,7 +118,7 @@ describe('ProformaViewComponent', () => {
 
   it('hides edit and generate note for a closed proforma even with permissions', () => {
     login(['product.change_proforma_header', 'product.add_nota_trabajo']);
-    create(detail({ is_close: true, status: 'nota_trabajo' }));
+    create(detail({ is_close: true, status: 'en_trabajo', status_label: 'En trabajo' }));
     expect(component.canEdit).toBe(false);
     expect(component.canGenerateNota).toBe(false);
   });
@@ -136,10 +137,55 @@ describe('ProformaViewComponent', () => {
     await new Promise<void>((resolve) => setTimeout(resolve));
     httpMock
       .expectOne(`${url}generar-nota-trabajo/`)
-      .flush(detail({ is_close: true, status: 'nota_trabajo', nota_trabajo_id: 9 }));
+      .flush(detail({ is_close: true, status: 'en_trabajo', status_label: 'En trabajo', nota_trabajo_id: 9 }));
     await pending;
 
     expect(component.proforma?.is_close).toBe(true);
     expect(component.proforma?.nota_trabajo_id).toBe(9);
+  });
+
+  it('shows the global status badge from the server label and class', () => {
+    create(detail({ status: 'por_cobrar', status_label: 'Por Cobrar', is_close: true }));
+    expect(component.statusText).toBe('Por Cobrar');
+    expect(component.statusClass).toBe('status-cobrar');
+    component.proforma = detail({ status: 'anulada', status_label: 'Anulada', is_close: true });
+    expect(component.statusClass).toBe('status-void');
+  });
+
+  it('links to the nota de trabajo and nota de venta only while the order exists', () => {
+    create(detail({ status: 'en_trabajo', is_close: true, nota_trabajo_id: 9, nota_venta_id: 4 }));
+    expect(component.hasOrder).toBe(true);
+    component.proforma = detail({ status: 'proforma', nota_trabajo_id: 9, nota_venta_id: 4 });
+    expect(component.hasOrder).toBe(false);
+    component.proforma = detail({ status: 'anulada', is_close: true });
+    expect(component.hasOrder).toBe(false);
+  });
+
+  it('anular needs delete_proforma_header and a vigente proforma', () => {
+    login(['product.delete_proforma_header']);
+    create(detail());
+    expect(component.canAnular).toBe(true);
+    component.proforma = detail({ status: 'en_trabajo', is_close: true });
+    expect(component.canAnular).toBe(false);
+  });
+
+  it('does not offer anular without the permission', () => {
+    create(detail());
+    expect(component.canAnular).toBe(false);
+  });
+
+  it('anula la proforma after confirming and refreshes it with the server response', async () => {
+    login(['product.delete_proforma_header']);
+    spyOn(Swal, 'fire').and.returnValue(Promise.resolve({ isConfirmed: true } as SweetAlertResult));
+    create(detail());
+
+    const pending = component.anular();
+    await new Promise<void>((resolve) => setTimeout(resolve));
+    const req = httpMock.expectOne(`${url}anular/`);
+    expect(req.request.method).toBe('POST');
+    req.flush(detail({ status: 'anulada', status_label: 'Anulada', is_close: true }));
+    await pending;
+
+    expect(component.proforma?.status).toBe('anulada');
   });
 });

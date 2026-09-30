@@ -1,4 +1,4 @@
-<section class="main-content">
+<section class="main-content orden-list">
   <ul class="breadcrumb breadcrumb-style">
     <li class="breadcrumb-item">
       <h5 class="page-title m-b-0">Proformas</h5>
@@ -32,6 +32,13 @@
                           <input placeholder="Buscar por número, cliente, placa o modelo" type="text" class="browser-default search-field"
                             (keyup)="filterDatatable($event)" aria-label="Search box" />
                         </div>
+                      </div>
+                      <div class="ms-2">
+                        <select class="form-select form-select-sm" aria-label="Filtrar por estado" [value]="statusFilter" (change)="onStatusChange($event)">
+                          @for (option of statusOptions; track option.value) {
+                            <option [value]="option.value">{{ option.label }}</option>
+                          }
+                        </select>
                       </div>
                       @if (canCreate) {
                         <div class="header-buttons-left">
@@ -78,20 +85,29 @@
               <ngx-datatable-column name="Fecha" prop="proforma_created_on" [width]="110">
                 <ng-template let-value="value" ngx-datatable-cell-template>{{ value | slice: 0 : 10 }}</ng-template>
               </ngx-datatable-column>
-              <ngx-datatable-column name="Estado" prop="status_label" [width]="110"></ngx-datatable-column>
-              <ngx-datatable-column name="Acciones" [sortable]="false" [width]="190">
+              <ngx-datatable-column name="Estado" prop="status_label" [width]="120">
+                <ng-template let-row="row" ngx-datatable-cell-template>
+                  <span [class]="badge(row.status)">{{ row.status_label }}</span>
+                </ng-template>
+              </ngx-datatable-column>
+              <ngx-datatable-column name="Acciones" [sortable]="false" [width]="230">
                 <ng-template let-row="row" ngx-datatable-cell-template>
                   <a [routerLink]="['/ordenes/proformas/view', row.id]" class="btn btn-tbl-view h-auto" title="Ver">
                     <i class="fas fa-eye"></i>
                   </a>
-                  @if (canEdit && !row.is_close) {
+                  @if (canEdit && row.status === 'proforma') {
                     <a [routerLink]="['/ordenes/proformas/edit', row.id]" class="btn btn-tbl-edit h-auto" title="Editar">
                       <i class="fas fa-pen"></i>
                     </a>
                   }
-                  @if (canGenerateNota && !row.is_close) {
-                    <button type="button" class="btn btn-tbl-activate h-auto" title="Generar nota de trabajo" (click)="generateNota(row)">
+                  @if (canGenerateNota && row.status === 'proforma') {
+                    <button type="button" class="btn btn-tbl-activate h-auto" title="Aprobar y generar orden" (click)="generateNota(row)">
                       <i class="fas fa-clipboard-check"></i>
+                    </button>
+                  }
+                  @if (canAnular && row.status === 'proforma') {
+                    <button type="button" class="btn btn-tbl-delete h-auto" title="Anular proforma" (click)="anular(row)">
+                      <i class="fas fa-ban"></i>
                     </button>
                   }
                   <button type="button" class="btn btn-tbl-view h-auto" title="PDF" (click)="downloadPdf(row)">

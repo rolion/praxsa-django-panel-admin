@@ -1,6 +1,6 @@
 # TASK-estados-proforma-nota-trabajo-nota-venta: Revisar y reorganizar estados y transiciones de Proforma, Nota de Trabajo y Nota de Venta
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** task/TASK-estados-proforma-nota-trabajo-nota-venta
@@ -14,6 +14,7 @@
 | 2026-09-30 01:25 UTC | ARCHITECTURE → PLANNING | Decisiones tomadas: estado explícito por documento con servicio único de transiciones, nota de venta creada con la nota de trabajo, migración reversible con backfill (acordado con el usuario), endpoints de acción y de lectura con permisos Django estándar; sin anticipos | delivery-architect |
 | 2026-09-30 02:10 UTC | PLANNING → ENGINEERING | Plan v1 escrito y PR abierto; queda pendiente de aprobación humana del plan antes de implementar. Permisos por grupo indicados por el usuario incorporados (Admin/Caja/Vendedor: add_pago, delete_pago; Admin/Almacen: change_proforma_header, change_nota_trabajo) | delivery-plan |
 | 2026-09-30 02:40 UTC | ENGINEERING → PLANNING → ENGINEERING | Plan v2 pedido por el usuario (no por engineer/review): comando idempotente de permisos, permisos por acción (aprobar/anular proforma: Vendedor y Admin; anular nota de trabajo: Almacen y Admin; anular nota de venta: Caja, Vendedor y Admin), `reabrir` reemplazado por anular nota de trabajo/venta. ADR de API/máquina de estados y DDR actualizados (Actualización 1) sin reabrir ARCHITECTURE: no cambia el modelo de datos y los permisos no son custom (se usan `delete_*` estándar) | delivery-plan |
+| 2026-09-30 02:14 UTC | ENGINEERING → REVIEW | Implementación completa según plan v2.1 (backend, Django Admin, API, comando de permisos y panel). Vendedor también edita proformas (indicado por el usuario). Autoverificación: 333 tests backend y 221 frontend en verde (15 fallas preexistentes en specs "should create" de la plantilla, idénticas en `origin/master`), `ng build` y `ng lint` limpios, migración ensayada en Postgres real | delivery-engineer |
 
 ## Investigación
 
@@ -125,7 +126,30 @@ Ver la tabla de estados/transiciones propuesta en la respuesta de chat de esta i
 - [PLAN-2026-09-30-estados-proforma-nota-trabajo-nota-venta](../plans/PLAN-2026-09-30-estados-proforma-nota-trabajo-nota-venta.md) — **v2** (v1 → v2: comando `asignar_permisos_estados`, matriz de permisos por acción, anular nota de trabajo/venta en lugar de reabrir). 6 fases (modelo+migración 0111, servicio de transiciones, Django Admin, API, frontend, permisos por grupo y verificación en vivo). E2E Playwright: no corresponde (ver plan).
 
 ## Implementación
-_Pendiente_
+Implementado según el plan v2.1 (PR [#51](https://github.com/rolion/praxsa-django-panel-admin/pull/51)). Autoverificación del engineer, **no** es el Quality Gate.
+
+**Backend (`praxsa_manager/product/`)**
+- `helper/estados.py` (estados + tabla de transiciones); `models.py` (`Nota_trabajo.status`, `Nota_Venta.status`, choices de `Proforma_Header.status`); migración `0111_estados_orden` con backfill y reverso.
+- `business/orden_estado.py`: `Orden_Estado_Business` (aprobar, terminar, corregir, anular NT/NV/proforma, registrar/anular pago, cierre contable, estado global derivado). `Proforma_Business`/`Pago_Business` quedan como delegadores; se eliminaron `crear_nota_venta`, `delete_proforma` y `create_nota_venta_pago` (esta última y `delete_proforma` estaban rotas).
+- API: `POST proformas/<pk>/anular/`, `notas-trabajo/<pk>/{terminar,corregir,anular}/`, `GET notas-venta`, `notas-venta/<pk>/`, `notas-venta/<pk>/{pago,anular-pago,anular}/`; permisos estándar `add_nota_trabajo`, `change_nota_trabajo`, `delete_proforma_header`, `delete_nota_trabajo`, `delete_nota_venta`, `add_pago`, `delete_pago`; alcance por sucursal (404 fuera de alcance); el monto del pago lo fija el servidor. Se mantiene la ruta `generar-nota-trabajo/` (el ADR decía `generate-nota`).
+- Django Admin re-cableado (acciones, `get_estado`, alta/baja de pagos vía servicio, `PagosForm.clean`).
+- Comando `asignar_permisos_estados` (idempotente, `--dry-run`, falla sin cambios parciales si falta un grupo).
+
+**Frontend (`panel_admin/src/app/ordenes/`)**: badges unificados y filtro por estado en proformas, acciones aprobar/anular/terminar/corregir/anular nota de trabajo, bloque Cobro, pantallas de Notas de Venta (listado, vista) y modal "Registrar pago", clase `status-void`, submenú y rutas.
+
+**Desviaciones respecto del plan (de implementación, no de alcance)**
+1. **Bug encontrado en el ensayo sobre Postgres real y corregido:** el reverso de `0111` fallaba con `cannot ALTER TABLE ... pending trigger events` (el `RunPython` borra filas y luego se elimina la columna en la misma transacción). Se agregó `SET CONSTRAINTS ALL IMMEDIATE` al final de backfill y reverso, más un test de regresión (`MigracionReversibleEnPostgresTest`, verificado que falla sin el arreglo).
+2. El backfill también cubre las proformas "abiertas" del modelo anterior (nota de trabajo viva, sin nota de venta y `is_close=False`, con el inventario ya devuelto): quedan `cancelada`, sin nota de venta. El plan solo describía los otros casos.
+3. `delete_work_note` además bloquea las notas `terminado`, omite detalles sin inventario (notas canceladas) y corrige el retorno de metros en metro lineal (antes multiplicaba por `quantity=0`).
+4. Se agregó `nota_venta_id` al detalle de proforma para el enlace del DDR y una acción de admin "anular proforma".
+5. `test_proforma_status_field.py` se reemplazó por `test_orden_estado_service.py` (paridad con `get_estado` ya no aplica); se retiró la acción huérfana `create_sales_note` de `ProformaAdmin.actions`.
+6. `get_finish_nota_queryset` filtra por `status='terminado'` (la nota de venta ahora siempre existe).
+
+**Pruebas escritas** (según la estrategia del plan; sin E2E, con la justificación del plan): unit de tabla de transiciones y estado derivado; servicio (efectos, precondiciones, retrocesos, inventario); migración (backfill, idempotencia, reverso y aplicar/revertir real en Postgres); comando de permisos; Django Admin; API de la cadena completa, retrocesos, alcance por sucursal y permisos por grupo (Admin/Caja/Vendedor/Almacen); frontend: servicio, listados, vistas, modal de pago y reglas de negocio de los botones.
+
+**Deuda técnica señalada (no resuelta)**: `is_close` sigue en los tres modelos como campo legado; `Proforma_Header.status` denormalizado sin constraint en base; no hay auditoría de transiciones; listados sin paginación en servidor; el cierre contable del pago solo existe en Django Admin; `Almacen` vs `Almacén` depende del ambiente (el comando lo detecta).
+
+**Pendiente para revisión/publicación**: verificación en vivo con `runserver` + `ng serve` (usuarios de distintos grupos/sucursales, Django Admin y reportes), ensayo de `migrate`/reverso con una copia de datos reales y ejecución de `asignar_permisos_estados` en cada ambiente.
 
 ## Review
 _Pendiente_

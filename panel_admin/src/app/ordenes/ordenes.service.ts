@@ -6,11 +6,14 @@ import { environment } from '../../environments/environment';
 import {
   AppNotaTrabajo,
   AppNotaTrabajoDetail,
+  AppNotaVenta,
+  AppNotaVentaDetail,
   AppProforma,
   AppProformaDetail,
   NotaTrabajoUpdatePayload,
   OrdenInstalador,
   OrdenSucursal,
+  PagoPayload,
   ProformaPayload,
   ReelCatalogItem,
 } from './ordenes.model';
@@ -59,6 +62,10 @@ export class OrdenesService {
     return this.http.post<AppProformaDetail>(`${this.base}/proformas/${id}/generar-nota-trabajo/`, {});
   }
 
+  anularProforma(id: number): Observable<AppProformaDetail> {
+    return this.http.post<AppProformaDetail>(`${this.base}/proformas/${id}/anular/`, {});
+  }
+
   /** Descarga el PDF como Blob. Un error llega del servidor como Blob (JSON
    * dentro): se convierte de vuelta a objeto para que `extractApiError` lo lea. */
   downloadProformaPdf(id: number): Observable<Blob> {
@@ -94,6 +101,46 @@ export class OrdenesService {
 
   updateNotaTrabajo(id: number, payload: NotaTrabajoUpdatePayload): Observable<AppNotaTrabajoDetail> {
     return this.http.patch<AppNotaTrabajoDetail>(`${this.base}/notas-trabajo/${id}/`, payload);
+  }
+
+  terminarNotaTrabajo(id: number): Observable<AppNotaTrabajoDetail> {
+    return this.http.post<AppNotaTrabajoDetail>(`${this.base}/notas-trabajo/${id}/terminar/`, {});
+  }
+
+  corregirNotaTrabajo(id: number): Observable<AppNotaTrabajoDetail> {
+    return this.http.post<AppNotaTrabajoDetail>(`${this.base}/notas-trabajo/${id}/corregir/`, {});
+  }
+
+  anularNotaTrabajo(id: number): Observable<AppNotaTrabajoDetail> {
+    return this.http.post<AppNotaTrabajoDetail>(`${this.base}/notas-trabajo/${id}/anular/`, {});
+  }
+
+  // Notas de venta y cobro
+  listNotasVenta(params: { search?: string; status?: string } = {}): Observable<AppNotaVenta[]> {
+    const query: Record<string, string> = {};
+    if (params.search) {
+      query['search'] = params.search;
+    }
+    if (params.status) {
+      query['status'] = params.status;
+    }
+    return this.http.get<AppNotaVenta[]>(`${this.base}/notas-venta`, { params: query });
+  }
+
+  getNotaVenta(id: number): Observable<AppNotaVentaDetail> {
+    return this.http.get<AppNotaVentaDetail>(`${this.base}/notas-venta/${id}/`);
+  }
+
+  registrarPago(id: number, payload: PagoPayload): Observable<AppNotaVentaDetail> {
+    return this.http.post<AppNotaVentaDetail>(`${this.base}/notas-venta/${id}/pago/`, payload);
+  }
+
+  anularPago(id: number): Observable<AppNotaVentaDetail> {
+    return this.http.post<AppNotaVentaDetail>(`${this.base}/notas-venta/${id}/anular-pago/`, {});
+  }
+
+  anularNotaVenta(id: number): Observable<AppNotaVentaDetail> {
+    return this.http.post<AppNotaVentaDetail>(`${this.base}/notas-venta/${id}/anular/`, {});
   }
 
   // Catalogos

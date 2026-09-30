@@ -4,7 +4,11 @@ import importlib
 from decimal import Decimal
 
 from django.apps import apps as django_apps
-from django.test import TestCase
+from django.core.management import call_command
+from django.db import connection
+from django.db.migrations.executor import MigrationExecutor
+from django.test import TestCase, TransactionTestCase
+from django.utils import timezone
 
 from . import helpers
 from ..models import Nota_trabajo, Nota_Venta, Proforma_Header, pago
@@ -100,3 +104,45 @@ class BackfillEstadosTest(TestCase):
         self.assertEqual(Proforma_Header.objects.get(pk=self.a.pk).status, 'nota_trabajo')
         self.assertEqual(Proforma_Header.objects.get(pk=self.c.pk).status, 'por_cobrar')
         self.assertEqual(Proforma_Header.objects.get(pk=self.d.pk).status, 'finalizado')
+
+
+class MigracionReversibleEnPostgresTest(TransactionTestCase):
+    """Aplica y revierte la migracion de verdad (esquema + RunPython en la misma
+    transaccion). Regresion: sin SET CONSTRAINTS ALL IMMEDIATE, Postgres rechaza
+    el reverso con "pending trigger events" cuando el RunPython borro filas."""
+
+    ANTERIOR = ('product', '0110_inventario_is_active')
+    ACTUAL = ('product', '0111_estados_orden')
+
+    def tearDown(self):
+        call_command('migrate', 'product', self.ACTUAL[1], verbosity=0)
+
+    def test_aplicar_revertir_y_volver_a_aplicar_con_datos(self):
+        call_command('migrate', 'product', self.ANTERIOR[1], verbosity=0)
+        apps = MigrationExecutor(connection).loader.project_state([self.ANTERIOR]).apps
+        User = apps.get_model('auth', 'User')
+        Sucursal = apps.get_model('product', 'Sucursal')
+        Proforma = apps.get_model('product', 'Proforma_Header')
+        NT = apps.get_model('product', 'Nota_trabajo')
+        NV = apps.get_model('product', 'Nota_Venta')
+        user = User.objects.create(username='mig', password='x')
+        sucursal = Sucursal.objects.create(name='S', address='A', enable_to_install_windows_film=True, phone_number='70000000')
+        proforma = Proforma.objects.create(
+            name='C', ci_nit='1', phone_number='7', total_price=Decimal('340.00'), discount=Decimal('20.00'),
+            created_by=user, sucursal=sucursal, is_close=True, status='nota_trabajo',
+        )
+        NT.objects.create(proforma=proforma, name='C', car_plate='A', entrada_vehiculo=timezone.now())
+
+        call_command('migrate', 'product', self.ACTUAL[1], verbosity=0)
+        self.assertEqual(Nota_Venta.objects.count(), 1)  # creada por el backfill
+        self.assertEqual(Nota_Venta.objects.get().status, 'por_cobrar')
+
+        call_command('migrate', 'product', self.ANTERIOR[1], verbosity=0)
+        with connection.cursor() as cursor:
+            cursor.execute('select count(*) from product_nota_venta')
+            self.assertEqual(cursor.fetchone()[0], 0)  # el reverso elimino la nota de venta de relleno
+            cursor.execute('select status from product_proforma_header')
+            self.assertEqual([row[0] for row in cursor.fetchall()], ['nota_trabajo'])
+
+        call_command('migrate', 'product', self.ACTUAL[1], verbosity=0)
+        self.assertEqual(Nota_Venta.objects.count(), 1)

@@ -8,7 +8,8 @@
 
 // ---------- tarjetas, encabezados, alertas y acciones (ambas raices) ----------
 .proforma-form,
-.orden-view {
+.orden-view,
+.orden-list {
   .section-card {
     border: 1px solid rgba(128, 128, 128, 0.2);
     border-radius: 12px;
@@ -155,6 +156,11 @@
     &.status-final {
       background: #d5ede0;
       color: #0f5132;
+    }
+
+    &.status-void {
+      background: #e6e8ec;
+      color: #5b6470;
     }
   }
 

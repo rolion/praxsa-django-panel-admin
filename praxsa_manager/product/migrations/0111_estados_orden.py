@@ -22,6 +22,14 @@ def _estado_global(nota, nota_venta):
     return 'por_cobrar'
 
 
+def _flush_deferred_constraints(schema_editor):
+    """Postgres no deja ALTERAR una tabla con eventos de trigger (FK diferidas)
+    pendientes de las filas que este mismo RunPython inserto o borro dentro de la
+    misma transaccion ("pending trigger events"): se validan ahora."""
+    if schema_editor is not None and schema_editor.connection.vendor == 'postgresql':
+        schema_editor.execute('SET CONSTRAINTS ALL IMMEDIATE')
+
+
 def backfill_estados(apps, schema_editor):
     """ADR-estados-...-maquina-de-estados, decision 4.
 
@@ -79,6 +87,7 @@ def backfill_estados(apps, schema_editor):
         proforma.save(update_fields=['status', 'is_close'])
     if omitidas:
         logger.warning(f'0111_estados_orden: {omitidas} nota(s) de trabajo omitida(s) por no tener proforma.')
+    _flush_deferred_constraints(schema_editor)
 
 
 def reverse_estados(apps, schema_editor):
@@ -108,6 +117,7 @@ def reverse_estados(apps, schema_editor):
                     status = 'finalizado'
         proforma.status = status
         proforma.save(update_fields=['status'])
+    _flush_deferred_constraints(schema_editor)
 
 
 class Migration(migrations.Migration):

@@ -20,7 +20,7 @@ El usuario definió qué rol hace qué: **Vendedor y Admin** aprueban y anulan p
 | Anular nota de trabajo | `POST notas-trabajo/<pk>/anular/` | `delete_nota_trabajo` | Almacen, Admin |
 | Anular nota de venta | `POST notas-venta/<pk>/anular/` | `delete_nota_venta` | Caja, Vendedor, Admin |
 | Registrar / anular pago | `POST notas-venta/<pk>/pago/` · `anular-pago/` | `add_pago` · `delete_pago` | Admin, Caja, Vendedor |
-| Editar proforma / nota de trabajo | (existentes) | `change_proforma_header` · `change_nota_trabajo` | Admin, Almacen |
+| Editar proforma / nota de trabajo | (existentes) | `change_proforma_header` · `change_nota_trabajo` | Proforma: Admin, Almacen, Vendedor · Nota de trabajo: Admin, Almacen |
 
 - La asignación a grupos deja de ser un paso manual: un comando idempotente (`asignar_permisos_estados`, ver plan v2) la aplica en cada ambiente.
 

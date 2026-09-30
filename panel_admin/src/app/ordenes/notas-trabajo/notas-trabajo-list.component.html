@@ -1,4 +1,4 @@
-<section class="main-content">
+<section class="main-content orden-list">
   <ul class="breadcrumb breadcrumb-style">
     <li class="breadcrumb-item">
       <h5 class="page-title m-b-0">Notas de Trabajo</h5>
@@ -69,15 +69,26 @@
                 <ng-template let-value="value" ngx-datatable-cell-template>{{ value || '—' }}</ng-template>
               </ngx-datatable-column>
               <ngx-datatable-column name="Sucursal" prop="sucursal_name" [width]="120"></ngx-datatable-column>
-              <ngx-datatable-column name="Finalizado" prop="is_finalizada" [width]="90">
-                <ng-template let-value="value" ngx-datatable-cell-template>{{ value ? 'Sí' : 'No' }}</ng-template>
+              <ngx-datatable-column name="Estado" prop="status_label" [width]="110">
+                <ng-template let-row="row" ngx-datatable-cell-template>
+                  <span [class]="badge(row.status)">{{ row.status_label }}</span>
+                </ng-template>
+              </ngx-datatable-column>
+              <ngx-datatable-column name="Cobro" prop="nota_venta" [width]="110" [sortable]="false">
+                <ng-template let-row="row" ngx-datatable-cell-template>
+                  @if (row.nota_venta) {
+                    <span [class]="badge(row.nota_venta.status)">{{ row.nota_venta.status_label }}</span>
+                  } @else {
+                    —
+                  }
+                </ng-template>
               </ngx-datatable-column>
               <ngx-datatable-column name="Acciones" [sortable]="false" [width]="110">
                 <ng-template let-row="row" ngx-datatable-cell-template>
                   <a [routerLink]="['/ordenes/notas-trabajo/view', row.id]" class="btn btn-tbl-view h-auto" title="Ver">
                     <i class="fas fa-eye"></i>
                   </a>
-                  @if (canEdit && !row.is_finalizada && !row.is_close) {
+                  @if (canEdit && row.status === 'en_proceso') {
                     <a [routerLink]="['/ordenes/notas-trabajo/edit', row.id]" class="btn btn-tbl-edit h-auto" title="Editar">
                       <i class="fas fa-pen"></i>
                     </a>

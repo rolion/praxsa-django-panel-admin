@@ -108,7 +108,7 @@ describe('ProformasListComponent', () => {
     const req = httpMock.expectOne(`${base}/proformas/1/generar-nota-trabajo/`);
     expect(req.request.method).toBe('POST');
     req.flush({});
-    httpMock.expectOne(`${base}/proformas`).flush([row({ is_close: true, status: 'nota_trabajo' })]);
+    httpMock.expectOne(`${base}/proformas`).flush([row({ is_close: true, status: 'en_trabajo', status_label: 'En trabajo' })]);
     await pending;
 
     expect(component.rows[0].is_close).toBe(true);
@@ -135,7 +135,7 @@ describe('ProformasListComponent', () => {
     await pending;
 
     expect(fire).toHaveBeenCalledWith(
-      jasmine.objectContaining({ title: 'No se pudo generar la nota de trabajo', text: 'no hay lamina disponible' })
+      jasmine.objectContaining({ title: 'No se pudo aprobar la proforma', text: 'no hay lamina disponible' })
     );
   });
 
@@ -150,5 +150,58 @@ describe('ProformasListComponent', () => {
 
     expect(createUrl).toHaveBeenCalled();
     expect(click).toHaveBeenCalled();
+  });
+
+  it('filters by the global status and combines it with the search', () => {
+    create([
+      row(),
+      row({ id: 2, name: 'Luis', status: 'en_trabajo', status_label: 'En trabajo', is_close: true }),
+      row({ id: 3, name: 'Luisa', status: 'anulada', status_label: 'Anulada', is_close: true }),
+    ]);
+
+    component.onStatusChange({ target: { value: 'en_trabajo' } } as unknown as Event);
+    expect(component.rows.map((r) => r.id)).toEqual([2]);
+
+    component.onStatusChange({ target: { value: '' } } as unknown as Event);
+    component.filterDatatable({ target: { value: 'luis' } } as unknown as Event);
+    expect(component.rows.map((r) => r.id)).toEqual([2, 3]);
+
+    component.onStatusChange({ target: { value: 'anulada' } } as unknown as Event);
+    expect(component.rows.map((r) => r.id)).toEqual([3]);
+  });
+
+  it('maps every status to its badge class', () => {
+    create([row()]);
+    expect(component.badge('proforma')).toBe('status-badge status-proforma');
+    expect(component.badge('en_trabajo')).toBe('status-badge status-progress');
+    expect(component.badge('por_cobrar')).toBe('status-badge status-cobrar');
+    expect(component.badge('finalizado')).toBe('status-badge status-final');
+    expect(component.badge('anulada')).toBe('status-badge status-void');
+  });
+
+  it('canAnular follows delete_proforma_header', () => {
+    create([row()]);
+    expect(component.canAnular).toBe(false);
+  });
+
+  it('canAnular is true with delete_proforma_header', () => {
+    login(['product.delete_proforma_header']);
+    create([row()]);
+    expect(component.canAnular).toBe(true);
+  });
+
+  it('anula la proforma after confirming and reloads the list', async () => {
+    spyOn(Swal, 'fire').and.returnValue(Promise.resolve({ isConfirmed: true } as SweetAlertResult));
+    create([row()]);
+
+    const pending = component.anular(row());
+    await tick();
+    const req = httpMock.expectOne(`${base}/proformas/1/anular/`);
+    expect(req.request.method).toBe('POST');
+    req.flush({});
+    httpMock.expectOne(`${base}/proformas`).flush([row({ status: 'anulada', status_label: 'Anulada', is_close: true })]);
+    await pending;
+
+    expect(component.rows[0].status).toBe('anulada');
   });
 });

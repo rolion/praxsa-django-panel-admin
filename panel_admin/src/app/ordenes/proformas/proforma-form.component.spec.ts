@@ -296,7 +296,7 @@ describe('ProformaFormComponent', () => {
       sucursal: 1, sucursal_name: 'Central', car_model_name: 'Corolla', car_brand_name: 'Toyota',
       car_plate: 'ABC123', total_price: '388.00', discount: '0.00', total_a_pagar: '388.00',
       proforma_created_on: '2026-09-29T10:00:00', status: 'proforma', status_label: 'Proforma',
-      is_close: false, nota_trabajo_id: null, email: 'ana@test.com', ci_nit: '123',
+      is_close: false, nota_trabajo_id: null, nota_venta_id: null, email: 'ana@test.com', ci_nit: '123',
       phone_number: '70000001', car_model_id: 9, discount_reason: '',
       items: [{
         id: 1, car_part: 5, car_part_name: 'Parabrisas', window_film: 3, window_film_name: 'Carbon',

@@ -66,6 +66,8 @@ class CadenaCompletaTest(OrdenApiBase):
         proforma_id, nota, nv = self.aprobada()
         detalle = self.client.get(f'{PROFORMAS}/{proforma_id}/', **self.owner_headers).json()
         self.assertEqual(detalle['status'], 'en_trabajo')
+        self.assertEqual(detalle['nota_trabajo_id'], nota.pk)
+        self.assertEqual(detalle['nota_venta_id'], nv.pk)
         self.assertEqual(self.to_install(), Decimal('48.00'))
         self.assertEqual(nv.status, 'por_cobrar')
 

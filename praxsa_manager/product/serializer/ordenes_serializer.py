@@ -92,11 +92,17 @@ class ProformaDetailSerializer(ProformaListSerializer):
     el formulario de edicion."""
 
     items = ProformaLineSerializer(many=True, read_only=True)
+    nota_venta_id = serializers.SerializerMethodField()
 
     class Meta(ProformaListSerializer.Meta):
         fields = ProformaListSerializer.Meta.fields + [
-            'email', 'ci_nit', 'phone_number', 'car_model_id', 'discount_reason', 'items',
+            'email', 'ci_nit', 'phone_number', 'car_model_id', 'discount_reason', 'items', 'nota_venta_id',
         ]
+
+    def get_nota_venta_id(self, obj):
+        nota = getattr(obj, 'nota_trabajo', None)
+        nota_venta = getattr(nota, 'nota_venta', None) if nota is not None else None
+        return nota_venta.id if nota_venta is not None else None
 
 
 class ProformaLineInputSerializer(serializers.Serializer):

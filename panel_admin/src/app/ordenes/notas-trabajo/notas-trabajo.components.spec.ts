@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
+import Swal, { SweetAlertResult } from 'sweetalert2';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/service/auth.service';
 import { AppNotaTrabajo, AppNotaTrabajoDetail } from '../ordenes.model';
@@ -13,7 +14,8 @@ const base = `${environment.apiUrl}/product/ordenes`;
 const nota = (overrides: Partial<AppNotaTrabajoDetail> = {}): AppNotaTrabajoDetail => ({
   id: 3, proforma_id: 5, name: 'Ana', car_model_name: 'Corolla', car_plate: 'ABC123', instaladar: null,
   instalador_name: null, codigo_garantia: null, entrada_vehiculo: '2026-09-29T10:00:00',
-  salida_vehiculo: null, sucursal_id: 1, sucursal_name: 'Central', is_close: false, is_finalizada: false,
+  salida_vehiculo: null, sucursal_id: 1, sucursal_name: 'Central', is_close: false, status: 'en_proceso', status_label: 'En proceso',
+  nota_venta: { id: 7, status: 'por_cobrar', status_label: 'Por cobrar', total_price: '340.00' },
   observaciones: null, responsable_name: 'oscar', sales_type: 'venta_instalacion',
   sales_type_label: 'Venta con Instalación', resumen: [], proforma_items: [], ...overrides,
 });
@@ -94,21 +96,24 @@ describe('NotaTrabajoViewComponent', () => {
     httpMock.expectOne(`${base}/notas-trabajo/3/`).flush(nota());
     expect(component.canEdit).toBe(true);
 
-    component.nota = nota({ is_finalizada: true });
+    component.nota = nota({ status: 'terminado', status_label: 'Terminado', is_close: true });
     expect(component.canEdit).toBe(false);
   });
 
-  it('shows the status badge: en ejecucion until the nota de venta exists, then finalizado', () => {
+  it('shows the badge of the nota de trabajo itself: En proceso, Terminado, Cancelada', () => {
     const component = TestBed.createComponent(NotaTrabajoViewComponent).componentInstance;
     component.ngOnInit();
     httpMock.expectOne(`${base}/notas-trabajo/3/`).flush(nota());
 
-    expect(component.statusText).toBe('En ejecución');
+    expect(component.statusText).toBe('En proceso');
     expect(component.statusClass).toBe('status-progress');
 
-    component.nota = nota({ is_finalizada: true });
-    expect(component.statusText).toBe('Finalizado');
+    component.nota = nota({ status: 'terminado', status_label: 'Terminado', is_close: true });
+    expect(component.statusText).toBe('Terminado');
     expect(component.statusClass).toBe('status-done');
+
+    component.nota = nota({ status: 'cancelada', status_label: 'Cancelada', is_close: true });
+    expect(component.statusClass).toBe('status-void');
   });
 
   it('renders cards, formatted dates, muted empty values and the detail tables', () => {
@@ -130,7 +135,7 @@ describe('NotaTrabajoViewComponent', () => {
     fixture.detectChanges();
 
     const element = fixture.nativeElement as HTMLElement;
-    expect(element.querySelectorAll('.section-card').length).toBe(5);
+    expect(element.querySelectorAll('.section-card').length).toBe(6); // 3 de datos + Cobro + 2 tablas
     expect(element.querySelectorAll('ngx-datatable').length).toBe(2);
     expect(element.querySelector('table')).toBeNull();
     const text = element.textContent || '';
@@ -211,7 +216,7 @@ describe('NotaTrabajoViewComponent in-situ editing', () => {
     component.startEdit();
     expect(component.editing).toBe(false);
 
-    component.nota = nota({ is_finalizada: true });
+    component.nota = nota({ status: 'terminado', status_label: 'Terminado', is_close: true });
     component.startEdit();
     expect(component.editing).toBe(false);
   });
@@ -291,7 +296,7 @@ describe('NotaTrabajoViewComponent in-situ editing', () => {
 
   it('the edit route stays read-only when the note is already finalized', () => {
     setup({ edit: true });
-    const component = create(nota({ is_finalizada: true }));
+    const component = create(nota({ status: 'terminado', status_label: 'Terminado', is_close: true }));
     expect(component.editing).toBe(false);
   });
 
@@ -303,5 +308,150 @@ describe('NotaTrabajoViewComponent in-situ editing', () => {
     component.cancelEdit();
 
     expect(router.navigate).toHaveBeenCalledWith(['/ordenes/notas-trabajo/view', 3]);
+  });
+});
+
+describe('NotaTrabajoViewComponent - estados y acciones', () => {
+  let httpMock: HttpTestingController;
+  let component: NotaTrabajoViewComponent;
+  const url = `${base}/notas-trabajo/3/`;
+  const tick = () => new Promise<void>((resolve) => setTimeout(resolve));
+
+  function setup(permissions: string[], data: AppNotaTrabajoDetail = nota()) {
+    localStorage.clear();
+    TestBed.configureTestingModule({
+      imports: [NotaTrabajoViewComponent],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([]), routeWithId('3')],
+    });
+    httpMock = TestBed.inject(HttpTestingController);
+    login(httpMock, permissions);
+    component = TestBed.createComponent(NotaTrabajoViewComponent).componentInstance;
+    component.ngOnInit();
+    httpMock.expectOne(url).flush(data);
+  }
+
+  afterEach(() => {
+    httpMock.verify();
+    localStorage.clear();
+  });
+
+  it('terminar is offered with change_nota_trabajo and explains what is missing for a venta con instalacion', () => {
+    setup(['product.change_nota_trabajo']);
+    expect(component.canTerminar).toBe(true);
+    expect(component.terminarBlockReason).toBe('Falta el código de garantía y el instalador.');
+
+    component.nota = nota({ codigo_garantia: 'GAR-1' });
+    expect(component.terminarBlockReason).toBe('Falta el instalador.');
+
+    component.nota = nota({ codigo_garantia: 'GAR-1', instaladar: 2 });
+    expect(component.terminarBlockReason).toBe('');
+  });
+
+  it('terminar does not ask for garantia / instalador in metro lineal', () => {
+    setup(['product.change_nota_trabajo'], nota({ sales_type: 'venta_metro_lineal' }));
+    expect(component.terminarBlockReason).toBe('');
+  });
+
+  it('terminar, corregir and anular follow permission and state', () => {
+    setup([]);
+    expect(component.canTerminar).toBe(false);
+    expect(component.canCorregir).toBe(false);
+    expect(component.canAnular).toBe(false);
+  });
+
+  it('corregir only when terminado with the nota de venta still por cobrar', () => {
+    setup(['product.change_nota_trabajo']);
+    component.nota = nota({ status: 'terminado', status_label: 'Terminado', is_close: true });
+    expect(component.canCorregir).toBe(true);
+    expect(component.canTerminar).toBe(false);
+    component.nota = nota({
+      status: 'terminado', status_label: 'Terminado', is_close: true,
+      nota_venta: { id: 7, status: 'pagada', status_label: 'Pagada', total_price: '340.00' },
+    });
+    expect(component.canCorregir).toBe(false);
+  });
+
+  it('anular needs delete_nota_trabajo and the trabajo en proceso', () => {
+    setup(['product.delete_nota_trabajo']);
+    expect(component.canAnular).toBe(true);
+    component.nota = nota({ status: 'terminado', status_label: 'Terminado', is_close: true });
+    expect(component.canAnular).toBe(false);
+  });
+
+  it('terminar posts the action after confirming and shows the updated note', async () => {
+    setup(['product.change_nota_trabajo'], nota({ codigo_garantia: 'GAR-1', instaladar: 2 }));
+    spyOn(Swal, 'fire').and.returnValue(Promise.resolve({ isConfirmed: true } as SweetAlertResult));
+
+    const pending = component.terminar();
+    await tick();
+    const req = httpMock.expectOne(`${url}terminar/`);
+    expect(req.request.method).toBe('POST');
+    req.flush(nota({ status: 'terminado', status_label: 'Terminado', is_close: true }));
+    await pending;
+
+    expect(component.nota?.status).toBe('terminado');
+    expect(component.savedMessage).toContain('terminado');
+  });
+
+  it('corregir posts the action', async () => {
+    setup(['product.change_nota_trabajo'], nota({ status: 'terminado', status_label: 'Terminado', is_close: true }));
+    spyOn(Swal, 'fire').and.returnValue(Promise.resolve({ isConfirmed: true } as SweetAlertResult));
+
+    const pending = component.corregir();
+    await tick();
+    httpMock.expectOne(`${url}corregir/`).flush(nota());
+    await pending;
+
+    expect(component.nota?.status).toBe('en_proceso');
+  });
+
+  it('anular posts the action and shows the cancelled note', async () => {
+    setup(['product.delete_nota_trabajo']);
+    spyOn(Swal, 'fire').and.returnValue(Promise.resolve({ isConfirmed: true } as SweetAlertResult));
+
+    const pending = component.anular();
+    await tick();
+    httpMock.expectOne(`${url}anular/`).flush(nota({ status: 'cancelada', status_label: 'Cancelada', is_close: true }));
+    await pending;
+
+    expect(component.nota?.status).toBe('cancelada');
+  });
+
+  it('does nothing when the confirmation is cancelled', async () => {
+    setup(['product.change_nota_trabajo'], nota({ codigo_garantia: 'GAR-1', instaladar: 2 }));
+    spyOn(Swal, 'fire').and.returnValue(Promise.resolve({ isConfirmed: false } as SweetAlertResult));
+
+    await component.terminar();
+
+    httpMock.expectNone(`${url}terminar/`);
+  });
+
+  it('a server rejection shows an error alert and keeps the note', async () => {
+    setup(['product.change_nota_trabajo'], nota({ codigo_garantia: 'GAR-1', instaladar: 2 }));
+    const fire = spyOn(Swal, 'fire');
+    fire.and.returnValue(Promise.resolve({ isConfirmed: true } as SweetAlertResult));
+
+    const pending = component.terminar();
+    await tick();
+    httpMock.expectOne(`${url}terminar/`).flush({ detail: 'Debe agregar un Instalador' }, { status: 409, statusText: 'Conflict' });
+    await pending;
+
+    expect(component.nota?.status).toBe('en_proceso');
+    expect(fire).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('NotasTrabajoListComponent - estado y cobro', () => {
+  it('maps the badge class of a nota status', () => {
+    localStorage.clear();
+    TestBed.configureTestingModule({
+      imports: [NotasTrabajoListComponent],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
+    });
+    const component = TestBed.createComponent(NotasTrabajoListComponent).componentInstance;
+    expect(component.badge('en_proceso')).toBe('status-badge status-progress');
+    expect(component.badge('terminado')).toBe('status-badge status-done');
+    expect(component.badge('cancelada')).toBe('status-badge status-void');
+    expect(component.badge('pagada')).toBe('status-badge status-final');
   });
 });

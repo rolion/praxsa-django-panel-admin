@@ -11,7 +11,7 @@
 Reemplazar la inferencia de estados por `hasattr()`/`is_close` por un estado explícito en `Nota_trabajo` y `Nota_Venta` y un estado global derivado en `Proforma_Header`, con un único servicio de transiciones. La nota de venta nace con la nota de trabajo (`por_cobrar`); el pago solo se registra con el trabajo `terminado`. Exponerlo en la API y en `panel_admin/` (terminar trabajo, notas de venta, registrar pago).
 
 ## Context
-Ver `docs/tasks/TASK-estados-proforma-nota-trabajo-nota-venta.md`. Resumen: hoy "Finalizado" significa tres cosas distintas, el `status` persistido puede divergir del admin (no se refresca al crear el pago), `abrir_proforma` deja viva la nota de trabajo, y la nota de venta/pago solo existen en Django Admin. Decisiones de negocio ya tomadas con el usuario: sin anticipos; backfill de notas de venta `por_cobrar` para notas de trabajo abiertas; **permisos por grupo y por acción** (ver matriz en "Architecture considerations"): Admin/Caja/Vendedor cobran y anulan pagos; Admin/Almacen terminan/corrigen el trabajo y editan; Vendedor/Admin aprueban y anulan proformas; Almacen/Admin anulan la nota de trabajo; Caja/Vendedor/Admin anulan la nota de venta. Anular la nota de trabajo equivale a reabrir la proforma; anular la nota de venta solo con el trabajo `en_proceso` (decisiones del usuario, v2).
+Ver `docs/tasks/TASK-estados-proforma-nota-trabajo-nota-venta.md`. Resumen: hoy "Finalizado" significa tres cosas distintas, el `status` persistido puede divergir del admin (no se refresca al crear el pago), `abrir_proforma` deja viva la nota de trabajo, y la nota de venta/pago solo existen en Django Admin. Decisiones de negocio ya tomadas con el usuario: sin anticipos; backfill de notas de venta `por_cobrar` para notas de trabajo abiertas; **permisos por grupo y por acción** (ver matriz en "Architecture considerations"): Admin/Caja/Vendedor cobran y anulan pagos; Admin/Almacen terminan/corrigen el trabajo; Admin/Almacen/Vendedor editan proformas; Vendedor/Admin aprueban y anulan proformas; Almacen/Admin anulan la nota de trabajo; Caja/Vendedor/Admin anulan la nota de venta. Anular la nota de trabajo equivale a reabrir la proforma; anular la nota de venta solo con el trabajo `en_proceso` (decisiones del usuario, v2).
 
 ## Current behavior
 (Verificado de nuevo al planificar; el código no cambió desde la investigación — `master` = `21beefe`.)
@@ -46,7 +46,7 @@ Resumen de los ADR (no se re-decide nada):
 | Anular nota de trabajo | `POST notas-trabajo/<pk>/anular/` | `delete_nota_trabajo` | Almacen, Admin |
 | Anular nota de venta | `POST notas-venta/<pk>/anular/` | `delete_nota_venta` | Caja, Vendedor, Admin |
 | Registrar / anular pago | `POST notas-venta/<pk>/pago/` · `anular-pago/` | `add_pago` · `delete_pago` | Admin, Caja, Vendedor |
-| Editar proforma / nota de trabajo | (existentes) | `change_proforma_header` · `change_nota_trabajo` | Admin, Almacen |
+| Editar proforma / nota de trabajo | (existentes) | `change_proforma_header` · `change_nota_trabajo` | Proforma: Admin, Almacen, Vendedor · Nota de trabajo: Admin, Almacen |
  Nota: `Caja` y `Vendedor` no son `admin`, así que ven solo su(s) sucursal(es) (`User_Helper.can_view_all_sucursales`, ADR-002).
 - **Rendimiento:** listados con `select_related` (NT→proforma→sucursal, NV→NT→proforma) para evitar N+1; sin paginación server-side (deuda aceptada).
 - **Acoplamiento:** los `ModelAdmin` y los reportes dejan de calcular estado por su cuenta y llaman al servicio; es la parte con más riesgo de efectos colaterales (ver Risks).
@@ -176,8 +176,9 @@ Alternativa descartada por arquitectura (ver ADR): `django-fsm`, un solo enum li
 - Playwright/E2E.
 - Migración de datos para asignar permisos (se usa el comando, que se ejecuta a mano por ambiente).
 - Reporte de cuentas por cobrar.
-- **Preguntas abiertas:** (1) ¿Vendedor debe poder **editar** proformas (`change_proforma_header`)? Con la asignación acordada solo Admin y Almacen pueden, aunque Vendedor aprueba y anula. (2) Confirmar la ortografía del grupo `Almacen`/`Almacén` (el comando falla explícitamente si no lo encuentra).
+- **Preguntas abiertas:** (1) ~~¿Vendedor debe poder editar proformas?~~ Resuelto por el usuario (v2.1): sí, Vendedor recibe `change_proforma_header`. (2) Confirmar la ortografía del grupo `Almacen`/`Almacén` (el comando falla explícitamente si no lo encuentra).
 
 ## Changelog
 - **v2** (2026-09-30): (a) se agrega el comando idempotente `asignar_permisos_estados` para asignar permisos por grupo; (b) permisos por acción definidos por negocio: Vendedor/Admin aprueban y anulan proformas, Almacen/Admin anulan la nota de trabajo, Caja/Vendedor/Admin anulan la nota de venta; (c) `reabrir` se reemplaza por `anular` nota de trabajo/venta (mismo efecto, solo con NT `en_proceso`); anulaciones con permisos estándar `delete_*`. Solicitado por el usuario directamente al planificador (no por delivery-engineer/review). Actualizados en el mismo PR: ADR de API y de máquina de estados (Actualización 1) y DDR (Actualización 1).
+- **v2.1** (2026-09-30): Vendedor también puede editar proformas (`change_proforma_header`), indicado por el usuario al iniciar la implementación; solo cambia la asignación del comando `asignar_permisos_estados` y la matriz.
 - **v1** (2026-09-30): plan inicial.
