@@ -1,10 +1,10 @@
 # TASK-appheader-nav-cleanup: Quitar del header de panel_admin nombre de usuario, buscador, selector de idioma, mensajes y alertas
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** NO
 **Rama:** `claude/appheader-nav-cleanup-650d44` (asignada por el entorno)
-**Pull Request:** _sin abrir todavía_
+**Pull Request:** [#59](https://github.com/rolion/praxsa-django-panel-admin/pull/59)
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
@@ -12,6 +12,7 @@
 | 2026-09-30 | (nuevo) → INVESTIGATION | Task creado | delivery-investigate |
 | 2026-09-30 | INVESTIGATION → PLANNING | Veredicto NEEDS_PLAN, diseño NO; sin arquitectura requerida | delivery-plan |
 | 2026-09-30 | PLANNING → ENGINEERING | Plan v1 escrito (4 archivos frontend + i18n, spec actualizado, sin E2E ni dependencias); PR abierto sobre la rama asignada por el entorno | delivery-plan |
+| 2026-09-30 | ENGINEERING → REVIEW | Implementación completa según plan v1 | delivery-engineer |
 
 ## Investigación
 
@@ -72,7 +73,15 @@ _No aplica según veredicto_
 [PLAN-2026-09-30-appheader-nav-cleanup](../plans/PLAN-2026-09-30-appheader-nav-cleanup.md) — versión vigente: v1
 
 ## Implementación
-_Pendiente_
+Según plan v1, en `panel_admin/src/`:
+- `header.component.html`: quitados nombre del nav izquierdo, buscador, idioma, mensajes y alertas; quedan toggle del sidebar, fullscreen y menú de usuario (nombre como título + Logout).
+- `header.component.ts`: eliminado estado/lógica de idioma (`flagvalue`, `listLang`, `setLanguage`, etc.) e imports sin uso (`NgClass`, `NgScrollbar`, `TranslateModule`, `FormsModule`).
+- `header.component.sass` vaciado; bloque `HEADER` quitado de `assets/i18n/{de,en,es}.json` (grep previo: sin otros usos).
+- `header.component.spec.ts`: el test del nombre a la izquierda se reemplazó por 3 tests (widgets quitados ausentes, toggle/fullscreen/usuario presentes, nombre solo en `.dropdown-title` con Logout).
+
+Desvío menor respecto al plan: se **mantuvo** la inyección de `LanguageService` en el header (plan decía dejar de inyectarlo). Es el único lugar que lo instancia, y su constructor aplica el idioma inicial que usa el `translate` pipe del sidebar; quitarlo habría dejado el sidebar sin idioma. Queda con comentario en el código. Deuda técnica: mover esa inicialización a un `APP_INITIALIZER`/`app.config`.
+
+Autoverificación del engineer (no sustituye el Quality Gate): `ng lint` limpio, `ng build` OK, spec del header 7/7 SUCCESS.
 
 ## Review
 _Pendiente_
