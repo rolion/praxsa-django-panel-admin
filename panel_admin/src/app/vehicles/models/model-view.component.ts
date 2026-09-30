@@ -33,6 +33,7 @@ export class ModelViewComponent implements OnInit {
   items: AppCarModelPart[] = [];
   loading = true;
   errorMessage = '';
+  imageFailed = false;
 
   addForm!: FormGroup;
   mode: AddItemMode = 'existing';
@@ -64,6 +65,7 @@ export class ModelViewComponent implements OnInit {
 
   load(): void {
     this.loading = true;
+    this.imageFailed = false;
     this.vehiclesService.getModel(this.modelId).subscribe({
       next: (model) => {
         this.model = model;

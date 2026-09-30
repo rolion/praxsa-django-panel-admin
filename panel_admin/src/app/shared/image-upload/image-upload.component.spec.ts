@@ -24,6 +24,23 @@ describe('ImageUploadComponent', () => {
     expect(component.displayUrl).toBe('http://localhost/media/car_models/foo.jpg');
   });
 
+  it('falls back to the placeholder when the existing remote image fails to load', () => {
+    component.currentImageUrl = 'http://localhost/media/car_models/missing.jpg';
+
+    component.onImageError();
+
+    expect(component.displayUrl).toBeNull();
+  });
+
+  it('shows a new remote url after a previous one failed to load', () => {
+    component.currentImageUrl = 'http://localhost/media/car_models/missing.jpg';
+    component.onImageError();
+
+    component.currentImageUrl = 'http://localhost/media/car_models/new.jpg';
+
+    expect(component.displayUrl).toBe('http://localhost/media/car_models/new.jpg');
+  });
+
   it('rejects a file with a disallowed type and does not call onChange', () => {
     let changedValue: unknown = 'untouched';
     component.registerOnChange((value) => (changedValue = value));

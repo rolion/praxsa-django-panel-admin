@@ -40,6 +40,7 @@ export class ImageUploadComponent implements ControlValueAccessor {
   errorMessage = '';
   disabled = false;
   private removed = false;
+  private failedUrl: string | null = null;
 
   private onChange: (value: File | null | undefined) => void = () => {};
   private onTouched: () => void = () => {};
@@ -70,7 +71,7 @@ export class ImageUploadComponent implements ControlValueAccessor {
     if (this.previewUrl) {
       return this.previewUrl;
     }
-    if (!this.removed) {
+    if (!this.removed && this.currentImageUrl !== this.failedUrl) {
       return this.currentImageUrl;
     }
     return null;
@@ -99,6 +100,13 @@ export class ImageUploadComponent implements ControlValueAccessor {
     this.setPreviewFromFile(file);
     this.onChange(file);
     this.onTouched();
+  }
+
+  /** La imagen existente (remota) no cargo: se cae al placeholder. */
+  onImageError(): void {
+    if (!this.previewUrl) {
+      this.failedUrl = this.currentImageUrl;
+    }
   }
 
   removeImage(): void {
