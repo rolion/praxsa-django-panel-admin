@@ -78,7 +78,7 @@ class ProformaAdmin(admin.ModelAdmin):
     # readonly_fields = ['sales_status']
     form = SaleHeaderForm
     list_per_page = 10
-    actions =["open_proforma", "create_sales_note", "create_work_note", "print_proforma", "convertir_proforma_metro_lineal"]
+    actions =["open_proforma", "anular_proforma", "create_work_note", "print_proforma", "convertir_proforma_metro_lineal"]
     proforma_business = Proforma_Business()
     user_business = User_Business()
     user_helper = User_Helper()
@@ -94,20 +94,7 @@ class ProformaAdmin(admin.ModelAdmin):
     get_proforma_date_format.admin_order_field = 'proforma_created_on'
 
     def get_estado(self, obj):
-        estado = 'Proforma'
-        if(hasattr(obj, 'nota_trabajo')):
-           estado = 'Nota Trabajo'
-        else:
-            return estado
-        if(hasattr(obj.nota_trabajo, 'nota_venta')):
-             estado = 'Por Cobrar'
-        else:
-            return estado
-        if(hasattr(obj.nota_trabajo.nota_venta, 'pago')):
-             estado = 'Finalizado'
-
-        return estado
-       
+        return obj.get_status_display()
     get_estado.short_description = 'Estado'
     
     fieldsets = [('Proforma', {
@@ -229,7 +216,7 @@ class ProformaAdmin(admin.ModelAdmin):
             self.log_debug.info(str(e))
             self.message_user(request=request,  message=str(e), level= messages.ERROR)
 
-    @admin.action(description="abrir proforma")
+    @admin.action(description="anular nota de trabajo (reabrir proforma)")
     def open_proforma(self, request: HttpRequest, queryset: QuerySet):
         try:
             [self.proforma_business.abrir_proforma(proforma=qs) for qs in list(queryset)]
@@ -237,6 +224,14 @@ class ProformaAdmin(admin.ModelAdmin):
             self.log_debug.info(str(e))
             self.message_user(request=request,  message=str(e), level= messages.ERROR)
             
+    @admin.action(description="anular proforma")
+    def anular_proforma(self, request: HttpRequest, queryset: QuerySet):
+        try:
+            [self.proforma_business.estado_business.anular_proforma(proforma=qs) for qs in list(queryset)]
+        except Exception as e:
+            self.log_debug.info(str(e))
+            self.message_user(request=request,  message=str(e), level= messages.ERROR)
+
     @admin.action(description="Convertir a Venta Metro Lineal")
     def convertir_proforma_metro_lineal(self, request: HttpRequest, queryset: QuerySet):
         try:

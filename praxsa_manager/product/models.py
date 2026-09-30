@@ -5,6 +5,7 @@ from tinymce.models import HTMLField
 from django.utils.translation import gettext_lazy as _
 from .helper.proforma import Proforma_Helper
 from .helper.pagos import Pagos_Helper
+from .helper import estados
 import datetime
 alphanumeric = RegexValidator(r'^[0-9a-zA-Z]*$', 'Solo se permiten letras y numeros')
 registro_contable_regex = RegexValidator(regex=r'\d{1,4}\/\d{2}', 
@@ -209,7 +210,8 @@ class Nota_trabajo(models.Model):
     car_plate = models.CharField(max_length=10, default="", null=True, verbose_name="Placa Auto")
     car_model = models.ForeignKey(Car_Model, on_delete=models.DO_NOTHING, verbose_name="Modelo", null=True, blank=True)
     nota_venta_created_on = models.DateTimeField(verbose_name="Fecha Orden Trabajo",  auto_now_add=True)
-    is_close = models.BooleanField(default=False) 
+    is_close = models.BooleanField(default=False)
+    status = models.CharField(max_length=20, choices=estados.NT_STATUS_CHOICES, default=estados.NT_EN_PROCESO, verbose_name='Estado')
     def __str__(self) -> str:
         return f'Nota Trabajo {self.id }'
 
@@ -274,6 +276,7 @@ class Nota_Venta(models.Model):
                                    related_name='nota_venta_created_by')
     created_on = models.DateTimeField(verbose_name="Creado en", null=True, blank=True)
     is_close = models.BooleanField(default=False)
+    status = models.CharField(max_length=20, choices=estados.NV_STATUS_CHOICES, default=estados.NV_POR_COBRAR, verbose_name='Estado')
 
     class Meta:
         verbose_name = 'Nota Venta'

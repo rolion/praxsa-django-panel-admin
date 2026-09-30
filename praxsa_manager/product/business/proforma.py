@@ -9,6 +9,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import Sum
 from datetime import datetime
 from ..business.orden_trabajo import Orden_Trabajo_Business
+from .orden_estado import Orden_Estado_Business
 from decimal import *
 from ..helper.proforma import Proforma_Helper
 import logging
@@ -19,6 +20,7 @@ class Proforma_Business:
         self.helper = Proforma_Helper()
         self.inv_bussiness = Inventario_Business()
         self.orden_trabajo_bussiness = Orden_Trabajo_Business()
+        self.estado_business = Orden_Estado_Business()
         self.user_helper = User_Helper()
         self.log_errors = logging.getLogger('django_admin')
         self.log_debug= logging.getLogger('debug')
@@ -28,60 +30,19 @@ class Proforma_Business:
         return Proforma_Header.objects.get(pk = id)
 
     def refresh_status(self, proforma):
-        # Misma logica y mismo orden que ProformaAdmin.get_estado (admin_config/proforma_admin.py),
-        # para que el campo persistido nunca diverja de lo que el admin ya muestra hoy (TASK-009/ADR-006).
-        status = self.helper.estado_proforma
-        if hasattr(proforma, 'nota_trabajo'):
-            status = self.helper.estado_nota_trabajo
-        else:
-            proforma.status = status
-            proforma.save(update_fields=['status'])
-            return proforma
-        if hasattr(proforma.nota_trabajo, 'nota_venta'):
-            status = self.helper.estado_por_cobrar
-        else:
-            proforma.status = status
-            proforma.save(update_fields=['status'])
-            return proforma
-        if hasattr(proforma.nota_trabajo.nota_venta, 'pago'):
-            status = self.helper.estado_finalizado
-        proforma.status = status
-        proforma.save(update_fields=['status'])
+        # Delegador: el estado global lo calcula Orden_Estado_Business (ADR maquina-de-estados).
+        return self.estado_business.refrescar(proforma)
+
+
+    
+    def abrir_proforma(self, proforma):
+        """Reabrir == anular la nota de trabajo (ADR: anular NT equivale a reabrir)."""
+        nota = Nota_trabajo.objects.filter(proforma=proforma).first()
+        if nota is None:
+            raise Exception(f'la proforma {proforma.id} no tiene nota de trabajo')
+        self.estado_business.anular_nota_trabajo(nota)
         return proforma
 
-    def delete_proforma(self, user, proforma):
-        if proforma.sales_status == self.helper.req  :
-            proforma.is_delete = True
-            try:
-                return proforma.save()
-            except Exception as e:
-                self.log_errors.error(f'algo sali mal, contactar administrador {e}')
-                raise Exception('algo sali mal, contactar administrador')
-        self.log_errors.error(f'no se puede eliminar una proforma aprobada o instalada {e}')
-        raise Exception('no se puede eliminar una proforma aprobada o instalada')
-    
-    @transaction.atomic
-    def abrir_proforma(self, proforma):
-        if proforma.is_close == True:
-            try:
-                with transaction.atomic():
-                    detalles = Proforma_Detail.objects.select_related('proforma_header', 'window_film','proforma_header__sucursal' )
-                    detalles = detalles.filter(proforma_header = proforma)
-                    proforma.is_close = False
-                    if detalles.exists():
-                        for detalle in list(detalles):
-                            to_add = detalle.length
-                            to_add = to_add * Decimal(detalle.quantity) if detalle.quantity > 0 else to_add
-                            result = self.inv_bussiness.return_to_inventory(detail_inventory= detalle.inventario,
-                                                                   length_to_add = to_add)
-                            if result is not True:
-                                self.log_errors.error(f'no se actualizo el inventario {e}')
-                                raise Exception('no se actualizo el inventario')
-                    proforma.save()
-                    return self.refresh_status(proforma)
-            except Exception as e:
-                self.log_errors.error(f'algo salio mal, contactar administrador {e}')
-                raise Exception('algo salio mal, contactar administrador')
     
     def validate_proforma_detail(self, proforma_details:list[Proforma_Detail]):
         for detalle in proforma_details:
@@ -95,49 +56,10 @@ class Proforma_Business:
 
         return True
     
-    @transaction.atomic
     def create_work_note(self, proforma, responsable):
-        # if proforma.sales_status == self.helper.prof:
-            try:
-                with transaction.atomic():
-                    detalles = Proforma_Detail.objects.select_related('proforma_header', 'window_film','proforma_header__sucursal' )
-                    detalles = detalles.filter(proforma_header = proforma)
-                    sumary = []
-                    
-                    if detalles.exists():
-                        if proforma.sales_type == self.helper.tipo_venta_instalacion:
-                            self.validate_proforma_detail(detalles)
-                        for detalle in list(detalles):
-                            to_reduce = detalle.length
-                            to_reduce = to_reduce * Decimal(detalle.quantity) if detalle.quantity > 0 else to_reduce
-                            # update inventory
-                            inventario = self.inv_bussiness.reduce_inventory(sucursal = detalle.proforma_header.sucursal, 
-                                                                windows_film =detalle.window_film, 
-                                                                width = detalle.width, 
-                                                                length_to_reduce = to_reduce)
-                            detalle.inventario = inventario
-                            detalle.save()
-                            item_index = next((i for i, item in enumerate(sumary) 
-                                               if item["window_film"] == detalle.window_film and item["width"] == inventario.bobina.width ), 
-                                               None)
-                            if item_index is not None:
-                                sumary[item_index]['length'] = sumary[item_index]['length'] + to_reduce
-                            else:
-                                sumary.append({"window_film": detalle.window_film, "width": inventario.bobina.width, 'length':  to_reduce})
-                    proforma.is_close = True
-                    proforma.save()
-                    nota_trabajo = self.orden_trabajo_bussiness.create_work_note(proforma=proforma, sumary=sumary,responsable= responsable)
-                    self.refresh_status(proforma)
-                    return nota_trabajo
-            except IntegrityError as e:
-                raise Exception(f'ya existe una nota de trabajo asignada a la Proforma {proforma.id}')
-            except NoHayLaminasDisponibles as e:
-                 raise Exception(str(e))
-            except ProformaException as e:
-                raise e
-            except Exception as e:
-                self.log_errors.error(f'algo salio mal, contactar administrador {e}')
-                raise Exception('algo salio mal, contactar administrador')
+        # Delegador: aprobar la proforma (descuenta inventario, crea nota de trabajo y nota de venta).
+        return self.estado_business.aprobar_proforma(proforma=proforma, responsable=responsable)
+
         
     
     @transaction.atomic
@@ -198,29 +120,6 @@ class Proforma_Business:
         proforma.total_price = total if total is not None else Decimal('0')
         proforma.save(update_fields=['total_price'])
 
-    def crear_nota_venta(self, nota_trabajo, user):
-        if nota_trabajo.proforma.is_close == False:
-                    raise Exception(f'la proforma {nota_trabajo.proforma.id}, debe estar cerrada antes de crear la nota de venta')
-        if nota_trabajo.proforma.sales_type == self.helper.tipo_venta_instalacion and nota_trabajo.codigo_garantia is  None:
-            raise Exception('Debe agregar el código de Garantía')
-        
-        if nota_trabajo.proforma.sales_type == self.helper.tipo_venta_instalacion and nota_trabajo.instaladar is  None:
-            raise Exception('Debe agregar un Instalador')
-        try:
-            nota_venta = Nota_Venta()
-            nota_venta.nota_trabajo = nota_trabajo
-            nota_venta.name = nota_trabajo.proforma.name
-            nota_venta.ci_nit = nota_trabajo.proforma.ci_nit
-            nota_venta.total_price = nota_trabajo.proforma.total_price - nota_trabajo.proforma.discount
-            nota_venta.created_by = user
-            nota_venta.created_on = datetime.now()
-            nota_venta.save()
-            nota_trabajo.is_close = True
-            nota_trabajo.save()
-            self.refresh_status(nota_trabajo.proforma)
-        except Exception as e:
-            self.log_errors.error(f'algo salio mal, contactar administrador {e}')
-            raise Exception('algo salio mal, contactar administrador')
 
     def delete_fisica(self, user, proforma):
         try:
@@ -298,20 +197,6 @@ class Proforma_Business:
             self.log_errors.error(f'algo salio mal, Proforma_Business - get_proforma_queryset_by_role {e}')
             return None
         
-    def create_nota_venta_pago(self, proforma, user):
-        if user is None:
-            raise NotaVentaException('el usuario es requerido para la gestion del pago')
-        if proforma is None:
-            raise NotaVentaException('la nota venta no puede ser nula')
-        # if proforma.sales_status != self.helper.nov:
-        #     raise NotaVentaException(f'proforma {proforma.id} no es una nota venta')
-        
-        paidment = pago()
-        paidment.proforma = proforma
-        paidment.cerrado = False
-        paidment.created_by = user
-        paidment.save()
-        return paidment
         
 
             

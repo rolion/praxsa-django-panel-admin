@@ -1,15 +1,27 @@
 from ..models import pago, Proforma_Header, Nota_trabajo, Sucursal
 from django.db import IntegrityError, transaction
 from ..helper.user import User_Helper
-from .proforma import Proforma_Business
+from .orden_estado import Orden_Estado_Business
 import logging
 
 class Pago_Business:
 
     def __init__(self) -> None:
         self.user_helper = User_Helper()
-        self.proforma_business = Proforma_Business()
+        self.estado_business = Orden_Estado_Business()
         self.log_errors = logging.getLogger('django_admin')
+
+    def get_panel_nota_venta_queryset(self, user, qs):
+        """Alcance de notas de venta para el panel (API `ordenes/notas-venta`),
+        mismo criterio que proformas/notas de trabajo: admin ve todas las no
+        borradas; el resto, las de todas sus sucursales habilitadas; sin
+        sucursal, ninguna (ADR-...-alcance-permisos)."""
+        qs = qs.filter(nota_trabajo__proforma__is_delete=False).select_related(
+            'nota_trabajo', 'nota_trabajo__proforma', 'nota_trabajo__proforma__sucursal', 'pago'
+        ).order_by('-id')
+        if self.user_helper.can_view_all_sucursales(user):
+            return qs
+        return qs.filter(nota_trabajo__proforma__sucursal_id__in=self.user_helper.get_enabled_sucursal_ids(user))
 
     def get_pago_queryset_by_role(self, user, qs):
         try:
@@ -26,23 +38,6 @@ class Pago_Business:
             self.log_errors.error(f'algo salio mal, Pago_Business - get_pago_queryset_by_role {e}')
             return None
 
-    @transaction.atomic
-    def cerrar_pago(self,paiment: pago):
-        try:
-            with transaction.atomic():
-                paiment.cerrado = True
-                paiment.save()
-                nota_venta = proforma = paiment.nota_venta
-                nota_venta.is_close = True
-                nota_venta.save()
-                proforma = paiment.nota_venta.nota_trabajo.proforma
-                proforma.is_close = True
-                proforma.save()
-                nota_trabajo = proforma.nota_trabajo
-                nota_trabajo.is_close = True
-                nota_trabajo.save()
-                self.proforma_business.refresh_status(proforma)
-        except Exception as e:
-            print(str(e))
-            raise Exception('algo salio mal, contacte al administrador')
-            pass
+    def cerrar_pago(self, paiment: pago):
+        # Cierre contable: solo el flag; los estados los gobierna Orden_Estado_Business.
+        return self.estado_business.cerrar_pago(paiment)
