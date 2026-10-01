@@ -14,6 +14,7 @@
 | 2026-10-01 14:10 UTC | PLANNING → ENGINEERING | Plan v1 escrito (sin E2E, sin dependencias nuevas); PR abierto, pendiente de aprobación humana antes de implementar | delivery-plan |
 | 2026-10-01 14:50 UTC | ENGINEERING → REVIEW | Implementación completa según plan v1 (componente de tarjeta, rediseño de la vista, specs); empujada al PR #61 | delivery-engineer |
 | 2026-10-01 15:30 UTC | REVIEW → PUBLISH | Quality Gate: **PASS**. 453 tests OK (14 fallos idénticos a la línea base de master, ajenos al cambio), lint y build limpios, verificación en vivo con API simulada. 1 issue Low abierto (REV-01) | delivery-review |
+| 2026-10-01 16:00 UTC | PUBLISH → PUBLISH | Descripción del PR completada con trazabilidad total; sin cambios sensibles (sin ADRs, auth, DB ni infraestructura). Pendiente de aprobación humana del merge, no se mergea en esta invocación | delivery-publish |
 
 ## Investigación
 
@@ -99,4 +100,4 @@ Según plan v1, sin desvíos de alcance:
 **PASS** (2026-10-01, misma sesión que la implementación: aislamiento procedimental). Evidencia en el PR #61 (`## Testing` / `## Review`). 14 fallos de tests de la plantilla demo son preexistentes (idénticos en `origin/master`). Issue abierto no bloqueante: [REV-2026-10-01-vehiculo-detalle-partes-ui-01](../reviews/REV-2026-10-01-vehiculo-detalle-partes-ui-01.md) (Low, IMPLEMENTATION: imagen desborda la card a 375px).
 
 ## Publicación
-_Pendiente_
+[PR #61](https://github.com/rolion/praxsa-django-panel-admin/pull/61) — **Listo para aprobación humana** (no mergeado). Descripción completa; commits posteriores al review son solo documentación. Limitaciones conocidas en el PR (REV-01 Low abierto, colores sin imagen de referencia).
