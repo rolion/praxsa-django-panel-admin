@@ -49,5 +49,34 @@ python manage.py collectstatic
 # chage static file owenership
 chown -R app:app /praxsa_manager
 
+## Cargar imagenes de los modelos de vehiculo
+
+Las imagenes de los Modelos viajan dentro de la imagen Docker, ya reducidas (WEBP de hasta 900 px y 150 KB), en `praxsa_manager/product/seed_data/car_models/`, con nombre `Marca - Modelo.webp`. Despues de cada despliegue se cargan con `importar_imagenes_modelos` (paso manual, igual que los demas comandos de datos). Por defecto **no pisa** a los modelos que ya tienen imagen (por ejemplo una subida desde el admin); se puede repetir sin riesgo.
+
+```
+# 1. Simular (muestra que se asignaria, los omitidos y los archivos/modelos sin pareja; no guarda nada)
+docker exec -it web python manage.py importar_imagenes_modelos --dry-run
+
+# 2. Importar de verdad
+docker exec -it web python manage.py importar_imagenes_modelos
+
+# Reemplazar tambien las imagenes que ya existen
+docker exec -it web python manage.py importar_imagenes_modelos --forzar
+```
+
+Ejecutar siempre primero el `--dry-run` en produccion: si los nombres de marca/modelo difieren de los de `seed_data`, los reporta como "Archivos sin modelo" / "Modelos sin archivo" y no modifica nada de lo no emparejado.
+
+### Agregar o actualizar imagenes del set (desarrollo)
+
+Poner los originales (`.png`, `.jpg`, `.jfif`, `.webp`, nombrados `Marca - Modelo.<ext>`) en una carpeta fuera de git, por ejemplo `praxsa_manager/media/car_models/`, y generar los WEBP reducidos desde `praxsa_manager/`:
+
+```
+python manage.py importar_imagenes_modelos --carpeta media/car_models --exportar-a product/seed_data/car_models
+```
+
+`--exportar-a` no toca la base de datos. Luego commitear solo los WEBP de `seed_data/` (nunca los originales) y redesplegar. En local, `python manage.py importar_imagenes_modelos` carga el set en tu BD.
+
+Alternativa para modelos sin imagen: `python manage.py precargar_imagenes_modelos` las busca en Wikimedia Commons (fotos con licencia libre) y deja un CSV con la fuente y licencia (`--dry-run`, `--limit N`, `--brand Marca`).
+
 # reset id auto increment
 ALTER SEQUENCE auth_permission_id_seq RESTART WITH 125
