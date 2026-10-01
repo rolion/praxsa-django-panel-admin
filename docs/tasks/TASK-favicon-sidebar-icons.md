@@ -1,6 +1,6 @@
 # TASK-favicon-sidebar-icons: Favicon, titulo de pestana y logos del menu lateral
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** NO
 **Rama:** claude/favicon-sidebar-icons-290108
@@ -14,6 +14,7 @@
 | 2026-10-01 | ENGINEERING → REVIEW | Implementación completa | delivery-engineer |
 | 2026-10-01 | REVIEW → ENGINEERING | Quality Gate FAIL: REV-01 (Medium, IMPLEMENTATION) | delivery-review |
 | 2026-10-01 | ENGINEERING → REVIEW | REV-01 corregido: logos en blanco en skin oscura | delivery-engineer |
+| 2026-10-01 | REVIEW → PUBLISH | Quality Gate PASS (re-review), REV-01 resuelto | delivery-review |
 
 ## Investigación
 
@@ -80,11 +81,21 @@ Implementado según PLAN v1, todo en `panel_admin/`:
 - Deuda/limitaciones: favicon de 16x16 (pixelado en HiDPI); `proforma` y páginas Django no se tocaron (fuera de alcance).
 
 ## Review
-**FAIL** (2026-10-01, misma sesion que delivery-engineer: aislamiento solo procedimental).
+**PASS** (re-review 2026-10-01; REV-01 `Resolved`). Detalle del re-review al final de esta seccion.
+
+Primera revision: **FAIL** (2026-10-01, misma sesion que delivery-engineer: aislamiento solo procedimental).
 - Issue abierto: `docs/reviews/REV-2026-10-01-favicon-sidebar-icons-01.md` (Medium, IMPLEMENTATION): logo casi invisible en skin oscura; incumple el criterio "tema claro y oscuro" del plan.
 - Pasa: spec del sidebar 2/2, `ng lint` limpio, `ng build` OK, titulo/favicon, alternancia abierto/cerrado/hover en tema claro.
 - `ng test` completo: 448 OK, 13 FAILED, todos `should create` de componentes no tocados por este diff (AdvanceTable, Blank, Dashboard2, First1-3, Footer, Page404/500, Second1-2, Signup, Third1); no se comparo contra baseline de master.
 - `npm audit --omit=dev`: 3 vulnerabilidades (1 moderada, 2 altas) en dependencias, preexistentes y fuera de alcance.
+
+### Re-review (PASS)
+Misma sesion que delivery-engineer (aislamiento procedimental). Diff contra master: solo `panel_admin/` mas docs, dentro del alcance del plan.
+- `ng test` completo: 448 OK, 13 FAILED. En master (worktree limpio): 453 OK, 14 FAILED. Los 13 fallos restantes son identicos a los de master (`should create` de AdvanceTable, Blank, Dashboard2, First1-3, Footer, Page404/500, Second1-2, Signup, Third1); la unica diferencia es `SidebarComponent should create`, que este PR corrige.
+- `ng lint`: All files pass linting. `ng build`: OK (warning preexistente de reglas SCSS omitidas).
+- `npm audit --omit=dev`: 3 vulnerabilidades (1 moderada, 2 altas), preexistentes y fuera de alcance. Cobertura (`--code-coverage`) no ejecutada.
+- Verificacion manual en vivo: titulo "Praxsa Admin", REV-01 resuelto (logos blancos en skin oscura abierto/cerrado), tema claro sin filtro.
+- Limitaciones: favicon 16x16; `proforma`/Django sin tocar (fuera de alcance).
 
 ## Publicación
 _Pendiente_

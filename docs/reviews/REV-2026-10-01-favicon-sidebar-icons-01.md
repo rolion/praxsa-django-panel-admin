@@ -1,6 +1,6 @@
 # REV-2026-10-01-favicon-sidebar-icons-01: Logo casi invisible en el sidebar con skin oscura
 
-**Status:** Open
+**Status:** Resolved
 **Severity:** Medium
 **Category:** IMPLEMENTATION
 **Related plan:** docs/plans/PLAN-2026-10-01-favicon-sidebar-icons.md (v1)
@@ -20,3 +20,6 @@ No se toco `_darksidebar.scss` y el logo queda con muy bajo contraste en la skin
 
 ## Resolución (delivery-engineer, pendiente de re-review)
 Corregido en `panel_admin/src/assets/scss/skins/_darksidebar.scss` (logos a blanco con `filter`). Status se mantiene `Open` hasta que `delivery-review` lo confirme.
+
+## Verificación (delivery-review, 2026-10-01)
+Re-verificado en vivo: con `dark dark-sidebar`, `.logo-full` y `.logo-mark` tienen `filter: brightness(0) invert(1)` y se leen en blanco sobre `rgb(22, 25, 42)`, tanto con el menu abierto como cerrado; en tema claro el filtro es `none`.
