@@ -22,4 +22,4 @@ Plan en v1, sin changelog; el TASK y el PR si documentan la ampliacion.
 Se suma una segunda ampliacion fuera del plan v1: pagina de login (`signin.component.{html,scss,spec.ts}` y `praxsa-admin-logo-horizontal.webp`). Sigue sin changelog en el plan.
 
 ## Resolución
-Plan actualizado a v2 con Changelog que cubre las ampliaciones (header de `/calculadora`, login y logo horizontal del sidebar). Pendiente de confirmación por `delivery-review`.
+Plan actualizado a v2 con Changelog que cubre las ampliaciones (header de `/calculadora`, login y logo horizontal del sidebar). Confirmado por `delivery-review` (5.ª revisión): el plan v2 incluye el Changelog.

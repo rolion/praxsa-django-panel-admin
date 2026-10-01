@@ -1,6 +1,6 @@
 # TASK-favicon-sidebar-icons: Favicon, titulo de pestana y logos del menu lateral
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** NO
 **Rama:** claude/favicon-sidebar-icons-290108
@@ -21,6 +21,7 @@
 | 2026-10-01 | REVIEW → PUBLISH | Quality Gate PASS (4.a revision) con REV-02 y REV-03 Low abiertos | delivery-review |
 | 2026-10-01 | PUBLISH → PUBLISH | Descripción del PR completada; pendiente de aprobación humana | delivery-publish |
 | 2026-10-01 | PUBLISH → REVIEW | Alcance ampliado por el usuario: el sidebar abierto reutiliza el logo del login; plan v2 con changelog; requiere re-review | delivery-engineer |
+| 2026-10-01 | REVIEW → PUBLISH | Quality Gate PASS (5.a revision), REV-03 confirmado Resolved, REV-02 Low abierto | delivery-review |
 
 ## Investigación
 
@@ -118,6 +119,13 @@ Misma sesion que delivery-engineer (aislamiento procedimental). Diff: `signin.co
 - Manual en vivo: titulo "Praxsa Admin", logo horizontal cargado, sin imagen lateral, tarjeta de 520px centrada (offset 0), 2 inputs y boton "Ingresar". No se probo el login contra un backend real (solo los specs con `HttpTestingController`).
 - Observacion: `praxsa-admin-logo.png` ya no se referencia en `panel_admin/src` y `praxsa-login-hero.png` solo en un comentario; quedan como assets sin uso (no bloqueante).
 - Abiertos (Low): REV-02 (fondo blanco del JPG del header en oscuro) y REV-03 (plan v1 sin changelog; ahora cubre dos ampliaciones).
+
+### 5.a revision (PASS, sidebar con el logo del login y plan v2)
+Misma sesion que delivery-engineer (aislamiento procedimental). Diff de la ampliacion: `sidebar.component.{html,spec.ts}`, `_layout.scss`, retiro de `praxsa-admin-logo-full.webp`, plan v2 y docs.
+- `ng test` completo: 449 OK, 13 FAILED (los mismos 13 `should create` preexistentes de master). `ng lint` limpio; `ng build` OK; `npm audit --omit=dev`: 3 vulnerabilidades preexistentes. Cobertura no ejecutada.
+- Manual en vivo (iframe con las llamadas a la API bloqueadas, porque el backend local devuelve 401 al token de prueba): menu abierto con `praxsa-admin-logo-horizontal.webp` (143x56, encabezado 80px); `side-closed` muestra solo el Rx (menu de 60px); `side-closed-hover` vuelve al logo; skin oscura con filtro blanco; tema claro sin filtro; titulo "Praxsa Admin".
+- Sin referencias vivas a `praxsa-admin-logo-full.webp` en `panel_admin/src` (solo en docs, como historia).
+- REV-03 confirmado `Resolved` (plan v2 con Changelog). Abierto (Low, no bloqueante): REV-02 (fondo blanco del JPG del header de `/calculadora` con la clase `dark`).
 
 ## Publicación
 PR: https://github.com/rolion/praxsa-django-panel-admin/pull/63 — **Listo para aprobación humana** (no mergeado). Cambio no sensible (sin arquitectura, auth, DB ni infraestructura). Hallazgos Low abiertos: REV-02, REV-03; limitaciones listadas en `## Known limitations` del PR.
