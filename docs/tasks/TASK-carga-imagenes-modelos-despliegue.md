@@ -1,6 +1,6 @@
 # TASK-carga-imagenes-modelos-despliegue: Incluir las imágenes de Modelos y `importar_imagenes_modelos` en el proceso de carga de datos al desplegar en Docker
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** NO
 **Rama:** task/TASK-carga-imagenes-modelos-despliegue
@@ -12,6 +12,7 @@
 | 2026-10-01 | (nuevo) → INVESTIGATION | Task creado | delivery-investigate |
 | 2026-10-01 | ARCHITECTURE → PLANNING | Decisión de distribución de imágenes registrada en ADR | delivery-architect |
 | 2026-10-01 | PLANNING → ENGINEERING | Plan v1 listo para aprobación humana | delivery-plan |
+| 2026-10-01 | ENGINEERING → REVIEW | Implementación completa según el plan v1 | delivery-engineer |
 
 ## Investigación
 
@@ -78,7 +79,19 @@ No aplica
 [PLAN-2026-10-01-carga-imagenes-modelos-despliegue](../plans/PLAN-2026-10-01-carga-imagenes-modelos-despliegue.md) — **v1**. Pendiente de aprobación humana antes de implementar.
 
 ## Implementación
-_Pendiente_ (el comando `importar_imagenes_modelos` y sus tests ya existen sin commitear, creados antes de abrir este task)
+Implementado según el plan v1, sin desvíos de alcance:
+- `product/helper/imagenes.py` (nuevo): `reducir_a_webp` y constantes (500–900 px, ≤150 KB), movidos desde `precargar_imagenes_modelos` para que ningún comando dependa del otro.
+- `importar_imagenes_modelos`: carpeta por defecto `product/seed_data/car_models/`; **no pisa** modelos cuya imagen existe (reporta "Omitidos"); `--forzar` reemplaza y borra la anterior; `--exportar-a DIR` escribe los WEBP reducidos como `Marca - Modelo.webp` sin tocar la BD; conserva `--dry-run`, `--carpeta` y los reportes de archivos sin modelo / modelos sin archivo.
+- `precargar_imagenes_modelos` (Wikimedia, sin cambios de comportamiento): usa el helper compartido.
+- `product/seed_data/car_models/`: 95 WEBP generados con `--exportar-a` desde los originales locales (todos de 900 px, ≤64 KB cada uno, **2.7 MB en total**, menos que los ≈14 MB estimados en el ADR). Los originales (121 MB) no se versionan.
+- README: sección reemplazada por el flujo `docker exec` + `--dry-run` + `--forzar` y la receta de `--exportar-a`.
+- Tests: 17 en los dos archivos de comandos (incluye los casos del plan: carpeta por defecto, no pisar, archivo inexistente, `--forzar`, `--exportar-a`, límites de `reducir_a_webp`); suite completa `product` (567 tests) en verde en la corrida propia del engineer.
+- Sin cambios en `Dockerfile.prod`, compose, nginx, migraciones ni `proforma/`. Sin dependencias nuevas.
+
+**Pendiente / no verificado (para review y usuario):**
+- **Medición de memoria en el contenedor `web` con límite de 100 MB: NO realizada** — Docker Desktop no estaba corriendo en esta sesión. Solo hay una medición proxy local con `tracemalloc` (pico ≈4 MB por imagen), que no incluye memoria nativa de Pillow y no sustituye la prueba del plan. Tampoco se verificó el `docker build` con `seed_data` ni la URL servida por nginx.
+- Archivos del flujo de Gemini (`docs/prompt-gemini-imagenes-modelos.md`, `docs/prompts-gemini-imagenes-modelos-por-bloques.md`) siguen sin commitear: no forman parte del plan.
+- El nombre exacto de los archivos de seed depende de los nombres actuales de Marca/Modelo en la BD local; contra producción solo el `--dry-run` lo confirma.
 
 ## Review
 _Pendiente_
