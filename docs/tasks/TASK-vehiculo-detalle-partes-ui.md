@@ -1,6 +1,6 @@
 # TASK-vehiculo-detalle-partes-ui: Rediseño UI de la vista Detalle de Vehículo (Modelo) y su lista de Partes
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** SI
 **Rama:** claude/vehicle-detail-parts-ui-9c9dc9 (asignada por el entorno)
@@ -13,6 +13,7 @@
 | 2026-10-01 13:45 UTC | INVESTIGATION → DESIGN → PLANNING | Diseño resuelto en DDR (Bootstrap en vez de Tailwind, cabecera con pill y Editar bajo la imagen, tarjetas por ítem con `ModelItemCardComponent`); veredicto NEEDS_PLAN, sin arquitectura | delivery-design |
 | 2026-10-01 14:10 UTC | PLANNING → ENGINEERING | Plan v1 escrito (sin E2E, sin dependencias nuevas); PR abierto, pendiente de aprobación humana antes de implementar | delivery-plan |
 | 2026-10-01 14:50 UTC | ENGINEERING → REVIEW | Implementación completa según plan v1 (componente de tarjeta, rediseño de la vista, specs); empujada al PR #61 | delivery-engineer |
+| 2026-10-01 15:30 UTC | REVIEW → PUBLISH | Quality Gate: **PASS**. 453 tests OK (14 fallos idénticos a la línea base de master, ajenos al cambio), lint y build limpios, verificación en vivo con API simulada. 1 issue Low abierto (REV-01) | delivery-review |
 
 ## Investigación
 
@@ -95,7 +96,7 @@ Según plan v1, sin desvíos de alcance:
 - Deuda/notas: sin imagen de referencia, colores de botones/pill vienen del tema (ver DDR).
 
 ## Review
-_Pendiente_
+**PASS** (2026-10-01, misma sesión que la implementación: aislamiento procedimental). Evidencia en el PR #61 (`## Testing` / `## Review`). 14 fallos de tests de la plantilla demo son preexistentes (idénticos en `origin/master`). Issue abierto no bloqueante: [REV-2026-10-01-vehiculo-detalle-partes-ui-01](../reviews/REV-2026-10-01-vehiculo-detalle-partes-ui-01.md) (Low, IMPLEMENTATION: imagen desborda la card a 375px).
 
 ## Publicación
 _Pendiente_
