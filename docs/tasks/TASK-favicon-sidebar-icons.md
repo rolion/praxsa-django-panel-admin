@@ -1,6 +1,6 @@
 # TASK-favicon-sidebar-icons: Favicon, titulo de pestana y logos del menu lateral
 
-**Etapa actual:** PUBLISH
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** NO
 **Rama:** claude/favicon-sidebar-icons-290108
@@ -15,6 +15,7 @@
 | 2026-10-01 | REVIEW → ENGINEERING | Quality Gate FAIL: REV-01 (Medium, IMPLEMENTATION) | delivery-review |
 | 2026-10-01 | ENGINEERING → REVIEW | REV-01 corregido: logos en blanco en skin oscura | delivery-engineer |
 | 2026-10-01 | REVIEW → PUBLISH | Quality Gate PASS (re-review), REV-01 resuelto | delivery-review |
+| 2026-10-01 | PUBLISH → REVIEW | Alcance ampliado por el usuario: logo del menu superior de /calculadora; requiere re-review | delivery-engineer |
 
 ## Investigación
 
@@ -78,6 +79,7 @@ Implementado según PLAN v1, todo en `panel_admin/`:
 - `sidebar.component.spec.ts`: test de los dos `<img>`; además se agregó `provideRouter` y `FeatherModule.pick(allIcons)` porque el spec existente ya fallaba (2/2) por falta de ese provider.
 - Verificación propia (no es el Quality Gate): spec del sidebar 2/2 OK; en `ng serve` el título es "Praxsa Admin", menú abierto muestra logo completo, `side-closed` muestra solo el Rx dentro de los 60px, `side-closed-hover` vuelve al logo completo. No se revisó el tema oscuro ni la corrida completa de `ng test`.
 - Corrección de REV-01: `skins/_darksidebar.scss` aplica `filter: brightness(0) invert(1)` a `.header-logo` del sidebar oscuro (los logos son de un solo color), de modo que se leen en blanco. Verificado en vivo en skin oscura con menú abierto y cerrado; falta nueva corrida del Quality Gate.
+- Ampliacion pedida despues del PASS: el menu superior de `/calculadora` (`header.component.html`, modo `minimal`) usa ahora `praxsa-3m-header-logo.jpg` (PRAXSA + 3M Automotive Window Films, 700px de ancho, desde `3.jpg`) en vez de `praxsa-admin-logo.png`; `.header-brand-logo` con `max-width: 100%` (`_calculadora.scss`). Spec del header actualizado. Verificado en vivo en escritorio y en 375px (sin scroll horizontal); specs header + minimal-layout 17/17 y `ng lint` limpio. Fuera de esta ampliacion el login conserva `praxsa-admin-logo.png`. Pendiente de nuevo Quality Gate.
 - Deuda/limitaciones: favicon de 16x16 (pixelado en HiDPI); `proforma` y páginas Django no se tocaron (fuera de alcance).
 
 ## Review

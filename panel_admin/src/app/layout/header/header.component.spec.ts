@@ -116,7 +116,7 @@ describe('HeaderComponent', () => {
 
     it('shows the logo (linking to the calculator) and never the sidebar toggle', () => {
       fixture.detectChanges();
-      expect(el().querySelector('.header-brand img')?.getAttribute('src')).toContain('praxsa-admin-logo.png');
+      expect(el().querySelector('.header-brand img')?.getAttribute('src')).toContain('praxsa-3m-header-logo.jpg');
       expect(el().querySelector('.header-brand')?.getAttribute('href')).toContain('calculadora');
       expect(el().querySelector('.navbar-minimal')).not.toBeNull();
       expect(el().querySelector('i-feather[name="menu"]')).toBeNull();
