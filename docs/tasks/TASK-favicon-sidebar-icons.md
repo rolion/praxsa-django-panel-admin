@@ -22,6 +22,7 @@
 | 2026-10-01 | PUBLISH → PUBLISH | Descripción del PR completada; pendiente de aprobación humana | delivery-publish |
 | 2026-10-01 | PUBLISH → REVIEW | Alcance ampliado por el usuario: el sidebar abierto reutiliza el logo del login; plan v2 con changelog; requiere re-review | delivery-engineer |
 | 2026-10-01 | REVIEW → PUBLISH | Quality Gate PASS (5.a revision), REV-03 confirmado Resolved, REV-02 Low abierto | delivery-review |
+| 2026-10-01 | PUBLISH → PUBLISH | Descripción del PR verificada y completa; pendiente de aprobación humana | delivery-publish |
 
 ## Investigación
 
@@ -91,7 +92,7 @@ Implementado según PLAN v1 (actualizado a v2 por las ampliaciones), todo en `pa
 - Deuda/limitaciones: favicon de 16x16 (pixelado en HiDPI); `proforma` y páginas Django no se tocaron (fuera de alcance).
 
 ## Review
-**PASS** (re-review 2026-10-01; REV-01 `Resolved`). Detalle del re-review al final de esta seccion.
+**PASS** (ultima: 5.a revision, 2026-10-01; REV-01 y REV-03 `Resolved`, REV-02 Low abierto). El detalle de cada revision esta al final de esta seccion.
 
 Primera revision: **FAIL** (2026-10-01, misma sesion que delivery-engineer: aislamiento solo procedimental).
 - Issue abierto: `docs/reviews/REV-2026-10-01-favicon-sidebar-icons-01.md` (Medium, IMPLEMENTATION): logo casi invisible en skin oscura; incumple el criterio "tema claro y oscuro" del plan.
@@ -128,4 +129,4 @@ Misma sesion que delivery-engineer (aislamiento procedimental). Diff de la ampli
 - REV-03 confirmado `Resolved` (plan v2 con Changelog). Abierto (Low, no bloqueante): REV-02 (fondo blanco del JPG del header de `/calculadora` con la clase `dark`).
 
 ## Publicación
-PR: https://github.com/rolion/praxsa-django-panel-admin/pull/63 — **Listo para aprobación humana** (no mergeado). Cambio no sensible (sin arquitectura, auth, DB ni infraestructura). Hallazgos Low abiertos: REV-02, REV-03; limitaciones listadas en `## Known limitations` del PR.
+PR: https://github.com/rolion/praxsa-django-panel-admin/pull/63 — **Listo para aprobación humana** (no mergeado). Cambio no sensible (sin arquitectura, auth, DB ni infraestructura). Último review: PASS (5.a revisión) sobre el último commit de código; REV-02 (Low) abierto y listado en `## Known limitations` del PR junto con las demás limitaciones.
