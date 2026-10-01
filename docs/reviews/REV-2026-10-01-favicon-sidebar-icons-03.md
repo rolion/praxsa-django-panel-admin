@@ -1,6 +1,6 @@
 # REV-2026-10-01-favicon-sidebar-icons-03: Plan v1 no refleja la ampliacion del logo del header de /calculadora
 
-**Status:** Open
+**Status:** Resolved
 **Severity:** Low
 **Category:** PLAN
 **Related plan:** docs/plans/PLAN-2026-10-01-favicon-sidebar-icons.md (v1)
@@ -20,3 +20,6 @@ Plan en v1, sin changelog; el TASK y el PR si documentan la ampliacion.
 
 ## Actualizacion (4.a revision)
 Se suma una segunda ampliacion fuera del plan v1: pagina de login (`signin.component.{html,scss,spec.ts}` y `praxsa-admin-logo-horizontal.webp`). Sigue sin changelog en el plan.
+
+## Resolución
+Plan actualizado a v2 con Changelog que cubre las ampliaciones (header de `/calculadora`, login y logo horizontal del sidebar). Pendiente de confirmación por `delivery-review`.

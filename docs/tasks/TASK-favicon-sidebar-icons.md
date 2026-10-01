@@ -1,6 +1,6 @@
 # TASK-favicon-sidebar-icons: Favicon, titulo de pestana y logos del menu lateral
 
-**Etapa actual:** PUBLISH
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** NO
 **Rama:** claude/favicon-sidebar-icons-290108
@@ -20,6 +20,7 @@
 | 2026-10-01 | PUBLISH → REVIEW | Alcance ampliado por el usuario: logo y layout de la pagina de login; requiere re-review | delivery-engineer |
 | 2026-10-01 | REVIEW → PUBLISH | Quality Gate PASS (4.a revision) con REV-02 y REV-03 Low abiertos | delivery-review |
 | 2026-10-01 | PUBLISH → PUBLISH | Descripción del PR completada; pendiente de aprobación humana | delivery-publish |
+| 2026-10-01 | PUBLISH → REVIEW | Alcance ampliado por el usuario: el sidebar abierto reutiliza el logo del login; plan v2 con changelog; requiere re-review | delivery-engineer |
 
 ## Investigación
 
@@ -73,18 +74,19 @@ _No aplica_
 _No aplica según veredicto_
 
 ## Plan
-`docs/plans/PLAN-2026-10-01-favicon-sidebar-icons.md` (v1)
+`docs/plans/PLAN-2026-10-01-favicon-sidebar-icons.md` (v2 — ver su Changelog)
 
 ## Implementación
-Implementado según PLAN v1, todo en `panel_admin/`:
+Implementado según PLAN v1 (actualizado a v2 por las ampliaciones), todo en `panel_admin/`:
 - `index.html`: `<title>Praxsa Admin</title>`; `favicon.ico` entregado copiado a `src/favicon.ico` y `src/assets/images/favicon.ico`.
-- Assets nuevos: `praxsa-admin-logo-full.webp` (imagen 2, 400px de ancho) y `praxsa-rx-mark.png` (Rx recortado, 128px). `praxsa-admin-logo.png` (login) intacto.
-- `sidebar.component.html`: `img.logo-full` + `img.logo-mark`. `_layout.scss`: `.sidebar-brand` 100px de alto, logo 80px, Rx 34px y regla `.side-closed:not(.side-closed-hover)` que alterna ambos.
+- Assets nuevos: `praxsa-rx-mark.png` (Rx recortado, 128px) y, tras la ampliación 3, el sidebar abierto usa `praxsa-admin-logo-horizontal.webp` (el mismo del login); `praxsa-admin-logo-full.webp` (imagen 2) se retiró.
+- `sidebar.component.html`: `img.logo-full` + `img.logo-mark`. `_layout.scss`: `.sidebar-brand` 80px de alto, logo 56px, Rx 34px y regla `.side-closed:not(.side-closed-hover)` que alterna ambos.
 - `sidebar.component.spec.ts`: test de los dos `<img>`; además se agregó `provideRouter` y `FeatherModule.pick(allIcons)` porque el spec existente ya fallaba (2/2) por falta de ese provider.
 - Verificación propia (no es el Quality Gate): spec del sidebar 2/2 OK; en `ng serve` el título es "Praxsa Admin", menú abierto muestra logo completo, `side-closed` muestra solo el Rx dentro de los 60px, `side-closed-hover` vuelve al logo completo. No se revisó el tema oscuro ni la corrida completa de `ng test`.
 - Corrección de REV-01: `skins/_darksidebar.scss` aplica `filter: brightness(0) invert(1)` a `.header-logo` del sidebar oscuro (los logos son de un solo color), de modo que se leen en blanco. Verificado en vivo en skin oscura con menú abierto y cerrado; falta nueva corrida del Quality Gate.
 - Ampliacion pedida despues del PASS: el menu superior de `/calculadora` (`header.component.html`, modo `minimal`) usa ahora `praxsa-3m-header-logo.jpg` (PRAXSA + 3M Automotive Window Films, 700px de ancho, desde `3.jpg`) en vez de `praxsa-admin-logo.png`; `.header-brand-logo` con `max-width: 100%` (`_calculadora.scss`). Spec del header actualizado. Verificado en vivo en escritorio y en 375px (sin scroll horizontal); specs header + minimal-layout 17/17 y `ng lint` limpio. Fuera de esta ampliacion el login conserva `praxsa-admin-logo.png`. Pendiente de nuevo Quality Gate.
 - Ampliacion 2 (login, pedida despues del PASS): `signin.component.html` usa `praxsa-admin-logo-horizontal.webp` (imagen 4, transparente, 700px) sobre el formulario; la imagen lateral `praxsa-login-hero.png` se quito del markup (queda un comentario y el asset sin tocar) y el formulario queda centrado (`.login-card` max-width 520px; se eliminaron las reglas de `col-md-5/7` del scss). Spec nuevo del signin; specs signin 6/6, `ng lint` limpio, verificado en vivo en escritorio y 375px sin desborde. Pendiente de nuevo Quality Gate. Plan v1 sigue sin changelog de las dos ampliaciones (REV-03).
+- Ampliacion 3 (sidebar, pedida despues del PASS): `sidebar.component.html` y su spec usan `praxsa-admin-logo-horizontal.webp` (el logo del login) para el menu abierto; se elimino `praxsa-admin-logo-full.webp`; `.sidebar-brand` pasa a 80px y el logo a 56px (`_layout.scss`). Verificado en vivo (iframe con las llamadas a la API bloqueadas): menu abierto con el logo horizontal (142x56), cerrado con el Rx (60px), skin oscura con logos blancos; spec del sidebar 2/2 y `ng lint` limpio. Plan actualizado a v2 con Changelog y REV-03 marcado `Resolved`. Pendiente de nuevo Quality Gate; no se corrio la suite completa ni `ng build` para este cambio.
 - Deuda/limitaciones: favicon de 16x16 (pixelado en HiDPI); `proforma` y páginas Django no se tocaron (fuera de alcance).
 
 ## Review

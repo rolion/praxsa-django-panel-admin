@@ -30,7 +30,7 @@ describe('SidebarComponent', () => {
   });
   it('renderiza el logo completo y el simbolo Rx del menu cerrado', () => {
     const el: HTMLElement = fixture.nativeElement;
-    expect(el.querySelector('img.logo-full')?.getAttribute('src')).toBe('assets/images/praxsa-admin-logo-full.webp');
+    expect(el.querySelector('img.logo-full')?.getAttribute('src')).toBe('assets/images/praxsa-admin-logo-horizontal.webp');
     expect(el.querySelector('img.logo-mark')?.getAttribute('src')).toBe('assets/images/praxsa-rx-mark.png');
   });
 });

@@ -1,11 +1,11 @@
-# PLAN-2026-10-01-favicon-sidebar-icons (v1)
+# PLAN-2026-10-01-favicon-sidebar-icons (v2)
 
 **Task:** TASK-favicon-sidebar-icons
 **DDRs relacionados:** Ninguno
 **ADRs relacionados:** Ninguno
 
 ## Objective
-Que la app `panel_admin` se identifique como "Praxsa Admin": favicon y titulo de la pestana propios, logo completo en el menu lateral abierto y solo el simbolo Rx cuando el menu esta cerrado.
+Que la app `panel_admin` se identifique como "Praxsa Admin": favicon y titulo de la pestana propios, logo horizontal PRAXSA ADMIN (el mismo del login) en el menu lateral abierto y solo el simbolo Rx cuando el menu esta cerrado. Ampliaciones pedidas por el usuario en v2: logo PRAXSA + 3M en el menu superior de `/calculadora` y login con logo horizontal, sin imagen lateral y centrado.
 
 ## Context
 Ver `docs/tasks/TASK-favicon-sidebar-icons.md`. Verificado de nuevo contra el codigo actual: las rutas y lineas citadas en la investigacion siguen vigentes.
@@ -18,7 +18,7 @@ Ver `docs/tasks/TASK-favicon-sidebar-icons.md`. Verificado de nuevo contra el co
 
 ## Expected behavior
 - Pestana: titulo "Praxsa Admin" y el `favicon.ico` entregado por el usuario.
-- Menu abierto (y colapsado con hover): logo PRAXSA ADMIN (imagen 2).
+- Menu abierto (y colapsado con hover): logo horizontal PRAXSA ADMIN (`praxsa-admin-logo-horizontal.webp`, el mismo del login).
 - Menu colapsado sin hover: solo el Rx (imagen 3), centrado en los 60px.
 
 ## Architecture considerations
@@ -27,14 +27,15 @@ Cambio solo de frontend (assets + markup + SCSS); sin contrato API, datos, diner
 ## Proposed solution
 1. **Favicon**: copiar `proforma/src/assets/img/favicon.ico` (16x16, 1150 bytes) sobre `panel_admin/src/favicon.ico` y `panel_admin/src/assets/images/favicon.ico` (ambos se referencian: uno por `index.html`, otro por `angular.json`).
 2. **Titulo**: `<title>Praxsa Admin</title>` en `panel_admin/src/index.html`.
-3. **Assets de logo** (en `panel_admin/src/assets/images/`): `praxsa-admin-logo-full.webp` (imagen 2, reducida de 1281x1228 a ~400px de ancho para no cargar 1.2 MP en cada pagina) y `praxsa-rx-mark.png` (imagen 1/3, Rx, reducida a ~128x128). Se conserva `praxsa-admin-logo.png` sin tocar porque lo usa el login.
+3. **Assets de logo** (en `panel_admin/src/assets/images/`): `praxsa-admin-logo-horizontal.webp` (imagen 4, transparente, 700px; se usa en login y en el sidebar abierto) y `praxsa-rx-mark.png` (Rx, ~128px). `praxsa-admin-logo.png` y `praxsa-login-hero.png` quedan sin uso. (v1 usaba `praxsa-admin-logo-full.webp`, imagen 2, retirada en v2.)
 4. **Markup** del sidebar: dentro del mismo `<a>` dos imagenes, `.logo-full` y `.logo-mark`.
 5. **SCSS** en `_layout.scss`: `.logo-mark {display:none}`; `.side-closed:not(.side-closed-hover) .main-sidebar .sidebar-brand` oculta `.logo-full` y muestra `.logo-mark`. Ajustar altura de `.sidebar-brand` (el logo es casi cuadrado, en 30px de alto quedaria ilegible) y tamano del Rx para 60px de ancho; revisar tambien la skin oscura (`_darksidebar.scss:87-93`, fondo oscuro con logo azul).
 
 ## Files/components affected
 Frontend (`panel_admin`):
 - `src/index.html`, `src/favicon.ico`, `src/assets/images/favicon.ico`
-- `src/assets/images/praxsa-admin-logo-full.webp` (nuevo), `src/assets/images/praxsa-rx-mark.png` (nuevo)
+- `src/assets/images/praxsa-admin-logo-horizontal.webp` (nuevo, v2), `src/assets/images/praxsa-rx-mark.png` (nuevo)
+- v2: `src/app/authentication/signin/signin.component.{html,scss,spec.ts}`, `src/app/layout/header/header.component.{html,spec.ts}`, `src/assets/scss/_calculadora.scss`, `src/assets/images/praxsa-3m-header-logo.jpg` (nuevo)
 - `src/app/layout/sidebar/sidebar.component.html`, `sidebar.component.spec.ts`
 - `src/assets/scss/layouts/_layout.scss` (posible ajuste en `skins/_darksidebar.scss`)
 Backend: ninguno. `proforma/`: ninguno (ver Out of scope).
@@ -43,12 +44,12 @@ Backend: ninguno. `proforma/`: ninguno (ver Out of scope).
 1. Generar los dos assets de logo desde los adjuntos (`images/2.webp` y `images/1.png` de la sesion) con Pillow y guardarlos en `panel_admin/src/assets/images/`.
 2. Copiar el `favicon.ico` en las dos ubicaciones y cambiar el `<title>` en `index.html`.
 3. Actualizar el markup del sidebar con `.logo-full` / `.logo-mark`.
-4. Agregar el SCSS de alternancia y ajustar alturas.
+4. Agregar el SCSS de alternancia y ajustar alturas (v2: `.sidebar-brand` 80px, logo 56px, Rx 34px; skin oscura con `filter: brightness(0) invert(1)` en `_darksidebar.scss`).
 5. Agregar/actualizar la prueba unitaria del sidebar.
 6. Verificacion manual con `preview_start` de `panel_admin`: menu abierto, colapsado, colapsado + hover, tema claro y oscuro, y titulo/favicon de la pestana (recargando sin cache).
 
 ## Test strategy
-- **Unitario** (`sidebar.component.spec.ts`, TestBed): el DOM contiene `img.logo-full` con `assets/images/praxsa-admin-logo-full.webp` y `img.logo-mark` con `assets/images/praxsa-rx-mark.png`.
+- **Unitario** (`sidebar.component.spec.ts`, TestBed): el DOM contiene `img.logo-full` con `assets/images/praxsa-admin-logo-horizontal.webp` y `img.logo-mark` con `assets/images/praxsa-rx-mark.png`.
 - **Verificacion manual en vivo** de la alternancia (la visibilidad depende de CSS real sobre clases del `<body>`, que un test unitario con jsdom/karma no valida de forma fiable) y del titulo/favicon.
 - **E2E: no** — no cambia flujos de usuario, navegacion ni integracion front/back; es presentacion estatica. Tampoco se instala Playwright.
 
@@ -73,3 +74,6 @@ Backend: ninguno. `proforma/`: ninguno (ver Out of scope).
 
 ## Dependencias nuevas
 Ninguna (Pillow solo se usa localmente para preparar los assets, no entra al proyecto).
+
+## Changelog
+- **v2** (2026-10-01): refleja los cambios posteriores al primer PASS, pedidos por el usuario: (1) logo del header de `/calculadora` = PRAXSA + 3M (`praxsa-3m-header-logo.jpg`); (2) login con logo horizontal, imagen lateral oculta y formulario centrado; (3) el sidebar abierto reutiliza el logo horizontal del login en lugar de `praxsa-admin-logo-full.webp`; (4) skin oscura del sidebar con logos en blanco (REV-01). Cierra REV-03. Solicitado por el usuario; registrado por delivery-engineer.
