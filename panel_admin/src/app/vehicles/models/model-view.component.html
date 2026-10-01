@@ -8,16 +8,16 @@
   </ul>
   <div class="section-body">
     <div class="row clearfix">
-      <div class="col-lg-8 col-md-12">
-        <div class="card">
+      <div class="col-12 col-xl-10">
+        <div class="card shadow-sm rounded-3">
           <div class="card-body">
             @if (loading) {
               <p>Cargando...</p>
             } @else if (errorMessage) {
               <div class="alert alert-danger">{{ errorMessage }}</div>
             } @else if (model) {
-              <div class="row align-items-center mb-3">
-                <div class="col-md-4 text-center mb-3 mb-md-0">
+              <div class="d-flex flex-column flex-md-row align-items-md-center gap-4 mb-4">
+                <div class="text-center">
                   @if (model.image && !imageFailed) {
                     <img [src]="model.image" (error)="imageFailed = true" alt="Imagen del vehículo" style="max-width: 320px; max-height: 320px; object-fit: cover;" />
                   } @else {
@@ -25,49 +25,49 @@
                       <i class="fas fa-image fa-3x text-muted"></i>
                     </div>
                   }
+                  <div class="mt-3">
+                    <a [routerLink]="['/vehicles/models/edit', model.id]" class="btn btn-primary" data-test="edit-model">
+                      <i class="fas fa-pen me-1"></i>Editar
+                    </a>
+                  </div>
                 </div>
-                <div class="col-md-8">
+                <div>
                   <dl class="row mb-0">
-                    <dt class="col-sm-3">Marca</dt>
-                    <dd class="col-sm-9">{{ model.car_brand_name }}</dd>
-                    <dt class="col-sm-3">Modelo</dt>
-                    <dd class="col-sm-9">{{ model.name }}</dd>
-                    <dt class="col-sm-3">Estado</dt>
-                    <dd class="col-sm-9">{{ model.is_active ? 'Activo' : 'Inactivo' }}</dd>
+                    <dt class="col-sm-4">Marca</dt>
+                    <dd class="col-sm-8">{{ model.car_brand_name }}</dd>
+                    <dt class="col-sm-4">Modelo</dt>
+                    <dd class="col-sm-8">{{ model.name }}</dd>
+                    <dt class="col-sm-4">Estado</dt>
+                    <dd class="col-sm-8">
+                      @if (model.is_active) {
+                        <span class="badge rounded-pill bg-success-subtle text-success-emphasis" data-test="status">Activo</span>
+                      } @else {
+                        <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis" data-test="status">Inactivo</span>
+                      }
+                    </dd>
                   </dl>
                 </div>
               </div>
-              <a [routerLink]="['/vehicles/models/edit', model.id]" class="btn btn-primary mb-4">Editar</a>
 
-              <h5>
-                Items
-                <button type="button" class="btn btn-sm btn-outline-primary float-end" (click)="openAddItem(addItemModal)">
-                  Agregar item
+              <div class="border-top pt-4 mb-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
+                <div>
+                  <h4 class="fw-bold mb-0">Partes del Modelo</h4>
+                  <div class="text-muted small" data-test="items-count">
+                    {{ items.length }} {{ items.length === 1 ? 'Ítem Asociado' : 'Ítems Asociados' }}
+                  </div>
+                </div>
+                <button type="button" class="btn btn-primary btn-sm" data-test="add-item" (click)="openAddItem(addItemModal)">
+                  <i class="fas fa-plus me-1"></i>Agregar Item
                 </button>
-              </h5>
+              </div>
               @if (items.length) {
-                <ul class="list-group">
+                <div class="d-flex flex-column gap-3">
                   @for (item of items; track item.id) {
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                      <div>
-                        <strong>{{ item.car_part_name }}</strong>
-                        <div class="text-muted small">
-                          Ancho: {{ item.width }} · Largo: {{ item.length }} · Cantidad: {{ item.quantity }}
-                        </div>
-                      </div>
-                      <div>
-                        <button type="button" class="btn btn-tbl-edit h-auto" title="Editar" (click)="openEditItem(item, editItemModal)">
-                          <i class="fas fa-pen"></i>
-                        </button>
-                        <button type="button" class="btn btn-tbl-delete h-auto" title="Quitar" (click)="removeItem(item)">
-                          <i class="far fa-trash-alt"></i>
-                        </button>
-                      </div>
-                    </li>
+                    <app-model-item-card [item]="item" (edit)="openEditItem($event, editItemModal)" (remove)="removeItem($event)" />
                   }
-                </ul>
+                </div>
               } @else {
-                <p class="text-muted">Este modelo todavía no tiene items asociados.</p>
+                <p class="text-muted text-center border rounded-3 p-4 mb-0">Este modelo todavía no tiene items asociados.</p>
               }
             }
           </div>

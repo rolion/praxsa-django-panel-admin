@@ -4,6 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import Swal from 'sweetalert2';
 import { AppCarModel, AppCarModelPart, AppCarPart } from '../vehicles.model';
+import { ModelItemCardComponent } from './model-item-card.component';
 import { VehiclesService } from '../vehicles.service';
 
 type AddItemMode = 'existing' | 'new';
@@ -19,7 +20,7 @@ type AddItemMode = 'existing' | 'new';
 @Component({
   selector: 'app-model-view',
   standalone: true,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, ModelItemCardComponent],
   templateUrl: './model-view.component.html',
 })
 export class ModelViewComponent implements OnInit {

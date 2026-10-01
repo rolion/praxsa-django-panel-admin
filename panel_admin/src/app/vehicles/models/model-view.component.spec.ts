@@ -100,6 +100,48 @@ describe('ModelViewComponent', () => {
     expect(fixture.nativeElement.querySelector('img')).toBeTruthy();
   });
 
+  it('muestra el contador de items asociados en singular y plural', () => {
+    const fixture = createAndLoad();
+    const counter = () =>
+      (fixture.nativeElement.querySelector('[data-test="items-count"]') as HTMLElement).textContent?.trim();
+    expect(counter()).toBe('1 Ítem Asociado');
+
+    fixture.componentInstance.items = [sampleItem, { ...sampleItem, id: 10, car_part_id: 3 }];
+    fixture.detectChanges();
+    expect(counter()).toBe('2 Ítems Asociados');
+  });
+
+  it('muestra el estado como pill Activo / Inactivo', () => {
+    const fixture = createAndLoad();
+    const status = () => fixture.nativeElement.querySelector('[data-test="status"]') as HTMLElement;
+    expect(status().textContent?.trim()).toBe('Activo');
+    expect(status().classList).toContain('bg-success-subtle');
+
+    fixture.componentInstance.model = { ...sampleModel, is_active: false };
+    fixture.detectChanges();
+    expect(status().textContent?.trim()).toBe('Inactivo');
+    expect(status().classList).toContain('bg-secondary-subtle');
+  });
+
+  it('el boton Editar del modelo enlaza a la edicion', () => {
+    const fixture = createAndLoad();
+    const link = fixture.nativeElement.querySelector('[data-test="edit-model"]') as HTMLAnchorElement;
+    expect(link.getAttribute('href')).toBe('/vehicles/models/edit/5');
+  });
+
+  it('sin items muestra el estado vacio y ninguna tarjeta', () => {
+    const fixture = TestBed.createComponent(ModelViewComponent);
+    fixture.detectChanges();
+    httpMock.expectOne(`${base}/models/5/`).flush(sampleModel);
+    httpMock.expectOne(`${base}/models/5/items/`).flush([]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-model-item-card')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('todavía no tiene items asociados');
+    expect(fixture.nativeElement.querySelector('[data-test="items-count"]').textContent.trim()).toBe(
+      '0 Ítems Asociados'
+    );
+  });
+
   it('carga el modelo y sus items', () => {
     const fixture = createAndLoad();
     const component = fixture.componentInstance;
@@ -126,7 +168,7 @@ describe('ModelViewComponent', () => {
 
   function clickEditButton(fixture: ReturnType<typeof createAndLoad>) {
     const editButton = fixture.nativeElement.querySelector(
-      'li.list-group-item button[title="Editar"]'
+      'app-model-item-card button[title="Editar"]'
     ) as HTMLButtonElement;
     editButton.click();
   }
