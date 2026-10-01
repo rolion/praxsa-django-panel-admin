@@ -20,6 +20,7 @@
 | 2026-09-30 | PLANNING → ENGINEERING | Plan **v2** escrito sobre el mismo PR #60: backend aditivo (migración `0115` con `Client.car_plate`, registro/perfil/lista de cliente, catálogo público con `is_active` e imagen), guards y manejo de 401, módulo `cliente/` (modal de acceso en 2 etapas, Mis proformas), calculadora con catálogo público y acciones según sesión; sin E2E (verificación manual en vivo obligatoria) y sin dependencias nuevas; primer paso: sincronizar la rama con `origin/master` (9 commits detrás) | delivery-plan |
 | 2026-09-30 | ENGINEERING → REVIEW | Implementación completa del plan v2 (backend aditivo + frontend de cliente); suites propias en verde (backend 550, frontend 443 con los 14 `should create` preexistentes), `ng lint`/`ng build` limpios; verificación manual contra el backend real pendiente | delivery-engineer |
 | 2026-09-30 | REVIEW → PUBLISH | Quality Gate PASS: backend 550 OK, frontend 460 specs con los mismos 14 `should create` que master, lint y build limpios; 1 hallazgo Medium abierto (REV-01, throttle de registro) que no bloquea | delivery-review |
+| 2026-09-30 | PUBLISH (sin cambio) | PR completado y señalado listo; espera aprobación humana por ser cambio sensible | delivery-publish |
 
 ## Investigación
 
@@ -282,4 +283,8 @@ Implementado según [PLAN v1](../plans/PLAN-2026-09-30-pricing-calculator-screen
 
 
 ## Publicación
-_Pendiente_
+- PR: [#60](https://github.com/rolion/praxsa-django-panel-admin/pull/60)
+- Estado: **Listo para aprobación humana** (cambio sensible: autenticación/autorización, BD y arquitectura; no se mergea sin aprobación explícita).
+- Descripción del PR completada; rama sin cambios sin comitear ni secretos; el único commit posterior al código revisado es el de documentación del propio review.
+- Pendiente consciente: REV-01 (Medium) y limitaciones listadas en el PR.
+
