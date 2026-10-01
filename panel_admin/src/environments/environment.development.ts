@@ -5,6 +5,9 @@
 export const environment = {
   production: false,
   apiUrl: 'http://localhost:8000',
+  // Numero de WhatsApp de la consulta de la calculadora (global; valor inicial
+  // tomado de proforma/, pendiente de confirmar con negocio).
+  whatsappNumber: '+59178181012',
 };
 
 /*

@@ -1,0 +1,533 @@
+// Calculadora de precios: layout sin sidebar + estilos de la pantalla.
+// Van como estilos globales acotados por clase raiz (.layout-minimal /
+// .pricing-calculator) por el presupuesto `anyComponentStyle` de angular.json
+// (ver REV-2026-09-30-modulo-ordenes-proforma-nota-trabajo-01), igual que `_ordenes.scss`.
+
+// ---------- layout minimo (sin sidebar) ----------
+// La plantilla desplaza barra y contenido por el sidebar (`left: 260px`,
+// `padding-left: 285px`); aqui se anulan solo dentro del layout minimo. La
+// especificidad (body + clase + clase) gana a `.side-closed .main-content`.
+body .layout-minimal {
+  .navbar.navbar-minimal {
+    left: 0;
+    right: 0;
+    background-color: #fff;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+  }
+
+  .main-content {
+    padding-left: 29px;
+    padding-right: 29px;
+    padding-top: 90px;
+  }
+
+  // Los iconos del header de la plantilla son blancos (la barra original es de color).
+  .navbar.navbar-minimal .nav-link .feather,
+  .navbar.navbar-minimal .nav-link i-feather {
+    color: #555556;
+    stroke: #555556;
+  }
+
+  .header-brand {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .header-brand-logo {
+    height: 38px;
+    width: auto;
+  }
+
+  // Menu superior del cliente (Calculadora / Proformas) y acceso sin sesion.
+  .header-links {
+    flex-direction: row;
+    gap: 0.25rem;
+    margin-left: 1.25rem;
+
+    .nav-link {
+      color: #555556;
+      font-weight: 600;
+      padding: 0.4rem 0.75rem;
+      border-radius: 0.375rem;
+
+      &.active,
+      &:hover {
+        color: #4f6bed;
+        background: rgba(79, 107, 237, 0.1);
+      }
+    }
+  }
+
+  .header-access {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
+}
+
+body.dark .layout-minimal .navbar.navbar-minimal {
+  background-color: #2a2d3e;
+
+  .header-links .nav-link {
+    color: #fff;
+  }
+
+  .nav-link .feather,
+  .nav-link i-feather {
+    color: #fff;
+    stroke: #fff;
+  }
+}
+
+@media (max-width: 1024px) {
+  body .layout-minimal .main-content {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+// ---------- pantalla ----------
+.pricing-calculator {
+  .section-card {
+    border: 1px solid rgba(128, 128, 128, 0.2);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    margin-bottom: 1.25rem;
+    overflow: hidden;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.8rem 1.25rem;
+    background: rgba(128, 128, 128, 0.08);
+    border-bottom: 1px solid rgba(128, 128, 128, 0.18);
+
+    i {
+      color: #4f6bed;
+    }
+
+    h6 {
+      margin: 0;
+      font-weight: 700;
+    }
+  }
+
+  .line-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.85rem;
+
+    &.warn {
+      background: #fff6d6;
+      border: 1px solid #f0d36b;
+      color: #7a5b00;
+    }
+
+    &.danger {
+      background: #fde8ea;
+      border: 1px solid #f1a9b0;
+      color: #a3202e;
+    }
+  }
+
+  // Titulo + stepper
+  .calc-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .calc-title {
+    margin: 0;
+    font-weight: 700;
+
+    i {
+      color: #4f6bed;
+      margin-right: 0.4rem;
+    }
+  }
+
+  .calc-stepper {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #8a8f9c;
+      font-weight: 600;
+
+      & + li::before {
+        content: '';
+        display: inline-block;
+        width: 28px;
+        height: 2px;
+        background: rgba(128, 128, 128, 0.35);
+        margin-right: 0.75rem;
+      }
+    }
+
+    .step-dot {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid rgba(128, 128, 128, 0.45);
+      font-size: 0.8rem;
+    }
+
+    li.active {
+      color: #4f6bed;
+
+      .step-dot {
+        background: #4f6bed;
+        border-color: #4f6bed;
+        color: #fff;
+      }
+    }
+
+    li.done {
+      color: #1e8e5a;
+
+      .step-dot {
+        background: #1e8e5a;
+        border-color: #1e8e5a;
+        color: #fff;
+      }
+    }
+  }
+
+  // Tabla de items
+  .calc-table {
+    margin-bottom: 0;
+
+    th {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: #8a8f9c;
+    }
+
+    tr.excluded {
+      opacity: 0.5;
+    }
+
+    select {
+      min-width: 220px;
+    }
+  }
+
+  .placeholder {
+    background-color: rgba(128, 128, 128, 0.3);
+  }
+
+  .calc-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .calc-item-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: rgba(79, 107, 237, 0.12);
+    color: #4f6bed;
+  }
+
+  .calc-item-name {
+    font-weight: 600;
+  }
+
+  .calc-subtotal {
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .calc-action-col {
+    width: 48px;
+  }
+
+  // Estados
+  .calc-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.5rem;
+    padding: 2.5rem 1rem;
+    color: #8a8f9c;
+
+    p {
+      margin: 0;
+      font-weight: 600;
+    }
+  }
+
+  .skeleton-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.15);
+  }
+
+  .skeleton-icon {
+    width: 38px;
+    height: 38px;
+  }
+
+  // Resumen sticky (debajo del header fijo de 70px)
+  .calc-summary {
+    @media (min-width: 992px) {
+      position: sticky;
+      top: 90px;
+    }
+  }
+
+  .calc-summary-image {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 160px;
+    background: rgba(128, 128, 128, 0.08);
+
+    img {
+      width: 100%;
+      max-height: 200px;
+      object-fit: cover;
+    }
+  }
+
+  .calc-breakdown {
+    list-style: none;
+    margin: 1rem 0;
+    padding: 0;
+    font-size: 0.85rem;
+
+    li {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.3rem 0;
+      border-bottom: 1px dashed rgba(128, 128, 128, 0.25);
+    }
+  }
+
+  .calc-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    border-radius: 10px;
+    background: rgba(79, 107, 237, 0.12);
+
+    strong {
+      font-size: 1.5rem;
+      color: #4f6bed;
+    }
+  }
+
+  .btn {
+    border-radius: 0.375rem;
+  }
+}
+
+@media (max-width: 575px) {
+  .pricing-calculator .calc-stepper .step-label {
+    display: none;
+  }
+}
+
+// Barra inferior con el total (solo por debajo de lg; el resumen sticky queda arriba del fold).
+.pricing-calculator .calc-mobile-bar {
+  display: none;
+}
+
+@media (max-width: 991px) {
+  .pricing-calculator {
+    padding-bottom: 90px;
+
+    .calc-mobile-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 880;
+      padding: 0.75rem 1rem;
+      background: #fff;
+      box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.12);
+
+      strong {
+        font-size: 1.25rem;
+        color: #4f6bed;
+      }
+    }
+  }
+}
+
+// Filas apiladas en pantallas chicas: item + quitar arriba, lamina + subtotal abajo.
+// La plantilla fuerza `.table-responsive table { min-width: 800px }` en xs
+// (override/_table.scss); aqui se anula para esta tabla.
+@media (max-width: 767px) {
+  .pricing-calculator .table-responsive table.calc-table {
+    min-width: 0;
+  }
+
+  .pricing-calculator .calc-table {
+    display: block;
+    width: 100%;
+
+    thead {
+      display: none;
+    }
+
+    tbody {
+      display: block;
+    }
+
+    tbody tr {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 0.5rem 0.75rem;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+    }
+
+    td {
+      display: block;
+      padding: 0;
+      border: 0;
+    }
+
+    td:nth-child(1) {
+      grid-column: 1;
+      grid-row: 1;
+    }
+
+    td:nth-child(4) {
+      grid-column: 2;
+      grid-row: 1;
+    }
+
+    td:nth-child(2) {
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    td:nth-child(3) {
+      grid-column: 2;
+      grid-row: 2;
+      align-self: center;
+    }
+
+    select {
+      min-width: 0;
+      width: 100%;
+    }
+  }
+}
+
+// Fila recien guardada en "Mis proformas".
+.pricing-calculator .mis-proformas .saved-row,
+.mis-proformas .datatable-body-row.saved-row {
+  background: rgba(30, 142, 90, 0.14) !important;
+  transition: background 0.4s ease;
+}
+
+// Modal de acceso (login / registro en 2 etapas): vive fuera de `.pricing-calculator`.
+.acceso-modal {
+  .acceso-steps {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    list-style: none;
+    margin: 0 0 1.25rem;
+    padding: 0;
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #8a8f9c;
+      font-weight: 600;
+
+      & + li::before {
+        content: '';
+        display: inline-block;
+        width: 28px;
+        height: 2px;
+        background: rgba(128, 128, 128, 0.35);
+        margin-right: 0.5rem;
+      }
+    }
+
+    .step-dot {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 2px solid rgba(128, 128, 128, 0.45);
+      font-size: 0.78rem;
+    }
+
+    li.active {
+      color: #4f6bed;
+
+      .step-dot {
+        background: #4f6bed;
+        border-color: #4f6bed;
+        color: #fff;
+      }
+    }
+
+    li.done {
+      color: #1e8e5a;
+
+      .step-dot {
+        background: #1e8e5a;
+        border-color: #1e8e5a;
+        color: #fff;
+      }
+    }
+  }
+}
+
+@media (max-width: 575px) {
+  body .layout-minimal .header-links {
+    margin-left: 0.5rem;
+
+    .nav-link {
+      padding: 0.3rem 0.45rem;
+      font-size: 0.85rem;
+    }
+  }
+
+  body .layout-minimal .header-brand-logo {
+    height: 30px;
+  }
+}

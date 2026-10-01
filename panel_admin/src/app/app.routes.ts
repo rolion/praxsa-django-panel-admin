@@ -1,6 +1,8 @@
 import { Route } from '@angular/router';
 import { MainLayoutComponent } from './layout/app-layout/main-layout/main-layout.component';
-import { AuthGuard } from './core/guard/auth.guard';
+import { StaffGuard } from './core/guard/staff.guard';
+import { SessionGuard } from './core/guard/session.guard';
+import { MinimalLayoutComponent } from './layout/app-layout/minimal-layout/minimal-layout.component';
 import { AuthLayoutComponent } from './layout/app-layout/auth-layout/auth-layout.component';
 import { Page404Component } from './authentication/page404/page404.component';
 
@@ -8,7 +10,8 @@ export const APP_ROUTE: Route[] = [
     {
         path: '',
         component: MainLayoutComponent,
-        canActivate: [AuthGuard],
+        // Administracion: solo staff (ADR-pricing-calculator-screen-sesion-cliente-aislamiento).
+        canActivate: [StaffGuard],
         children: [
             { path: '', redirectTo: '/authentication/signin', pathMatch: 'full' },
             {
@@ -63,6 +66,21 @@ export const APP_ROUTE: Route[] = [
                     import('./reportes/reportes.routes').then((m) => m.REPORTES_ROUTE),
             },
         ],
+    },
+    {
+        // Calculadora de precios: publica y sin sidebar (ADR-pricing-calculator-screen-layout-sin-sidebar).
+        path: 'calculadora',
+        component: MinimalLayoutComponent,
+        loadChildren: () =>
+            import('./calculadora/calculadora.routes').then((m) => m.CALCULADORA_ROUTE),
+    },
+    {
+        // Proformas del cliente (solo lectura): requiere sesion.
+        path: 'mis-proformas',
+        component: MinimalLayoutComponent,
+        canActivate: [SessionGuard],
+        loadChildren: () =>
+            import('./cliente/cliente.routes').then((m) => m.CLIENTE_ROUTE),
     },
     {
         path: 'authentication',

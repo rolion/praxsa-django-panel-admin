@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { User } from '../models/user';
 import { LocalStorageService } from './storage.service';
@@ -35,6 +35,31 @@ export class AuthService {
 
   public get currentUserValue(): User {
     return this.currentUserSubject.value;
+  }
+
+  private sessionExpiredSubject = new Subject<void>();
+  /** Se emite cuando una sesion de CLIENTE vence (401): la pantalla reabre el modal de
+   * acceso sin recargar la pagina (ADR-pricing-calculator-screen-sesion-cliente-aislamiento). */
+  readonly sessionExpired$ = this.sessionExpiredSubject.asObservable();
+
+  get isLoggedIn(): boolean {
+    return !!this.currentUserValue?.token;
+  }
+
+  /** Sesion de personal interno. Sesiones guardadas antes de que existiera `isStaff`
+   * se tratan como no-staff hasta volver a iniciar sesion. Solo UX: la barrera real
+   * es `IsStaffUser` en cada endpoint de administracion. */
+  get isStaff(): boolean {
+    return this.isLoggedIn && this.currentUserValue.isStaff === true;
+  }
+
+  /** Sesion de cliente final (con token y sin `is_staff`). */
+  get isClient(): boolean {
+    return this.isLoggedIn && !this.isStaff;
+  }
+
+  notifySessionExpired(): void {
+    this.sessionExpiredSubject.next();
   }
 
   login(username: string, password: string): Observable<User> {

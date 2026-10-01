@@ -1,0 +1,262 @@
+<section class="main-content pricing-calculator">
+  <div class="container-fluid">
+    <!-- Titulo + stepper -->
+    <div class="calc-head">
+      <h4 class="calc-title"><i class="fas fa-car-side"></i> Calculadora de precios</h4>
+      <ol class="calc-stepper" aria-label="Progreso">
+        @for (label of stepLabels; track label; let i = $index) {
+          <li [class.active]="step() === i + 1" [class.done]="step() > i + 1">
+            <span class="step-dot">
+              @if (step() > i + 1) {
+                <i class="fas fa-check"></i>
+              } @else {
+                {{ i + 1 }}
+              }
+            </span>
+            <span class="step-label">{{ label }}</span>
+          </li>
+        }
+      </ol>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card section-card">
+      <div class="card-body">
+        <form [formGroup]="filters" class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label" for="calc-sucursal">Sucursal</label>
+            <select id="calc-sucursal" class="form-select" formControlName="sucursal" (change)="onSucursalChange()">
+              <option [ngValue]="null">Seleccionar sucursal</option>
+              @for (s of sucursales(); track s.id) {
+                <option [ngValue]="s.id">{{ s.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="calc-brand">Marca</label>
+            <select id="calc-brand" class="form-select" formControlName="brand" (change)="onBrandChange()">
+              <option [ngValue]="null">Seleccionar marca</option>
+              @for (b of brands(); track b.id) {
+                <option [ngValue]="b.id">{{ b.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="calc-model">Modelo</label>
+            <select id="calc-model" class="form-select" formControlName="model" (change)="onModelChange()">
+              <option [ngValue]="null">Seleccionar modelo</option>
+              @for (m of models(); track m.id) {
+                <option [ngValue]="m.id">{{ m.name }}</option>
+              }
+            </select>
+          </div>
+        </form>
+        @if (catalogsLoaded() && sucursales().length === 0) {
+          <div class="line-alert warn mt-3">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>Asigne una sucursal al usuario para cotizar.</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <!-- Columna izquierda: items -->
+      <div class="col-lg-8">
+        <div class="card section-card">
+          <div class="section-header">
+            <i class="fas fa-list-ul"></i>
+            <h6>Cristales del vehículo</h6>
+          </div>
+          <div class="card-body">
+            @switch (state()) {
+              @case ('initial') {
+                <div class="calc-empty" data-state="initial">
+                  <i class="fas fa-car fa-3x"></i>
+                  <p>Selecciona sucursal, marca y modelo para cotizar.</p>
+                </div>
+              }
+              @case ('loading') {
+                <div class="placeholder-glow" data-state="loading" aria-busy="true">
+                  @for (n of [1, 2, 3, 4, 5]; track n) {
+                    <div class="skeleton-row">
+                      <span class="placeholder rounded-circle skeleton-icon"></span>
+                      <span class="placeholder col-4"></span>
+                      <span class="placeholder col-3 ms-auto"></span>
+                      <span class="placeholder col-1"></span>
+                    </div>
+                  }
+                </div>
+              }
+              @case ('empty') {
+                <div class="calc-empty" data-state="empty">
+                  <i class="fas fa-box-open fa-3x"></i>
+                  @if (emptyReason() === 'sin-items') {
+                    <p>Este modelo no tiene ítems configurados.</p>
+                  } @else {
+                    <p>No hay láminas con stock en esta sucursal.</p>
+                  }
+                  <small>Cambia la sucursal o el modelo para continuar.</small>
+                </div>
+              }
+              @case ('error') {
+                <div class="calc-empty" data-state="error">
+                  <div class="line-alert danger">
+                    <i class="fas fa-ban"></i><span>{{ errorMessage() }}</span>
+                  </div>
+                  <button type="button" class="btn btn-outline-primary btn-sm mt-2" (click)="retry()">Reintentar</button>
+                </div>
+              }
+              @default {
+                <div class="table-responsive" data-state="active">
+                  <table class="table calc-table align-middle">
+                    <thead>
+                      <tr>
+                        <th>Ítem</th>
+                        <th>Lámina</th>
+                        <th class="text-end">Subtotal</th>
+                        <th class="calc-action-col"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (row of quote().lines; track row.item.id; let i = $index) {
+                        <tr [class.excluded]="row.excluded" [formGroup]="line(i)">
+                          <td>
+                            <div class="calc-item">
+                              <span class="calc-item-icon"><i class="fas" [class]="iconFor(row.item.car_part_name)"></i></span>
+                              <div>
+                                <div class="calc-item-name">{{ row.item.car_part_name }}</div>
+                                <small class="text-muted">{{ subtitle(row.item) }}</small>
+                              </div>
+                            </div>
+                            @if (noOptionsWarning(i); as warning) {
+                              <div class="line-alert danger mt-2"><i class="fas fa-ban"></i><span>{{ warning }}</span></div>
+                            }
+                          </td>
+                          <td>
+                            <select
+                              class="form-select form-select-sm"
+                              formControlName="reel"
+                              [attr.aria-label]="'Lámina para ' + row.item.car_part_name"
+                            >
+                              <option [ngValue]="null">Seleccionar lámina</option>
+                              @for (opt of optionsByItem()[i]; track opt.key) {
+                                <option [ngValue]="opt.key">
+                                  {{ opt.name }} · {{ opt.width }} m · {{ formatBs(+opt.unitPrice) }}/m{{ opt.recommended ? ' · Recomendada' : '' }}
+                                </option>
+                              }
+                            </select>
+                            @if (row.film?.recommended) {
+                              <span class="badge bg-success mt-1">Recomendada</span>
+                            }
+                          </td>
+                          <td class="text-end calc-subtotal">
+                            @if (row.film && !row.excluded) {
+                              {{ formatBs(row.subtotal) }}
+                            } @else {
+                              <span class="text-muted">—</span>
+                            }
+                          </td>
+                          <td class="text-end">
+                            <button
+                              type="button"
+                              class="btn btn-sm btn-icon"
+                              [class.btn-outline-danger]="!row.excluded"
+                              [class.btn-outline-secondary]="row.excluded"
+                              [attr.aria-label]="(row.excluded ? 'Restaurar ' : 'Quitar ') + row.item.car_part_name"
+                              [title]="row.excluded ? 'Restaurar' : 'Quitar'"
+                              (click)="toggleExcluded(i)"
+                            >
+                              <i class="fas" [class.fa-times]="!row.excluded" [class.fa-undo]="row.excluded"></i>
+                            </button>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+                <div class="line-alert warn mt-3">
+                  <i class="fas fa-info-circle"></i>
+                  <span>Los precios pueden variar según la disponibilidad de láminas. El total es referencial hasta crear la proforma.</span>
+                </div>
+              }
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Columna derecha: resumen sticky -->
+      <div class="col-lg-4">
+        <aside class="card section-card calc-summary" aria-label="Resumen de cotización">
+          <div class="calc-summary-image">
+            @if (selectedModel()?.image; as image) {
+              <img [src]="image" [alt]="'Imagen de ' + selectedModel()?.name" />
+            } @else {
+              <i class="fas fa-car fa-4x text-muted"></i>
+            }
+          </div>
+          <div class="card-body">
+            @if (selectedModel(); as model) {
+              <h6 class="mb-0">{{ model.brand_name }} {{ model.name }}</h6>
+              <small class="text-muted">{{ selectedSucursal()?.name }}</small>
+            } @else {
+              <h6 class="mb-0 text-muted">Sin vehículo seleccionado</h6>
+            }
+
+            <ul class="calc-breakdown">
+              @for (row of quote().lines; track row.item.id) {
+                @if (!row.excluded) {
+                  <li>
+                    <span>{{ row.item.car_part_name }}<small class="d-block text-muted">{{ row.film ? row.film.name : 'pendiente' }}</small></span>
+                    <span>{{ row.film ? formatBs(row.subtotal) : '—' }}</span>
+                  </li>
+                }
+              }
+            </ul>
+
+            <div class="calc-total">
+              <span>Total</span>
+              <strong data-testid="total">{{ formatBs(quote().total) }}</strong>
+            </div>
+
+            @if (profile(); as account) {
+              <p class="calc-account small text-muted mb-3">
+                A nombre de: <strong>{{ account.name }} {{ account.lastname }}</strong>
+                @if (account.car_plate) { · Placa <strong>{{ account.car_plate }}</strong> }
+              </p>
+            }
+            @if (saveError()) {
+              <div class="line-alert danger mb-2" role="alert"><i class="fas fa-ban"></i><span>{{ saveError() }}</span></div>
+            }
+            @if (showCreate) {
+              <button type="button" class="btn btn-primary w-100 mb-2" [disabled]="!canAct || saving()" (click)="createProforma()">
+                @if (saving()) {
+                  <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                } @else {
+                  <i class="fas fa-file-invoice"></i>
+                }
+                Crear Proforma
+              </button>
+            }
+            <button type="button" class="btn btn-success w-100" [disabled]="!canAct" (click)="openWhatsapp()">
+              <i class="fab fa-whatsapp"></i> Consultar por WhatsApp
+            </button>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barra inferior (solo < lg): total y accion principal -->
+  <div class="calc-mobile-bar">
+    <div>
+      <small class="text-muted d-block">Total</small>
+      <strong>{{ formatBs(quote().total) }}</strong>
+    </div>
+    @if (showCreate) {
+      <button type="button" class="btn btn-primary" [disabled]="!canAct || saving()" (click)="createProforma()">Crear Proforma</button>
+    } @else {
+      <button type="button" class="btn btn-success" [disabled]="!canAct" (click)="openWhatsapp()">WhatsApp</button>
+    }
+  </div>
+</section>

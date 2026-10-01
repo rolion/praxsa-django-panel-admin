@@ -8,6 +8,8 @@ import {
   Validators,
 } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { CotizacionDraft } from '../../calculadora/calculadora.model';
+import { parseDraft } from '../../calculadora/calculadora.helpers';
 import { AppCarModel, AppCarModelPart } from '../../vehicles/vehicles.model';
 import { VehiclesService } from '../../vehicles/vehicles.service';
 import { previewSubtotal, round2 } from '../ordenes.calc';
@@ -59,6 +61,8 @@ export class ProformaFormComponent implements OnInit {
   /** Panel de referencia de medidas del modelo (colapsable). */
   showReference = true;
   copiedItemId: number | null = null;
+  /** Cotizacion que trae la Calculadora de precios por `history.state` (solo alta). */
+  private draft: CotizacionDraft | null = null;
 
   get isEdit(): boolean {
     return this.editId !== null;
@@ -106,6 +110,13 @@ export class ProformaFormComponent implements OnInit {
       this.form.get('sales_type')?.valueChanges.subscribe(() => this.onSalesTypeChange());
     }
 
+    if (!this.isEdit) {
+      this.draft = parseDraft(history.state);
+      if (this.draft) {
+        this.applyDraft(this.draft);
+      }
+    }
+
     this.vehiclesService.listModels().subscribe((models) => (this.models = models));
     this.ordenesService.listSucursales().subscribe({
       next: (sucursales) => this.onSucursalesLoaded(sucursales),
@@ -121,12 +132,37 @@ export class ProformaFormComponent implements OnInit {
     this.sucursales = sucursales;
     if (sucursales.length === 0) {
       this.errorMessage = 'Asigne una sucursal al usuario para crear proformas.';
+    } else if (!this.isEdit && this.draft && sucursales.some((s) => s.id === this.draft?.sucursal)) {
+      // Cotizacion de la calculadora: su sucursal (si esta en el alcance) queda elegida.
+      this.form.get('sucursal')?.setValue(this.draft.sucursal);
+      if (sucursales.length === 1) {
+        this.form.get('sucursal')?.disable();
+      }
+      this.loadCatalog(this.draft.sucursal);
     } else if (!this.isEdit && sucursales.length === 1) {
       // Con una sola sucursal se fija y se muestra como solo lectura.
       this.form.get('sucursal')?.setValue(sucursales[0].id);
       this.form.get('sucursal')?.disable();
       this.loadCatalog(sucursales[0].id);
     }
+  }
+
+  /** Precarga modelo, items y lineas de la cotizacion de la calculadora. El cliente
+   * y los demas datos los completa la persona; el servidor recalcula los importes. */
+  private applyDraft(draft: CotizacionDraft): void {
+    this.form.get('car_model_id')?.setValue(draft.carModelId);
+    this.lines.clear();
+    draft.lines.forEach((line) =>
+      this.lines.push(
+        this.newLine({
+          car_part: line.carPartId,
+          reel: this.reelKey(line.windowFilm, line.width),
+          length: line.length,
+          quantity: line.quantity,
+        })
+      )
+    );
+    this.loadItems(draft.carModelId);
   }
 
   private loadForEdit(): void {

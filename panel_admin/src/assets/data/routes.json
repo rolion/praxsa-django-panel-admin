@@ -179,6 +179,17 @@
       "badgeClass": "",
       "submenu": [
         {
+          "path": "/calculadora",
+          "title": "Calculadora de precios",
+          "iconType": "",
+          "icon": "",
+          "class": "ml-menu",
+          "groupTitle": false,
+          "badge": "",
+          "badgeClass": "",
+          "submenu": []
+        },
+        {
           "path": "/ordenes/proformas",
           "title": "Proforma",
           "iconType": "",
