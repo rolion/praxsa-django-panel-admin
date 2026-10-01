@@ -17,3 +17,6 @@ Plan en v1, sin changelog; el TASK y el PR si documentan la ampliacion.
 
 ## Evidence
 `git diff --stat HEAD~1` lista 5 archivos, 3 de ellos fuera de la seccion "Files/components affected" del plan.
+
+## Actualizacion (4.a revision)
+Se suma una segunda ampliacion fuera del plan v1: pagina de login (`signin.component.{html,scss,spec.ts}` y `praxsa-admin-logo-horizontal.webp`). Sigue sin changelog en el plan.

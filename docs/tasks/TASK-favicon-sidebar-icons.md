@@ -1,6 +1,6 @@
 # TASK-favicon-sidebar-icons: Favicon, titulo de pestana y logos del menu lateral
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** NO
 **Rama:** claude/favicon-sidebar-icons-290108
@@ -18,6 +18,7 @@
 | 2026-10-01 | PUBLISH → REVIEW | Alcance ampliado por el usuario: logo del menu superior de /calculadora; requiere re-review | delivery-engineer |
 | 2026-10-01 | REVIEW → PUBLISH | Quality Gate PASS (3.a revision) con 2 hallazgos Low abiertos (REV-02, REV-03) | delivery-review |
 | 2026-10-01 | PUBLISH → REVIEW | Alcance ampliado por el usuario: logo y layout de la pagina de login; requiere re-review | delivery-engineer |
+| 2026-10-01 | REVIEW → PUBLISH | Quality Gate PASS (4.a revision) con REV-02 y REV-03 Low abiertos | delivery-review |
 
 ## Investigación
 
@@ -107,6 +108,13 @@ Misma sesion que delivery-engineer (aislamiento procedimental). Diff de la ampli
 - `ng test` completo: 448 OK, 13 FAILED; los mismos 13 `should create` preexistentes que en master. `ng lint` limpio; `ng build` OK; `npm audit --omit=dev`: 3 vulnerabilidades preexistentes. Cobertura no ejecutada.
 - Manual en vivo en `/calculadora`: el logo carga (700x81), sin desborde a 375px.
 - Hallazgos abiertos, ambos Low y no bloqueantes: `docs/reviews/REV-2026-10-01-favicon-sidebar-icons-02.md` (IMPLEMENTATION: fondo blanco del JPG visible con la clase `dark`) y `docs/reviews/REV-2026-10-01-favicon-sidebar-icons-03.md` (PLAN: plan v1 sin changelog de la ampliacion).
+
+### 4.a revision (PASS, ampliacion del login)
+Misma sesion que delivery-engineer (aislamiento procedimental). Diff: `signin.component.{html,scss,spec.ts}` y `praxsa-admin-logo-horizontal.webp`.
+- `ng test` completo: 449 OK, 13 FAILED (los mismos 13 `should create` preexistentes de master). `ng lint` limpio; `ng build` OK; `npm audit --omit=dev`: 3 vulnerabilidades preexistentes. Cobertura no ejecutada.
+- Manual en vivo: titulo "Praxsa Admin", logo horizontal cargado, sin imagen lateral, tarjeta de 520px centrada (offset 0), 2 inputs y boton "Ingresar". No se probo el login contra un backend real (solo los specs con `HttpTestingController`).
+- Observacion: `praxsa-admin-logo.png` ya no se referencia en `panel_admin/src` y `praxsa-login-hero.png` solo en un comentario; quedan como assets sin uso (no bloqueante).
+- Abiertos (Low): REV-02 (fondo blanco del JPG del header en oscuro) y REV-03 (plan v1 sin changelog; ahora cubre dos ampliaciones).
 
 ## Publicación
 _Pendiente_
