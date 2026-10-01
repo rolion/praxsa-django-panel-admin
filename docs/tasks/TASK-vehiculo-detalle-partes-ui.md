@@ -1,6 +1,6 @@
 # TASK-vehiculo-detalle-partes-ui: Rediseño UI de la vista Detalle de Vehículo (Modelo) y su lista de Partes
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** SI
 **Rama:** claude/vehicle-detail-parts-ui-9c9dc9 (asignada por el entorno)
@@ -12,6 +12,7 @@
 | 2026-10-01 13:20 UTC | (nuevo) → INVESTIGATION | Task creado | delivery-investigate |
 | 2026-10-01 13:45 UTC | INVESTIGATION → DESIGN → PLANNING | Diseño resuelto en DDR (Bootstrap en vez de Tailwind, cabecera con pill y Editar bajo la imagen, tarjetas por ítem con `ModelItemCardComponent`); veredicto NEEDS_PLAN, sin arquitectura | delivery-design |
 | 2026-10-01 14:10 UTC | PLANNING → ENGINEERING | Plan v1 escrito (sin E2E, sin dependencias nuevas); PR abierto, pendiente de aprobación humana antes de implementar | delivery-plan |
+| 2026-10-01 14:50 UTC | ENGINEERING → REVIEW | Implementación completa según plan v1 (componente de tarjeta, rediseño de la vista, specs); empujada al PR #61 | delivery-engineer |
 
 ## Investigación
 
@@ -84,7 +85,14 @@ _Pendiente / No aplica según veredicto_
 - [PLAN-2026-10-01-vehiculo-detalle-partes-ui](../plans/PLAN-2026-10-01-vehiculo-detalle-partes-ui.md) — v1
 
 ## Implementación
-_Pendiente_
+Según plan v1, sin desvíos de alcance:
+- Nuevo `panel_admin/src/app/vehicles/models/model-item-card.component.{ts,html,spec.ts}` (standalone, `input` item, outputs `edit`/`remove`, `DecimalPipe '1.2-2'`).
+- `model-view.component.html` reescrito según el DDR (card `shadow-sm rounded-3`, Editar con ícono bajo la imagen, pill de estado, "Partes del Modelo" + contador + "Agregar Item", lista `flex-column gap-3` de tarjetas, vacío en recuadro); `model-view.component.ts` solo suma el import del componente; modales y lógica intactos.
+- `model-view.component.spec.ts`: selector actualizado a `app-model-item-card button[title="Editar"]` y 4 casos nuevos (contador, pill, enlace Editar, vacío).
+- Autoverificación (no es el Quality Gate): `ng lint` limpio, `ng build` ok; `ng test` 453 OK / 14 FALLAN, todos `should create` de componentes de la plantilla demo (AdvanceTable, Blank, Dashboard2, First*/Second*/Third*, Footer, Page404/500, Sidebar, Signup) por falta de provider `ActivatedRoute`; no tocan vehículos ni este cambio (no se contrastó contra master). Los specs de `vehicles/models` pasan.
+- Para correr los tests en este worktree se enlazó `panel_admin/node_modules` (junction, ignorado por git) al de otro worktree con `package-lock.json` idéntico; no se instaló ni cambió ninguna dependencia.
+- **Pendiente:** verificación visual en vivo (tema claro/oscuro, móvil, con y sin imagen/items) del paso 5 del plan; no se ejecutó en esta etapa.
+- Deuda/notas: sin imagen de referencia, colores de botones/pill vienen del tema (ver DDR).
 
 ## Review
 _Pendiente_
