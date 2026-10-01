@@ -19,6 +19,7 @@
 | 2026-10-01 | REVIEW → PUBLISH | Quality Gate PASS (3.a revision) con 2 hallazgos Low abiertos (REV-02, REV-03) | delivery-review |
 | 2026-10-01 | PUBLISH → REVIEW | Alcance ampliado por el usuario: logo y layout de la pagina de login; requiere re-review | delivery-engineer |
 | 2026-10-01 | REVIEW → PUBLISH | Quality Gate PASS (4.a revision) con REV-02 y REV-03 Low abiertos | delivery-review |
+| 2026-10-01 | PUBLISH → PUBLISH | Descripción del PR completada; pendiente de aprobación humana | delivery-publish |
 
 ## Investigación
 
@@ -117,4 +118,4 @@ Misma sesion que delivery-engineer (aislamiento procedimental). Diff: `signin.co
 - Abiertos (Low): REV-02 (fondo blanco del JPG del header en oscuro) y REV-03 (plan v1 sin changelog; ahora cubre dos ampliaciones).
 
 ## Publicación
-_Pendiente_
+PR: https://github.com/rolion/praxsa-django-panel-admin/pull/63 — **Listo para aprobación humana** (no mergeado). Cambio no sensible (sin arquitectura, auth, DB ni infraestructura). Hallazgos Low abiertos: REV-02, REV-03; limitaciones listadas en `## Known limitations` del PR.
