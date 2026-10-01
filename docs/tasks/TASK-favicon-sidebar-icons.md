@@ -1,16 +1,17 @@
 # TASK-favicon-sidebar-icons: Favicon, titulo de pestana y logos del menu lateral
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** NO
 **Rama:** claude/favicon-sidebar-icons-290108
-**Pull Request:** _sin abrir todavía_
+**Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/63
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
 |---|---|---|---|
 | 2026-10-01 | (nuevo) → INVESTIGATION | Task creado | delivery-investigate |
 | 2026-10-01 | INVESTIGATION → PLANNING → ENGINEERING | Plan v1 listo, PR abierto para aprobacion humana | delivery-plan |
+| 2026-10-01 | ENGINEERING → REVIEW | Implementación completa | delivery-engineer |
 
 ## Investigación
 
@@ -67,7 +68,13 @@ _No aplica según veredicto_
 `docs/plans/PLAN-2026-10-01-favicon-sidebar-icons.md` (v1)
 
 ## Implementación
-_Pendiente_
+Implementado según PLAN v1, todo en `panel_admin/`:
+- `index.html`: `<title>Praxsa Admin</title>`; `favicon.ico` entregado copiado a `src/favicon.ico` y `src/assets/images/favicon.ico`.
+- Assets nuevos: `praxsa-admin-logo-full.webp` (imagen 2, 400px de ancho) y `praxsa-rx-mark.png` (Rx recortado, 128px). `praxsa-admin-logo.png` (login) intacto.
+- `sidebar.component.html`: `img.logo-full` + `img.logo-mark`. `_layout.scss`: `.sidebar-brand` 100px de alto, logo 80px, Rx 34px y regla `.side-closed:not(.side-closed-hover)` que alterna ambos.
+- `sidebar.component.spec.ts`: test de los dos `<img>`; además se agregó `provideRouter` y `FeatherModule.pick(allIcons)` porque el spec existente ya fallaba (2/2) por falta de ese provider.
+- Verificación propia (no es el Quality Gate): spec del sidebar 2/2 OK; en `ng serve` el título es "Praxsa Admin", menú abierto muestra logo completo, `side-closed` muestra solo el Rx dentro de los 60px, `side-closed-hover` vuelve al logo completo. No se revisó el tema oscuro ni la corrida completa de `ng test`.
+- Deuda/limitaciones: favicon de 16x16 (pixelado en HiDPI); `proforma` y páginas Django no se tocaron (fuera de alcance).
 
 ## Review
 _Pendiente_
