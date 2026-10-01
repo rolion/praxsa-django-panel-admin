@@ -4,7 +4,7 @@
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** SI
 **Rama:** claude/vehicle-detail-parts-ui-9c9dc9 (asignada por el entorno)
-**Pull Request:** _sin abrir todavía_
+**Pull Request:** [#61](https://github.com/rolion/praxsa-django-panel-admin/pull/61)
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
