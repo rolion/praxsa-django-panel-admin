@@ -442,8 +442,8 @@ body.layout-3 {
     display: inline-block;
     width: 100%;
     text-align: center;
-    height: 70px;
-    line-height: 70px;
+    height: 80px;
+    line-height: 80px;
 
     &.sidebar-brand-sm {
       display: none;
@@ -459,7 +459,12 @@ body.layout-3 {
       color: #000;
 
       .header-logo {
-        height: 30px;
+        height: 56px;
+      }
+
+      .logo-mark {
+        display: none;
+        height: 34px;
       }
 
       .logo-name {
@@ -983,5 +988,16 @@ body:not(.sidebar-mini) .sidebar-style-2 {
         opacity: 0.6;
       }
     }
+  }
+}
+
+// Menu cerrado (sin hover): se muestra solo el simbolo Rx en lugar del logo completo.
+.side-closed:not(.side-closed-hover) .main-sidebar .sidebar-brand a {
+  .logo-full {
+    display: none;
+  }
+
+  .logo-mark {
+    display: inline-block;
   }
 }

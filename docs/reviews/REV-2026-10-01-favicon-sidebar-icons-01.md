@@ -1,0 +1,25 @@
+# REV-2026-10-01-favicon-sidebar-icons-01: Logo casi invisible en el sidebar con skin oscura
+
+**Status:** Resolved
+**Severity:** Medium
+**Category:** IMPLEMENTATION
+**Related plan:** docs/plans/PLAN-2026-10-01-favicon-sidebar-icons.md (v1)
+**Suggested owner:** delivery-engineer
+
+## Description
+Con la skin oscura del sidebar (`body.dark-sidebar`, fondo `rgb(22, 25, 42)`), el logo completo y el Rx (ambos azul oscuro sobre transparente) casi no se distinguen del fondo.
+
+## Expected behavior
+Acceptance criteria del plan: "Se ve bien en tema claro y oscuro". El paso 5 del plan pedia revisar `skins/_darksidebar.scss:87-93`.
+
+## Actual behavior
+No se toco `_darksidebar.scss` y el logo queda con muy bajo contraste en la skin oscura (verificado en vivo agregando `dark dark-sidebar` al `<body>`). La propia nota de Implementacion del TASK admite que el tema oscuro no se reviso.
+
+## Evidence
+`getComputedStyle(.sidebar-brand).backgroundColor` = `rgb(22, 25, 42)` con `dark-sidebar`; la captura muestra el logo azul apenas visible sobre ese fondo. Tema claro: OK.
+
+## Resolución (delivery-engineer, pendiente de re-review)
+Corregido en `panel_admin/src/assets/scss/skins/_darksidebar.scss` (logos a blanco con `filter`). Status se mantiene `Open` hasta que `delivery-review` lo confirme.
+
+## Verificación (delivery-review, 2026-10-01)
+Re-verificado en vivo: con `dark dark-sidebar`, `.logo-full` y `.logo-mark` tienen `filter: brightness(0) invert(1)` y se leen en blanco sobre `rgb(22, 25, 42)`, tanto con el menu abierto como cerrado; en tema claro el filtro es `none`.
