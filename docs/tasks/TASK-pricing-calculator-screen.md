@@ -1,6 +1,6 @@
 # TASK-pricing-calculator-screen: Pantalla "Calculadora de precios" para staff/asesores en panel_admin
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** `claude/pricing-calculator-screen-b5e976` (asignada por el entorno)
@@ -19,6 +19,7 @@
 | 2026-09-30 | ARCHITECTURE → PLANNING | Decisiones tomadas en 3 ADR nuevos: sesión de cliente con aislamiento por guards y barrera de servidor existente (sin tocar el login del panel), registro y API de cliente aditivos (endpoint nuevo, `Client.car_plate` con migración, perfil y lista propios, `POST invoice` para guardar), y catálogo público para la calculadora; el ADR de cotización v1 queda reemplazado en parte | delivery-architect |
 | 2026-09-30 | PLANNING → ENGINEERING | Plan **v2** escrito sobre el mismo PR #60: backend aditivo (migración `0115` con `Client.car_plate`, registro/perfil/lista de cliente, catálogo público con `is_active` e imagen), guards y manejo de 401, módulo `cliente/` (modal de acceso en 2 etapas, Mis proformas), calculadora con catálogo público y acciones según sesión; sin E2E (verificación manual en vivo obligatoria) y sin dependencias nuevas; primer paso: sincronizar la rama con `origin/master` (9 commits detrás) | delivery-plan |
 | 2026-09-30 | ENGINEERING → REVIEW | Implementación completa del plan v2 (backend aditivo + frontend de cliente); suites propias en verde (backend 550, frontend 443 con los 14 `should create` preexistentes), `ng lint`/`ng build` limpios; verificación manual contra el backend real pendiente | delivery-engineer |
+| 2026-09-30 | REVIEW → PUBLISH | Quality Gate PASS: backend 550 OK, frontend 460 specs con los mismos 14 `should create` que master, lint y build limpios; 1 hallazgo Medium abierto (REV-01, throttle de registro) que no bloquea | delivery-review |
 
 ## Investigación
 
@@ -270,7 +271,15 @@ Implementado según [PLAN v1](../plans/PLAN-2026-09-30-pricing-calculator-screen
 - Sigue habiendo dos calculadoras (esta y la de `proforma/`), aceptado por el ADR.
 
 ## Review
-_Pendiente_
+**Resultado: PASS** (2026-09-30). Revisión en sesión nueva, solo desde artefactos y diff del PR.
+
+- `python manage.py test` (praxsa_manager): 550 tests OK; `makemigrations --check --dry-run`: sin cambios.
+- `ng test --code-coverage` (panel_admin): 460 specs, 14 fallos, todos `should create` de la plantilla; master (350 specs) tiene los mismos 14. Cobertura global: statements 77.36 %, branches 71.82 %, lines 77.18 %.
+- `ng lint`: limpio. `ng build`: exit 0 (advertencia de selectores `%` de la plantilla, preexistente).
+- Seguridad: `npm audit --omit=dev`: 3 vulnerabilidades en `xlsx` (sin fix, dependencia preexistente, `package.json` no está en el diff). `bandit`/`flake8`/`mypy` no están instalados ni configurados: no ejecutados. Cobertura backend: revisión manual, `test_client_api.py` ejercita cada vista, serializer y rama nueva.
+- Plan compliance: criterios 1-13 cumplidos; sin scope creep; sin E2E según el plan (verificación manual en vivo registrada en Implementación).
+- Issues: [REV-2026-09-30-pricing-calculator-screen-01](../reviews/REV-2026-09-30-pricing-calculator-screen-01.md) (Medium, ARCHITECTURE, abierto): throttle de `client/register` evadible con `X-Forwarded-For`.
+
 
 ## Publicación
 _Pendiente_
