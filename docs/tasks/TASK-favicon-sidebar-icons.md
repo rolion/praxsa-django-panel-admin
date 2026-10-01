@@ -1,6 +1,6 @@
 # TASK-favicon-sidebar-icons: Favicon, titulo de pestana y logos del menu lateral
 
-**Etapa actual:** REVIEW
+**Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** NO
 **Rama:** claude/favicon-sidebar-icons-290108
@@ -12,6 +12,7 @@
 | 2026-10-01 | (nuevo) → INVESTIGATION | Task creado | delivery-investigate |
 | 2026-10-01 | INVESTIGATION → PLANNING → ENGINEERING | Plan v1 listo, PR abierto para aprobacion humana | delivery-plan |
 | 2026-10-01 | ENGINEERING → REVIEW | Implementación completa | delivery-engineer |
+| 2026-10-01 | REVIEW → ENGINEERING | Quality Gate FAIL: REV-01 (Medium, IMPLEMENTATION) | delivery-review |
 
 ## Investigación
 
@@ -77,7 +78,11 @@ Implementado según PLAN v1, todo en `panel_admin/`:
 - Deuda/limitaciones: favicon de 16x16 (pixelado en HiDPI); `proforma` y páginas Django no se tocaron (fuera de alcance).
 
 ## Review
-_Pendiente_
+**FAIL** (2026-10-01, misma sesion que delivery-engineer: aislamiento solo procedimental).
+- Issue abierto: `docs/reviews/REV-2026-10-01-favicon-sidebar-icons-01.md` (Medium, IMPLEMENTATION): logo casi invisible en skin oscura; incumple el criterio "tema claro y oscuro" del plan.
+- Pasa: spec del sidebar 2/2, `ng lint` limpio, `ng build` OK, titulo/favicon, alternancia abierto/cerrado/hover en tema claro.
+- `ng test` completo: 448 OK, 13 FAILED, todos `should create` de componentes no tocados por este diff (AdvanceTable, Blank, Dashboard2, First1-3, Footer, Page404/500, Second1-2, Signup, Third1); no se comparo contra baseline de master.
+- `npm audit --omit=dev`: 3 vulnerabilidades (1 moderada, 2 altas) en dependencias, preexistentes y fuera de alcance.
 
 ## Publicación
 _Pendiente_
