@@ -46,6 +46,13 @@ describe('SigninComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  it('muestra el logo horizontal y oculta la imagen lateral', () => {
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelector('img.login-brand-logo')?.getAttribute('src')).toBe('assets/images/praxsa-admin-logo-horizontal.webp');
+    expect(el.querySelector('img.login-card-img')).toBeNull();
+  });
+
   it('navigates to /dashboard/main on successful login', () => {
     component.loginForm.setValue({ username: 'admin', password: 'secret123' });
     component.onSubmit();
