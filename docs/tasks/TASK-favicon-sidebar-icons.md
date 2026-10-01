@@ -1,6 +1,6 @@
 # TASK-favicon-sidebar-icons: Favicon, titulo de pestana y logos del menu lateral
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** NO
 **Rama:** claude/favicon-sidebar-icons-290108
@@ -16,6 +16,7 @@
 | 2026-10-01 | ENGINEERING → REVIEW | REV-01 corregido: logos en blanco en skin oscura | delivery-engineer |
 | 2026-10-01 | REVIEW → PUBLISH | Quality Gate PASS (re-review), REV-01 resuelto | delivery-review |
 | 2026-10-01 | PUBLISH → REVIEW | Alcance ampliado por el usuario: logo del menu superior de /calculadora; requiere re-review | delivery-engineer |
+| 2026-10-01 | REVIEW → PUBLISH | Quality Gate PASS (3.a revision) con 2 hallazgos Low abiertos (REV-02, REV-03) | delivery-review |
 
 ## Investigación
 
@@ -98,6 +99,12 @@ Misma sesion que delivery-engineer (aislamiento procedimental). Diff contra mast
 - `npm audit --omit=dev`: 3 vulnerabilidades (1 moderada, 2 altas), preexistentes y fuera de alcance. Cobertura (`--code-coverage`) no ejecutada.
 - Verificacion manual en vivo: titulo "Praxsa Admin", REV-01 resuelto (logos blancos en skin oscura abierto/cerrado), tema claro sin filtro.
 - Limitaciones: favicon 16x16; `proforma`/Django sin tocar (fuera de alcance).
+
+### 3.a revision (PASS, ampliacion del logo del header de /calculadora)
+Misma sesion que delivery-engineer (aislamiento procedimental). Diff de la ampliacion: `header.component.{html,spec.ts}`, `_calculadora.scss`, `praxsa-3m-header-logo.jpg`.
+- `ng test` completo: 448 OK, 13 FAILED; los mismos 13 `should create` preexistentes que en master. `ng lint` limpio; `ng build` OK; `npm audit --omit=dev`: 3 vulnerabilidades preexistentes. Cobertura no ejecutada.
+- Manual en vivo en `/calculadora`: el logo carga (700x81), sin desborde a 375px.
+- Hallazgos abiertos, ambos Low y no bloqueantes: `docs/reviews/REV-2026-10-01-favicon-sidebar-icons-02.md` (IMPLEMENTATION: fondo blanco del JPG visible con la clase `dark`) y `docs/reviews/REV-2026-10-01-favicon-sidebar-icons-03.md` (PLAN: plan v1 sin changelog de la ampliacion).
 
 ## Publicación
 _Pendiente_
