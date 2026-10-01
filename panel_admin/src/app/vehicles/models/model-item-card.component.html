@@ -1,0 +1,16 @@
+<div class="border rounded-3 p-3 d-flex justify-content-between align-items-center gap-3 bg-body" data-test="item-card">
+  <div>
+    <div class="fw-semibold" data-test="item-name">{{ item().car_part_name }}</div>
+    <div class="text-muted small" data-test="item-details">
+      Dimensiones: Ancho: {{ item().width | number: '1.2-2' }}m x Largo: {{ item().length | number: '1.2-2' }}m | Cantidad: {{ item().quantity }}
+    </div>
+  </div>
+  <div class="d-flex flex-shrink-0">
+    <button type="button" class="btn btn-tbl-edit h-auto" title="Editar" aria-label="Editar" (click)="edit.emit(item())">
+      <i class="fas fa-pen"></i>
+    </button>
+    <button type="button" class="btn btn-tbl-delete h-auto" title="Quitar" aria-label="Quitar" (click)="remove.emit(item())">
+      <i class="far fa-trash-alt"></i>
+    </button>
+  </div>
+</div>
