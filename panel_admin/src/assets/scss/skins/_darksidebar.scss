@@ -90,6 +90,11 @@ $color-dark: #16192a;
       a {
         color: #fff;
       }
+
+      // Los logos son azul oscuro sobre transparente: se pasan a blanco para que se lean sobre el fondo oscuro.
+      .header-logo {
+        filter: brightness(0) invert(1);
+      }
     }
 
     .menu .list li {

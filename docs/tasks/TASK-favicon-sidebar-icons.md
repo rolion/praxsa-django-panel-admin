@@ -1,6 +1,6 @@
 # TASK-favicon-sidebar-icons: Favicon, titulo de pestana y logos del menu lateral
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** NO
 **Rama:** claude/favicon-sidebar-icons-290108
@@ -13,6 +13,7 @@
 | 2026-10-01 | INVESTIGATION → PLANNING → ENGINEERING | Plan v1 listo, PR abierto para aprobacion humana | delivery-plan |
 | 2026-10-01 | ENGINEERING → REVIEW | Implementación completa | delivery-engineer |
 | 2026-10-01 | REVIEW → ENGINEERING | Quality Gate FAIL: REV-01 (Medium, IMPLEMENTATION) | delivery-review |
+| 2026-10-01 | ENGINEERING → REVIEW | REV-01 corregido: logos en blanco en skin oscura | delivery-engineer |
 
 ## Investigación
 
@@ -75,6 +76,7 @@ Implementado según PLAN v1, todo en `panel_admin/`:
 - `sidebar.component.html`: `img.logo-full` + `img.logo-mark`. `_layout.scss`: `.sidebar-brand` 100px de alto, logo 80px, Rx 34px y regla `.side-closed:not(.side-closed-hover)` que alterna ambos.
 - `sidebar.component.spec.ts`: test de los dos `<img>`; además se agregó `provideRouter` y `FeatherModule.pick(allIcons)` porque el spec existente ya fallaba (2/2) por falta de ese provider.
 - Verificación propia (no es el Quality Gate): spec del sidebar 2/2 OK; en `ng serve` el título es "Praxsa Admin", menú abierto muestra logo completo, `side-closed` muestra solo el Rx dentro de los 60px, `side-closed-hover` vuelve al logo completo. No se revisó el tema oscuro ni la corrida completa de `ng test`.
+- Corrección de REV-01: `skins/_darksidebar.scss` aplica `filter: brightness(0) invert(1)` a `.header-logo` del sidebar oscuro (los logos son de un solo color), de modo que se leen en blanco. Verificado en vivo en skin oscura con menú abierto y cerrado; falta nueva corrida del Quality Gate.
 - Deuda/limitaciones: favicon de 16x16 (pixelado en HiDPI); `proforma` y páginas Django no se tocaron (fuera de alcance).
 
 ## Review

@@ -17,3 +17,6 @@ No se toco `_darksidebar.scss` y el logo queda con muy bajo contraste en la skin
 
 ## Evidence
 `getComputedStyle(.sidebar-brand).backgroundColor` = `rgb(22, 25, 42)` con `dark-sidebar`; la captura muestra el logo azul apenas visible sobre ese fondo. Tema claro: OK.
+
+## Resolución (delivery-engineer, pendiente de re-review)
+Corregido en `panel_admin/src/assets/scss/skins/_darksidebar.scss` (logos a blanco con `filter`). Status se mantiene `Open` hasta que `delivery-review` lo confirme.
