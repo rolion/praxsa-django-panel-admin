@@ -17,7 +17,8 @@
 | 2026-10-02 | (sin cambio de etapa) | Usuario define sucursales inactivas: lectura sí, escritura no; reportes con multiselect | delivery-investigate |
 | 2026-10-02 | (sin cambio de etapa) | El usuario aclara con captura que la regla aplica también al grupo admin; se agrega el hecho G como choque principal | delivery-investigate |
 | 2026-10-02 | ENGINEERING → REVIEW | Implementación completa de los pasos 1 a 15 del plan v1, incluida verificación manual en vivo con base temporal; desvíos menores documentados; pendiente de Quality Gate independiente | delivery-engineer |
-| 2026-10-02 | REVIEW → PUBLISH | Quality Gate PASS: 685 tests backend OK, ng lint y ng build OK, panel 501 OK + 13 fallos preexistentes de componentes demo; 1 hallazgo Low abierto (REV-01) | delivery-review |
+| 2026-10-02 | REVIEW → PUBLISH | Quality Gate PASS: 685 tests backend OK, ng lint y ng build OK, panel 501 OK + 13 fallos preexistentes de componentes demo; 1 hallazgo Low abierto (REV-01) | delivery-review |
+| 2026-10-02 | (sin cambio de etapa) | PR #68 con descripción completa, listo para aprobación humana (cambio sensible: autorización + 2 ADR); no mergeado | delivery-publish |
 
 ## Investigación
 
@@ -203,4 +204,4 @@ Pasos 1 a 15 del [plan v1](../plans/PLAN-2026-10-02-inventario-alcance-sucursal-
 - Issues abiertos: [REV-2026-10-02-inventario-alcance-sucursal-django-admin-01](../reviews/REV-2026-10-02-inventario-alcance-sucursal-django-admin-01.md) (Low, IMPLEMENTATION, no bloquea).
 
 ## Publicación
-_Pendiente_
+PR [#68](https://github.com/rolion/praxsa-django-panel-admin/pull/68) — **Listo para aprobación humana** (no mergeado). Cambio sensible: autorización por sucursal (el grupo admin deja de ser global) con 2 ADR. Verificado: árbol limpio, diff dentro del plan, sin secretos ni temporales, sin commits posteriores al Quality Gate salvo el propio de documentación.
