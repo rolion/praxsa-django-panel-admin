@@ -220,6 +220,8 @@ Implementado según el plan v2. Todos los pasos 1-11 del plan, con verificación
 
 **Resultados de las corridas propias:** `manage.py test product` 588 tests OK (+21 nuevos); `makemigrations --check` sin cambios; `ng lint` limpio; `ng build --configuration production --base-href /panel/` OK; `ng test` 456 OK y 13 fallos, todos `should create` de componentes demo de la plantilla (`No provider found for ActivatedRoute`), sin relación con este cambio (el TASK de la calculadora ya documentaba 14 de la misma clase en `master`; no se corrió `master` en esta sesión).
 
+- Guía de despliegue a producción en inglés con comandos para Linux y Windows: `docs/deployment-v2.md` (agregada a pedido del usuario durante ENGINEERING, enlazada desde el README). Sus comandos no se ejecutaron como documento; son los mismos ya verificados en Docker, salvo `pg_dump` y la generación de `SECRET_KEY`, que no se probaron.
+
 **Pendiente / no verificado:**
 - Los 4 supuestos del plan siguen sin confirmar por el usuario (superadmin en `Admin`, dirección de instaladores = la de su sucursal, precios de inventario en 0, `Profile` vacío).
 - Sin TLS: Adminer, `/admin` y el panel viajan por HTTP.

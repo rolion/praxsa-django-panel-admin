@@ -21,6 +21,8 @@ Django siempre lee `praxsa_manager/.env` (nombre fijo, sin importar el ambiente 
 
 ## Despliegue v2 (servidor nuevo, sin subdominios)
 
+**Production deployment guide in English (Linux and Windows commands): [docs/deployment-v2.md](docs/deployment-v2.md).**
+
 Stack independiente del despliegue actual: `docker-compose.v2.yml` + `Dockerfile.v2` + `nginx/nginx.conf.v2`. Contenedores y volumenes llevan sufijo `_v2` (`db_v2`, `web_v2`, `nginx_v2`, `adminer_v2`, `postgres_v2`, `media_v2`), el propio compose crea red y volumenes (no hay nada `external`) y los estaticos de Django y el build de `panel_admin` viajan **dentro de la imagen de nginx**: reconstruir imagenes ya no requiere destruir volumenes. `proforma/` no forma parte de este stack.
 
 Rutas (todas por el mismo host, por IP o por el dominio que haya despues; sin TLS por ahora):
