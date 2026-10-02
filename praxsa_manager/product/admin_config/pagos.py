@@ -18,7 +18,10 @@ from rangefilter.filters import (
 )
 from datetime import datetime
 from ..models import Nota_Venta
-class PagosAdmin(admin.ModelAdmin):
+from .sucursal_scope import SucursalWritableAdminMixin
+class PagosAdmin(SucursalWritableAdminMixin, admin.ModelAdmin):
+    sucursal_obj_path = 'nota_venta.nota_trabajo.proforma.sucursal_id'
+
     list_display = ['nota_venta', 
                     'view_proforma_sucursal',
                     'view_proforma_monto',
@@ -91,7 +94,11 @@ class PagosAdmin(admin.ModelAdmin):
         if not change:  # Solo establecer el valor si es un nuevo objeto
             nota_venta = request.GET.get("nota_venta", None)
            
-            obj.nota_venta =  Nota_Venta.objects.select_related('nota_trabajo').get(id = nota_venta)
+            obj.nota_venta =  Nota_Venta.objects.select_related('nota_trabajo', 'nota_trabajo__proforma').get(id = nota_venta)
+            if not self.sucursal_writable_for(request, obj):
+                # Sucursal inactiva (o ajena): solo lectura, no se registran pagos nuevos.
+                self.message_user(request=request, message='La sucursal está inactiva: solo lectura.', level=messages.ERROR)
+                return
             # El servicio valida (nota de trabajo terminada, nota de venta por cobrar),
             # fija el monto y marca la nota de venta como pagada.
             self.estado_business.registrar_pago_instancia(obj, request.user)
@@ -130,6 +137,8 @@ class PagosAdmin(admin.ModelAdmin):
     
 
     def has_change_permission(self, request: HttpRequest, obj=None):
+        if not self.sucursal_writable_for(request, obj):
+            return False
         if obj is None:
             return True
         # user = request.user
