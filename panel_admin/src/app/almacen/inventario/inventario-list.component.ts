@@ -3,14 +3,18 @@ import { RouterLink } from '@angular/router';
 import { DatatableComponent, NgxDatatableModule } from '@swimlane/ngx-datatable';
 import Swal from 'sweetalert2';
 import { AuthService } from '../../core/service/auth.service';
-import { AppInventario } from '../almacen.model';
+import { AppInventario, AppSucursal, AppWindowFilm } from '../almacen.model';
 import { AlmacenService } from '../almacen.service';
 
 /** Listado de Inventario. Mismo patron de tabla/acciones/busqueda que
- * Lamina -- Ver/Crear/Editar('Gestionar')/Eliminar para admin, solo Ver
- * para almacen. Ver ADR-modulo-almacen-modelo-datos-imagen-soft-delete
- * (seccion Actualizacion): "Eliminar" puede fallar con 400 si la fila
- * todavia tiene metros disponibles para instalar. */
+ * Lamina. El servidor devuelve solo el inventario de las sucursales del
+ * usuario (admin: todas) y aplica los filtros de lamina y sucursal; con una
+ * sola sucursal el selector queda fijo. Crear/Editar/Eliminar se muestran
+ * segun los permisos Django del usuario (la barrera real es el backend), ver
+ * DDR-almacen-permisos-sucursal-filtros-filtros-y-selector-sucursal y
+ * ADR-almacen-permisos-sucursal-filtros-alcance-inventario. "Eliminar" puede
+ * fallar con 400 si la fila todavia tiene metros disponibles para instalar
+ * (ADR-modulo-almacen-modelo-datos-imagen-soft-delete). */
 @Component({
   selector: 'app-inventario-list',
   standalone: true,
@@ -25,30 +29,86 @@ export class InventarioListComponent implements OnInit {
 
   data: AppInventario[] = [];
   rows: AppInventario[] = [];
+  sucursales: AppSucursal[] = [];
+  laminas: AppWindowFilm[] = [];
+  selectedSucursal: number | null = null;
+  selectedLamina: number | null = null;
+  sucursalesLoaded = false;
   loadingIndicator = true;
   errorMessage = '';
 
   ngOnInit(): void {
+    this.almacenService.listLaminas().subscribe((laminas) => (this.laminas = laminas));
+    this.almacenService.listSucursalesAlcance().subscribe({
+      next: (sucursales) => {
+        this.sucursales = sucursales;
+        this.sucursalesLoaded = true;
+        if (sucursales.length === 1) {
+          this.selectedSucursal = sucursales[0].id;
+        }
+        this.load();
+      },
+      error: () => {
+        this.sucursalesLoaded = true;
+        this.load();
+      },
+    });
+  }
+
+  /** Con una sola sucursal en alcance el selector queda fijo y deshabilitado. */
+  get sucursalLocked(): boolean {
+    return this.sucursales.length === 1;
+  }
+
+  get withoutSucursales(): boolean {
+    return this.sucursalesLoaded && this.sucursales.length === 0;
+  }
+
+  get sucursalPlaceholder(): string {
+    return this.authService.hasGroup('admin') ? 'Todas las sucursales' : 'Todas mis sucursales';
+  }
+
+  get canCreate(): boolean {
+    return this.authService.hasPermission('add_inventario') && !this.withoutSucursales;
+  }
+
+  get canEdit(): boolean {
+    return this.authService.hasPermission('change_inventario');
+  }
+
+  private static parseId(event: Event): number | null {
+    const value = (event.target as HTMLSelectElement).value;
+    return value ? Number(value) : null;
+  }
+
+  onSucursalChange(event: Event): void {
+    this.selectedSucursal = InventarioListComponent.parseId(event);
     this.load();
   }
 
-  get canManage(): boolean {
-    return this.authService.hasGroup('admin');
+  onLaminaChange(event: Event): void {
+    this.selectedLamina = InventarioListComponent.parseId(event);
+    this.load();
   }
 
   load(): void {
     this.loadingIndicator = true;
-    this.almacenService.listInventario().subscribe({
-      next: (rows) => {
-        this.data = rows;
-        this.rows = rows;
-        this.loadingIndicator = false;
-      },
-      error: () => {
-        this.errorMessage = 'No se pudo cargar el inventario.';
-        this.loadingIndicator = false;
-      },
-    });
+    this.almacenService
+      .listInventario({ sucursal: this.selectedSucursal, windowFilm: this.selectedLamina })
+      .subscribe({
+        next: (rows) => {
+          this.data = rows;
+          this.rows = rows;
+          this.loadingIndicator = false;
+        },
+        error: () => {
+          this.errorMessage = 'No se pudo cargar el inventario.';
+          this.loadingIndicator = false;
+        },
+      });
+    if (this.table) {
+      this.table.offset = 0;
+    }
   }
 
   filterDatatable(event: Event): void {

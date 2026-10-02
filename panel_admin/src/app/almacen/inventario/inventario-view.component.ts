@@ -20,7 +20,7 @@ export class InventarioViewComponent implements OnInit {
   errorMessage = '';
 
   get canManage(): boolean {
-    return this.authService.hasGroup('admin');
+    return this.authService.hasPermission('change_inventario');
   }
 
   ngOnInit(): void {

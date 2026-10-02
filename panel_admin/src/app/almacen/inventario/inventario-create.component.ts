@@ -38,7 +38,16 @@ export class InventarioCreateComponent implements OnInit {
       nro_lote: ['', [Validators.required, Validators.pattern(/^[0-9a-zA-Z]*$/), Validators.maxLength(15)]],
       date: [''],
     });
-    this.almacenService.listSucursales().subscribe((sucursales) => (this.sucursales = sucursales));
+    // Solo las sucursales del usuario (admin: todas). Con una sola, queda
+    // preseleccionada y bloqueada (ver DDR-almacen-permisos-sucursal-filtros-
+    // filtros-y-selector-sucursal); el backend valida el alcance igualmente.
+    this.almacenService.listSucursalesAlcance().subscribe((sucursales) => {
+      this.sucursales = sucursales;
+      if (sucursales.length === 1) {
+        this.form.patchValue({ sucursal: sucursales[0].id });
+        this.form.get('sucursal')?.disable();
+      }
+    });
     this.almacenService.listBobinas().subscribe((bobinas) => (this.bobinas = bobinas));
   }
 
@@ -50,7 +59,7 @@ export class InventarioCreateComponent implements OnInit {
     }
     this.saving = true;
     this.errorMessage = '';
-    const payload: InventarioCreatePayload = { ...this.form.value };
+    const payload: InventarioCreatePayload = { ...this.form.getRawValue() };
     if (!payload.date) {
       delete payload.date;
     }

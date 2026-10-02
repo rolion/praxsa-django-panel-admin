@@ -6,6 +6,7 @@ import {
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { environment } from '../../../environments/environment';
+import { AuthService } from '../../core/service/auth.service';
 import { AppInventario } from '../almacen.model';
 import { InventarioViewComponent } from './inventario-view.component';
 
@@ -52,5 +53,27 @@ describe('InventarioViewComponent', () => {
     httpMock.expectOne(`${base}/7/`).flush({}, { status: 404, statusText: 'Not Found' });
 
     expect(fixture.componentInstance.errorMessage).toBe('No se pudo cargar el inventario.');
+  });
+
+  function loginWith(permissions: string[]): void {
+    TestBed.inject(AuthService).login('user', 'pass').subscribe();
+    httpMock
+      .expectOne(`${environment.apiUrl}/product/api-panel-admin-token-auth/`)
+      .flush({
+        token: 't', user_id: 1, username: 'user', name: 'U', lastname: 'U', is_staff: true,
+        groups: ['almacen'], permissions,
+      });
+  }
+
+  it('canManage depende del permiso change_inventario, no del grupo', () => {
+    localStorage.clear();
+    loginWith(['product.change_inventario']);
+    const fixture = TestBed.createComponent(InventarioViewComponent);
+    expect(fixture.componentInstance.canManage).toBe(true);
+
+    localStorage.clear();
+    loginWith(['product.view_inventario']);
+    expect(fixture.componentInstance.canManage).toBe(false);
+    localStorage.clear();
   });
 });

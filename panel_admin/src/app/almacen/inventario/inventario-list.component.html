@@ -32,7 +32,7 @@
                             (keyup)="filterDatatable($event)" aria-label="Search box" />
                         </div>
                       </div>
-                      @if (canManage) {
+                      @if (canCreate) {
                         <div class="header-buttons-left">
                           <div class="tbl-btn-style">
                             <a routerLink="/almacen/inventario/create" class="btn btn-icon icon-left btn-primary rounded-button">
@@ -46,6 +46,32 @@
                 </div>
               </div>
             </div>
+            <div class="row m-0 mb-2">
+              <div class="col-md-4 mb-2">
+                <label class="fw-bold" for="filter-sucursal">Sucursal</label>
+                <select id="filter-sucursal" class="form-select form-control" [disabled]="sucursalLocked || withoutSucursales"
+                  (change)="onSucursalChange($event)">
+                  @if (!sucursalLocked) {
+                    <option value="" [selected]="selectedSucursal === null">{{ sucursalPlaceholder }}</option>
+                  }
+                  @for (sucursal of sucursales; track sucursal.id) {
+                    <option [value]="sucursal.id" [selected]="selectedSucursal === sucursal.id">{{ sucursal.name }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-md-4 mb-2">
+                <label class="fw-bold" for="filter-lamina">Lámina</label>
+                <select id="filter-lamina" class="form-select form-control" (change)="onLaminaChange($event)">
+                  <option value="" [selected]="selectedLamina === null">Todas las láminas</option>
+                  @for (lamina of laminas; track lamina.id) {
+                    <option [value]="lamina.id" [selected]="selectedLamina === lamina.id">{{ lamina.name }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+            @if (withoutSucursales) {
+              <div class="alert alert-info m-3">No tienes sucursales asignadas.</div>
+            }
             @if (errorMessage) {
               <div class="alert alert-danger m-3">{{ errorMessage }}</div>
             }
@@ -73,7 +99,7 @@
                   <a [routerLink]="['/almacen/inventario/view', row.id]" class="btn btn-tbl-view h-auto" title="Ver">
                     <i class="fas fa-eye"></i>
                   </a>
-                  @if (canManage) {
+                  @if (canEdit) {
                     <a [routerLink]="['/almacen/inventario/edit', row.id]" class="btn btn-tbl-edit h-auto" title="Gestionar">
                       <i class="fas fa-pen"></i>
                     </a>
