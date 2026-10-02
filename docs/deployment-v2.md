@@ -223,3 +223,4 @@ Django application logs stay inside the `web_v2` container (there is no logs vol
 - Adminer exposes the whole database at `/adminer/`: limit access by firewall/VPN, or block the path in `nginx/nginx.conf.v2` if you do not need it.
 - Add TLS (a TLS-terminating proxy in front of nginx that sets `X-Forwarded-Proto: https`) as soon as you have a domain, then use `https://` origins in `CSRF_TRUSTED_ORIGINS`.
 - The PostgreSQL port is not published to the host; only nginx (HTTP port) is reachable from outside.
+- Dependency vulnerabilities: periodically (e.g. monthly and before each release) audit the pinned packages from a throwaway environment, without adding the tool to the requirements: `pipx run pip-audit -r praxsa_manager/requirements-3.8.10.txt`. Update the pins in that file and rebuild the images; see `docs/adr/ADR-actualizar-dependencias-django-seguridad-ruta-actualizacion.md` for the upgrade path.
