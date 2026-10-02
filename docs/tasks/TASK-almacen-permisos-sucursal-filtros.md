@@ -4,7 +4,7 @@
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** task/TASK-almacen-permisos-sucursal-filtros
-**Pull Request:** _sin abrir todavía_
+**Pull Request:** [#66](https://github.com/rolion/praxsa-django-panel-admin/pull/66)
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
