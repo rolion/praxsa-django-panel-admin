@@ -1,6 +1,6 @@
 # TASK-panel-admin-vulnerabilidades-npm: Corregir vulnerabilidades de `npm audit` en panel_admin sin romper el build
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** NO
 **Rama:** `claude/panel-admin-vulnerabilities-4a1058` (asignada por el entorno)
@@ -13,6 +13,7 @@
 | 2026-10-02 | INVESTIGATION → PLANNING | Veredicto NEEDS_PLAN, diseño NO; sin arquitectura requerida | delivery-plan |
 | 2026-10-02 | PLANNING → ENGINEERING | Plan v1 escrito (retirar paquetes sin uso, subir CLI, override de piscina, refrescar lock); PR abierto sobre la rama asignada por el entorno | delivery-plan |
 | 2026-10-02 | ENGINEERING → REVIEW | Implementación completa según plan v1 (commit a8eb8d5) | delivery-engineer |
+| 2026-10-02 | REVIEW → PUBLISH | Quality Gate PASS; 13 specs preexistentes fallidos ignorados con autorizacion del usuario; sin issues abiertos | delivery-review |
 
 ## Investigación
 
@@ -104,7 +105,11 @@ Commit `a8eb8d5` en la rama del PR #69. Solo se tocaron `panel_admin/package.jso
 - Los 13 specs fallidos preexistentes siguen sin arreglar (fuera de alcance).
 
 ## Review
-_Pendiente_
+**PASS** — sin issues abiertos (ningun `REV-*`). Detalle y evidencia en la seccion `## Review` y `## Testing` del PR #69.
+- `npm ci` limpio, `npm audit` 0 (tambien `--omit=dev`), `ng lint` OK, `ng build` dev y prod OK (bundle 2.20 MB, sin crecimiento), `ng test` 489 specs / 13 fallos.
+- Los 13 fallos son identicos en `origin/master` (preexistentes). El usuario autorizo ignorarlos en el chat.
+- Pendiente recomendado: revision manual del dashboard autenticado (`ng2-charts`/`apexcharts`); no se pudo ejecutar sin backend/credenciales.
+- Review corrida en la misma sesion que la implementacion (aislamiento procedimental).
 
 ## Publicación
 _Pendiente_
