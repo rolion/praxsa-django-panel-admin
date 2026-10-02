@@ -1,6 +1,6 @@
 # ADR-modulo-almacen-permisos-rol-frontend: Permisos Django por grupo para `admin`/`almacen`, y `PanelAdminAuthToken` extendido con `groups`/`is_staff` para que el frontend pueda diferenciar rol
 
-**Estado:** Propuesto
+**Estado:** Propuesto — parcialmente reemplazado para Inventario (decisiones 2 y 6) por [ADR-almacen-permisos-sucursal-filtros-alcance-inventario](ADR-almacen-permisos-sucursal-filtros-alcance-inventario.md); Láminas y Bobinas siguen vigentes
 **Task relacionado:** TASK-modulo-almacen
 **Fecha:** 2026-09-26
 
