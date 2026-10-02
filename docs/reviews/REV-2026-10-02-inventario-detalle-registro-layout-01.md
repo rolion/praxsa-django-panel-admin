@@ -1,6 +1,6 @@
 # REV-2026-10-02-inventario-detalle-registro-layout-01: Título "Detalle de Registro" ilegible en tema oscuro
 
-**Status:** Open
+**Status:** Resolved
 **Severity:** Medium
 **Category:** IMPLEMENTATION
 **Related plan:** docs/plans/PLAN-2026-10-02-inventario-detalle-registro-layout.md (v1)
@@ -25,3 +25,6 @@ product-name color: rgb(100, 120, 154)   containerBg: rgba(128, 128, 128, 0.08)
 ```
 
 Captura en tema oscuro (escritorio y 375x812): "Detalle de Registro" casi invisible; el resto legible. Nota: el breadcrumb `page-title` sí es legible porque la plantilla le asigna color; el `h4` propio no.
+
+## Resolución (verificada en la corrida 2 del Quality Gate, 2026-10-02)
+Con `body.dark` en `localhost:8086`, el `h4` (`inventario-title`) calcula `rgb(255, 255, 255)` y la regla `body.dark .inventario-view .inventario-title` está cargada; captura en tema oscuro: título legible.

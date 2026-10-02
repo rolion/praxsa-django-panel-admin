@@ -1,6 +1,6 @@
 # TASK-inventario-detalle-registro-layout: Rediseño de la vista de detalle de registro de inventario (dos columnas, métricas y valores)
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** SI
 **Rama:** `claude/inventory-record-detail-e97b4e` (asignada por el entorno)
@@ -15,6 +15,7 @@
 | 2026-10-02 | ENGINEERING → REVIEW | Implementación completa del plan v1 (plantilla, componente, parcial SCSS y specs) | delivery-engineer |
 | 2026-10-02 | REVIEW → ENGINEERING | Quality Gate FAIL: REV-2026-10-02-inventario-detalle-registro-layout-01 (Medium, título ilegible en tema oscuro) | delivery-review |
 | 2026-10-02 | ENGINEERING → REVIEW | REV-01 corregido: el título recibe color propio en `body.dark` (clase `inventario-title`) | delivery-engineer |
+| 2026-10-02 | REVIEW → PUBLISH | Quality Gate PASS (corrida 2): REV-01 resuelto, sin issues abiertos | delivery-review |
 
 ## Investigación
 
@@ -97,9 +98,11 @@ Notas: (1) las dos preguntas abiertas del plan (nombre del producto = solo lámi
 **Corrección de REV-01** (tema oscuro): el `h4` de la cabecera recibe la clase `inventario-title` y una regla `body.dark .inventario-view .inventario-title { color: #fff }` en `_inventario.scss`; el spec comprueba la clase. Verificado en el stack local en tema oscuro (color computado `rgb(255,255,255)`); spec de la vista 13/13 y `ng lint` limpios (verificación propia).
 
 ## Review
-**Resultado: FAIL** (corrida 1, 2026-10-02; ejecutada en la misma sesión que la implementación, aislamiento solo procedimental).
-- Issue abierto: [REV-2026-10-02-inventario-detalle-registro-layout-01](../reviews/REV-2026-10-02-inventario-detalle-registro-layout-01.md) — Medium, IMPLEMENTATION: título "Detalle de Registro" negro e ilegible en tema oscuro (criterio de aceptación de tema oscuro no cumplido).
-- Verificado OK: suite completa de `panel_admin` 510/523, con 13 fallas idénticas a la línea base de master (501 OK + 9 nuevas; todos specs "should create" de la plantilla demo, ajenos al cambio); `ng lint` limpio; `ng build` OK (aviso de selectores SCSS ajeno al cambio); cobertura de `inventario-view.component.ts` 100%; sin cambios en `package*.json` (`npm audit` reporta hallazgos preexistentes de dependencias); fecha del API sin `Z` y mostrada sin desfase; layout correcto en escritorio y móvil, tema claro.
+**Resultado: PASS** (corrida 2, 2026-10-02; ejecutada en la misma sesión de contexto que la corrida 1, aislamiento solo procedimental).
+- Issues: [REV-2026-10-02-inventario-detalle-registro-layout-01](../reviews/REV-2026-10-02-inventario-detalle-registro-layout-01.md) — Medium, IMPLEMENTATION (título ilegible en tema oscuro): **Resuelto y verificado** en el stack local (`rgb(255, 255, 255)` en `body.dark`, captura legible). Sin issues abiertos.
+- Funcional: spec de la vista 13/13; suite completa `panel_admin` 510 OK / 13 fallas, todas "should create" de componentes de la plantilla demo (AdvanceTable, Blank, Dashboard2, First1-3, Footer, Page404/500, Second1-2, Signup, Third1), idénticas a la línea base de master y ajenas al cambio.
+- Técnico: `ng lint` limpio; `ng build` OK (avisos de selectores SCSS `%` preexistentes); cobertura del componente verificada en la corrida 1 (100%); `npm audit`: 81 hallazgos preexistentes de dependencias (sin cambios en `package*.json` en este PR); sin `bandit`/`safety` (backend no tocado).
+- Plan compliance: alcance del diff = archivos del plan (plantilla, componente, spec, `_inventario.scss`, `style.scss`); criterios de aceptación cumplidos (layout 8/4, cabecera con único "Editar" bajo `change_inventario`, Fecha tras Estado, métricas/valores con `Bs`, tema claro/oscuro, móvil). Sin E2E, conforme al plan.
 
 ## Publicación
 _Pendiente_
