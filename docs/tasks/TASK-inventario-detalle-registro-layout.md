@@ -1,16 +1,17 @@
 # TASK-inventario-detalle-registro-layout: Rediseño de la vista de detalle de registro de inventario (dos columnas, métricas y valores)
 
-**Etapa actual:** PLANNING
+**Etapa actual:** ENGINEERING
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** SI
 **Rama:** `claude/inventory-record-detail-e97b4e` (asignada por el entorno)
-**Pull Request:** _sin abrir todavía_
+**Pull Request:** [#70](https://github.com/rolion/praxsa-django-panel-admin/pull/70)
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
 |---|---|---|---|
 | 2026-10-02 | (nuevo) → INVESTIGATION | Task creado | delivery-investigate |
 | 2026-10-02 | INVESTIGATION → PLANNING | Diseño decidido: Bootstrap + SCSS (no Tailwind), reutiliza `.orden-view`, contenedor gris translúcido, métricas en mosaicos, "Editar" en cabecera; NEEDS_PLAN, no requiere arquitectura | delivery-design |
+| 2026-10-02 | PLANNING → ENGINEERING | Plan v1 escrito (solo frontend: plantilla, componente, parcial SCSS y spec; sin E2E ni dependencias) y PR #70 abierto sobre la rama asignada por el entorno; a la espera de aprobación humana del plan | delivery-plan |
 
 ## Investigación
 
@@ -79,7 +80,7 @@ La pantalla muestra una única tarjeta angosta (`col-lg-8`) con lista de definic
 _No aplica según veredicto_
 
 ## Plan
-_Pendiente_
+- [PLAN-2026-10-02-inventario-detalle-registro-layout](../plans/PLAN-2026-10-02-inventario-detalle-registro-layout.md) — **v1**.
 
 ## Implementación
 _Pendiente_
