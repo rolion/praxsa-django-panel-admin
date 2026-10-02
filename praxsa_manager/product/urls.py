@@ -37,6 +37,7 @@ from .custom_views.instalador_admin import (
     InstaladorToggleActiveView,
 )
 from .custom_views.almacen_admin import (
+    AlmacenSucursalesView,
     InventarioListView,
     InventarioToggleActiveView,
     InventarioUpdateView,
@@ -135,6 +136,7 @@ urlpatterns = [
     path('almacen/bobinas/<int:pk>/toggle-active/', WindowFilmReelToggleActiveView.as_view()),
     path('almacen/precios-sucursal', PrecioVentaSucursalListCreateView.as_view()),
     path('almacen/precios-sucursal/<int:pk>/', PrecioVentaSucursalDetailView.as_view()),
+    path('almacen/sucursales', AlmacenSucursalesView.as_view()),
     path('almacen/inventario', InventarioListView.as_view()),
     path('almacen/inventario/<int:pk>/', InventarioUpdateView.as_view()),
     path('almacen/inventario/<int:pk>/toggle-active/', InventarioToggleActiveView.as_view()),

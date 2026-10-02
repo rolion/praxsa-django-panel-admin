@@ -10,6 +10,10 @@ import { AppSucursal, AppWindowFilmReel } from '../almacen.model';
 import { InventarioCreateComponent } from './inventario-create.component';
 
 const sampleSucursales: AppSucursal[] = [{ id: 1, name: 'Central' }];
+const twoSucursales: AppSucursal[] = [
+  { id: 1, name: 'Central' },
+  { id: 2, name: 'Norte' },
+];
 const sampleBobinas: AppWindowFilmReel[] = [
   { id: 1, window_film: 1, window_film_name: 'Carbon 20%', width: '1.50', length: '30.00', price: '120.00', is_active: true },
 ];
@@ -18,10 +22,10 @@ describe('InventarioCreateComponent', () => {
   let httpMock: HttpTestingController;
   const base = `${environment.apiUrl}/product/almacen`;
 
-  function createAndLoad() {
+  function createAndLoad(sucursales: AppSucursal[] = sampleSucursales) {
     const fixture = TestBed.createComponent(InventarioCreateComponent);
     fixture.detectChanges();
-    httpMock.expectOne(`${environment.apiUrl}/product/sucursales`).flush(sampleSucursales);
+    httpMock.expectOne(`${base}/sucursales`).flush(sucursales);
     httpMock.expectOne((r) => r.url === `${base}/bobinas`).flush(sampleBobinas);
     return fixture;
   }
@@ -152,5 +156,38 @@ describe('InventarioCreateComponent', () => {
 
     expect(component.errorMessage).toBe('Clave primaria invalida.');
     expect(component.saving).toBe(false);
+  });
+
+  it('con una sola sucursal la deja preseleccionada y bloqueada, y la envia igual', () => {
+    const fixture = createAndLoad();
+    const component = fixture.componentInstance;
+
+    expect(component.form.get('sucursal')?.value).toBe(1);
+    expect(component.form.get('sucursal')?.disabled).toBe(true);
+
+    component.form.patchValue({
+      bobina: 1, quantity: 3, to_install: '50.00',
+      precio_compra_mtr_lineal: '80.00', precio_venta_mtr_lineal: '120.00', nro_lote: 'L001',
+    });
+    component.save();
+
+    const req = httpMock.expectOne(`${base}/inventario`);
+    expect(req.request.body.sucursal).toBe(1);
+    req.flush({
+      id: 9, sucursal: 1, sucursal_name: 'Central', bobina: 1, window_film_name: 'Carbon 20%',
+      bobina_width: '1.50', quantity: 3, to_install: '50.00', installed: '0.00',
+      original_length: '50.00', date: '2026-09-27T00:00:00Z', numero_referencia: 0,
+      precio_compra_mtr_lineal: '80.00', precio_venta_mtr_lineal: '120.00', nro_lote: 'L001',
+      is_active: true,
+    });
+  });
+
+  it('con varias sucursales las ofrece todas y no preselecciona ninguna', () => {
+    const fixture = createAndLoad(twoSucursales);
+    const component = fixture.componentInstance;
+
+    expect(component.sucursales).toEqual(twoSucursales);
+    expect(component.form.get('sucursal')?.value).toBeNull();
+    expect(component.form.get('sucursal')?.enabled).toBe(true);
   });
 });

@@ -115,12 +115,35 @@ class WindowFilmReelToggleActiveView(APIView):
         return Response(WindowFilmReelSerializer(reel).data, status=status.HTTP_200_OK)
 
 
+def _inventario_in_scope(user):
+    """Filas de inventario que el usuario puede ver y operar: todas para admin,
+    las de todas sus sucursales habilitadas para el resto (ver ADR-almacen-
+    permisos-sucursal-filtros-alcance-inventario, decision 1)."""
+    queryset = inventario.objects.select_related('bobina', 'bobina__window_film', 'sucursal')
+    return Inventario_Business().get_panel_inventario_queryset(user, queryset)
+
+
+class AlmacenSucursalesView(APIView):
+    """Sucursales habilitadas que el usuario puede usar en Almacen: todas para
+    admin, las suyas para el resto. Alimenta el selector de sucursal de
+    Inventario."""
+
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated, IsStaffUser]
+
+    def get(self, request):
+        sucursales = User_Helper().get_sucursales_in_scope(request.user)
+        return Response([{'id': s.id, 'name': s.name} for s in sucursales])
+
+
 class InventarioListView(generics.ListCreateAPIView):
-    """Consulta (filtrada por sucursal del usuario -- admin ve todas, ver
-    Inventario_Business.get_inventario_queryset_by_role) y alta manual
-    (solo admin, ver InventarioCreateSerializer) de Inventario. ?search=
-    filtra por nombre de lamina o numero de lote. Solo activas por defecto,
-    ?include_inactive=true para verlas todas -- mismo patron que Lamina/Bobina."""
+    """Consulta (dentro del alcance del usuario -- admin ve todas las
+    sucursales, el resto las suyas, ver `_inventario_in_scope`) y alta manual
+    (requiere `add_inventario` y una sucursal dentro del alcance, ver
+    InventarioCreateSerializer) de Inventario. ?search= filtra por nombre de
+    lamina o numero de lote; ?sucursal= y ?window_film= (ids) filtran dentro
+    del alcance. Solo activas por defecto, ?include_inactive=true para verlas
+    todas -- mismo patron que Lamina/Bobina."""
 
     authentication_classes = [authentication.TokenAuthentication]
     serializer_class = InventarioSerializer
@@ -134,12 +157,17 @@ class InventarioListView(generics.ListCreateAPIView):
         return InventarioCreateSerializer if self.request.method == 'POST' else InventarioSerializer
 
     def get_queryset(self):
-        queryset = inventario.objects.select_related('bobina', 'bobina__window_film', 'sucursal')
-        business = Inventario_Business()
-        queryset = business.get_inventario_queryset_by_role(self.request.user, queryset)
-        if self.request.query_params.get('include_inactive') != 'true':
+        queryset = _inventario_in_scope(self.request.user)
+        params = self.request.query_params
+        if params.get('include_inactive') != 'true':
             queryset = queryset.filter(is_active=True)
-        search = self.request.query_params.get('search')
+        sucursal = params.get('sucursal')
+        if sucursal and sucursal.isdigit():
+            queryset = queryset.filter(sucursal_id=int(sucursal))
+        window_film = params.get('window_film')
+        if window_film and window_film.isdigit():
+            queryset = queryset.filter(bobina__window_film_id=int(window_film))
+        search = params.get('search')
         if search:
             queryset = queryset.filter(
                 Q(bobina__window_film__name__icontains=search) | Q(nro_lote__icontains=search)
@@ -147,14 +175,15 @@ class InventarioListView(generics.ListCreateAPIView):
         return queryset
 
     def create(self, request, *args, **kwargs):
-        serializer = InventarioCreateSerializer(data=request.data)
+        serializer = InventarioCreateSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
         return Response(InventarioSerializer(instance).data, status=status.HTTP_201_CREATED)
 
 
 class InventarioToggleActiveView(APIView):
-    """"Eliminar"/"activar" una fila de Inventario (solo admin). Desactivar
+    """"Eliminar"/"activar" una fila de Inventario dentro del alcance del
+    usuario (`change_inventario`, fila fuera del alcance -> 404). Desactivar
     solo se permite si `to_install == 0` -- ver ADR-modulo-almacen-modelo-
     datos-imagen-soft-delete, seccion "Actualizacion": toda la logica de
     negocio de venta/instalacion (business/inventario.py) ya filtra
@@ -171,7 +200,7 @@ class InventarioToggleActiveView(APIView):
         if not request.user.has_perm('product.change_inventario'):
             return Response(status=status.HTTP_403_FORBIDDEN)
         try:
-            inv = inventario.objects.select_related('bobina', 'bobina__window_film', 'sucursal').get(pk=pk)
+            inv = _inventario_in_scope(request.user).get(pk=pk)
         except inventario.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
@@ -192,15 +221,18 @@ class InventarioToggleActiveView(APIView):
 
 
 class InventarioUpdateView(generics.RetrieveUpdateAPIView):
-    """"Gestionar" una fila de Inventario existente (solo admin) -- unicamente
-    los campos de InventarioUpdateSerializer, nunca quantity/original_length/
-    date/sucursal/bobina (ver ADR-modulo-almacen-modelo-datos-imagen-soft-delete
-    punto 8)."""
+    """"Gestionar" una fila de Inventario existente dentro del alcance del
+    usuario (`change_inventario`; fila fuera del alcance -> 404) --
+    unicamente los campos de InventarioUpdateSerializer, nunca quantity/
+    original_length/date/sucursal/bobina (ver ADR-modulo-almacen-modelo-datos-
+    imagen-soft-delete punto 8)."""
 
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated, IsStaffUser]
-    queryset = inventario.objects.select_related('bobina', 'bobina__window_film', 'sucursal')
     http_method_names = ['get', 'patch', 'head', 'options']
+
+    def get_queryset(self):
+        return _inventario_in_scope(self.request.user)
 
     def get_serializer_class(self):
         return InventarioSerializer if self.request.method == 'GET' else InventarioUpdateSerializer

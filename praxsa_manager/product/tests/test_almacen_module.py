@@ -391,7 +391,7 @@ class InventarioTest(TestCase):
     def test_manage_updates_allowed_fields(self):
         admin, token, _ = helpers.create_staff_user_with_token()
         helpers.grant_permission(admin, 'product', 'change_inventario')
-        inv = helpers.create_inventario(to_install=Decimal('10.00'))
+        inv = helpers.create_inventario(sucursal=helpers.create_sucursal(admin), to_install=Decimal('10.00'))
 
         response = self.client.patch(
             f'/product/almacen/inventario/{inv.id}/',
@@ -411,7 +411,8 @@ class InventarioTest(TestCase):
         imagen-soft-delete punto 8. Mandarlos no debe cambiarlos."""
         admin, token, _ = helpers.create_staff_user_with_token()
         helpers.grant_permission(admin, 'product', 'change_inventario')
-        inv = helpers.create_inventario(quantity=5)
+        own_sucursal = helpers.create_sucursal(admin)
+        inv = helpers.create_inventario(sucursal=own_sucursal, quantity=5)
         other_sucursal = helpers.create_sucursal(admin)
 
         response = self.client.patch(
@@ -626,7 +627,7 @@ class InventarioToggleActiveTest(TestCase):
     def test_delete_blocked_when_to_install_greater_than_zero(self):
         admin, token, _ = helpers.create_staff_user_with_token()
         helpers.grant_permission(admin, 'product', 'change_inventario')
-        inv = helpers.create_inventario(to_install=Decimal('10.00'))
+        inv = helpers.create_inventario(sucursal=helpers.create_sucursal(admin), to_install=Decimal('10.00'))
 
         response = self.client.patch(
             f'/product/almacen/inventario/{inv.id}/toggle-active/',
@@ -642,7 +643,7 @@ class InventarioToggleActiveTest(TestCase):
     def test_delete_allowed_when_to_install_is_zero(self):
         admin, token, _ = helpers.create_staff_user_with_token()
         helpers.grant_permission(admin, 'product', 'change_inventario')
-        inv = helpers.create_inventario(to_install=Decimal('0.00'))
+        inv = helpers.create_inventario(sucursal=helpers.create_sucursal(admin), to_install=Decimal('0.00'))
 
         response = self.client.patch(
             f'/product/almacen/inventario/{inv.id}/toggle-active/',
@@ -658,7 +659,7 @@ class InventarioToggleActiveTest(TestCase):
     def test_reactivate_has_no_to_install_restriction(self):
         admin, token, _ = helpers.create_staff_user_with_token()
         helpers.grant_permission(admin, 'product', 'change_inventario')
-        inv = helpers.create_inventario(to_install=Decimal('10.00'))
+        inv = helpers.create_inventario(sucursal=helpers.create_sucursal(admin), to_install=Decimal('10.00'))
         inv.is_active = False
         inv.save(update_fields=['is_active'])
 

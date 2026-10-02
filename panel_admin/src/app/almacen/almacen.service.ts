@@ -18,13 +18,26 @@ interface ListParams {
   includeInactive?: boolean;
 }
 
-function buildParams(params: ListParams = {}): Record<string, string> {
+/** Filtros del listado de Inventario (el servidor los aplica dentro del
+ * alcance de sucursales del usuario). */
+interface InventarioListParams extends ListParams {
+  sucursal?: number | null;
+  windowFilm?: number | null;
+}
+
+function buildParams(params: InventarioListParams = {}): Record<string, string> {
   const query: Record<string, string> = {};
   if (params.search) {
     query['search'] = params.search;
   }
   if (params.includeInactive) {
     query['include_inactive'] = 'true';
+  }
+  if (params.sucursal) {
+    query['sucursal'] = String(params.sucursal);
+  }
+  if (params.windowFilm) {
+    query['window_film'] = String(params.windowFilm);
   }
   return query;
 }
@@ -118,8 +131,14 @@ export class AlmacenService {
   }
 
   // Inventario
-  listInventario(params: ListParams = {}): Observable<AppInventario[]> {
+  listInventario(params: InventarioListParams = {}): Observable<AppInventario[]> {
     return this.http.get<AppInventario[]>(`${this.base}/inventario`, { params: buildParams(params) });
+  }
+
+  /** Sucursales habilitadas que el usuario puede usar en Inventario (todas
+   * para admin, las suyas para el resto). */
+  listSucursalesAlcance(): Observable<AppSucursal[]> {
+    return this.http.get<AppSucursal[]>(`${this.base}/sucursales`);
   }
 
   getInventario(id: number): Observable<AppInventario> {
