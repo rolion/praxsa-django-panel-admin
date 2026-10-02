@@ -1,6 +1,6 @@
 # TASK-almacen-permisos-sucursal-filtros: Almacén — alcance por sucursal en bobinas e inventario, y filtros de lámina/sucursal
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** task/TASK-almacen-permisos-sucursal-filtros
@@ -13,6 +13,7 @@
 | 2026-10-02 | (sin cambio de etapa) | Usuario reduce el alcance: se omite bobinas, solo inventario; veredicto sin cambio; DDR anotado | delivery-design |
 | 2026-10-02 | ARCHITECTURE → PLANNING | ADR de alcance por sucursal y filtros de Inventario registrado | delivery-architect |
 | 2026-10-02 | PLANNING → ENGINEERING | Plan v1 escrito y PR abierto; queda a la espera de la aprobación humana del plan y de la respuesta a las 3 preguntas abiertas antes de implementar | delivery-plan |
+| 2026-10-02 | ENGINEERING → REVIEW | Implementación completa de los pasos 1 a 9 del plan v1; el paso 10 (verificación manual en vivo) queda para review/usuario | delivery-engineer |
 | 2026-10-02 | DESIGN → ARCHITECTURE | DDR de filtros y selector de sucursal registrado; veredicto NEEDS_ARCHITECTURE | delivery-design |
 
 ## Investigación
@@ -111,7 +112,30 @@ Supuestos de negocio pendientes de confirmar (marcados en el ADR): Eliminar/Acti
 - [PLAN-2026-10-02-almacen-permisos-sucursal-filtros](../plans/PLAN-2026-10-02-almacen-permisos-sucursal-filtros.md) — **v1**. 10 pasos (vista de sucursales en alcance, listado con alcance y filtros, detalle/toggle/alta con alcance, tests backend, servicio y componentes del panel, specs y verificación manual en vivo). E2E: no corresponde (sin Playwright; integración de API + specs + verificación manual). Sin dependencias nuevas, sin migraciones. Tres preguntas abiertas (Eliminar/Activar, grupos con permisos, alta en sucursales deshabilitadas).
 
 ## Implementación
-_Pendiente_
+Pasos 1 a 9 del [plan v1](../plans/PLAN-2026-10-02-almacen-permisos-sucursal-filtros.md), sin desvíos de alcance. Commits `260e7d2` (backend) y `d4c7ad8` (panel) en el PR [#66](https://github.com/rolion/praxsa-django-panel-admin/pull/66).
+
+**Backend**
+- `almacen_admin.py`: `_inventario_in_scope(user)` (usa `Inventario_Business.get_panel_inventario_queryset`) en `InventarioListView`, `InventarioUpdateView.get_queryset` e `InventarioToggleActiveView` (404 fuera de alcance); filtros `?sucursal=`/`?window_film=` (solo dígitos, sobre el alcance); `create` pasa `context={'request': request}`; nueva `AlmacenSucursalesView` y ruta `almacen/sucursales` (`urls.py`).
+- `almacen_serializer.py`: `InventarioCreateSerializer.validate_sucursal` contra `get_sucursales_in_scope` (400; sin `request` rechaza). Único uso del serializer: `InventarioListView` (verificado por grep).
+- Sin migraciones; `get_inventario_queryset_by_role` intacto.
+
+**Panel**
+- `almacen.service.ts` (`InventarioListParams`, `listSucursalesAlcance`), `inventario-list` (selects Lámina/Sucursal, sucursal fija con una sola, aviso sin sucursales, `canCreate`/`canEdit` por `hasPermission`), `inventario-create` (sucursales en alcance, preselección y bloqueo con una, `getRawValue()` al enviar), `inventario-view` (`canManage` por `change_inventario`).
+
+**Pruebas**
+- `tests/test_inventario_alcance_sucursal.py` (nuevo, 30 casos): listado (varias sucursales, admin, sin sucursal, sucursal deshabilitada), filtros (propia, ajena, lámina, combinados, no numéricos, con búsqueda/inactivos), detalle/PATCH/toggle propios y ajenos (404), sin permiso (403), admin, alta (propia, ajena, deshabilitada, admin, sin permiso) y endpoint de sucursales.
+- Ajuste de 5 tests de `test_almacen_module.py` (`InventarioTest.test_manage_*`, `InventarioToggleActiveTest.*`): el usuario pasa a ser empleado de la sucursal del inventario; no se relajó el alcance.
+- Specs del panel: listado (carga con parámetros, sucursal fija/varias/ninguna, filtros, permisos), alta (sucursal única bloqueada y enviada, varias) y vista (`canManage` por permiso).
+- Corrida propia (no es el Quality Gate): `manage.py test product` 618 OK; `makemigrations --check --dry-run` sin cambios; `ng build` OK; specs de `almacen/` 48 OK. La suite completa del panel da 13 fallos en specs `should create` de componentes demo de la plantilla (AdvanceTable, Blank, Dashboard2, First/Second/Third, Footer, Page404/500, Signup) que no tocan almacén; no se comprobó contra `master` si ya fallaban antes.
+
+**Decisiones por defecto aplicadas (preguntas abiertas del plan sin respuesta del usuario):** Eliminar/Activar sigue la regla de editar (`change_inventario` + alcance); el alta se bloquea en sucursales deshabilitadas también para admin; no se agregó comando de asignación de permisos a grupos (paso operativo). Si el negocio decide otra cosa, cambia solo el punto afectado (toggle: permiso aparte; comando: aditivo).
+
+**Deuda técnica / límites señalados**
+- Conviven dos métodos de alcance de inventario (`get_inventario_queryset_by_role`, legado con `sucursales[0]`, usado por el reporte del Django Admin; y `get_panel_inventario_queryset` en la API).
+- `GET /product/sucursales` y Precios por sucursal siguen sin alcance por usuario (fuera de alcance).
+- Los botones del panel reflejan los permisos del último login; un cambio de grupo exige volver a iniciar sesión (el servidor sí aplica el cambio de inmediato).
+- Los permisos `add_inventario`/`change_inventario` hay que asignarlos a los grupos no admin que deban operar; mientras tanto siguen en solo lectura.
+- **Pendiente:** verificación manual en vivo (paso 10 del plan: admin, usuario de 1 sucursal, de 2, sin permisos y sin sucursal; intento directo por API a una fila ajena) — no ejecutada por el engineer.
 
 ## Review
 _Pendiente_
