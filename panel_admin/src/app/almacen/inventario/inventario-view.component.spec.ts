@@ -69,6 +69,7 @@ describe('InventarioViewComponent', () => {
   it('muestra titulo, nombre del producto y datos de Informacion General', () => {
     const el = render({ date: '2026-09-27T14:30:00', nro_lote: 'L1', numero_referencia: 12 });
     expect(text(el, 'title')).toBe('Detalle de Registro');
+    expect(el.querySelector('[data-test="title"]')?.classList).toContain('inventario-title');
     expect(text(el, 'product-name')).toBe('Carbon 20%');
     expect(text(el, 'sucursal')).toBe('Central');
     expect(text(el, 'lamina')).toBe('Carbon 20%');

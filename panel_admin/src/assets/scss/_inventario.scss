@@ -54,3 +54,9 @@
     }
   }
 }
+
+// Tema oscuro de la plantilla (body.dark): el `h4` suelto de la cabecera no
+// esta cubierto por los estilos de `.card h4` de skins/_dark.scss y quedaba negro.
+body.dark .inventario-view .inventario-title {
+  color: #ffffff;
+}
