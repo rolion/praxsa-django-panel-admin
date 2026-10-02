@@ -1,6 +1,6 @@
 # TASK-despliegue-nuevo-servidor-inicializacion-db: Nuevo despliegue Docker en servidor aparte, con DB admin y script manual de inicialización de datos
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** NO
 **Rama:** `claude/deployment-db-initialization-b97fdc` (asignada por el entorno)
@@ -19,6 +19,7 @@
 | 2026-10-02 | PLANNING → ENGINEERING | Plan v1 escrito (settings por entorno, `Dockerfile.v2` multi-stage, compose v2, nginx por path, comando `inicializar_datos` + exportador de catálogo, `scripts/init-v2.sh`, `panel_admin` con `apiUrl` relativo); PR abierto sobre la rama asignada; listo para aprobación humana | delivery-plan |
 | 2026-10-02 | PLANNING → PLANNING (plan v2) | Por pedido del usuario se quita `HashLocationStrategy` (URLs sin `#`); `/calculadora` → `/panel/calculadora`; nginx con fallback `try_files`; verificación local del build en `/panel/` registrada | delivery-plan |
 | 2026-10-02 | ENGINEERING → REVIEW | Implementación completa según el plan v2; verificación propia en Docker real (build, arranque, seed dos veces, rutas, login, Adminer, persistencia) y suites propias en verde | delivery-engineer |
+| 2026-10-02 | REVIEW → PUBLISH | Quality Gate PASS: backend 588 OK, `ng lint`/build/`ng test` (13 fallos idénticos a `master`), stack Docker v2 reconstruido y verificado de punta a punta; 0 issues abiertos | delivery-review |
 
 ## Investigación
 
@@ -227,7 +228,18 @@ Implementado según el plan v2. Todos los pasos 1-11 del plan, con verificación
 - El acceso a Adminer no tiene capa extra (decisión aceptada del ADR).
 
 ## Review
-_Pendiente_
+**Resultado: PASS** (2026-10-02, `delivery-review`, sesión nueva sin contexto de la implementación). **Issues abiertos: ninguno** (no se creó ningún `REV-...md`).
+
+Verificado con comandos reales sobre la rama del PR #64:
+- Backend: `manage.py test product` 588 tests OK; `makemigrations --check --dry-run` sin cambios; `flake8` (max 120) y `bandit` sin hallazgos en los 2 comandos y sus tests; `ALLOWED_HOSTS`/`CSRF_TRUSTED_ORIGINS`/`CORS_ORIGIN_WHITELIST` sin variables = idénticas a `master` (13/6/15 elementos).
+- Frontend: `ng lint` limpio; `ng build --configuration production --base-href /panel/` OK (`<base href="/panel/">`); `ng test --code-coverage` 456 OK / 13 FAILED, **los mismos 13 `should create` que en `master`** (baseline corrido en un worktree temporal de `origin/master`: 456/13).
+- Docker (stack aislado, proyecto `review-v2`, `.env` desechable, puerto 8099; se destruyó al terminar): build OK; 4 servicios arriba; `init-v2.sh` aborta sin `DEFAULT_PASSWORD`; seed dos veces: 1ª crea 4 grupos/2 sucursales/3 usuarios/2 instaladores/33/155/9/12/10 láminas/2 bobinas/4 inventarios, 2ª 0 creados; rutas `/`, `/calculadora`, `/admin/login/`, `/static/admin/css/base.css`, `/panel/`, `/panel/calculadora`, `/panel/users`, `/product/calculator_info`, `/adminer` (login Adminer con PostgreSQL), `/media/car_models/2.webp` según lo planeado; login API de `admin1` con token y 400 con contraseña mala; login `/admin/` de `superadmin` OK; archivo en `media_v2` sobrevive a recrear `web`/`nginx` (`--build --force-recreate`, sin borrar volúmenes); solo `postgres_v2`/`media_v2` + red propia; sin `.env*` en las imágenes `web`/`nginx`; `web` corre como `app`.
+- Plan compliance: todos los acceptance criteria cumplidos; el diff no toca archivos del despliegue actual (compose/Dockerfile/nginx `prod|stg|dev`, `proforma/`). Archivos fuera de la lista del plan: `.gitattributes` (LF en `*.sh`) y copia de `.npmrc` en el Dockerfile, ambos declarados en `## Implementación` y de bajo riesgo; no se consideran scope creep.
+
+No verificado / límites de esta revisión:
+- Seguridad: `bandit` solo sobre los 2 comandos nuevos; `safety`/`mypy`/`coverage.py` no instalados (cobertura backend revisada a mano: cada rama de `inicializar_datos` y `exportar_catalogo_seed` tiene test). `npm audit --omit=dev` reporta 3 vulnerabilidades (1 moderada, 2 altas) en dependencias preexistentes de `panel_admin`; este cambio no agrega dependencias y no se bloquea por ello.
+- Sin TLS/dominio real ni despliegue en el servidor definitivo (fuera de alcance del plan); los 4 supuestos del plan siguen sin confirmar por el usuario; límites de memoria no medidos (`docker stats` no corrido).
+- Observación no bloqueante, preexistente: tras el login de `/admin/` Django redirige a `/accounts/profile/` (no depende de este diff).
 
 ## Publicación
 _Pendiente_
