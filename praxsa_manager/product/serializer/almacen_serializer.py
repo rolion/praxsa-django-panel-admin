@@ -2,6 +2,7 @@ from django.core.validators import MaxValueValidator
 from django.utils import timezone
 from rest_framework import serializers
 
+from ..helper.user import User_Helper
 from ..models import Sucursal, Window_Film, Window_Film_Reel, alphanumeric, inventario
 from .image_validation import validate_uploaded_image
 
@@ -142,6 +143,18 @@ class InventarioCreateSerializer(serializers.ModelSerializer):
             'precio_venta_mtr_lineal', 'installed', 'original_length', 'date',
             'numero_referencia', 'nro_lote',
         ]
+
+    def validate_sucursal(self, value):
+        """Solo sucursales habilitadas dentro del alcance del usuario (admin:
+        todas las habilitadas, el resto las suyas) -- ver ADR-almacen-permisos-
+        sucursal-filtros-alcance-inventario, decision 3. Sin `request` en el
+        contexto no hay alcance que verificar y se rechaza."""
+        request = self.context.get('request')
+        if request is None:
+            raise serializers.ValidationError('No se pudo verificar la sucursal del usuario.')
+        if not User_Helper().get_sucursales_in_scope(request.user).filter(pk=value.pk).exists():
+            raise serializers.ValidationError('Clave primaria invalida: la sucursal no esta disponible para este usuario.')
+        return value
 
     def create(self, validated_data):
         validated_data.setdefault('installed', 0)
