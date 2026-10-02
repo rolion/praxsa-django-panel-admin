@@ -15,6 +15,7 @@
 | 2026-10-02 | PLANNING → ENGINEERING | Plan v1 escrito (ThemeService nuevo, botón en header, retiro del panel, specs y doc); PR abierto sobre la rama asignada por el entorno | delivery-plan |
 | 2026-10-02 | ENGINEERING → REVIEW | Implementación completa según plan v1 | delivery-engineer |
 | 2026-10-02 | REVIEW → PUBLISH | Quality Gate PASS; 1 issue Medium abierto (REV-01, categoría PLAN: cambio de color primario no registrado) a resolver/confirmar en la publicación | delivery-review |
+| 2026-10-02 | PUBLISH (sin cambio) | PR #65 completo y listo para aprobación humana; pendiente confirmar REV-01 (color primario) | delivery-publish |
 
 ## Investigación
 
@@ -113,4 +114,6 @@ Verificaciones ejecutadas (salida real en el PR, `## Testing`):
 Plan compliance: los 5 acceptance criteria se cumplen; `RightSidebarComponent`/`RightSidebarService` ya no existen (solo quedan comentarios y SCSS inerte documentados como fuera de alcance); no hay ADR/DDR; tests definidos por el plan presentes; E2E no requerido por el plan.
 
 ## Publicación
-_Pendiente_
+[PR #65](https://github.com/rolion/praxsa-django-panel-admin/pull/65) — **Listo para aprobación humana** (no mergeado). Descripción completa con trazabilidad (plan v1, sin ADR/DDR, testing y review del Quality Gate).
+
+Antes del merge: confirmar el cambio de color primario del skin claro ([REV-01](../reviews/REV-2026-10-02-theme-switcher-relocation-01.md), Medium abierto) o revertirlo.
