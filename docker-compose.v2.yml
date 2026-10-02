@@ -1,0 +1,77 @@
+# Stack v2 (ADR-despliegue-nuevo-servidor-inicializacion-db-stack-v2-build-y-enrutamiento).
+# Autocontenido: red y volumenes los crea el propio compose (nada `external`), con
+# sufijo v2 para no chocar con el despliegue actual si comparten host Docker.
+#   cp praxsa_manager/.env-v2.example praxsa_manager/.env   # y completar los valores
+#   docker compose -f docker-compose.v2.yml up -d --build
+#   ./scripts/init-v2.sh                                    # paso manual: migrate + datos
+name: praxsa-v2
+
+services:
+  db:
+    container_name: db_v2
+    image: postgres:16
+    restart: unless-stopped
+    env_file: ${ENV_FILE:-praxsa_manager/.env}
+    volumes:
+      - postgres_v2:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - praxsa_v2
+
+  web:
+    container_name: web_v2
+    build:
+      context: .
+      dockerfile: Dockerfile.v2
+      target: web
+    restart: unless-stopped
+    env_file: ${ENV_FILE:-praxsa_manager/.env}
+    volumes:
+      - media_v2:/praxsa_manager/media
+    expose:
+      - "5000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - praxsa_v2
+
+  nginx:
+    container_name: nginx_v2
+    build:
+      context: .
+      dockerfile: Dockerfile.v2
+      target: nginx
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    volumes:
+      - media_v2:/praxsa_manager/media:ro
+    depends_on:
+      - web
+      - adminer
+    networks:
+      - praxsa_v2
+
+  # Sin puerto publicado al host: solo se alcanza por nginx en /adminer/.
+  adminer:
+    container_name: adminer_v2
+    image: adminer:4
+    restart: unless-stopped
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    depends_on:
+      - db
+    networks:
+      - praxsa_v2
+
+volumes:
+  postgres_v2:
+  media_v2:
+
+networks:
+  praxsa_v2:

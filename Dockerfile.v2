@@ -1,0 +1,71 @@
+# Stack v2 (ADR-despliegue-nuevo-servidor-inicializacion-db-stack-v2-build-y-enrutamiento).
+# Contexto de build = raiz del repo. Dos targets: `web` (Django + gunicorn) y `nginx`
+# (nginx con los estaticos de Django y el build de panel_admin ya dentro de la
+# imagen: no hay volumenes compartidos `static`/`laminas`).
+#   docker build -f Dockerfile.v2 --target web   .
+#   docker build -f Dockerfile.v2 --target nginx .
+
+# ---------------------------------------------------------------- backend (base comun)
+FROM python:3.10-alpine AS backend
+
+ENV PYTHONUNBUFFERED=1
+ENV TZ=America/La_Paz
+
+RUN addgroup -S app && adduser -S app -G app
+
+WORKDIR /praxsa_manager
+ENV HOME=/praxsa_manager
+
+RUN apk add --no-cache netcat-openbsd gcc libc-dev gpgme-dev postgresql-dev tzdata
+
+COPY praxsa_manager/requirements-3.8.10.txt .
+RUN pip install --upgrade pip \
+    && pip install psycopg2-binary \
+    && pip install -r requirements-3.8.10.txt
+
+COPY praxsa_manager/praxsa_manager ./praxsa_manager
+COPY praxsa_manager/product ./product
+COPY praxsa_manager/templates ./templates
+COPY praxsa_manager/manage.py ./
+
+# ---------------------------------------------------------------- static (collectstatic en build)
+FROM backend AS static
+
+# settings.py exige estas variables al importarse; collectstatic no abre la BD, asi
+# que basta con valores ficticios, solo para esta instruccion (no quedan en la imagen).
+RUN mkdir -p logs static staticfiles \
+    && ENV=PROD DEBUG=0 SECRET_KEY=solo-para-collectstatic-en-build \
+       POSTGRES_USER=build POSTGRES_PASSWORD=build POSTGRES_DB=build DB_HOST=localhost DB_PORT=5432 \
+       python manage.py collectstatic --noinput
+
+# ---------------------------------------------------------------- panel (build de panel_admin)
+FROM node:22-alpine AS panel
+
+WORKDIR /panel_admin
+# .npmrc fija legacy-peer-deps=true (peer deps de angular-datetime-picker); sin el, npm ci falla.
+COPY panel_admin/package.json panel_admin/package-lock.json panel_admin/.npmrc ./
+RUN npm ci --no-audit --no-fund
+COPY panel_admin/ ./
+RUN npx ng build --configuration production --base-href /panel/
+
+# ---------------------------------------------------------------- target web
+FROM backend AS web
+
+# `media` es el punto de montaje del volumen media_v2; se crea con dueño `app` para
+# que el volumen nuevo herede el permiso de escritura.
+RUN mkdir -p media logs static \
+    && chown -R app:app /praxsa_manager
+
+USER app
+
+EXPOSE 5000
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "praxsa_manager.wsgi:application"]
+
+# ---------------------------------------------------------------- target nginx
+FROM nginx:1.27-alpine AS nginx
+
+COPY nginx/nginx.conf.v2 /etc/nginx/nginx.conf
+COPY --from=static /praxsa_manager/staticfiles /praxsa_manager/staticfiles
+COPY --from=panel /panel_admin/dist/oreva/browser /usr/share/nginx/html/panel
+
+EXPOSE 80

@@ -1,0 +1,1049 @@
+{
+  "marcas": [
+    {
+      "nombre": "Audi",
+      "activo": true
+    },
+    {
+      "nombre": "BMW",
+      "activo": true
+    },
+    {
+      "nombre": "BYD",
+      "activo": true
+    },
+    {
+      "nombre": "Changan",
+      "activo": true
+    },
+    {
+      "nombre": "CHERY",
+      "activo": true
+    },
+    {
+      "nombre": "CHEVROLET",
+      "activo": true
+    },
+    {
+      "nombre": "DAIHATSU",
+      "activo": true
+    },
+    {
+      "nombre": "Dodge",
+      "activo": true
+    },
+    {
+      "nombre": "FIAT",
+      "activo": true
+    },
+    {
+      "nombre": "Ford",
+      "activo": true
+    },
+    {
+      "nombre": "Foton",
+      "activo": true
+    },
+    {
+      "nombre": "GAC",
+      "activo": true
+    },
+    {
+      "nombre": "Great Wall",
+      "activo": true
+    },
+    {
+      "nombre": "Honda",
+      "activo": true
+    },
+    {
+      "nombre": "Hyundai",
+      "activo": true
+    },
+    {
+      "nombre": "ISUZU",
+      "activo": true
+    },
+    {
+      "nombre": "JAC",
+      "activo": true
+    },
+    {
+      "nombre": "Jeep",
+      "activo": true
+    },
+    {
+      "nombre": "KIA",
+      "activo": true
+    },
+    {
+      "nombre": "Lexus",
+      "activo": true
+    },
+    {
+      "nombre": "Mazda",
+      "activo": true
+    },
+    {
+      "nombre": "Mercedes-Benz",
+      "activo": true
+    },
+    {
+      "nombre": "MITSUBISHI",
+      "activo": true
+    },
+    {
+      "nombre": "Nissan",
+      "activo": true
+    },
+    {
+      "nombre": "Peugeot",
+      "activo": true
+    },
+    {
+      "nombre": "RAM",
+      "activo": true
+    },
+    {
+      "nombre": "Renault",
+      "activo": true
+    },
+    {
+      "nombre": "SUBARU",
+      "activo": true
+    },
+    {
+      "nombre": "Suzuki",
+      "activo": true
+    },
+    {
+      "nombre": "TLD",
+      "activo": true
+    },
+    {
+      "nombre": "Toyota",
+      "activo": true
+    },
+    {
+      "nombre": "Volkswagen",
+      "activo": true
+    },
+    {
+      "nombre": "ZNA",
+      "activo": true
+    }
+  ],
+  "modelos": [
+    {
+      "marca": "Audi",
+      "nombre": "A1",
+      "activo": true
+    },
+    {
+      "marca": "Audi",
+      "nombre": "Q5",
+      "activo": true
+    },
+    {
+      "marca": "BMW",
+      "nombre": "120i",
+      "activo": true
+    },
+    {
+      "marca": "BMW",
+      "nombre": "320i - 1987",
+      "activo": true
+    },
+    {
+      "marca": "BMW",
+      "nombre": "328i",
+      "activo": true
+    },
+    {
+      "marca": "BMW",
+      "nombre": "528i",
+      "activo": true
+    },
+    {
+      "marca": "BMW",
+      "nombre": "M850i",
+      "activo": true
+    },
+    {
+      "marca": "BMW",
+      "nombre": "X1",
+      "activo": true
+    },
+    {
+      "marca": "BMW",
+      "nombre": "X4",
+      "activo": true
+    },
+    {
+      "marca": "BMW",
+      "nombre": "X6",
+      "activo": true
+    },
+    {
+      "marca": "BYD",
+      "nombre": "Song Plus DM-i",
+      "activo": true
+    },
+    {
+      "marca": "Changan",
+      "nombre": "CS15",
+      "activo": true
+    },
+    {
+      "marca": "Changan",
+      "nombre": "CS35",
+      "activo": true
+    },
+    {
+      "marca": "CHERY",
+      "nombre": "Arrizo 3",
+      "activo": true
+    },
+    {
+      "marca": "CHERY",
+      "nombre": "QQ",
+      "activo": true
+    },
+    {
+      "marca": "CHERY",
+      "nombre": "TIGGO 2",
+      "activo": true
+    },
+    {
+      "marca": "CHEVROLET",
+      "nombre": "Blazer",
+      "activo": true
+    },
+    {
+      "marca": "CHEVROLET",
+      "nombre": "ONIX",
+      "activo": true
+    },
+    {
+      "marca": "CHEVROLET",
+      "nombre": "Silverado",
+      "activo": true
+    },
+    {
+      "marca": "CHEVROLET",
+      "nombre": "Tracker",
+      "activo": true
+    },
+    {
+      "marca": "DAIHATSU",
+      "nombre": "Feroza",
+      "activo": true
+    },
+    {
+      "marca": "FIAT",
+      "nombre": "Argo",
+      "activo": true
+    },
+    {
+      "marca": "FIAT",
+      "nombre": "Cronos",
+      "activo": true
+    },
+    {
+      "marca": "FIAT",
+      "nombre": "Fullback",
+      "activo": true
+    },
+    {
+      "marca": "FIAT",
+      "nombre": "Pulse",
+      "activo": true
+    },
+    {
+      "marca": "FIAT",
+      "nombre": "Strada",
+      "activo": true
+    },
+    {
+      "marca": "FIAT",
+      "nombre": "Uno Way",
+      "activo": true
+    },
+    {
+      "marca": "Ford",
+      "nombre": "EcoSport",
+      "activo": true
+    },
+    {
+      "marca": "Ford",
+      "nombre": "Escape-2018",
+      "activo": true
+    },
+    {
+      "marca": "Ford",
+      "nombre": "Explorer",
+      "activo": true
+    },
+    {
+      "marca": "Ford",
+      "nombre": "F-150",
+      "activo": true
+    },
+    {
+      "marca": "Ford",
+      "nombre": "Maverick",
+      "activo": true
+    },
+    {
+      "marca": "Ford",
+      "nombre": "Ranger",
+      "activo": true
+    },
+    {
+      "marca": "Foton",
+      "nombre": "Tunland G7",
+      "activo": true
+    },
+    {
+      "marca": "GAC",
+      "nombre": "Emkoo",
+      "activo": true
+    },
+    {
+      "marca": "GAC",
+      "nombre": "Emzoom",
+      "activo": true
+    },
+    {
+      "marca": "GAC",
+      "nombre": "GS3",
+      "activo": true
+    },
+    {
+      "marca": "GAC",
+      "nombre": "GS4",
+      "activo": true
+    },
+    {
+      "marca": "GAC",
+      "nombre": "GS5",
+      "activo": true
+    },
+    {
+      "marca": "GAC",
+      "nombre": "GS8",
+      "activo": true
+    },
+    {
+      "marca": "Great Wall",
+      "nombre": "Voleex C30",
+      "activo": true
+    },
+    {
+      "marca": "Honda",
+      "nombre": "Accord",
+      "activo": true
+    },
+    {
+      "marca": "Honda",
+      "nombre": "Civic",
+      "activo": true
+    },
+    {
+      "marca": "Honda",
+      "nombre": "CR-V",
+      "activo": true
+    },
+    {
+      "marca": "Honda",
+      "nombre": "HR-V",
+      "activo": true
+    },
+    {
+      "marca": "Honda",
+      "nombre": "HR-V (2024)",
+      "activo": true
+    },
+    {
+      "marca": "Honda",
+      "nombre": "PILOT - 2018",
+      "activo": true
+    },
+    {
+      "marca": "Honda",
+      "nombre": "Ridgeline",
+      "activo": true
+    },
+    {
+      "marca": "Honda",
+      "nombre": "VTec",
+      "activo": true
+    },
+    {
+      "marca": "Honda",
+      "nombre": "WR-V",
+      "activo": true
+    },
+    {
+      "marca": "Hyundai",
+      "nombre": "Accent",
+      "activo": true
+    },
+    {
+      "marca": "Hyundai",
+      "nombre": "Creta",
+      "activo": true
+    },
+    {
+      "marca": "Hyundai",
+      "nombre": "Creta Grand",
+      "activo": true
+    },
+    {
+      "marca": "Hyundai",
+      "nombre": "EON",
+      "activo": true
+    },
+    {
+      "marca": "Hyundai",
+      "nombre": "Grand i10",
+      "activo": true
+    },
+    {
+      "marca": "Hyundai",
+      "nombre": "Santa Fe",
+      "activo": true
+    },
+    {
+      "marca": "Hyundai",
+      "nombre": "Santa Fe - 2024",
+      "activo": true
+    },
+    {
+      "marca": "Hyundai",
+      "nombre": "Sontana",
+      "activo": true
+    },
+    {
+      "marca": "Hyundai",
+      "nombre": "Tucson",
+      "activo": true
+    },
+    {
+      "marca": "Hyundai",
+      "nombre": "Venue",
+      "activo": true
+    },
+    {
+      "marca": "ISUZU",
+      "nombre": "Reward 530 - 650",
+      "activo": true
+    },
+    {
+      "marca": "Jeep",
+      "nombre": "Limited T270",
+      "activo": true
+    },
+    {
+      "marca": "Jeep",
+      "nombre": "Renegade 2018",
+      "activo": true
+    },
+    {
+      "marca": "Jeep",
+      "nombre": "Renegade 2019",
+      "activo": true
+    },
+    {
+      "marca": "KIA",
+      "nombre": "Rio",
+      "activo": true
+    },
+    {
+      "marca": "KIA",
+      "nombre": "Seltos",
+      "activo": true
+    },
+    {
+      "marca": "KIA",
+      "nombre": "Sonet",
+      "activo": true
+    },
+    {
+      "marca": "KIA",
+      "nombre": "Sportage",
+      "activo": true
+    },
+    {
+      "marca": "Lexus",
+      "nombre": "LX 570",
+      "activo": true
+    },
+    {
+      "marca": "Mazda",
+      "nombre": "BT-50",
+      "activo": true
+    },
+    {
+      "marca": "Mazda",
+      "nombre": "CX-3",
+      "activo": true
+    },
+    {
+      "marca": "Mazda",
+      "nombre": "CX-5",
+      "activo": true
+    },
+    {
+      "marca": "Mazda",
+      "nombre": "CX-6",
+      "activo": true
+    },
+    {
+      "marca": "Mazda",
+      "nombre": "CX-9",
+      "activo": true
+    },
+    {
+      "marca": "Mazda",
+      "nombre": "Mazda2",
+      "activo": true
+    },
+    {
+      "marca": "Mercedes-Benz",
+      "nombre": "G 500",
+      "activo": true
+    },
+    {
+      "marca": "Mercedes-Benz",
+      "nombre": "GLB 200",
+      "activo": true
+    },
+    {
+      "marca": "Mercedes-Benz",
+      "nombre": "GLC 200 COUPE",
+      "activo": true
+    },
+    {
+      "marca": "Mercedes-Benz",
+      "nombre": "GLC 200 SUV",
+      "activo": true
+    },
+    {
+      "marca": "Mercedes-Benz",
+      "nombre": "GLE 450  COUPE",
+      "activo": true
+    },
+    {
+      "marca": "Mercedes-Benz",
+      "nombre": "GLE 450 SUV",
+      "activo": true
+    },
+    {
+      "marca": "Mercedes-Benz",
+      "nombre": "GLS 450",
+      "activo": true
+    },
+    {
+      "marca": "MITSUBISHI",
+      "nombre": "Asx",
+      "activo": true
+    },
+    {
+      "marca": "MITSUBISHI",
+      "nombre": "Eclipse Cross",
+      "activo": true
+    },
+    {
+      "marca": "MITSUBISHI",
+      "nombre": "L200 (Triton)",
+      "activo": true
+    },
+    {
+      "marca": "MITSUBISHI",
+      "nombre": "Montero Sport",
+      "activo": true
+    },
+    {
+      "marca": "MITSUBISHI",
+      "nombre": "Outlander",
+      "activo": true
+    },
+    {
+      "marca": "MITSUBISHI",
+      "nombre": "PAJERO 2P",
+      "activo": true
+    },
+    {
+      "marca": "Nissan",
+      "nombre": "Frontier",
+      "activo": true
+    },
+    {
+      "marca": "Nissan",
+      "nombre": "Frontier 2011",
+      "activo": true
+    },
+    {
+      "marca": "Nissan",
+      "nombre": "Kicks",
+      "activo": true
+    },
+    {
+      "marca": "Nissan",
+      "nombre": "Pathfinder 2008",
+      "activo": true
+    },
+    {
+      "marca": "Nissan",
+      "nombre": "Pathfinder 2022",
+      "activo": true
+    },
+    {
+      "marca": "Nissan",
+      "nombre": "Patrol 4P",
+      "activo": true
+    },
+    {
+      "marca": "Nissan",
+      "nombre": "Patrol SGL 2P",
+      "activo": true
+    },
+    {
+      "marca": "Nissan",
+      "nombre": "Qashqai",
+      "activo": true
+    },
+    {
+      "marca": "Nissan",
+      "nombre": "Urvan",
+      "activo": true
+    },
+    {
+      "marca": "Nissan",
+      "nombre": "Versa",
+      "activo": true
+    },
+    {
+      "marca": "Nissan",
+      "nombre": "X-Trail",
+      "activo": true
+    },
+    {
+      "marca": "Peugeot",
+      "nombre": "2008",
+      "activo": true
+    },
+    {
+      "marca": "Peugeot",
+      "nombre": "3008",
+      "activo": true
+    },
+    {
+      "marca": "Peugeot",
+      "nombre": "5008",
+      "activo": true
+    },
+    {
+      "marca": "RAM",
+      "nombre": "700",
+      "activo": true
+    },
+    {
+      "marca": "RAM",
+      "nombre": "V700 Rapid",
+      "activo": true
+    },
+    {
+      "marca": "Renault",
+      "nombre": "Duster",
+      "activo": true
+    },
+    {
+      "marca": "SUBARU",
+      "nombre": "Forester",
+      "activo": true
+    },
+    {
+      "marca": "SUBARU",
+      "nombre": "Impreza",
+      "activo": true
+    },
+    {
+      "marca": "Suzuki",
+      "nombre": "Alto",
+      "activo": true
+    },
+    {
+      "marca": "Suzuki",
+      "nombre": "APV",
+      "activo": true
+    },
+    {
+      "marca": "Suzuki",
+      "nombre": "Baleno",
+      "activo": true
+    },
+    {
+      "marca": "Suzuki",
+      "nombre": "Carry",
+      "activo": true
+    },
+    {
+      "marca": "Suzuki",
+      "nombre": "Celerio",
+      "activo": true
+    },
+    {
+      "marca": "Suzuki",
+      "nombre": "Dzire",
+      "activo": true
+    },
+    {
+      "marca": "Suzuki",
+      "nombre": "Ertiga",
+      "activo": true
+    },
+    {
+      "marca": "Suzuki",
+      "nombre": "Escudo (3P)",
+      "activo": true
+    },
+    {
+      "marca": "Suzuki",
+      "nombre": "Gran Vitara 2P",
+      "activo": true
+    },
+    {
+      "marca": "Suzuki",
+      "nombre": "Grand Vitara",
+      "activo": true
+    },
+    {
+      "marca": "Suzuki",
+      "nombre": "Grand Vitara - 2024",
+      "activo": true
+    },
+    {
+      "marca": "Suzuki",
+      "nombre": "Ignis",
+      "activo": true
+    },
+    {
+      "marca": "Suzuki",
+      "nombre": "Jimmy",
+      "activo": true
+    },
+    {
+      "marca": "Suzuki",
+      "nombre": "Jimmy - 2019",
+      "activo": true
+    },
+    {
+      "marca": "Suzuki",
+      "nombre": "Scross",
+      "activo": true
+    },
+    {
+      "marca": "Suzuki",
+      "nombre": "Swift",
+      "activo": true
+    },
+    {
+      "marca": "Suzuki",
+      "nombre": "SX4",
+      "activo": true
+    },
+    {
+      "marca": "Suzuki",
+      "nombre": "Vitara",
+      "activo": true
+    },
+    {
+      "marca": "TLD",
+      "nombre": "M100 Push Back",
+      "activo": true
+    },
+    {
+      "marca": "TLD",
+      "nombre": "M75 Push Back",
+      "activo": true
+    },
+    {
+      "marca": "TLD",
+      "nombre": "M91 Push Back",
+      "activo": true
+    },
+    {
+      "marca": "TLD",
+      "nombre": "M92 Push Back",
+      "activo": true
+    },
+    {
+      "marca": "Toyota",
+      "nombre": "4Runner",
+      "activo": true
+    },
+    {
+      "marca": "Toyota",
+      "nombre": "Corolla",
+      "activo": true
+    },
+    {
+      "marca": "Toyota",
+      "nombre": "Corolla (vagoneta)",
+      "activo": true
+    },
+    {
+      "marca": "Toyota",
+      "nombre": "Corolla Cross",
+      "activo": true
+    },
+    {
+      "marca": "Toyota",
+      "nombre": "FJ",
+      "activo": true
+    },
+    {
+      "marca": "Toyota",
+      "nombre": "Fortuner 2017",
+      "activo": true
+    },
+    {
+      "marca": "Toyota",
+      "nombre": "Hilux",
+      "activo": true
+    },
+    {
+      "marca": "Toyota",
+      "nombre": "Land Cruiser",
+      "activo": true
+    },
+    {
+      "marca": "Toyota",
+      "nombre": "Platz",
+      "activo": true
+    },
+    {
+      "marca": "Toyota",
+      "nombre": "Prado (3P)",
+      "activo": true
+    },
+    {
+      "marca": "Toyota",
+      "nombre": "Prado (5P)",
+      "activo": true
+    },
+    {
+      "marca": "Toyota",
+      "nombre": "Rav4",
+      "activo": true
+    },
+    {
+      "marca": "Toyota",
+      "nombre": "Rush",
+      "activo": true
+    },
+    {
+      "marca": "Toyota",
+      "nombre": "Sequoia",
+      "activo": true
+    },
+    {
+      "marca": "Toyota",
+      "nombre": "Starlet",
+      "activo": true
+    },
+    {
+      "marca": "Toyota",
+      "nombre": "Tacoma",
+      "activo": true
+    },
+    {
+      "marca": "Toyota",
+      "nombre": "Tundra",
+      "activo": true
+    },
+    {
+      "marca": "Toyota",
+      "nombre": "Vitz",
+      "activo": true
+    },
+    {
+      "marca": "Toyota",
+      "nombre": "Yaris",
+      "activo": true
+    },
+    {
+      "marca": "Volkswagen",
+      "nombre": "Gol Hatchback",
+      "activo": true
+    },
+    {
+      "marca": "Volkswagen",
+      "nombre": "Golf 2018",
+      "activo": true
+    },
+    {
+      "marca": "Volkswagen",
+      "nombre": "Saveiro",
+      "activo": true
+    },
+    {
+      "marca": "Volkswagen",
+      "nombre": "T-Cross",
+      "activo": true
+    },
+    {
+      "marca": "Volkswagen",
+      "nombre": "Tiguan Allspace",
+      "activo": true
+    },
+    {
+      "marca": "Volkswagen",
+      "nombre": "WORKER",
+      "activo": true
+    },
+    {
+      "marca": "ZNA",
+      "nombre": "Rich (2013)",
+      "activo": true
+    }
+  ],
+  "items": [
+    {
+      "nombre": "Lateral adicional",
+      "activo": true
+    },
+    {
+      "nombre": "Laterales delanteros",
+      "activo": true
+    },
+    {
+      "nombre": "Laterales pequeños",
+      "activo": true
+    },
+    {
+      "nombre": "Laterales pequeños (delantero)",
+      "activo": true
+    },
+    {
+      "nombre": "Laterales traseros",
+      "activo": true
+    },
+    {
+      "nombre": "Luneta",
+      "activo": true
+    },
+    {
+      "nombre": "Parabrisas",
+      "activo": true
+    },
+    {
+      "nombre": "Techo Solar",
+      "activo": true
+    },
+    {
+      "nombre": "Vicera",
+      "activo": true
+    }
+  ],
+  "modelo_items": [
+    {
+      "modelo": "320i - 1987",
+      "item": "Laterales pequeños (delantero)",
+      "ancho": "0.70",
+      "largo": "1.00",
+      "cantidad": 2,
+      "precio_instalacion": "50.00"
+    },
+    {
+      "modelo": "320i - 1987",
+      "item": "Parabrisas",
+      "ancho": "0.70",
+      "largo": "1.00",
+      "cantidad": 2,
+      "precio_instalacion": "50.00"
+    },
+    {
+      "modelo": "A1",
+      "item": "Lateral adicional",
+      "ancho": "0.50",
+      "largo": "1.00",
+      "cantidad": 1,
+      "precio_instalacion": "0.00"
+    },
+    {
+      "modelo": "A1",
+      "item": "Laterales delanteros",
+      "ancho": "0.50",
+      "largo": "0.75",
+      "cantidad": 1,
+      "precio_instalacion": "0.00"
+    },
+    {
+      "modelo": "A1",
+      "item": "Laterales pequeños",
+      "ancho": "0.50",
+      "largo": "0.75",
+      "cantidad": 1,
+      "precio_instalacion": "0.00"
+    },
+    {
+      "modelo": "A1",
+      "item": "Laterales traseros",
+      "ancho": "5.00",
+      "largo": "1.00",
+      "cantidad": 1,
+      "precio_instalacion": "0.00"
+    },
+    {
+      "modelo": "A1",
+      "item": "Luneta",
+      "ancho": "0.50",
+      "largo": "0.50",
+      "cantidad": 1,
+      "precio_instalacion": "0.00"
+    },
+    {
+      "modelo": "A1",
+      "item": "Parabrisas",
+      "ancho": "1.00",
+      "largo": "1.20",
+      "cantidad": 1,
+      "precio_instalacion": "0.00"
+    },
+    {
+      "modelo": "A1",
+      "item": "Techo Solar",
+      "ancho": "1.00",
+      "largo": "2.00",
+      "cantidad": 1,
+      "precio_instalacion": "0.00"
+    },
+    {
+      "modelo": "Q5",
+      "item": "Lateral adicional",
+      "ancho": "0.70",
+      "largo": "0.50",
+      "cantidad": 1,
+      "precio_instalacion": "150.00"
+    },
+    {
+      "modelo": "Q5",
+      "item": "Laterales pequeños",
+      "ancho": "0.50",
+      "largo": "0.50",
+      "cantidad": 1,
+      "precio_instalacion": "100.00"
+    },
+    {
+      "modelo": "Q5",
+      "item": "Parabrisas",
+      "ancho": "0.70",
+      "largo": "1.50",
+      "cantidad": 1,
+      "precio_instalacion": "50.00"
+    }
+  ]
+}

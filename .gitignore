@@ -3,3 +3,4 @@ praxsa_manager/.env
 praxsa_manager/.env-dev
 praxsa_manager/.env-prod
 praxsa_manager/.env-stg
+praxsa_manager/.env-v2
