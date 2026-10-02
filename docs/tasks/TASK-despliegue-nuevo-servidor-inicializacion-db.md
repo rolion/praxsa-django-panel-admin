@@ -4,7 +4,7 @@
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** NO
 **Rama:** `claude/deployment-db-initialization-b97fdc` (asignada por el entorno)
-**Pull Request:** _sin abrir todavía_
+**Pull Request:** [#64](https://github.com/rolion/praxsa-django-panel-admin/pull/64)
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
