@@ -35,6 +35,7 @@
 @use "_custom";
 /* Modulo Ordenes (proforma / nota de trabajo) */
 @use "_ordenes";
+@use "_inventario";
 @use "_reportes";
 @use "_calculadora";
 /* Dashboard del taller */

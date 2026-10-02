@@ -1,4 +1,4 @@
-<section class="main-content">
+<section class="main-content orden-view inventario-view">
   <ul class="breadcrumb breadcrumb-style">
     <li class="breadcrumb-item">
       <h5 class="page-title m-b-0">Ver inventario</h5>
@@ -7,53 +7,128 @@
     <li class="breadcrumb-item">Inventario</li>
   </ul>
   <div class="section-body">
-    <div class="row clearfix">
-      <div class="col-lg-8 col-md-12">
-        <div class="card">
-          <div class="card-body">
-            @if (loading) {
-              <p>Cargando...</p>
-            } @else if (errorMessage) {
-              <div class="alert alert-danger">{{ errorMessage }}</div>
-            } @else if (inventario) {
-              <dl class="row mb-0">
-                <dt class="col-sm-3">Sucursal</dt>
-                <dd class="col-sm-9">{{ inventario.sucursal_name }}</dd>
-                <dt class="col-sm-3">Lámina</dt>
-                <dd class="col-sm-9">{{ inventario.window_film_name }}</dd>
-                <dt class="col-sm-3">Ancho</dt>
-                <dd class="col-sm-9">{{ inventario.bobina_width }}</dd>
-                <dt class="col-sm-3">Cantidad</dt>
-                <dd class="col-sm-9">{{ inventario.quantity }}</dd>
-                <dt class="col-sm-3">Disponible</dt>
-                <dd class="col-sm-9">{{ inventario.to_install }}</dd>
-                <dt class="col-sm-3">Instalado</dt>
-                <dd class="col-sm-9">{{ inventario.installed }}</dd>
-                <dt class="col-sm-3">Longitud inicial</dt>
-                <dd class="col-sm-9">{{ inventario.original_length }}</dd>
-                <dt class="col-sm-3">Fecha</dt>
-                <dd class="col-sm-9">{{ inventario.date }}</dd>
-                <dt class="col-sm-3">Nro. referencia</dt>
-                <dd class="col-sm-9">{{ inventario.numero_referencia }}</dd>
-                <dt class="col-sm-3">Precio compra</dt>
-                <dd class="col-sm-9">{{ inventario.precio_compra_mtr_lineal }}</dd>
-                <dt class="col-sm-3">Precio venta</dt>
-                <dd class="col-sm-9">{{ inventario.precio_venta_mtr_lineal }}</dd>
-                <dt class="col-sm-3">Nro. lote</dt>
-                <dd class="col-sm-9">{{ inventario.nro_lote || '—' }}</dd>
-                <dt class="col-sm-3">Estado</dt>
-                <dd class="col-sm-9">{{ inventario.is_active ? 'Activo' : 'Inactivo' }}</dd>
-              </dl>
-              @if (sucursalInactiva) {
-                <div class="alert alert-info mt-3 mb-0">Esta sucursal está inactiva: solo lectura.</div>
-              }
-              @if (canManage) {
-                <a [routerLink]="['/almacen/inventario/edit', inventario.id]" class="btn btn-primary">Gestionar</a>
-              }
-            }
+    @if (loading) {
+      <p>Cargando...</p>
+    } @else if (errorMessage) {
+      <div class="alert alert-danger">{{ errorMessage }}</div>
+    } @else if (inventario) {
+      <div class="inventario-container">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+          <div>
+            <h4 class="inventario-title mb-1" data-test="title">Detalle de Registro</h4>
+            <div class="text-muted" data-test="product-name">{{ inventario.window_film_name }}</div>
+          </div>
+          @if (canManage) {
+            <a [routerLink]="['/almacen/inventario/edit', inventario.id]" class="btn btn-primary" data-test="edit-button">
+              <i class="fas fa-pen me-1"></i>Editar
+            </a>
+          }
+        </div>
+
+        @if (sucursalInactiva) {
+          <div class="alert alert-info mb-3">Esta sucursal está inactiva: solo lectura.</div>
+        }
+
+        <div class="row g-4">
+          <!-- COLUMNA PRINCIPAL -->
+          <div class="col-lg-8">
+            <div class="card section-card">
+              <div class="section-header"><i class="fas fa-info-circle"></i><h6>Información General</h6></div>
+              <div class="card-body">
+                <div class="row info-grid">
+                  <div class="col-6 info-item">
+                    <span class="info-label">Sucursal</span>
+                    <span class="info-value" data-test="sucursal">{{ inventario.sucursal_name }}</span>
+                  </div>
+                  <div class="col-6 info-item">
+                    <span class="info-label">Lámina</span>
+                    <span class="info-value" data-test="lamina">{{ inventario.window_film_name }}</span>
+                  </div>
+                  <div class="col-6 info-item">
+                    <span class="info-label">Ancho</span>
+                    <span class="info-value" data-test="ancho">{{ formatMeters(inventario.bobina_width) }} m</span>
+                  </div>
+                  <div class="col-6 info-item">
+                    <span class="info-label">Número de lote</span>
+                    <span class="info-value" data-test="lote">
+                      @if (inventario.nro_lote) { {{ inventario.nro_lote }} } @else { <span class="empty-value">—</span> }
+                    </span>
+                  </div>
+                  <div class="col-6 info-item">
+                    <span class="info-label">Número de referencia</span>
+                    <span class="info-value" data-test="referencia">{{ inventario.numero_referencia }}</span>
+                  </div>
+                  <div class="col-6 info-item">
+                    <span class="info-label">Estado</span>
+                    <span class="info-value">
+                      @if (inventario.is_active) {
+                        <span class="badge bg-success" data-test="status">Activo</span>
+                      } @else {
+                        <span class="badge bg-secondary" data-test="status">Inactivo</span>
+                      }
+                    </span>
+                  </div>
+                  <div class="col-6 offset-6 info-item">
+                    <span class="info-label">Fecha de registro</span>
+                    <span class="info-value" data-test="fecha">
+                      @if (inventario.date) { {{ inventario.date | date: 'dd/MM/yyyy - HH:mm' }} h } @else { <span class="empty-value">—</span> }
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- COLUMNA LATERAL -->
+          <div class="col-lg-4">
+            <div class="card section-card">
+              <div class="section-header"><i class="fas fa-cubes"></i><h6>Métricas de Stock</h6></div>
+              <div class="card-body">
+                <div class="row g-2">
+                  <div class="col-6">
+                    <div class="stat-tile featured">
+                      <span class="info-label">Disponible</span>
+                      <span class="stat-value" data-test="disponible">{{ formatMeters(inventario.to_install) }}<span class="stat-unit">m</span></span>
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <div class="stat-tile">
+                      <span class="info-label">Cantidad</span>
+                      <span class="stat-value" data-test="cantidad">{{ inventario.quantity }}</span>
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <div class="stat-tile">
+                      <span class="info-label">Instalado</span>
+                      <span class="stat-value" data-test="instalado">{{ formatMeters(inventario.installed) }}<span class="stat-unit">m</span></span>
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <div class="stat-tile">
+                      <span class="info-label">Longitud inicial</span>
+                      <span class="stat-value" data-test="longitud-inicial">{{ formatMeters(inventario.original_length) }}<span class="stat-unit">m</span></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card section-card">
+              <div class="section-header"><i class="fas fa-coins"></i><h6>Valores Financieros</h6></div>
+              <div class="card-body">
+                <div class="finance-row">
+                  <span class="info-label">Precio de compra (por m)</span>
+                  <span class="finance-value" data-test="precio-compra">{{ formatBs(+inventario.precio_compra_mtr_lineal) }}</span>
+                </div>
+                <div class="finance-row">
+                  <span class="info-label">Precio de venta (por m)</span>
+                  <span class="finance-value" data-test="precio-venta">{{ formatBs(+inventario.precio_venta_mtr_lineal) }}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    }
   </div>
 </section>

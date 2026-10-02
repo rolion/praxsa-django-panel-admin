@@ -1,0 +1,62 @@
+// Vista "Detalle de registro" de inventario (almacen). Se apoya en los estilos
+// compartidos de `.orden-view` (section-card, section-header, info-*, ver
+// _ordenes.scss); aqui solo lo que no existe: contenedor gris y mosaicos de
+// metricas. Fondos translucidos para que sirvan en tema claro y oscuro.
+.inventario-view {
+  .inventario-container {
+    background: rgba(128, 128, 128, 0.08);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+
+  .stat-tile {
+    height: 100%;
+    background: rgba(128, 128, 128, 0.1);
+    border-radius: 10px;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      line-height: 1.2;
+      word-break: break-word;
+    }
+
+    .stat-unit {
+      font-size: 0.8rem;
+      font-weight: 400;
+      color: #8a8f98;
+      margin-left: 0.15rem;
+    }
+
+    &.featured .stat-value {
+      color: #4f6bed;
+    }
+  }
+
+  .finance-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 0.5rem 0;
+
+    & + .finance-row {
+      border-top: 1px solid rgba(128, 128, 128, 0.18);
+    }
+
+    .finance-value {
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+  }
+}
+
+// Tema oscuro de la plantilla (body.dark): el `h4` suelto de la cabecera no
+// esta cubierto por los estilos de `.card h4` de skins/_dark.scss y quedaba negro.
+body.dark .inventario-view .inventario-title {
+  color: #ffffff;
+}
