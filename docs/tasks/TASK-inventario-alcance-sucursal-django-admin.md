@@ -1,6 +1,6 @@
 # TASK-inventario-alcance-sucursal-django-admin: Inventario — choque entre el alcance por sucursal y la regla "solo las sucursales asignadas a su cuenta"
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** task/TASK-inventario-alcance-sucursal-django-admin
@@ -16,6 +16,7 @@
 | 2026-10-02 | (sin cambio de etapa) | Usuario responde: regla en todo el sistema; solo el superusuario ve todo | delivery-investigate |
 | 2026-10-02 | (sin cambio de etapa) | Usuario define sucursales inactivas: lectura sí, escritura no; reportes con multiselect | delivery-investigate |
 | 2026-10-02 | (sin cambio de etapa) | El usuario aclara con captura que la regla aplica también al grupo admin; se agrega el hecho G como choque principal | delivery-investigate |
+| 2026-10-02 | ENGINEERING → REVIEW | Implementación completa de los pasos 1 a 15 del plan v1, incluida verificación manual en vivo con base temporal; desvíos menores documentados; pendiente de Quality Gate independiente | delivery-engineer |
 
 ## Investigación
 
@@ -153,7 +154,43 @@ Supuestos de negocio pendientes de confirmar (marcados en los ADR): (a) el super
 - [PLAN-2026-10-02-inventario-alcance-sucursal-django-admin](../plans/PLAN-2026-10-02-inventario-alcance-sucursal-django-admin.md) — **v1**. 15 pasos en 5 fases: A alcance backend (helper con alcance de lectura/escritura, guard 409, bandera `sucursal_activa`), B reportes multisucursal, C Django Admin (`*_by_role` delegando, `InventoryAdmin` sin estado mutable, mixin de escritura), D panel (badge, botones ocultos, formularios solo con activas, multiselect con `NgbDropdown`), E verificación. E2E: no corresponde (sin Playwright; integración de API + specs + verificación manual con perfiles). Sin migraciones ni dependencias nuevas. Cuatro preguntas abiertas con valor por defecto (superusuario en inactivas, 409, "Todas" = activas, un solo PR).
 
 ## Implementación
-_Pendiente_
+Pasos 1 a 15 del [plan v1](../plans/PLAN-2026-10-02-inventario-alcance-sucursal-django-admin.md) en el PR [#68](https://github.com/rolion/praxsa-django-panel-admin/pull/68), con los desvíos que se listan abajo. Commits: `ab376c8` (fases A y B, backend), `f189eff` (fase C, Django Admin), `7d5a8d2` y `f3ab71c` (fase D, panel y ajustes visuales).
+
+**Backend**
+- `helper/user.py`: `can_view_all_sucursales` = `is_superuser`; `get_readable_sucursales/_ids` (asignadas, activas o no), `get_writable_sucursales/_ids` (asignadas y activas), `is_sucursal_writable`, `require_sucursal_writable` (lanza `SucursalInactiva`, 409) y `has_assigned_sucursal` sobre el alcance de lectura. Se eliminan `get_sucursales_in_scope` y `get_enabled_sucursal_ids` (un test lo fija). Nueva excepción `utils/exception/sucursal.py`.
+- Lecturas (alcance de lectura): `get_panel_*` de inventario, proforma, nota de trabajo, nota de venta y pago; catálogos `almacen/sucursales` y `ordenes/catalogo/sucursales` (ahora con `activa`); precios por sucursal; validación de sucursal de reportes y dashboard. Altas (alcance de escritura): inventario, proforma y precio por sucursal.
+- Escrituras con `require_sucursal_writable` (404 antes, 409 después): PATCH y toggle de inventario; PATCH, generar nota y anular de proforma; PATCH, terminar, corregir y anular de nota de trabajo; pago, anular pago y anular de nota de venta; PATCH y DELETE de precio por sucursal.
+- Campo `sucursal_activa` en inventario, proforma, nota de trabajo y nota de venta (listado y detalle).
+- Reportes: `?sucursales=1,2` (lista por comas, se une a `?sucursal=`), ids validados contra el alcance de lectura (404), "Todas" = activas del alcance; `filtrar_pagos(sucursal_ids=...)`. Dashboard: "Todas" = activas.
+- Django Admin: `admin_config/sucursal_scope.py` (`SucursalWritableAdminMixin`: alta si hay una sucursal activa, cambio/borrado por objeto, selector de sucursal limitado) aplicado a inventario, proforma, nota de trabajo, nota de venta, pagos y precio por sucursal; `PagosAdmin.save_model` rechaza pagos nuevos en sucursal inactiva; `InventoryAdmin` reescrito sin mutar atributos de la instancia; `*_by_role` delegan en los `get_panel_*`.
+
+**Panel**
+- Inventario: badge "Inactiva", Editar/Eliminar/Activar ocultos en esas filas, aviso en Ver y Gestionar (formulario deshabilitado), alta con solo sucursales activas (fija si hay una), aviso si no hay ninguna activa. Placeholder "Todas mis sucursales" para todos (ya no depende del grupo admin).
+- Órdenes: badge en listados y detalles de proformas, notas de trabajo y notas de venta; acciones de escritura ocultas con sucursal inactiva; formulario de proforma con solo sucursales activas y edición bloqueada si la sucursal está inactiva.
+- Reportes: componente nuevo `SucursalMultiselectComponent` (`NgbDropdown`, sin dependencias nuevas) en Ventas Diarias y Utilidad; activas marcadas por defecto, inactivas marcables; texto fijo con una sola activa.
+
+**Pruebas** (corrida propia, no es el Quality Gate)
+- Backend: `manage.py test product` **685 OK** (baseline 618 antes del cambio); `makemigrations --check --dry-run` sin cambios. Tests nuevos: `test_sucursal_alcance_helper.py` (8), `test_sucursal_inactiva_ordenes.py` (13), `test_sucursal_django_admin.py` (18), más casos nuevos en inventario, precios, reportes (`ReportesMultiSucursalTest`), dashboard, órdenes y la suite de alcance. Se actualizaron los tests que suponían "admin ve todo" (reemplazados por superusuario y admin acotado a sus sucursales).
+- Panel: `ng lint` OK, `ng build` OK; suite completa 501 OK y 13 fallos `should create` de componentes demo de la plantilla (los mismos 13 que ya fallaban antes, ver task anterior). Specs nuevos o ajustados en almacén, órdenes y reportes (`sucursal-multiselect.component.spec.ts`).
+- **Verificación manual en vivo (paso 15), con base de datos temporal aparte (ya borrada)**, sembrada con `inicializar_datos` (superadmin, admin1/Santa Cruz, admin2/La Paz) más una sucursal inactiva (Cochabamba) asignada a admin1 con inventario y proforma: API — admin1 ve Santa Cruz y Cochabamba pero no La Paz; fila de La Paz por id 404; PATCH en Cochabamba 409; alta en La Paz y en Cochabamba 400; alta en Santa Cruz 201; admin2 solo La Paz; superadmin todo; reportes con `sucursales=` válido 200 y ajeno 404. Panel — listado de inventario de admin1 (el caso de la captura del usuario) sin La Paz, Cochabamba con badge y solo "Ver"; alta con solo Santa Cruz fija; Ver y Gestionar de la fila inactiva en solo lectura; proformas: la de Cochabamba solo con Ver/PDF y la de Santa Cruz con todas las acciones; multiselect de reportes con Cochabamba "Inactiva" desmarcada. La verificación visual detectó y corrigió tres defectos del multiselect (caret duplicado, menú recortado por la tarjeta, texto cortado). No se probó en vivo con los grupos Almacén/Caja/Vendedor ni el Django Admin real (cubiertos por tests).
+
+**Desvíos respecto al plan (sin cambio de alcance)**
+1. `Conflict` de `ordenes_admin.py` no se reemplazó; `SucursalInactiva` es una excepción propia 409 y las dos conviven.
+2. Los `*_by_role` conservan el contrato de devolver `None` cuando el usuario no tiene sucursal (los `ModelAdmin` lo usan para el aviso "Asigne una sucursal al usuario"); solo el de inventario devuelve `qs.none()`, como antes. El plan decía "nunca None".
+3. `?sucursales=` con formato inválido responde 400 (validación del serializer, igual que `?sucursal=abc`) y no 404; el ADR decía 404 solo para ids fuera de alcance. La respuesta no repite `sucursales` (no hizo falta al panel).
+4. En el listado de proformas el botón "Crear" no se oculta cuando no hay sucursales activas (habría exigido una petición extra a cada listado y reescribir sus specs); el formulario sí avisa y no deja crear. El DDR pedía ocultarlo.
+5. Se agregó el guard de escritura a PATCH/DELETE de precio por sucursal (no estaba en la lista del paso 5, pero la regla es "todo el sistema").
+6. Ajustes visuales del multiselect (menú en `body`, caret único, ancho de columna de Ventas Diarias) encontrados en la verificación en vivo.
+
+**Deuda técnica / límites señalados**
+- `get_user_inventory_window_films` y `get_inventory_window_film_reel_widths` (`business/inventario.py`) siguen filtrando por `sucursal__empleado=user` (fuera de alcance, ver ADR).
+- Precios por sucursal responde 409 al editar o borrar en sucursal inactiva, pero el panel no lo marca con badge ni oculta sus botones.
+- El selector de sucursal del dashboard lista las inactivas sin marcarlas (el valor por defecto sí excluye las inactivas).
+- Módulo Usuarios fuera de alcance por decisión del usuario (`SucursalListCreateView` sigue devolviendo todas las sucursales).
+- Los permisos `add/change/delete_inventario` siguen sin asignarse a los grupos no admin (paso operativo).
+- Supuestos pendientes de confirmar aplicados por defecto: superusuario también en solo lectura en sucursal inactiva; 409 (no 403) por sucursal inactiva; "Todas" = solo activas en reportes y dashboard.
+- El `.env` y el directorio `logs/` del worktree son copias locales para correr los tests (ignorados por git); `panel_admin/node_modules` es un enlace (junction) al del checkout principal.
+
 
 ## Review
 _Pendiente_
