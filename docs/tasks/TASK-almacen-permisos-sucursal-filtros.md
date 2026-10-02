@@ -16,6 +16,7 @@
 | 2026-10-02 | ENGINEERING → REVIEW | Implementación completa de los pasos 1 a 9 del plan v1; el paso 10 (verificación manual en vivo) queda para review/usuario | delivery-engineer |
 | 2026-10-02 | DESIGN → ARCHITECTURE | DDR de filtros y selector de sucursal registrado; veredicto NEEDS_ARCHITECTURE | delivery-design |
 | 2026-10-02 | REVIEW → PUBLISH | Quality Gate PASS: 618 tests backend OK, specs almacén 48 OK, build y lint OK; 2 hallazgos Low no bloqueantes; verificación manual en vivo (paso 10) no ejecutada | delivery-review |
+| 2026-10-02 | (sin cambio de etapa) | Descripción del PR completada; cambio sensible (autorización): pendiente de aprobación humana explícita para el merge | delivery-publish |
 
 ## Investigación
 
@@ -149,4 +150,4 @@ Pasos 1 a 9 del [plan v1](../plans/PLAN-2026-10-02-almacen-permisos-sucursal-fil
 - Issues abiertos (Low, no bloquean): [REV-01](../reviews/REV-2026-10-02-almacen-permisos-sucursal-filtros-01.md) (error de carga de sucursales se muestra como "sin sucursales"), [REV-02](../reviews/REV-2026-10-02-almacen-permisos-sucursal-filtros-02.md) (rama sin `request` del serializer sin test).
 
 ## Publicación
-_Pendiente_
+[PR #66](https://github.com/rolion/praxsa-django-panel-admin/pull/66) — **Listo para aprobación humana** (no mergeado). Cambio sensible: autorización por sucursal, respaldado por ADR-almacen-permisos-sucursal-filtros-alcance-inventario. Pendiente recomendado: smoke manual en vivo del paso 10.
