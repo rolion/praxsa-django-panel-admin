@@ -28,7 +28,6 @@
             "tsConfig": "tsconfig.app.json",
             "allowedCommonJsDependencies": [
               "svg-gauge",
-              "echarts",
               "chart.js",
               "zrender/lib/svg/svg",
               "zrender/lib/vml/vml",
@@ -39,7 +38,6 @@
               "fast-deep-equal",
               "rfdc",
               "sweetalert2",
-              "@ckeditor/ckeditor5-build-classic",
               "bezier-easing"
             ],
             "inlineStyleLanguage": "scss",
