@@ -1,6 +1,6 @@
 # TASK-inventario-detalle-registro-layout: Rediseño de la vista de detalle de registro de inventario (dos columnas, métricas y valores)
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** SI
 **Rama:** `claude/inventory-record-detail-e97b4e` (asignada por el entorno)
@@ -14,6 +14,7 @@
 | 2026-10-02 | PLANNING → ENGINEERING | Plan v1 escrito (solo frontend: plantilla, componente, parcial SCSS y spec; sin E2E ni dependencias) y PR #70 abierto sobre la rama asignada por el entorno; a la espera de aprobación humana del plan | delivery-plan |
 | 2026-10-02 | ENGINEERING → REVIEW | Implementación completa del plan v1 (plantilla, componente, parcial SCSS y specs) | delivery-engineer |
 | 2026-10-02 | REVIEW → ENGINEERING | Quality Gate FAIL: REV-2026-10-02-inventario-detalle-registro-layout-01 (Medium, título ilegible en tema oscuro) | delivery-review |
+| 2026-10-02 | ENGINEERING → REVIEW | REV-01 corregido: el título recibe color propio en `body.dark` (clase `inventario-title`) | delivery-engineer |
 
 ## Investigación
 
@@ -93,6 +94,7 @@ Implementado según plan v1 y DDR, solo frontend (`panel_admin/`), commit `0fc62
 - Verificación propia (no es el Quality Gate): spec de la vista 12/12, `ng lint` y `ng build` limpios.
 
 Notas: (1) las dos preguntas abiertas del plan (nombre del producto = solo lámina; prefijo `Bs`) se implementaron con los supuestos del plan, sin respuesta del usuario. (2) Quedan para review la verificación visual (responsive, tema oscuro) y la zona horaria de `date`. (3) Deuda señalada: dependencia `almacen` → `calculadora` por `formatBs`.
+**Corrección de REV-01** (tema oscuro): el `h4` de la cabecera recibe la clase `inventario-title` y una regla `body.dark .inventario-view .inventario-title { color: #fff }` en `_inventario.scss`; el spec comprueba la clase. Verificado en el stack local en tema oscuro (color computado `rgb(255,255,255)`); spec de la vista 13/13 y `ng lint` limpios (verificación propia).
 
 ## Review
 **Resultado: FAIL** (corrida 1, 2026-10-02; ejecutada en la misma sesión que la implementación, aislamiento solo procedimental).
