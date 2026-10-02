@@ -1,6 +1,6 @@
 # ADR-modulo-ordenes-proforma-nota-trabajo-alcance-permisos: Alcance por sucursal y permisos Django por acción para las Órdenes, con permisos efectivos expuestos al frontend
 
-**Estado:** Propuesto
+**Estado:** Propuesto -- reemplazado parcialmente (alcance de admin y sucursales inactivas) por ADR-inventario-alcance-sucursal-django-admin-alcance-lectura-escritura
 **Task relacionado:** TASK-modulo-ordenes-proforma-nota-trabajo
 **Fecha:** 2026-09-29
 

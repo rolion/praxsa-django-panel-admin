@@ -1,6 +1,6 @@
 # ADR-reportes-utilidad-ventas-diarias-permisos: Permisos de los reportes de ventas y utilidad (servidor, Django Admin y panel)
 
-**Estado:** Propuesto
+**Estado:** Propuesto -- reemplazado parcialmente (alcance de admin y sucursales inactivas) por ADR-inventario-alcance-sucursal-django-admin-alcance-lectura-escritura
 **Task relacionado:** TASK-reportes-utilidad-ventas-diarias
 **Fecha:** 2026-09-30
 

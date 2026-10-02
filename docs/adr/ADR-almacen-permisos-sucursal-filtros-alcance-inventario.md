@@ -1,6 +1,6 @@
 # ADR-almacen-permisos-sucursal-filtros-alcance-inventario: Alcance por sucursal y filtros de lámina/sucursal en Inventario
 
-**Estado:** Propuesto
+**Estado:** Propuesto -- reemplazado parcialmente (alcance de admin y sucursales inactivas) por ADR-inventario-alcance-sucursal-django-admin-alcance-lectura-escritura
 **Task relacionado:** TASK-almacen-permisos-sucursal-filtros
 **Fecha:** 2026-10-02
 
