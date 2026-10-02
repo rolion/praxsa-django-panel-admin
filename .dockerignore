@@ -1,0 +1,20 @@
+# Contexto de build del stack v2 (Dockerfile.v2, contexto = raiz del repo).
+# IMPORTANTE: ningun .env real debe entrar al contexto ni a una capa de la imagen.
+.git
+.claude
+.vscode
+docs
+proforma
+panel_admin_doc
+**/node_modules
+**/.angular
+panel_admin/dist
+**/.venv
+**/__pycache__
+**/*.pyc
+**/.env
+**/.env-*
+!**/.env-*.example
+praxsa_manager/media
+praxsa_manager/logs
+praxsa_manager/*.pdf

@@ -1,6 +1,6 @@
 # TASK-despliegue-nuevo-servidor-inicializacion-db: Nuevo despliegue Docker en servidor aparte, con DB admin y script manual de inicialización de datos
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** NO
 **Rama:** `claude/deployment-db-initialization-b97fdc` (asignada por el entorno)
@@ -18,6 +18,7 @@
 | 2026-10-02 | PLANNING (ajuste de arquitectura) | Por pedido del usuario, la contraseña del seed se lee de `DEFAULT_PASSWORD` en el `.env` (sin valor en el código); ADR de seed actualizado | delivery-architect |
 | 2026-10-02 | PLANNING → ENGINEERING | Plan v1 escrito (settings por entorno, `Dockerfile.v2` multi-stage, compose v2, nginx por path, comando `inicializar_datos` + exportador de catálogo, `scripts/init-v2.sh`, `panel_admin` con `apiUrl` relativo); PR abierto sobre la rama asignada; listo para aprobación humana | delivery-plan |
 | 2026-10-02 | PLANNING → PLANNING (plan v2) | Por pedido del usuario se quita `HashLocationStrategy` (URLs sin `#`); `/calculadora` → `/panel/calculadora`; nginx con fallback `try_files`; verificación local del build en `/panel/` registrada | delivery-plan |
+| 2026-10-02 | ENGINEERING → REVIEW | Implementación completa según el plan v2; verificación propia en Docker real (build, arranque, seed dos veces, rutas, login, Adminer, persistencia) y suites propias en verde | delivery-engineer |
 
 ## Investigación
 
@@ -193,7 +194,37 @@ No aplica
 [PLAN-2026-10-02-despliegue-nuevo-servidor-inicializacion-db](../plans/PLAN-2026-10-02-despliegue-nuevo-servidor-inicializacion-db.md) — **v2**. Pendiente de aprobación humana antes de implementar. Incluye 4 supuestos sin confirmar (superadmin en grupo Admin, dirección de instaladores, precios de inventario en 0, Profile vacío).
 
 ## Implementación
-_Pendiente_
+Implementado según el plan v2. Todos los pasos 1-11 del plan, con verificación propia (no es el Quality Gate: eso es de `delivery-review`).
+
+**Backend (`praxsa_manager/`)**
+- `settings.py`: `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS` y `CORS_ORIGIN_WHITELIST` por `env.list(..., default=<lista actual>)`. Comprobado que sin las variables las tres listas son idénticas a las de `HEAD`.
+- `product/management/commands/exportar_catalogo_seed.py` (nuevo, solo desarrollo) y `product/seed_data/catalogo.json` (33 marcas, 155 modelos, 9 ítems, 12 modelo-ítem, generado desde la BD local; el JSON se escribe con LF y es idéntico entre corridas).
+- `product/management/commands/inicializar_datos.py` (nuevo): atómico, idempotente, `--dry-run` (recorre y deshace), `--password` y `--catalogo`; contraseña de `DEFAULT_PASSWORD` (error claro si falta, validada con los validadores de Django, no se imprime). Reutiliza `asignar_permisos_*` vía `call_command`.
+- Tests nuevos: `test_inicializar_datos.py` (17) y `test_exportar_catalogo_seed.py` (4).
+
+**Infra:** `Dockerfile.v2` (etapas `backend`, `static`, `panel`; targets `web` y `nginx`), `docker-compose.v2.yml` (`name: praxsa-v2`, solo `postgres_v2` y `media_v2`, sin recursos externos), `nginx/nginx.conf.v2`, `praxsa_manager/.env-v2.example`, `.dockerignore` raíz, `.gitignore` (+`.env-v2`), `.gitattributes` (`*.sh` con LF), `scripts/init-v2.sh`, sección "Despliegue v2" en `README.md`. No se modificó ningún archivo del despliegue actual.
+
+**Frontend (`panel_admin/`):** se quitó `HashLocationStrategy` (rutas sin `#`); `src/environments/environment.prod.ts` con `apiUrl: ''` y `fileReplacements` en `angular.json` (`production`).
+
+**Desvíos menores respecto del plan (no cambian alcance ni riesgo):**
+- `.npmrc` de `panel_admin` (`legacy-peer-deps=true`) se copia en la etapa `panel`; sin él `npm ci` falla en Docker por peer deps de `angular-datetime-picker`.
+- Se agregó `ENV_FILE` (por defecto `praxsa_manager/.env`) en el compose y en el script, para poder verificar con un env-file desechable sin tocar el `.env` real.
+- nginx: `client_max_body_size 10m` (el default de 1 MB rompería subidas de imágenes de hasta 5 MB), `absolute_redirect off` (el puerto publicado por Docker no es el 80 interno) y `/adminer` redirige a `/adminer/?pgsql=db` (Adminer ofrece MySQL por defecto).
+- `web` corre como usuario `app` (no root, a diferencia de `Dockerfile.prod`); `media` se crea con ese dueño para que el volumen nuevo sea escribible.
+- Los logs de Django quedan dentro del contenedor (no hay tercer volumen).
+- `importar_imagenes_modelos` pasa `--dry-run` cuando `scripts/init-v2.sh` recibe `--dry-run`.
+
+**Verificación propia en Docker (daemon disponible):** `docker compose build` OK; `up -d` con los 4 servicios (db `healthy`); `scripts/init-v2.sh` corrido dos veces: la segunda con 0 creados y 95 imágenes omitidas; datos en BD (4 grupos; `superadmin` superusuario con 2 sucursales, `admin1`/`admin2` staff en `Admin`; 2 instaladores; 33/155/9/12; 10 láminas; 2 bobinas 0.5 m/440 y 1 m/880 de 20 m; 4 inventarios de 20 m; 95 modelos con imagen); `/`, `/calculadora`, `/admin`, `/adminer` redirigen como se diseñó; `/admin/login/`, `/static/admin/css/base.css`, `/panel/`, `/panel/calculadora`, `/panel/users` (recarga sin 404), `/product/calculator_info`, `/media/car_models/2.webp` → 200; login del panel (`superadmin`, `admin1`) 200 y clave incorrecta 400; login de Django admin con CSRF OK; login de Adminer con credenciales de Postgres lista las tablas; ningún `.env` dentro de las imágenes (`web` y `nginx`); datos y media sobreviven a `up --force-recreate`; volúmenes creados: solo `postgres_v2` y `media_v2`. Memoria en reposo: `db` ≈71 MiB y `web` ≈68 MiB (por eso no se trasladaron los límites de 100 MB).
+
+**Resultados de las corridas propias:** `manage.py test product` 588 tests OK (+21 nuevos); `makemigrations --check` sin cambios; `ng lint` limpio; `ng build --configuration production --base-href /panel/` OK; `ng test` 456 OK y 13 fallos, todos `should create` de componentes demo de la plantilla (`No provider found for ActivatedRoute`), sin relación con este cambio (el TASK de la calculadora ya documentaba 14 de la misma clase en `master`; no se corrió `master` en esta sesión).
+
+**Pendiente / no verificado:**
+- Los 4 supuestos del plan siguen sin confirmar por el usuario (superadmin en `Admin`, dirección de instaladores = la de su sucursal, precios de inventario en 0, `Profile` vacío).
+- Sin TLS: Adminer, `/admin` y el panel viajan por HTTP.
+- No se probó un despliegue en el servidor real ni con dominio; `ALLOWED_HOSTS`/`CSRF_TRUSTED_ORIGINS` se verificaron solo con `localhost:8088`.
+- Un `.env` con `$` en algún valor (p. ej. el `.env` local de desarrollo) produce avisos de interpolación de compose; documentado en el README (`$$`).
+- `ng test` en `master` no se corrió para comparar de forma directa.
+- El acceso a Adminer no tiene capa extra (decisión aceptada del ADR).
 
 ## Review
 _Pendiente_

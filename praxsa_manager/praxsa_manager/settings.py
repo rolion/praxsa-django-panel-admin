@@ -67,47 +67,52 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ALLOWED_HOSTS=[
-               'praxsasrl.store',
-               'panel.praxsasrl.store',
-               'laminas.praxsasrl.store',
-               'oscarleon.website', 
-               'panel.oscarleon.website', 
-               'laminas.oscarleon.website', 
-               '143.198.239.122', 
-               '165.22.46.244',
-               'proforma',
-               'web', 
-               'nginx', 
-               'localhost', 
-               '127.0.0.1']
+# Hosts/origenes por entorno (ADR-despliegue-nuevo-servidor-inicializacion-db-stack-v2-build-y-enrutamiento).
+# Sin variable de entorno se conservan los valores historicos del despliegue actual.
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[
+    'praxsasrl.store',
+    'panel.praxsasrl.store',
+    'laminas.praxsasrl.store',
+    'oscarleon.website',
+    'panel.oscarleon.website',
+    'laminas.oscarleon.website',
+    '143.198.239.122',
+    '165.22.46.244',
+    'proforma',
+    'web',
+    'nginx',
+    'localhost',
+    '127.0.0.1',
+])
 # ALLOWED_HOSTS = ['*'] 
 
 CORS_ORIGIN_ALLOW_ALL = False
-CSRF_TRUSTED_ORIGINS=['https://praxsasrl.store',
-                      'https://laminas.praxsasrl.store',
-                      'https://panel.praxsasrl.store',
-                      'https://oscarleon.website', 
-                      'https://panel.oscarleon.website',
-                      'https://laminas.oscarleon.website']
+CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=[
+    'https://praxsasrl.store',
+    'https://laminas.praxsasrl.store',
+    'https://panel.praxsasrl.store',
+    'https://oscarleon.website',
+    'https://panel.oscarleon.website',
+    'https://laminas.oscarleon.website',
+])
 
-CORS_ORIGIN_WHITELIST = [
-                        'https://praxsasrl.store',
-                        'https://panel.praxsasrl.store',
-                        'https://laminas.praxsasrl.store',
-                        'https://oscarleon.website',
-                         'https://panel.oscarleon.website',
-                         'https://laminas.oscarleon.website',
-                         'http://localhost:8000', 
-                         'http://localhost:8081', 
-                         'http://127.0.0.1:8000',
-                         'http://127.0.0.1:4200',
-                         'http://127.0.0.1:4201',
-                         'http://localhost:4200', 
-                         'http://localhost:4000', 
-                         'http://localhost:4201', 
-                         'http://localhost',
-                         ]
+CORS_ORIGIN_WHITELIST = env.list('CORS_ORIGIN_WHITELIST', default=[
+    'https://praxsasrl.store',
+    'https://panel.praxsasrl.store',
+    'https://laminas.praxsasrl.store',
+    'https://oscarleon.website',
+    'https://panel.oscarleon.website',
+    'https://laminas.oscarleon.website',
+    'http://localhost:8000',
+    'http://localhost:8081',
+    'http://127.0.0.1:8000',
+    'http://127.0.0.1:4200',
+    'http://127.0.0.1:4201',
+    'http://localhost:4200',
+    'http://localhost:4000',
+    'http://localhost:4201',
+    'http://localhost',
+])
 
 CSRF_USE_SESSIONS = False
 CSRF_COOKIE_HTTPONLY = False  # this is the default, and should be kept this way

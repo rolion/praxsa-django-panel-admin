@@ -1,0 +1,93 @@
+# Stack v2: un solo server por path, sin subdominios ni TLS (aun no hay dominio).
+# /admin /product /tinymce /api-auth -> Django | /panel -> SPA panel_admin
+# /calculadora -> /panel/calculadora | /adminer -> Adminer | /static /media -> archivos
+worker_processes auto;
+error_log /var/log/nginx/error.log;
+pid /var/run/nginx.pid;
+events {}
+http {
+    include mime.types;
+
+    # Si hubiera un proxy delante (TLS futuro) se respeta su X-Forwarded-Proto;
+    # sin proxy, $scheme (http). Django lo usa en SECURE_PROXY_SSL_HEADER.
+    map $http_x_forwarded_proto $forwarded_proto {
+        default $http_x_forwarded_proto;
+        ''      $scheme;
+    }
+
+    upstream praxsa_web {
+        server web:5000;
+    }
+    upstream praxsa_adminer {
+        server adminer:8080;
+    }
+
+    server {
+        listen 80;
+        server_name _;
+
+        # Redirecciones relativas: el puerto publicado por Docker no es el 80 interno.
+        absolute_redirect off;
+        # Subidas de imagenes desde el admin (hasta 5 MB validados en Django).
+        client_max_body_size 10m;
+
+        location = / {
+            return 302 /panel/;
+        }
+
+        location = /calculadora {
+            return 302 /panel/calculadora;
+        }
+        location /calculadora/ {
+            return 302 /panel/calculadora;
+        }
+
+        location /static/ {
+            alias /praxsa_manager/staticfiles/;
+        }
+
+        location /media/ {
+            alias /praxsa_manager/media/;
+        }
+
+        # Django: admin, API y utilidades.
+        location ~ ^/(admin|product|tinymce|api-auth)(/|$) {
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $forwarded_proto;
+            proxy_set_header Host $http_host;
+            proxy_redirect off;
+            proxy_pass http://praxsa_web;
+        }
+
+        # Adminer: se le quita el prefijo /adminer. Sin parametros abre el login ya
+        # con PostgreSQL seleccionado (por defecto Adminer ofrece MySQL).
+        location = /adminer {
+            return 302 /adminer/?pgsql=db;
+        }
+        location = /adminer/ {
+            if ($args = '') {
+                return 302 /adminer/?pgsql=db;
+            }
+            proxy_set_header Host $http_host;
+            proxy_pass http://praxsa_adminer/;
+        }
+        location /adminer/ {
+            proxy_set_header Host $http_host;
+            proxy_pass http://praxsa_adminer/;
+        }
+
+        # SPA panel_admin (build con --base-href /panel/, rutas sin #): cualquier ruta
+        # que no sea un archivo cae en index.html para que recargar funcione.
+        location = /panel {
+            return 301 /panel/;
+        }
+        location = /panel/index.html {
+            root /usr/share/nginx/html;
+            add_header Cache-Control "no-cache";
+        }
+        location /panel/ {
+            root /usr/share/nginx/html;
+            try_files $uri $uri/ /panel/index.html;
+        }
+    }
+}
