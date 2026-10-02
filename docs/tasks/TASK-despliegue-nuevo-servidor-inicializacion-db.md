@@ -20,6 +20,7 @@
 | 2026-10-02 | PLANNING → PLANNING (plan v2) | Por pedido del usuario se quita `HashLocationStrategy` (URLs sin `#`); `/calculadora` → `/panel/calculadora`; nginx con fallback `try_files`; verificación local del build en `/panel/` registrada | delivery-plan |
 | 2026-10-02 | ENGINEERING → REVIEW | Implementación completa según el plan v2; verificación propia en Docker real (build, arranque, seed dos veces, rutas, login, Adminer, persistencia) y suites propias en verde | delivery-engineer |
 | 2026-10-02 | REVIEW → PUBLISH | Quality Gate PASS: backend 588 OK, `ng lint`/build/`ng test` (13 fallos idénticos a `master`), stack Docker v2 reconstruido y verificado de punta a punta; 0 issues abiertos | delivery-review |
+| 2026-10-02 | PUBLISH (pendiente de aprobación humana) | PR #64 con descripción completa; cambio sensible (infraestructura + BD): espera aprobación explícita en el chat | delivery-publish |
 
 ## Investigación
 
@@ -242,4 +243,4 @@ No verificado / límites de esta revisión:
 - Observación no bloqueante, preexistente: tras el login de `/admin/` Django redirige a `/accounts/profile/` (no depende de este diff).
 
 ## Publicación
-_Pendiente_
+Pull request: [#64](https://github.com/rolion/praxsa-django-panel-admin/pull/64). Estado: **Listo para aprobación humana** (no mergeado). Categorías sensibles: infraestructura y base de datos, respaldadas por los 2 ADR del task. Árbol limpio, sin secretos ni archivos temporales en el diff, sin commits posteriores al Quality Gate salvo el propio registro del review.
