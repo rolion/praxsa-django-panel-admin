@@ -4,7 +4,7 @@
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** NO
 **Rama:** task/TASK-actualizar-dependencias-django-seguridad
-**Pull Request:** _sin abrir todavía_
+**Pull Request:** https://github.com/rolion/praxsa-django-panel-admin/pull/67
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
