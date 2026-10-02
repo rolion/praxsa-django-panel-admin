@@ -81,6 +81,10 @@ describe('Pantallas de reportes', () => {
   }
 
   const sucursales = (n = 1) => Array.from({ length: n }, (_, i) => ({ id: i + 1, name: `Sucursal ${i + 1}`, address: '' }));
+  const conInactiva = [
+    { id: 1, name: 'Central', address: '', activa: true },
+    { id: 2, name: 'Norte', address: '', activa: false },
+  ];
 
   function text(fixture: ComponentFixture<unknown>): string {
     return (fixture.nativeElement as HTMLElement).textContent ?? '';
@@ -94,8 +98,10 @@ describe('Pantallas de reportes', () => {
       return fixture;
     }
 
-    function flushInicial(report: VentasDiariasReport, nSucursales = 1) {
-      httpMock.expectOne(`${api}/ordenes/catalogo/sucursales`).flush(sucursales(nSucursales));
+    function flushInicial(
+      report: VentasDiariasReport, nSucursales = 1, catalogo: object[] = sucursales(nSucursales),
+    ) {
+      httpMock.expectOne(`${api}/ordenes/catalogo/sucursales`).flush(catalogo);
       const req = httpMock.expectOne((r) => r.url === `${api}/reportes/ventas-diarias`);
       req.flush(report);
       return req;
@@ -135,6 +141,47 @@ describe('Pantallas de reportes', () => {
       expect((fixture.nativeElement as HTMLElement).querySelector('#rv-sucursal')).not.toBeNull();
     });
 
+    it('por defecto marca solo las sucursales activas', () => {
+      const fixture = create();
+      flushInicial(ventasReport(), 0, [...conInactiva, { id: 3, name: 'Sur', address: '', activa: true }]);
+
+      expect(fixture.componentInstance.filtros.controls.sucursales.value).toEqual([1, 3]);
+    });
+
+    it('con una sucursal inactiva muestra el multiselect para poder marcarla', () => {
+      const fixture = create();
+      flushInicial(ventasReport(), 0, conInactiva);
+      fixture.detectChanges();
+
+      expect((fixture.nativeElement as HTMLElement).querySelector('#rv-sucursal')).not.toBeNull();
+      expect(text(fixture)).toContain('Todas las activas');
+    });
+
+    it('con todas las sucursales inactivas las marca y vuelve a consultar', () => {
+      const fixture = create();
+      httpMock.expectOne(`${api}/ordenes/catalogo/sucursales`).flush([conInactiva[1]]);
+
+      expect(fixture.componentInstance.filtros.controls.sucursales.value).toEqual([2]);
+      const peticiones = httpMock.match((r) => r.url === `${api}/reportes/ventas-diarias`);
+      expect(peticiones.length).toBe(2); // la inicial (por defecto) y el reintento con la inactiva marcada
+      expect(peticiones[0].request.params.has('sucursales')).toBeFalse();
+      expect(peticiones[1].request.params.get('sucursales')).toBe('2');
+      peticiones.forEach((peticion) => peticion.flush(ventasReport()));
+    });
+
+    it('marcar una inactiva envia la lista explicita de sucursales', () => {
+      const fixture = create();
+      flushInicial(ventasReport(), 0, conInactiva);
+      const control = fixture.componentInstance.filtros.controls.sucursales;
+
+      control.setValue([1, 2]);
+      fixture.componentInstance.aplicar();
+
+      const req = httpMock.expectOne((r) => r.url === `${api}/reportes/ventas-diarias`);
+      expect(req.request.params.get('sucursales')).toBe('1,2');
+      req.flush(ventasReport());
+    });
+
     it('un rango invalido muestra el error y no consulta', () => {
       const fixture = create();
       flushInicial(ventasReport());
@@ -150,12 +197,12 @@ describe('Pantallas de reportes', () => {
       const fixture = create();
       flushInicial(ventasReport());
       const component = fixture.componentInstance;
-      component.filtros.patchValue({ desde: '2026-09-01', salesType: 'venta_metro_lineal', tipoPago: 'trans', sucursal: 1 });
+      component.filtros.patchValue({ desde: '2026-09-01', salesType: 'venta_metro_lineal', tipoPago: 'trans', sucursales: [1] });
       component.aplicar();
       const req = httpMock.expectOne((r) => r.url === `${api}/reportes/ventas-diarias`);
       expect(req.request.params.get('sales_type')).toBe('venta_metro_lineal');
       expect(req.request.params.get('tipo_pago')).toBe('trans');
-      expect(req.request.params.get('sucursal')).toBe('1');
+      expect(req.request.params.get('sucursales')).toBe('1');
       req.flush(ventasReport());
 
       component.limpiar();

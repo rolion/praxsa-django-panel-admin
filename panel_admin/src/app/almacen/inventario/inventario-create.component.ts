@@ -21,6 +21,12 @@ export class InventarioCreateComponent implements OnInit {
   saving = false;
   submitted = false;
   errorMessage = '';
+  sucursalesLoaded = false;
+
+  /** Cargadas las sucursales, ninguna esta activa: no se puede agregar inventario. */
+  get withoutActiveSucursales(): boolean {
+    return this.sucursalesLoaded && this.sucursales.length === 0;
+  }
 
   ngOnInit(): void {
     this.form = this.fb.group({
@@ -38,13 +44,16 @@ export class InventarioCreateComponent implements OnInit {
       nro_lote: ['', [Validators.required, Validators.pattern(/^[0-9a-zA-Z]*$/), Validators.maxLength(15)]],
       date: [''],
     });
-    // Solo las sucursales del usuario (admin: todas). Con una sola, queda
-    // preseleccionada y bloqueada (ver DDR-almacen-permisos-sucursal-filtros-
-    // filtros-y-selector-sucursal); el backend valida el alcance igualmente.
+    // Solo las sucursales ACTIVAS asignadas al usuario (las inactivas son de solo
+    // lectura). Con una sola, queda preseleccionada y bloqueada (ver DDR-almacen-
+    // permisos-sucursal-filtros-filtros-y-selector-sucursal y DDR-inventario-
+    // alcance-sucursal-django-admin-sucursales-inactivas-y-filtro-reportes); el
+    // backend valida el alcance igualmente.
     this.almacenService.listSucursalesAlcance().subscribe((sucursales) => {
-      this.sucursales = sucursales;
-      if (sucursales.length === 1) {
-        this.form.patchValue({ sucursal: sucursales[0].id });
+      this.sucursalesLoaded = true;
+      this.sucursales = sucursales.filter((sucursal) => sucursal.activa !== false);
+      if (this.sucursales.length === 1) {
+        this.form.patchValue({ sucursal: this.sucursales[0].id });
         this.form.get('sucursal')?.disable();
       }
     });

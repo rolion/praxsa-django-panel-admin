@@ -8,7 +8,10 @@ export type ReporteTipoPago = 'efec' | 'trans';
 export interface ReporteFiltros {
   desde: string; // YYYY-MM-DD
   hasta: string; // YYYY-MM-DD
+  /** Un solo id (parametro `sucursal`, se conserva por compatibilidad). */
   sucursal?: number | null;
+  /** Varias sucursales (`sucursales=1,2`); vacio = "todas las activas" en el servidor. */
+  sucursales?: number[];
   salesType?: ReporteSalesType | '';
   tipoPago?: ReporteTipoPago | '';
 }

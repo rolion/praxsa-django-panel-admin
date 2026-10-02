@@ -38,6 +38,24 @@ describe('ReportesService', () => {
     req.flush({});
   });
 
+  it('varias sucursales viajan como lista separada por comas y tienen prioridad sobre sucursal', () => {
+    service
+      .getVentasDiarias({ desde: '2026-09-01', hasta: '2026-09-30', sucursal: 4, sucursales: [1, 3] })
+      .subscribe();
+    const req = httpMock.expectOne((r) => r.url === `${base}/ventas-diarias`);
+    expect(req.request.params.get('sucursales')).toBe('1,3');
+    expect(req.request.params.has('sucursal')).toBeFalse();
+    req.flush({});
+  });
+
+  it('una lista vacia de sucursales no se envia (el servidor usa "todas las activas")', () => {
+    service.getUtilidad({ desde: '2026-09-01', hasta: '2026-09-30', sucursales: [] }).subscribe();
+    const req = httpMock.expectOne((r) => r.url === `${base}/utilidad`);
+    expect(req.request.params.has('sucursales')).toBeFalse();
+    expect(req.request.params.has('sucursal')).toBeFalse();
+    req.flush({});
+  });
+
   it('utilidad no envia el tipo de pago', () => {
     service
       .getUtilidad({ desde: '2026-09-01', hasta: '2026-09-30', salesType: 'venta_instalacion', tipoPago: 'efec' })

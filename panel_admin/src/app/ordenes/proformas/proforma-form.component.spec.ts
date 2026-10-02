@@ -68,6 +68,26 @@ describe('ProformaFormComponent', () => {
     expect(component.reels.length).toBe(2);
   });
 
+  it('en el alta solo ofrece las sucursales activas y fija la unica activa', () => {
+    setup();
+    httpMock.expectOne(`${ordenes}/catalogo/sucursales`).flush([
+      { ...sucursal, activa: true }, { id: 2, name: 'Norte', address: 'y', activa: false },
+    ]);
+    httpMock.expectOne((r) => r.url === `${ordenes}/catalogo/bobinas`).flush(reels);
+
+    expect(component.sucursales.map((s) => s.id)).toEqual([1]);
+    expect(component.form.getRawValue().sucursal).toBe(1);
+    expect(component.form.get('sucursal')?.disabled).toBe(true);
+  });
+
+  it('sin sucursales activas avisa y no deja crear', () => {
+    setup();
+    httpMock.expectOne(`${ordenes}/catalogo/sucursales`).flush([{ id: 2, name: 'Norte', address: 'y', activa: false }]);
+
+    expect(component.sucursales).toEqual([]);
+    expect(component.errorMessage).toContain('No tienes sucursales activas');
+  });
+
   it('shows a message when the user has no sucursal', () => {
     setup();
     httpMock.expectOne(`${ordenes}/catalogo/sucursales`).flush([]);

@@ -10,7 +10,7 @@ import { AppInventario } from '../almacen.model';
 import { InventarioEditComponent } from './inventario-edit.component';
 
 const sampleInventario: AppInventario = {
-  id: 7, sucursal: 1, sucursal_name: 'Central', bobina: 1, window_film_name: 'Carbon 20%',
+  id: 7, sucursal: 1, sucursal_name: 'Central', sucursal_activa: true, bobina: 1, window_film_name: 'Carbon 20%',
   bobina_width: '1.50', quantity: 3, to_install: '50.00', installed: '0.00',
   original_length: '50.00', date: '2026-09-27T00:00:00Z', numero_referencia: 0,
   precio_compra_mtr_lineal: '80.00', precio_venta_mtr_lineal: '120.00', nro_lote: 'L1',
@@ -42,6 +42,19 @@ describe('InventarioEditComponent', () => {
     httpMock.expectOne(`${base}/7/`).flush(sampleInventario);
     return fixture;
   }
+
+  it('una sucursal inactiva deja el formulario de solo lectura y no guarda', () => {
+    const fixture = TestBed.createComponent(InventarioEditComponent);
+    fixture.detectChanges();
+    httpMock.expectOne(`${base}/7/`).flush({ ...sampleInventario, sucursal_activa: false });
+    const component = fixture.componentInstance;
+
+    expect(component.sucursalInactiva).toBe(true);
+    expect(component.form.disabled).toBe(true);
+
+    component.save();
+    httpMock.expectNone(`${base}/7/`);
+  });
 
   it('carga los datos existentes en el formulario', () => {
     const fixture = createAndLoad();

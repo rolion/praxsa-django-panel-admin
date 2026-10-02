@@ -11,6 +11,9 @@
       <div class="col-lg-8 col-md-12">
         <div class="card">
           <div class="card-body">
+            @if (withoutActiveSucursales) {
+              <div class="alert alert-warning">No tienes sucursales activas para registrar inventario.</div>
+            }
             <form [formGroup]="form" (ngSubmit)="save()">
               <div class="mb-3">
                 <label class="fw-bold">Sucursal</label>

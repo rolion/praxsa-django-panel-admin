@@ -26,6 +26,8 @@ export class InventarioEditComponent implements OnInit {
   saving = false;
   submitted = false;
   errorMessage = '';
+  /** La sucursal de la fila esta inactiva: solo lectura, no se guarda (409). */
+  sucursalInactiva = false;
 
   ngOnInit(): void {
     this.inventarioId = Number(this.route.snapshot.paramMap.get('id'));
@@ -39,6 +41,10 @@ export class InventarioEditComponent implements OnInit {
 
     this.almacenService.getInventario(this.inventarioId).subscribe({
       next: (inv) => {
+        this.sucursalInactiva = inv.sucursal_activa === false;
+        if (this.sucursalInactiva) {
+          this.form.disable();
+        }
         this.form.patchValue({
           to_install: inv.to_install,
           installed: inv.installed,
@@ -56,6 +62,9 @@ export class InventarioEditComponent implements OnInit {
   }
 
   save(): void {
+    if (this.sucursalInactiva) {
+      return;
+    }
     this.submitted = true;
     if (this.form.invalid) {
       this.form.markAllAsTouched();

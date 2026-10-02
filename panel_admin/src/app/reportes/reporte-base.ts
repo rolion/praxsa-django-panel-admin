@@ -28,7 +28,8 @@ export abstract class ReporteBase<T> {
   filtros = new FormGroup({
     desde: new FormControl('', { nonNullable: true }),
     hasta: new FormControl('', { nonNullable: true }),
-    sucursal: new FormControl<number | null>(null),
+    /** Sucursales marcadas en el multiselect; por defecto las activas (ver defaultSucursalIds). */
+    sucursales: new FormControl<number[]>([], { nonNullable: true }),
     salesType: new FormControl('', { nonNullable: true }),
     tipoPago: new FormControl('', { nonNullable: true }),
   });
@@ -43,9 +44,16 @@ export abstract class ReporteBase<T> {
     return this.authService.hasPermission(this.permission);
   }
 
-  /** Con varias sucursales se ofrece el selector ("Todas"); con una sola se muestra fija. */
+  /** Con varias sucursales (o una inactiva, que hay que poder marcar) se ofrece el multiselect;
+   * con una sola activa se muestra fija. */
   get showSucursalSelector(): boolean {
-    return this.sucursales.length > 1;
+    return this.sucursales.length > 1 || this.sucursales.some((sucursal) => sucursal.activa === false);
+  }
+
+  /** Marcadas por defecto: las activas; si todas son inactivas, esas (para no pedir un reporte vacio). */
+  protected defaultSucursalIds(): number[] {
+    const activas = this.sucursales.filter((sucursal) => sucursal.activa !== false);
+    return (activas.length ? activas : this.sucursales).map((sucursal) => sucursal.id);
   }
 
   protected init(): void {
@@ -54,14 +62,26 @@ export abstract class ReporteBase<T> {
     }
     this.resetFiltros();
     this.ordenesService.listSucursales().subscribe({
-      next: (sucursales) => (this.sucursales = sucursales),
+      next: (sucursales) => this.onSucursalesLoaded(sucursales),
       error: () => (this.sucursales = []),
     });
     this.aplicar();
   }
 
+  private onSucursalesLoaded(sucursales: OrdenSucursal[]): void {
+    this.sucursales = sucursales;
+    const ids = this.defaultSucursalIds();
+    this.filtros.controls.sucursales.setValue(ids);
+    // Solo inactivas: el servidor (por defecto, "las activas") devolveria vacio; se vuelve a pedir.
+    if (ids.length > 0 && sucursales.every((sucursal) => sucursal.activa === false)) {
+      this.aplicar();
+    }
+  }
+
   private resetFiltros(): void {
-    this.filtros.reset({ desde: this.defaultDesde(), hasta: hoyIso(), sucursal: null, salesType: '', tipoPago: '' });
+    this.filtros.reset({
+      desde: this.defaultDesde(), hasta: hoyIso(), sucursales: this.defaultSucursalIds(), salesType: '', tipoPago: '',
+    });
   }
 
   limpiar(): void {
@@ -70,7 +90,7 @@ export abstract class ReporteBase<T> {
   }
 
   aplicar(): void {
-    const { desde, hasta, sucursal, salesType, tipoPago } = this.filtros.getRawValue();
+    const { desde, hasta, sucursales, salesType, tipoPago } = this.filtros.getRawValue();
     this.rangeError = rangoInvalido(desde, hasta);
     if (this.rangeError) {
       return;
@@ -80,7 +100,7 @@ export abstract class ReporteBase<T> {
     this.fetch({
       desde,
       hasta,
-      sucursal,
+      sucursales,
       salesType: salesType as ReporteFiltros['salesType'],
       tipoPago: tipoPago as ReporteFiltros['tipoPago'],
     }).subscribe({
