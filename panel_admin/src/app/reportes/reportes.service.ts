@@ -22,7 +22,9 @@ export class ReportesService {
   /** Solo se envian los filtros con valor; el tipo de pago aplica solo a Ventas Diarias. */
   private params(filtros: ReporteFiltros, conTipoPago: boolean): HttpParams {
     let params = new HttpParams().set('desde', filtros.desde).set('hasta', filtros.hasta);
-    if (filtros.sucursal) {
+    if (filtros.sucursales?.length) {
+      params = params.set('sucursales', filtros.sucursales.join(','));
+    } else if (filtros.sucursal) {
       params = params.set('sucursal', String(filtros.sucursal));
     }
     if (filtros.salesType) {

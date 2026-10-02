@@ -66,13 +66,24 @@ class GetProformaCarPartInfoAuthorizationTest(TestCase):
 
         self.assertEqual(response.status_code, 403)
 
-    def test_admin_group_staff_can_see_any_sucursal(self):
+    def test_admin_group_staff_of_other_sucursal_gets_404(self):
         admin_user, password = helpers.create_staff_user()
         helpers.add_user_to_group(admin_user, 'Admin')
+        helpers.create_sucursal(admin_user)
         owner, _ = helpers.create_user_with_token()
         header, _ = helpers.create_full_proforma(owner)
 
         self.client.login(username=admin_user.username, password=password)
+        response = self.client.get(f'/product/get_proforma_car_part_info/{header.id}')
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_superuser_can_see_any_sucursal(self):
+        superuser, _, password = helpers.create_superuser_with_token()
+        owner, _ = helpers.create_user_with_token()
+        header, _ = helpers.create_full_proforma(owner)
+
+        self.client.login(username=superuser.username, password=password)
         response = self.client.get(f'/product/get_proforma_car_part_info/{header.id}')
 
         self.assertEqual(response.status_code, 200)
@@ -115,10 +126,9 @@ class GetProformaCarPartInfoAuthorizationTest(TestCase):
         self.assertEqual(response.status_code, 403)
 
     def test_nonexistent_proforma_returns_404_for_valid_staff(self):
-        admin_user, password = helpers.create_staff_user()
-        helpers.add_user_to_group(admin_user, 'Admin')
+        superuser, _, password = helpers.create_superuser_with_token()
 
-        self.client.login(username=admin_user.username, password=password)
+        self.client.login(username=superuser.username, password=password)
         response = self.client.get('/product/get_proforma_car_part_info/999999')
 
         self.assertEqual(response.status_code, 404)

@@ -382,8 +382,8 @@ class ProformaPdfTest(TestCase):
 
     def test_pdf_without_sucursal_returns_409(self):
         proforma_id = self._create(metro_lineal_payload(self.s))
-        # Una proforma legada sin sucursal solo la ve un admin (fuera del alcance de sucursal).
-        admin, admin_token = make_staff(permissions=(), group='admin')
+        # Una proforma legada sin sucursal solo la ve el superusuario (fuera del alcance de sucursal).
+        _, admin_token, _ = helpers.create_superuser_with_token()
         Proforma_Header.objects.filter(pk=proforma_id).update(sucursal=None)
         response = self.client.get(f'{URL}/{proforma_id}/pdf/', **auth(admin_token))
         self.assertEqual(response.status_code, 409)

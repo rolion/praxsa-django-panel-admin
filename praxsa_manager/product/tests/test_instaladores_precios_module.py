@@ -275,13 +275,37 @@ class PrecioVentaSucursalApiTest(TestCase):
         response = _call(self.client, 'post', PRECIOS, self._payload(sucursal=own.id, width='1.10'), token)
         self.assertEqual(response.status_code, 201, response.content)
 
-    def test_admin_sees_every_sucursal(self):
+    def test_admin_sees_only_assigned_sucursales(self):
         other_user, _ = _staff()
         other = helpers.create_sucursal(other_user)
         helpers.create_precio_venta_sucursal(other, self.film)
         helpers.create_precio_venta_sucursal(self.sucursal, self.film)
         rows = _call(self.client, 'get', PRECIOS, token=self.admin_token).json()
+        self.assertEqual([row['sucursal'] for row in rows], [self.sucursal.id])
+
+    def test_superuser_sees_every_sucursal(self):
+        other_user, _ = _staff()
+        other = helpers.create_sucursal(other_user)
+        helpers.create_precio_venta_sucursal(other, self.film)
+        helpers.create_precio_venta_sucursal(self.sucursal, self.film)
+        _, superuser_token, _ = helpers.create_superuser_with_token()
+        rows = _call(self.client, 'get', PRECIOS, token=superuser_token).json()
         self.assertEqual(len(rows), 2)
+
+    def test_disabled_sucursal_prices_are_read_only(self):
+        row = helpers.create_precio_venta_sucursal(self.sucursal, self.film)
+        self.sucursal.enable_to_install_windows_film = False
+        self.sucursal.save(update_fields=['enable_to_install_windows_film'])
+
+        self.assertEqual(len(_call(self.client, 'get', PRECIOS, token=self.admin_token).json()), 1)
+        self.assertEqual(_call(self.client, 'get', f'{PRECIOS}/{row.id}/', token=self.admin_token).status_code, 200)
+        patch = _call(self.client, 'patch', f'{PRECIOS}/{row.id}/', {'precio_venta': '10.00'}, self.admin_token)
+        self.assertEqual(patch.status_code, 409, patch.content)
+        delete = _call(self.client, 'delete', f'{PRECIOS}/{row.id}/', token=self.admin_token)
+        self.assertEqual(delete.status_code, 409, delete.content)
+        self.assertTrue(precio_venta_sucursal.objects.filter(pk=row.pk).exists())
+        create = _call(self.client, 'post', PRECIOS, self._payload(), self.admin_token)
+        self.assertEqual(create.status_code, 400)
 
 
 class OrdenesInstaladorInactivoTest(TestCase):

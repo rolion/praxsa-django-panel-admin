@@ -14,6 +14,7 @@ from ..helper.user import User_Helper
 from ..helper.proforma import Proforma_Helper
 from django.http import HttpResponseRedirect
 from ..helper.pdf import PDFService
+from .sucursal_scope import SucursalWritableAdminMixin
 from django.http import FileResponse
 from django.urls import reverse
 from django.utils.html import format_html
@@ -22,7 +23,9 @@ from rangefilter.filters import DateTimeRangeFilter
 from .filtros_reportes import estado_filter, sucursal_en_alcance_filter
         
     
-class NotaVentaAdmin(admin.ModelAdmin):
+class NotaVentaAdmin(SucursalWritableAdminMixin, admin.ModelAdmin):
+    sucursal_obj_path = 'nota_trabajo.proforma.sucursal_id'
+
     list_display = [
                     'get_nota_venta_id',
                     'get_nota_trabajo_id',
@@ -109,6 +112,8 @@ class NotaVentaAdmin(admin.ModelAdmin):
 
     
     def has_change_permission(self, request: HttpRequest, obj=None):
+        if not self.sucursal_writable_for(request, obj):
+            return False
         if obj is None:
             return True
         if(hasattr(obj, 'pago') and obj.pago.cerrado):

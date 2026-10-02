@@ -50,6 +50,8 @@ export class ProformaFormComponent implements OnInit {
   form!: FormGroup;
   editId: number | null = null;
   sucursales: OrdenSucursal[] = [];
+  /** Edicion de una proforma cuya sucursal esta inactiva: solo lectura. */
+  sucursalInactiva = false;
   models: AppCarModel[] = [];
   items: AppCarModelPart[] = [];
   reels: ReelCatalogItem[] = [];
@@ -128,10 +130,15 @@ export class ProformaFormComponent implements OnInit {
     }
   }
 
-  private onSucursalesLoaded(sucursales: OrdenSucursal[]): void {
+  private onSucursalesLoaded(todas: OrdenSucursal[]): void {
+    // En el alta solo se ofrecen las sucursales ACTIVAS (las inactivas son de solo lectura);
+    // al editar se conserva la lista completa para mostrar la sucursal de la proforma.
+    const sucursales = this.isEdit ? todas : todas.filter((sucursal) => sucursal.activa !== false);
     this.sucursales = sucursales;
-    if (sucursales.length === 0) {
+    if (todas.length === 0) {
       this.errorMessage = 'Asigne una sucursal al usuario para crear proformas.';
+    } else if (sucursales.length === 0) {
+      this.errorMessage = 'No tienes sucursales activas para crear proformas.';
     } else if (!this.isEdit && this.draft && sucursales.some((s) => s.id === this.draft?.sucursal)) {
       // Cotizacion de la calculadora: su sucursal (si esta en el alcance) queda elegida.
       this.form.get('sucursal')?.setValue(this.draft.sucursal);
@@ -184,6 +191,11 @@ export class ProformaFormComponent implements OnInit {
   }
 
   private patchFromProforma(proforma: AppProformaDetail): void {
+    if (proforma.sucursal_activa === false) {
+      // Sucursal inactiva: la proforma se ve pero no se edita (el servidor responde 409).
+      this.sucursalInactiva = true;
+      this.errorMessage = 'La sucursal de esta proforma está inactiva: solo lectura, no se pueden guardar cambios.';
+    }
     this.form.patchValue({
       sales_type: proforma.sales_type,
       sucursal: proforma.sucursal,
@@ -448,6 +460,9 @@ export class ProformaFormComponent implements OnInit {
   // ---- guardar ----
 
   save(): void {
+    if (this.sucursalInactiva) {
+      return;
+    }
     this.submitted = true;
     if (this.form.invalid || this.discountError) {
       this.form.markAllAsTouched();

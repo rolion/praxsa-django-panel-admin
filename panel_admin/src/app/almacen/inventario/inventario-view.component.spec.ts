@@ -11,7 +11,7 @@ import { AppInventario } from '../almacen.model';
 import { InventarioViewComponent } from './inventario-view.component';
 
 const sampleInventario: AppInventario = {
-  id: 7, sucursal: 1, sucursal_name: 'Central', bobina: 1, window_film_name: 'Carbon 20%',
+  id: 7, sucursal: 1, sucursal_name: 'Central', sucursal_activa: true, bobina: 1, window_film_name: 'Carbon 20%',
   bobina_width: '1.50', quantity: 3, to_install: '50.00', installed: '0.00',
   original_length: '50.00', date: '2026-09-27T00:00:00Z', numero_referencia: 0,
   precio_compra_mtr_lineal: '80.00', precio_venta_mtr_lineal: '120.00', nro_lote: 'L1',
@@ -131,6 +131,20 @@ describe('InventarioViewComponent', () => {
         groups: ['almacen'], permissions,
       });
   }
+
+  it('una sucursal inactiva se ve pero no se puede gestionar', () => {
+    localStorage.clear();
+    loginWith(['product.change_inventario']);
+    const fixture = TestBed.createComponent(InventarioViewComponent);
+    fixture.detectChanges();
+    httpMock.expectOne(`${base}/7/`).flush({ ...sampleInventario, sucursal_activa: false });
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.sucursalInactiva).toBe(true);
+    expect(fixture.componentInstance.canManage).toBe(false);
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('solo lectura');
+    localStorage.clear();
+  });
 
   it('canManage depende del permiso change_inventario, no del grupo', () => {
     localStorage.clear();

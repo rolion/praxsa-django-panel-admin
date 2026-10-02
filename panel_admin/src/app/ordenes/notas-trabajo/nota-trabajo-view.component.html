@@ -41,6 +41,9 @@
                 <span class="info-label">Sucursal</span>
                 <span class="info-value">
                   @if (nota.sucursal_name) { {{ nota.sucursal_name }} } @else { <span class="empty-value">No asignada</span> }
+                  @if (sucursalInactiva) {
+                    <span class="badge bg-warning text-dark ms-1" title="Sucursal inactiva: solo lectura">Inactiva</span>
+                  }
                 </span>
               </div>
               <div class="col-6 col-md-3 info-item">

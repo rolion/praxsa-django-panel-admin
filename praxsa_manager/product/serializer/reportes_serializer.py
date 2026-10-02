@@ -17,8 +17,16 @@ class ReporteParamsSerializer(serializers.Serializer):
     desde = serializers.DateField()
     hasta = serializers.DateField()
     sucursal = serializers.IntegerField(required=False, min_value=1)
+    # Lista de ids separados por coma (`?sucursales=1,2`); se une a `sucursal` si vienen ambos.
+    sucursales = serializers.RegexField(r'^\d+(,\d+)*$', required=False)
     sales_type = serializers.ChoiceField(choices=TIPOS_VENTA, required=False)
     tipo_pago = serializers.ChoiceField(choices=TIPOS_PAGO, required=False)
+
+    def validate_sucursales(self, value):
+        ids = [int(raw) for raw in value.split(',')]
+        if any(sucursal_id < 1 for sucursal_id in ids):
+            raise serializers.ValidationError('Los ids de sucursal deben ser mayores a 0.')
+        return list(dict.fromkeys(ids))
 
 
 class _VentaBaseSerializer(serializers.Serializer):

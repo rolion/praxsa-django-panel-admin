@@ -12,39 +12,33 @@ class Pago_Business:
         self.log_errors = logging.getLogger('django_admin')
 
     def get_panel_nota_venta_queryset(self, user, qs):
-        """Alcance de notas de venta para el panel (API `ordenes/notas-venta`),
-        mismo criterio que proformas/notas de trabajo: admin ve todas las no
-        borradas; el resto, las de todas sus sucursales habilitadas; sin
-        sucursal, ninguna (ADR-...-alcance-permisos)."""
+        """Alcance de notas de venta para el panel (API `ordenes/notas-venta`):
+        las no borradas de las sucursales asignadas al usuario (activas o no,
+        alcance de lectura); solo el superusuario ve todas; sin sucursal,
+        ninguna (ADR-inventario-alcance-sucursal-django-admin-alcance-lectura-
+        escritura)."""
         qs = qs.filter(nota_trabajo__proforma__is_delete=False).select_related(
             'nota_trabajo', 'nota_trabajo__proforma', 'nota_trabajo__proforma__sucursal', 'pago'
         ).order_by('-id')
         if self.user_helper.can_view_all_sucursales(user):
             return qs
-        return qs.filter(nota_trabajo__proforma__sucursal_id__in=self.user_helper.get_enabled_sucursal_ids(user))
+        return qs.filter(nota_trabajo__proforma__sucursal_id__in=self.user_helper.get_readable_sucursal_ids(user))
 
     def get_panel_pago_queryset(self, user, qs):
-        """Alcance de pagos para los reportes (panel y Django Admin, ADR-reportes-
-        utilidad-ventas-diarias-permisos): admin ve todos; el resto, los de todas
-        sus sucursales habilitadas; sin sucursal, ninguno (qs.none(), no None)."""
+        """Alcance de pagos para los reportes (panel y Django Admin): los de las
+        sucursales asignadas al usuario; solo el superusuario ve todos; sin
+        sucursal, ninguno (qs.none(), no None)."""
         if self.user_helper.can_view_all_sucursales(user):
             return qs
-        return qs.filter(nota_venta__nota_trabajo__proforma__sucursal_id__in=self.user_helper.get_enabled_sucursal_ids(user))
+        return qs.filter(nota_venta__nota_trabajo__proforma__sucursal_id__in=self.user_helper.get_readable_sucursal_ids(user))
 
     def get_pago_queryset_by_role(self, user, qs):
-        try:
-            if self.user_helper.can_view_all_sucursales(user):
-                return qs
-            sucursales = Sucursal.objects.prefetch_related('empleado')
-            sucursales = sucursales.filter(empleado__id = user.id, enable_to_install_windows_film = True)
-            if len(sucursales) > 0:
-                qs_result = qs.filter(nota_venta__nota_trabajo__proforma__sucursal__id = sucursales[0].id)
-            else:
-                qs_result = None
-            return qs_result
-        except Exception as e:
-            self.log_errors.error(f'algo salio mal, Pago_Business - get_pago_queryset_by_role {e}')
+        """Legado del Django Admin: delega en el alcance del panel. Conserva el
+        contrato de devolver None cuando el usuario no tiene sucursal, que los
+        ModelAdmin usan para mostrar "Asigne una sucursal al usuario"."""
+        if not self.user_helper.can_view_all_sucursales(user) and not self.user_helper.has_assigned_sucursal(user):
             return None
+        return self.get_panel_pago_queryset(user, qs)
 
     def cerrar_pago(self, paiment: pago):
         # Cierre contable: solo el flag; los estados los gobierna Orden_Estado_Business.

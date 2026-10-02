@@ -10,6 +10,7 @@ from ..business.proforma import Proforma_Business
 from ..business.orden_trabajo import Orden_Trabajo_Business
 from ..models import Detalle_Nota_Trabajo, Nota_Venta, Proforma_Detail
 from ..helper.pdf import PDFService
+from .sucursal_scope import SucursalWritableAdminMixin
 from django.urls import reverse
 from django.utils.html import format_html
 from django.http import FileResponse
@@ -43,7 +44,9 @@ class ProformaDetailInLine(admin.TabularInline):
     max = 1
     extra = 0
     
-class NotaTrabajoAdmin(admin.ModelAdmin):
+class NotaTrabajoAdmin(SucursalWritableAdminMixin, admin.ModelAdmin):
+    sucursal_obj_path = 'proforma.sucursal_id'
+
     list_display = [ 
               'get_nota_venta_id',
               'get_entrada_vehiculo_date_format',
@@ -132,10 +135,13 @@ class NotaTrabajoAdmin(admin.ModelAdmin):
         return  result
 
     def has_change_permission(self, request: HttpRequest, obj=None):
+        if not self.sucursal_writable_for(request, obj):
+            return False
         if obj is None:
             return True
         if obj.is_close == False:
             return True
+        return False
 
     def get_readonly_fields(self, request, obj=None):
         # print ('admin obj', obj.sales_status )

@@ -136,7 +136,14 @@
               <ngx-datatable-column name="Instalador" prop="instalador_name" [width]="130">
                 <ng-template let-value="value" ngx-datatable-cell-template>{{ value || '—' }}</ng-template>
               </ngx-datatable-column>
-              <ngx-datatable-column name="Sucursal" prop="sucursal_name" [width]="120"></ngx-datatable-column>
+              <ngx-datatable-column name="Sucursal" prop="sucursal_name" [width]="120">
+                <ng-template let-row="row" ngx-datatable-cell-template>
+                  {{ row.sucursal_name }}
+                  @if (row.sucursal_activa === false) {
+                    <span class="badge bg-warning text-dark ms-1" title="Sucursal inactiva: solo lectura">Inactiva</span>
+                  }
+                </ng-template>
+              </ngx-datatable-column>
               <ngx-datatable-column name="Estado" prop="status_label" [width]="110">
                 <ng-template let-row="row" ngx-datatable-cell-template>
                   <span [class]="badge(row.status)">{{ row.status_label }}</span>
@@ -156,7 +163,7 @@
                   <a [routerLink]="['/ordenes/notas-trabajo/view', row.id]" class="btn btn-tbl-view h-auto" title="Ver">
                     <i class="fas fa-eye"></i>
                   </a>
-                  @if (canEdit && row.status === 'en_proceso') {
+                  @if (canEdit && row.status === 'en_proceso' && row.sucursal_activa !== false) {
                     <a [routerLink]="['/ordenes/notas-trabajo/edit', row.id]" class="btn btn-tbl-edit h-auto" title="Editar">
                       <i class="fas fa-pen"></i>
                     </a>

@@ -1,6 +1,6 @@
 # ADR-dashboard-taller-laminas-api-agregados-alcance: Endpoints de solo lectura por widget, con alcance por sucursal y permisos reutilizados de Reportes, y sin migraciones
 
-**Estado:** Propuesto
+**Estado:** Propuesto -- reemplazado parcialmente (alcance de admin y sucursales inactivas) por ADR-inventario-alcance-sucursal-django-admin-alcance-lectura-escritura
 **Task relacionado:** TASK-dashboard-taller-laminas
 **Fecha:** 2026-09-30
 

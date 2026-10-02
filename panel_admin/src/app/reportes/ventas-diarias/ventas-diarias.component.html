@@ -26,20 +26,15 @@
               <label class="info-label" for="rv-hasta">Hasta</label>
               <input id="rv-hasta" type="date" class="form-control" formControlName="hasta" />
             </div>
-            <div class="col-6 col-md-2 mb-2">
+            <div class="col-6 col-md-3 mb-2">
               <label class="info-label" for="rv-sucursal">Sucursal</label>
               @if (showSucursalSelector) {
-                <select id="rv-sucursal" class="form-select form-control" formControlName="sucursal">
-                  <option [ngValue]="null">Todas</option>
-                  @for (s of sucursales; track s.id) {
-                    <option [ngValue]="s.id">{{ s.name }}</option>
-                  }
-                </select>
+                <app-sucursal-multiselect inputId="rv-sucursal" [sucursales]="sucursales" [control]="filtros.controls.sucursales" />
               } @else {
                 <div class="form-control-plaintext fw-bold">{{ sucursales[0]?.name || '—' }}</div>
               }
             </div>
-            <div class="col-6 col-md-3 mb-2">
+            <div class="col-6 col-md-2 mb-2">
               <label class="info-label" for="rv-tipo-venta">Tipo de venta</label>
               <select id="rv-tipo-venta" class="form-select form-control" formControlName="salesType">
                 <option value="">Todos</option>

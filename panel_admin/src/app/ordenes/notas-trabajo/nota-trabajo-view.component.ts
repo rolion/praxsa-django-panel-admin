@@ -67,13 +67,24 @@ export class NotaTrabajoViewComponent implements OnInit {
     return 'status-badge ' + badgeClass(status);
   }
 
+  /** La sucursal esta inactiva: la nota se ve pero no se modifica. */
+  get sucursalInactiva(): boolean {
+    return this.nota?.sucursal_activa === false;
+  }
+
   get canEdit(): boolean {
-    return !!this.nota && this.nota.status === 'en_proceso' && this.authService.hasPermission('change_nota_trabajo');
+    return (
+      !!this.nota && this.nota.status === 'en_proceso' && !this.sucursalInactiva &&
+      this.authService.hasPermission('change_nota_trabajo')
+    );
   }
 
   /** Marcar terminado: exige garantia e instalador en venta con instalacion (el servidor lo vuelve a validar). */
   get canTerminar(): boolean {
-    return !!this.nota && this.nota.status === 'en_proceso' && this.authService.hasPermission('change_nota_trabajo');
+    return (
+      !!this.nota && this.nota.status === 'en_proceso' && !this.sucursalInactiva &&
+      this.authService.hasPermission('change_nota_trabajo')
+    );
   }
 
   /** Por que no se puede terminar todavia (tooltip del boton deshabilitado); vacio si se puede. */
@@ -94,6 +105,7 @@ export class NotaTrabajoViewComponent implements OnInit {
   get canCorregir(): boolean {
     return (
       !!this.nota &&
+      !this.sucursalInactiva &&
       this.nota.status === 'terminado' &&
       this.nota.nota_venta?.status === 'por_cobrar' &&
       this.authService.hasPermission('change_nota_trabajo')
@@ -103,6 +115,7 @@ export class NotaTrabajoViewComponent implements OnInit {
   get canAnular(): boolean {
     return (
       !!this.nota &&
+      !this.sucursalInactiva &&
       this.nota.status === 'en_proceso' &&
       (this.nota.nota_venta?.status ?? 'por_cobrar') === 'por_cobrar' &&
       this.authService.hasPermission('delete_nota_trabajo')

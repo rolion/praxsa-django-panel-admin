@@ -25,6 +25,10 @@
           }
         </div>
 
+        @if (sucursalInactiva) {
+          <div class="alert alert-info mb-3">Esta sucursal está inactiva: solo lectura.</div>
+        }
+
         <div class="row g-4">
           <!-- COLUMNA PRINCIPAL -->
           <div class="col-lg-8">

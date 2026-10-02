@@ -24,12 +24,18 @@ class FiltroSucursalEnAlcanceTest(TestCase):
         filtro = sucursal_en_alcance_filter('sucursal')(request, {}, Proxy_Nota_trabajo, AdminSite())
         return {valor for valor, _ in filtro.lookups(request, None)}
 
-    def test_admin_ve_todas_las_sucursales_habilitadas(self):
-        admin_user, _ = helpers.create_user_with_token()
-        helpers.add_user_to_group(admin_user, 'Admin')
+    def test_superusuario_ve_todas_las_sucursales(self):
+        superuser, _, _ = helpers.create_superuser_with_token()
         owner, _ = helpers.create_user_with_token()
         a, b = helpers.create_sucursal(owner), helpers.create_sucursal(owner)
-        self.assertEqual(self._lookups(admin_user), {a.id, b.id})
+        self.assertEqual(self._lookups(superuser), {a.id, b.id})
+
+    def test_admin_solo_ve_las_suyas(self):
+        admin_user, _ = helpers.create_user_with_token()
+        helpers.add_user_to_group(admin_user, 'Admin')
+        propia = helpers.create_sucursal(admin_user)
+        helpers.create_sucursal(helpers.create_user_with_token()[0])
+        self.assertEqual(self._lookups(admin_user), {propia.id})
 
     def test_usuario_normal_solo_ve_las_suyas(self):
         user, _ = helpers.create_user_with_token()
@@ -38,12 +44,12 @@ class FiltroSucursalEnAlcanceTest(TestCase):
         helpers.create_sucursal(otro)
         self.assertEqual(self._lookups(user), {propia_1.id, propia_2.id})
 
-    def test_sucursal_deshabilitada_no_se_ofrece(self):
+    def test_sucursal_deshabilitada_se_ofrece_para_consulta(self):
         user, _ = helpers.create_user_with_token()
         sucursal = helpers.create_sucursal(user)
         sucursal.enable_to_install_windows_film = False
         sucursal.save()
-        self.assertEqual(self._lookups(user), set())
+        self.assertEqual(self._lookups(user), {sucursal.id})
 
 
 class ReportesFiltrosBase(TestCase):

@@ -39,7 +39,7 @@ class _DashboardView(APIView):
         serializer.is_valid(raise_exception=True)
         params = serializer.validated_data
         sucursal_id = params.get('sucursal')
-        if sucursal_id is not None and not User_Helper().get_sucursales_in_scope(request.user).filter(id=sucursal_id).exists():
+        if sucursal_id is not None and not User_Helper().get_readable_sucursales(request.user).filter(id=sucursal_id).exists():
             raise NotFound('Sucursal no encontrada.')
         return params
 
