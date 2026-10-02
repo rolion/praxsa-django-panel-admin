@@ -12,28 +12,47 @@ import { OrdenSucursal } from '../ordenes/ordenes.model';
   selector: 'app-sucursal-multiselect',
   standalone: true,
   imports: [NgbDropdown, NgbDropdownToggle, NgbDropdownMenu],
+  styles: [
+    `
+      /* El select de la plantilla ya dibuja su flecha: se oculta el caret del toggle de ng-bootstrap. */
+      .dropdown-toggle::after {
+        display: none;
+      }
+      .menu-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0;
+        padding: 0.35rem 0.5rem;
+        white-space: nowrap;
+        cursor: pointer;
+      }
+      .menu-item input {
+        flex: 0 0 auto;
+        margin: 0;
+      }
+    `,
+  ],
   template: `
-    <div ngbDropdown class="d-block sucursal-multiselect" [autoClose]="'outside'">
-      <button type="button" ngbDropdownToggle class="form-select form-control text-start" [id]="inputId">
+    <div ngbDropdown class="d-block sucursal-multiselect" [autoClose]="'outside'" container="body">
+      <button type="button" ngbDropdownToggle class="form-select form-control text-start text-truncate w-100" [id]="inputId">
         {{ label }}
       </button>
-      <div ngbDropdownMenu class="p-2 w-100">
-        <div class="form-check">
+      <div ngbDropdownMenu class="py-1" style="min-width: 14rem">
+        <label class="menu-item fw-bold" [for]="inputId + '-todas'">
           <input class="form-check-input" type="checkbox" [id]="inputId + '-todas'"
             [checked]="allActiveSelected" (change)="selectAllActive()" />
-          <label class="form-check-label fw-bold" [for]="inputId + '-todas'">Todas las activas</label>
-        </div>
+          <span>Todas las activas</span>
+        </label>
         @for (sucursal of sucursales; track sucursal.id) {
-          <div class="form-check">
+          <label class="menu-item" [for]="inputId + '-' + sucursal.id">
             <input class="form-check-input" type="checkbox" [id]="inputId + '-' + sucursal.id"
               [checked]="isSelected(sucursal.id)" (change)="toggle(sucursal.id)" />
-            <label class="form-check-label" [for]="inputId + '-' + sucursal.id">
-              {{ sucursal.name }}
-              @if (sucursal.activa === false) {
-                <span class="badge bg-warning text-dark ms-1">Inactiva</span>
-              }
-            </label>
-          </div>
+            <span>{{ sucursal.name }}</span>
+            @if (sucursal.activa === false) {
+              <span class="badge bg-warning text-dark">Inactiva</span>
+            }
+          </label>
         }
       </div>
     </div>

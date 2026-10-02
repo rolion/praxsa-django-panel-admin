@@ -62,7 +62,10 @@ describe('SucursalMultiselectComponent', () => {
     toggle.click();
     fixture.detectChanges();
 
-    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    // el menu se agrega al <body> (container="body") para no quedar recortado por la tarjeta de filtros
+    const menu = document.body.querySelector('.dropdown-menu.show');
+    expect(menu).not.toBeNull();
+    const text = menu?.textContent ?? '';
     expect(text).toContain('Central');
     expect(text).toContain('Norte');
     expect(text).toContain('Inactiva');
