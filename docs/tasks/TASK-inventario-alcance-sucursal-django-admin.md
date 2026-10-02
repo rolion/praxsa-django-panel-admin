@@ -4,7 +4,7 @@
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** task/TASK-inventario-alcance-sucursal-django-admin
-**Pull Request:** _sin abrir todavía_
+**Pull Request:** [#68](https://github.com/rolion/praxsa-django-panel-admin/pull/68)
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
