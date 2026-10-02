@@ -90,6 +90,50 @@ describe('HeaderComponent', () => {
     expect(el.querySelector('i-feather[name="user"]')).not.toBeNull();
   });
 
+  describe('boton de tema', () => {
+    const el = () => fixture.nativeElement as HTMLElement;
+    const button = () => el().querySelector('a[aria-label*="modo"]') as HTMLElement;
+
+    afterEach(() => (document.body.className = ''));
+
+    it('staff: sits between fullscreen and the user menu, showing the moon in light mode', () => {
+      expect(button()).not.toBeNull();
+      expect(button().querySelector('i.fa-moon')).not.toBeNull();
+      expect(button().querySelector('i.fa-sun')).toBeNull();
+      const items = Array.from(el().querySelectorAll('ul.navbar-right > li'));
+      expect(items.length).toBe(3);
+      expect(items[0].querySelector('i-feather[name="maximize"]')).not.toBeNull();
+      expect(items[1].contains(button())).toBeTrue();
+      expect(items[2].querySelector('i-feather[name="user"]')).not.toBeNull();
+    });
+
+    it('click switches to dark (sun) and a second click back to light (moon)', () => {
+      button().click();
+      fixture.detectChanges();
+      expect(document.body.classList.contains('dark')).toBeTrue();
+      expect(button().querySelector('i.fa-sun')).not.toBeNull();
+      expect(localStorage.getItem('theme')).toBe('dark');
+
+      button().click();
+      fixture.detectChanges();
+      expect(document.body.classList.contains('light')).toBeTrue();
+      expect(document.body.classList.contains('dark')).toBeFalse();
+      expect(button().querySelector('i.fa-moon')).not.toBeNull();
+      expect(localStorage.getItem('theme')).toBe('light');
+    });
+
+    it('minimal variant: no theme button and the body stays light without persisting', () => {
+      localStorage.setItem('theme', 'dark');
+      const f = TestBed.createComponent(HeaderComponent);
+      f.componentRef.setInput('minimal', true);
+      f.detectChanges();
+      expect((f.nativeElement as HTMLElement).querySelector('a[aria-label*="modo"]')).toBeNull();
+      expect(document.body.classList.contains('light')).toBeTrue();
+      expect(document.body.classList.contains('dark')).toBeFalse();
+      expect(localStorage.getItem('theme')).toBe('dark');
+    });
+  });
+
   it('shows the user name only as the user dropdown title, with Logout', () => {
     authService.login('admin', 'secret123').subscribe();
     httpMock
