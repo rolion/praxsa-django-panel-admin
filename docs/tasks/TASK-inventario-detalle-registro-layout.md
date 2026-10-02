@@ -1,6 +1,6 @@
 # TASK-inventario-detalle-registro-layout: Rediseño de la vista de detalle de registro de inventario (dos columnas, métricas y valores)
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** SI
 **Rama:** `claude/inventory-record-detail-e97b4e` (asignada por el entorno)
@@ -12,6 +12,7 @@
 | 2026-10-02 | (nuevo) → INVESTIGATION | Task creado | delivery-investigate |
 | 2026-10-02 | INVESTIGATION → PLANNING | Diseño decidido: Bootstrap + SCSS (no Tailwind), reutiliza `.orden-view`, contenedor gris translúcido, métricas en mosaicos, "Editar" en cabecera; NEEDS_PLAN, no requiere arquitectura | delivery-design |
 | 2026-10-02 | PLANNING → ENGINEERING | Plan v1 escrito (solo frontend: plantilla, componente, parcial SCSS y spec; sin E2E ni dependencias) y PR #70 abierto sobre la rama asignada por el entorno; a la espera de aprobación humana del plan | delivery-plan |
+| 2026-10-02 | ENGINEERING → REVIEW | Implementación completa del plan v1 (plantilla, componente, parcial SCSS y specs) | delivery-engineer |
 
 ## Investigación
 
@@ -83,7 +84,14 @@ _No aplica según veredicto_
 - [PLAN-2026-10-02-inventario-detalle-registro-layout](../plans/PLAN-2026-10-02-inventario-detalle-registro-layout.md) — **v1**.
 
 ## Implementación
-_Pendiente_
+Implementado según plan v1 y DDR, solo frontend (`panel_admin/`), commit `0fc62a5`:
+- `inventario-view.component.html` reescrita: cabecera (título, nombre de la lámina, único botón Editar bajo `canManage`), Información General en grid de 2 columnas (Fecha de registro bajo Estado mediante `offset-6`), Métricas de Stock en mosaicos 2x2 (Disponible destacado) y Valores Financieros con `formatBs`.
+- `inventario-view.component.ts`: `DatePipe`, `formatBs` (importado de `calculadora/calculadora.helpers`) y `formatMeters` (`Intl` es-BO).
+- `assets/scss/_inventario.scss` nuevo, importado en `style.scss`; reutiliza `.orden-view`.
+- Spec: 9 pruebas nuevas de render (título, orden Estado→Fecha, badges, lote nulo, métricas/Bs, `formatMeters`, Editar con y sin permiso); las 3 existentes se mantienen.
+- Verificación propia (no es el Quality Gate): spec de la vista 12/12, `ng lint` y `ng build` limpios.
+
+Notas: (1) las dos preguntas abiertas del plan (nombre del producto = solo lámina; prefijo `Bs`) se implementaron con los supuestos del plan, sin respuesta del usuario. (2) Quedan para review la verificación visual (responsive, tema oscuro) y la zona horaria de `date`. (3) Deuda señalada: dependencia `almacen` → `calculadora` por `formatBs`.
 
 ## Review
 _Pendiente_
