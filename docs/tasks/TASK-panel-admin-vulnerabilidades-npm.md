@@ -1,6 +1,6 @@
 # TASK-panel-admin-vulnerabilidades-npm: Corregir vulnerabilidades de `npm audit` en panel_admin sin romper el build
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** NO
 **Rama:** `claude/panel-admin-vulnerabilities-4a1058` (asignada por el entorno)
@@ -12,6 +12,7 @@
 | 2026-10-02 | (nuevo) → INVESTIGATION | Task creado | delivery-investigate |
 | 2026-10-02 | INVESTIGATION → PLANNING | Veredicto NEEDS_PLAN, diseño NO; sin arquitectura requerida | delivery-plan |
 | 2026-10-02 | PLANNING → ENGINEERING | Plan v1 escrito (retirar paquetes sin uso, subir CLI, override de piscina, refrescar lock); PR abierto sobre la rama asignada por el entorno | delivery-plan |
+| 2026-10-02 | ENGINEERING → REVIEW | Implementación completa según plan v1 (commit a8eb8d5) | delivery-engineer |
 
 ## Investigación
 
@@ -88,7 +89,19 @@ _No aplica según veredicto_
 [docs/plans/PLAN-2026-10-02-panel-admin-vulnerabilidades-npm.md](../plans/PLAN-2026-10-02-panel-admin-vulnerabilidades-npm.md) (v1)
 
 ## Implementación
-_Pendiente_
+Commit `a8eb8d5` en la rama del PR #69. Solo se tocaron `panel_admin/package.json`, `package-lock.json` y `angular.json`.
+
+- Retirados (sin uso, confirmado con grep en `src/`, `angular.json`, `tsconfig*`, `.eslintrc.json`, README): `xlsx`, `echarts`, `ngx-echarts`, `@types/ckeditor__ckeditor5-build-classic`, `@types/ckeditor__ckeditor5-watchdog`. **Desvío menor respecto al plan:** también `@types/echarts`, que es un stub que solo depende de `echarts@*` y reintroducía `echarts@6.0.0` vulnerable (hallazgo del `npm audit` tras quitar los cinco previstos).
+- `angular.json`: quitadas de `allowedCommonJsDependencies` las entradas `echarts` y `@ckeditor/ckeditor5-build-classic`.
+- `@angular/cli` `~21.2.24` y `@angular/build` `^21.2.24`; `overrides: { "piscina": "^5.3.2" }` (resuelve a 5.3.2); `lodash-es` 4.18.1 vía `npm update`.
+- No se usó `--force`; sin dependencias nuevas.
+- Mediciones propias (no es el Quality Gate): `npm audit` 81 → 0 (también `--omit=dev`); `npm ci` limpio OK; `ng build --configuration production --base-href /panel/` OK; `ng lint` OK; `ng test` 489 specs con 13 fallos idénticos a la línea base previa al cambio (los "should create" de componentes de plantilla, p. ej. `Dashboard2Component`, `FooterComponent`, `SignupComponent`; fallos preexistentes); `ng serve` carga `/authentication/signin` sin errores de consola ni del servidor.
+- El diff del lock cambia de major solo paquetes internos del toolchain del CLI (`@npmcli/*`, `ssri`, `ini`, `proc-log`, `@hono/node-server`, `express-rate-limit`, etc.), todos de desarrollo.
+
+**Limitaciones / deuda técnica**
+- No se verificó el dashboard autenticado (requiere backend y credenciales); `ng2-charts` y `apexcharts` solo quedan cubiertos por build y specs. Conviene que Review o una persona lo revise a mano.
+- Quedan entradas `zrender/lib/*` en `allowedCommonJsDependencies` (`angular.json`), que eran de `echarts`; inofensivas, fuera del alcance del plan.
+- Los 13 specs fallidos preexistentes siguen sin arreglar (fuera de alcance).
 
 ## Review
 _Pendiente_
