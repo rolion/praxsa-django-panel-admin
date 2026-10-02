@@ -1,6 +1,6 @@
 # TASK-theme-switcher-relocation: Mover el cambio light/dark del Setting Panel a un botón en el header
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** NO
 **Rama:** `claude/theme-switcher-relocation-4d2c5c` (asignada por el entorno)
@@ -14,6 +14,7 @@
 | 2026-10-02 | INVESTIGATION → PLANNING | Veredicto NEEDS_PLAN, diseño NO; sin arquitectura requerida | delivery-plan |
 | 2026-10-02 | PLANNING → ENGINEERING | Plan v1 escrito (ThemeService nuevo, botón en header, retiro del panel, specs y doc); PR abierto sobre la rama asignada por el entorno | delivery-plan |
 | 2026-10-02 | ENGINEERING → REVIEW | Implementación completa según plan v1 | delivery-engineer |
+| 2026-10-02 | REVIEW → PUBLISH | Quality Gate PASS; 1 issue Medium abierto (REV-01, categoría PLAN: cambio de color primario no registrado) a resolver/confirmar en la publicación | delivery-review |
 
 ## Investigación
 
@@ -96,7 +97,20 @@ Según plan v1, sin desvíos:
 Deuda técnica señalada (fuera de alcance): SCSS inerte del panel (`_settingSidebar.scss`, reglas `.settingSidebar` en skins/rtl) e imágenes `light.png`/`dark.png`; `auth-layout` sigue leyendo el tema con el prefijo de `LocalStorageService`.
 
 ## Review
-_Pendiente_
+**Resultado: PASS** (2026-10-02, revisor en sesión distinta de la implementación; reconstruido solo desde TASK, plan y diff `origin/master...HEAD`).
+
+Issues abiertos:
+- [REV-2026-10-02-theme-switcher-relocation-01](../reviews/REV-2026-10-02-theme-switcher-relocation-01.md) — Medium, PLAN: el commit `44b394c` cambió el color primario del skin claro (`_white.scss`, `_lightsidebar.scss`) y añadió estilo en `header.component.sass`, fuera del plan y sin constar en el TASK/PR. No bloquea; hay que confirmar con el usuario que fue pedido y registrarlo (o revertirlo).
+
+Verificaciones ejecutadas (salida real en el PR, `## Testing`):
+- `ng build`: OK. `ng lint`: "All files pass linting".
+- `ng test --watch=false --browsers=ChromeHeadless --code-coverage`: 478 ejecutados, 13 FAILED. Baseline `origin/master` en worktree temporal: 469 ejecutados, **los mismos 13** (`should create` de componentes demo). Sin fallos nuevos; tratados como deuda preexistente fuera de alcance (no hay autorización explícita para ignorarlos: el usuario puede objetar).
+- Cobertura de archivos nuevos: `theme.service.ts` 96.87% stmts / 91.66% branches; `header.component.ts` 55.93% stmts (el código nuevo, `toggleTheme` y la rama `minimal`, está cubierto).
+- Navegador (app real de esta rama, sesión staff simulada, sin backend): sin engranaje ni panel; luna entre fullscreen y usuario; clic → `dark dark-sidebar theme-black` + sol + claves `theme/menuOption/choose_skin`; recarga mantiene dark; segundo clic vuelve a light; pasar a `/calculadora` (minimal) deja el `body` en `light`, sin botón y sin tocar `theme`.
+- Seguridad: `npm audit --omit=dev` → 3 vulnerabilidades (1 moderate, 2 high: `echarts`, `lodash-es`, `xlsx`), preexistentes, el diff no toca `package*.json`. `bandit`/`safety` no aplican (sin cambios backend).
+- Backend: no hay cambios, no se ejecutó `manage.py test`.
+
+Plan compliance: los 5 acceptance criteria se cumplen; `RightSidebarComponent`/`RightSidebarService` ya no existen (solo quedan comentarios y SCSS inerte documentados como fuera de alcance); no hay ADR/DDR; tests definidos por el plan presentes; E2E no requerido por el plan.
 
 ## Publicación
 _Pendiente_
