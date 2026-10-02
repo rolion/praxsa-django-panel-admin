@@ -133,69 +133,43 @@ class Proforma_Business:
             raise Exception('algo sali mal, contactar administrador')
         raise Exception('no se puede eliminar una proforma aprobada o instalada')
     
+    def _legacy_none_without_sucursal(self, user):
+        """Contrato de los metodos `*_by_role` del Django Admin: None cuando el
+        usuario no tiene ninguna sucursal asignada (los ModelAdmin lo usan para
+        mostrar "Asigne una sucursal al usuario"); el superusuario nunca."""
+        return not self.user_helper.can_view_all_sucursales(user) and not self.user_helper.has_assigned_sucursal(user)
+
     def get_proforma_queryset_by_role(self, user, qs):
-        try:
-            user_groups = list(user.groups.values_list('name',flat = True))
-            is_admin = 'Admin' in user_groups
-            if is_admin == True:
-                qs_result = qs.select_related('sucursal', 'car_model_id','car_model_id__car_brand_id')
-                qs_result = qs_result.filter(is_delete = False)
-            else:
-                sucursales = Sucursal.objects.prefetch_related('empleado')
-                sucursales = sucursales.filter(empleado__id = user.id, enable_to_install_windows_film = True)
-                if len(sucursales) > 0:
-                    qs_result = qs.select_related('sucursal', 'car_model_id','car_model_id__car_brand_id')
-                    qs_result = qs_result.filter(sucursal__id = sucursales[0].id, is_delete = False)
-                else:
-                    qs_result = None
-            
-            return qs_result
-        except Exception as e:
-            self.log_errors.error(f'algo salio mal, Proforma_Business - get_proforma_queryset_by_role {e}')
+        """Legado del Django Admin: delega en el alcance del panel."""
+        if self._legacy_none_without_sucursal(user):
             return None
-        
+        return self.get_panel_proforma_queryset(user, qs)
+
     def get_panel_proforma_queryset(self, user, qs):
-        """Alcance de proformas para el panel (API `ordenes/proformas`). Metodo
-        nuevo, sin tocar get_proforma_queryset_by_role (que sigue alimentando
-        Django Admin): admin (case-insensitive) ve todas las no borradas; el
-        resto, las de todas sus sucursales habilitadas; sin sucursal, ninguna.
-        Ver ADR-modulo-ordenes-proforma-nota-trabajo-alcance-permisos."""
+        """Alcance de proformas para el panel (API `ordenes/proformas`): las no
+        borradas de las sucursales asignadas al usuario (activas o no, alcance
+        de lectura); solo el superusuario ve todas; sin sucursal, ninguna. Ver
+        ADR-inventario-alcance-sucursal-django-admin-alcance-lectura-escritura."""
         qs = qs.filter(is_delete=False).select_related(
             'sucursal', 'car_model_id', 'car_model_id__car_brand_id', 'nota_trabajo'
         )
         if self.user_helper.can_view_all_sucursales(user):
             return qs
-        return qs.filter(sucursal_id__in=self.user_helper.get_enabled_sucursal_ids(user))
+        return qs.filter(sucursal_id__in=self.user_helper.get_readable_sucursal_ids(user))
 
     def get_nota_venta_queryset_by_role(self, user, qs):
-        try:
-            sucursales = Sucursal.objects.prefetch_related('empleado').filter(empleado__id = user.id, enable_to_install_windows_film = True)
-            
-            sucursales = Sucursal.objects.prefetch_related('empleado').filter(empleado__id = user.id, enable_to_install_windows_film = True)
-            if len(sucursales) > 0:
-                qs_result = qs.select_related('nota_trabajo', 'nota_trabajo__proforma', 'nota_trabajo__proforma__sucursal')
-                qs_result =qs_result.filter(nota_trabajo__proforma__sucursal__id = sucursales[0].id)
-            else:
-                qs_result = None
-            return qs_result
-        except Exception as e:
-            self.log_errors.error(f'algo salio mal, Proforma_Business - get_proforma_queryset_by_role {e}')
+        """Legado del Django Admin: delega en el alcance del panel."""
+        if self._legacy_none_without_sucursal(user):
             return None
-        
+        from .pago import Pago_Business  # import local: pago.py importa orden_estado
+        return Pago_Business().get_panel_nota_venta_queryset(user, qs)
+
     def get_nota_trabajo_queryset_by_role(self, user, qs):
-        try:
-            sucursales = Sucursal.objects.prefetch_related('empleado').filter(empleado__id = user.id, enable_to_install_windows_film = True)
-            # if user.is_superuser:
-            #     return qs.filter(is_delete = False)
-            sucursales = Sucursal.objects.prefetch_related('empleado').filter(empleado__id = user.id, enable_to_install_windows_film = True)
-            if len(sucursales) > 0:
-                qs_result = qs.select_related('proforma__sucursal').filter(proforma__sucursal__id = sucursales[0].id, proforma__is_delete = False)
-            else:
-                qs_result = None
-            return qs_result
-        except Exception as e:
-            self.log_errors.error(f'algo salio mal, Proforma_Business - get_proforma_queryset_by_role {e}')
+        """Legado del Django Admin: delega en el alcance del panel."""
+        if self._legacy_none_without_sucursal(user):
             return None
+        return self.orden_trabajo_bussiness.get_panel_nota_queryset(user, qs)
+
         
         
 

@@ -76,7 +76,7 @@ class ReportesPermisosTest(ReportesApiTestBase):
         self.assertEqual(self.get(UTILIDAD, token, **RANGO).status_code, 403)
 
     def test_admin_con_ambos_permisos_accede_a_ambos(self):
-        _, token = self.usuario(grupo='Admin', permisos=['view_proxy_pagos', 'view_utilidades'])
+        _, token = self.usuario(grupo='Admin', permisos=['view_proxy_pagos', 'view_utilidades'], sucursales=[self.sucursal_a, self.sucursal_b])
         self.assertEqual(self.get(VENTAS, token, **RANGO).status_code, 200)
         self.assertEqual(self.get(UTILIDAD, token, **RANGO).status_code, 200)
 
@@ -86,7 +86,7 @@ class ReportesPermisosTest(ReportesApiTestBase):
         self.assertEqual(self.get(UTILIDAD, token, **RANGO).status_code, 403)
 
     def test_ventas_diarias_no_expone_costos_utilidad_ni_margenes(self):
-        _, token = self.usuario(grupo='Admin', permisos=['view_proxy_pagos'])
+        _, token = self.usuario(grupo='Admin', permisos=['view_proxy_pagos'], sucursales=[self.sucursal_a, self.sucursal_b])
         respuesta = self.get(VENTAS, token, **RANGO)
         self.assertEqual(respuesta.status_code, 200)
         self.assertGreater(len(respuesta.json()['rows']), 0)
@@ -95,11 +95,80 @@ class ReportesPermisosTest(ReportesApiTestBase):
 
 class ReportesAlcanceTest(ReportesApiTestBase):
 
-    def test_admin_ve_todas_las_sucursales(self):
-        _, token = self.usuario(grupo='Admin', permisos=['view_proxy_pagos'])
+    def test_admin_con_ambas_sucursales_las_ve_todas(self):
+        _, token = self.usuario(grupo='Admin', permisos=['view_proxy_pagos'], sucursales=[self.sucursal_a, self.sucursal_b])
         filas = self.get(VENTAS, token, **RANGO).json()['rows']
         self.assertEqual({f['nota_venta_id'] for f in filas},
                          {self.venta_a['nota_venta'].id, self.venta_b['nota_venta'].id})
+
+    def test_admin_solo_ve_su_sucursal_asignada(self):
+        _, token = self.usuario(grupo='Admin', permisos=['view_proxy_pagos'], sucursales=[self.sucursal_a])
+        filas = self.get(VENTAS, token, **RANGO).json()['rows']
+        self.assertEqual([f['nota_venta_id'] for f in filas], [self.venta_a['nota_venta'].id])
+        self.assertEqual(self.get(VENTAS, token, sucursal=self.sucursal_b.id, **RANGO).status_code, 404)
+
+    def test_admin_sin_sucursal_no_ve_nada(self):
+        _, token = self.usuario(grupo='Admin', permisos=['view_proxy_pagos'])
+        datos = self.get(VENTAS, token, **RANGO).json()
+        self.assertEqual(datos['rows'], [])
+        self.assertTrue(datos['sin_sucursal'])
+
+    def test_superusuario_ve_todas_las_sucursales(self):
+        _, token, _ = helpers.create_superuser_with_token()
+        datos = self.get(VENTAS, token, **RANGO).json()
+        self.assertEqual({f['nota_venta_id'] for f in datos['rows']},
+                         {self.venta_a['nota_venta'].id, self.venta_b['nota_venta'].id})
+        self.assertFalse(datos['sin_sucursal'])
+
+
+class ReportesMultiSucursalTest(ReportesApiTestBase):
+    """?sucursales=1,2 (ADR-...-filtro-multisucursal-reportes): lista dentro del alcance
+    de lectura; sin pedir ninguna, "Todas" = las activas del alcance."""
+
+    def setUp(self):
+        super().setUp()
+        _, self.token = self.usuario(
+            grupo='Caja', permisos=['view_proxy_pagos', 'view_utilidades'],
+            sucursales=[self.sucursal_a, self.sucursal_b])
+
+    def ids(self, **params):
+        filas = self.get(VENTAS, self.token, **params, **RANGO).json()['rows']
+        return {f['nota_venta_id'] for f in filas}
+
+    def test_lista_separada_por_comas(self):
+        self.assertEqual(self.ids(sucursales=f'{self.sucursal_a.id},{self.sucursal_b.id}'),
+                         {self.venta_a['nota_venta'].id, self.venta_b['nota_venta'].id})
+        self.assertEqual(self.ids(sucursales=str(self.sucursal_b.id)), {self.venta_b['nota_venta'].id})
+
+    def test_sucursales_y_sucursal_se_unen(self):
+        self.assertEqual(self.ids(sucursales=str(self.sucursal_a.id), sucursal=self.sucursal_b.id),
+                         {self.venta_a['nota_venta'].id, self.venta_b['nota_venta'].id})
+
+    def test_sucursal_ajena_en_la_lista_es_404(self):
+        ajena = helpers.create_sucursal(helpers.create_user_with_token()[0])
+        respuesta = self.get(VENTAS, self.token, sucursales=f'{self.sucursal_a.id},{ajena.id}', **RANGO)
+        self.assertEqual(respuesta.status_code, 404)
+
+    def test_formato_invalido_es_400(self):
+        for valor in ('abc', '1,,2', '1,a', ',1'):
+            self.assertEqual(self.get(VENTAS, self.token, sucursales=valor, **RANGO).status_code, 400, valor)
+
+    def test_todas_excluye_sucursales_inactivas_por_defecto(self):
+        self.sucursal_b.enable_to_install_windows_film = False
+        self.sucursal_b.save(update_fields=['enable_to_install_windows_film'])
+        self.assertEqual(self.ids(), {self.venta_a['nota_venta'].id})
+
+    def test_sucursal_inactiva_se_puede_pedir_explicitamente(self):
+        self.sucursal_b.enable_to_install_windows_film = False
+        self.sucursal_b.save(update_fields=['enable_to_install_windows_film'])
+        self.assertEqual(self.ids(sucursal=self.sucursal_b.id), {self.venta_b['nota_venta'].id})
+        self.assertEqual(self.ids(sucursales=f'{self.sucursal_a.id},{self.sucursal_b.id}'),
+                         {self.venta_a['nota_venta'].id, self.venta_b['nota_venta'].id})
+
+    def test_utilidad_acepta_la_lista(self):
+        respuesta = self.get(UTILIDAD, self.token, sucursales=str(self.sucursal_a.id), **RANGO)
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual({v['nota_venta_id'] for v in respuesta.json()['ventas']}, {self.venta_a['nota_venta'].id})
 
     def test_empleado_solo_ve_sus_sucursales_y_todas_las_suyas(self):
         _, token_a = self.usuario(grupo='Caja', permisos=['view_proxy_pagos'], sucursales=[self.sucursal_a])
@@ -132,7 +201,7 @@ class ReportesValidacionTest(ReportesApiTestBase):
 
     def setUp(self):
         super().setUp()
-        _, self.token = self.usuario(grupo='Admin', permisos=['view_proxy_pagos', 'view_utilidades'])
+        _, self.token = self.usuario(grupo='Admin', permisos=['view_proxy_pagos', 'view_utilidades'], sucursales=[self.sucursal_a, self.sucursal_b])
 
     def test_desde_y_hasta_son_obligatorios(self):
         self.assertEqual(self.get(VENTAS, self.token).status_code, 400)
@@ -158,7 +227,7 @@ class ReportesContenidoTest(ReportesApiTestBase):
 
     def setUp(self):
         super().setUp()
-        _, self.token = self.usuario(grupo='Admin', permisos=['view_proxy_pagos', 'view_utilidades'])
+        _, self.token = self.usuario(grupo='Admin', permisos=['view_proxy_pagos', 'view_utilidades'], sucursales=[self.sucursal_a, self.sucursal_b])
 
     def test_ventas_diarias_filtra_por_tipo_de_venta_y_de_pago(self):
         solo_metro = self.get(VENTAS, self.token, sales_type=METRO_LINEAL, **RANGO).json()

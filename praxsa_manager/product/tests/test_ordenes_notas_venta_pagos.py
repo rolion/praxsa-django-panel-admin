@@ -272,9 +272,16 @@ class AlcanceNotasVentaTest(OrdenApiBase):
         user, token = make_staff(permissions=(), group='Caja')
         self.assertEqual(self.client.get(VENTAS, **auth(token)).json(), [])
 
-    def test_admin_ve_todas_las_sucursales(self):
+    def test_superusuario_ve_todas_las_sucursales(self):
         self.aprobada()
+        _, token, _ = helpers.create_superuser_with_token()
+        self.assertEqual(len(self.client.get(VENTAS, **auth(token)).json()), 1)
+
+    def test_admin_solo_ve_las_de_sus_sucursales(self):
+        _, nota, _ = self.aprobada()
         admin, token = make_staff(permissions=(), group='admin')
+        self.assertEqual(self.client.get(VENTAS, **auth(token)).json(), [])
+        nota.proforma.sucursal.empleado.add(admin)
         self.assertEqual(len(self.client.get(VENTAS, **auth(token)).json()), 1)
 
     def test_no_staff_es_403(self):

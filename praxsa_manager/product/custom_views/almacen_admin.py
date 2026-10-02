@@ -124,16 +124,19 @@ def _inventario_in_scope(user):
 
 
 class AlmacenSucursalesView(APIView):
-    """Sucursales habilitadas que el usuario puede usar en Almacen: todas para
-    admin, las suyas para el resto. Alimenta el selector de sucursal de
-    Inventario."""
+    """Sucursales del alcance de lectura del usuario en Almacen (asignadas, activas
+    o no; todas para el superusuario). `activa` permite al panel ofrecer solo las
+    activas en el alta. Alimenta los selectores de sucursal de Inventario."""
 
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated, IsStaffUser]
 
     def get(self, request):
-        sucursales = User_Helper().get_sucursales_in_scope(request.user)
-        return Response([{'id': s.id, 'name': s.name} for s in sucursales])
+        sucursales = User_Helper().get_readable_sucursales(request.user)
+        return Response([
+            {'id': s.id, 'name': s.name, 'activa': s.enable_to_install_windows_film}
+            for s in sucursales
+        ])
 
 
 class InventarioListView(generics.ListCreateAPIView):
@@ -203,6 +206,7 @@ class InventarioToggleActiveView(APIView):
             inv = _inventario_in_scope(request.user).get(pk=pk)
         except inventario.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
+        User_Helper().require_sucursal_writable(request.user, inv.sucursal_id)
 
         is_active = request.data.get('is_active')
         if is_active is None:
@@ -240,6 +244,7 @@ class InventarioUpdateView(generics.RetrieveUpdateAPIView):
     def patch(self, request, *args, **kwargs):
         if not request.user.has_perm('product.change_inventario'):
             return Response(status=status.HTTP_403_FORBIDDEN)
+        User_Helper().require_sucursal_writable(request.user, self.get_object().sucursal_id)
         return super().patch(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
@@ -249,11 +254,9 @@ class InventarioUpdateView(generics.RetrieveUpdateAPIView):
 
 
 def _precios_in_scope(user):
-    """Precios por sucursal de las sucursales que el usuario puede usar: todas
-    para admin, las suyas para el resto (User_Helper.get_sucursales_in_scope,
-    ver ADR-agrupacion-menu-instalador-precio-sucursal-api-permisos-borrado,
-    decision 5)."""
-    sucursales = User_Helper().get_sucursales_in_scope(user)
+    """Precios por sucursal de las sucursales asignadas al usuario, activas o no
+    (User_Helper.get_readable_sucursales; todas solo para el superusuario)."""
+    sucursales = User_Helper().get_readable_sucursales(user)
     return precio_venta_sucursal.objects.select_related('sucursal', 'lamina').filter(
         sucursal__in=sucursales
     ).order_by('sucursal__name', 'lamina__name', 'width')
@@ -292,3 +295,11 @@ class PrecioVentaSucursalDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         return _precios_in_scope(self.request.user)
+
+    def update(self, request, *args, **kwargs):
+        User_Helper().require_sucursal_writable(request.user, self.get_object().sucursal_id)
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        User_Helper().require_sucursal_writable(request.user, self.get_object().sucursal_id)
+        return super().destroy(request, *args, **kwargs)

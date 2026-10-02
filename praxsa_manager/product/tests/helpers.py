@@ -55,6 +55,15 @@ def create_staff_user_with_token(username=None, password='testpass123', is_staff
     return user, token, password
 
 
+def create_superuser_with_token(username=None, password='testpass123'):
+    """Superusuario de Django (unica excepcion global al alcance por sucursal)
+    autenticable por Token DRF. Es staff y tiene todos los permisos."""
+    username = username or f'{_unique("superuser")}@test.com'
+    user = User.objects.create_superuser(username=username, email=username, password=password)
+    token = Token.objects.create(user=user)
+    return user, token, password
+
+
 def grant_permission(user, app_label, codename):
     permission = Permission.objects.get(content_type__app_label=app_label, codename=codename)
     user.user_permissions.add(permission)

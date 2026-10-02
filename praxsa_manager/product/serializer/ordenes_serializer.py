@@ -57,6 +57,7 @@ class ProformaListSerializer(serializers.ModelSerializer):
     sales_type_label = serializers.CharField(source='get_sales_type_display', read_only=True)
     status_label = serializers.CharField(source='get_status_display', read_only=True)
     sucursal_name = serializers.SerializerMethodField()
+    sucursal_activa = serializers.BooleanField(source='sucursal.enable_to_install_windows_film', read_only=True)
     car_model_name = serializers.SerializerMethodField()
     car_brand_name = serializers.SerializerMethodField()
     total_a_pagar = serializers.SerializerMethodField()
@@ -65,7 +66,7 @@ class ProformaListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Proforma_Header
         fields = [
-            'id', 'sales_type', 'sales_type_label', 'name', 'sucursal', 'sucursal_name',
+            'id', 'sales_type', 'sales_type_label', 'name', 'sucursal', 'sucursal_name', 'sucursal_activa',
             'car_model_name', 'car_brand_name', 'car_plate', 'total_price', 'discount',
             'total_a_pagar', 'proforma_created_on', 'status', 'status_label', 'is_close',
             'nota_trabajo_id',
@@ -163,7 +164,7 @@ class ProformaWriteSerializer(serializers.ModelSerializer):
         if self.instance is not None:
             return sucursal
         user = self.context['request'].user
-        if not User_Helper().get_sucursales_in_scope(user).filter(pk=sucursal.pk).exists():
+        if not User_Helper().get_writable_sucursales(user).filter(pk=sucursal.pk).exists():
             raise serializers.ValidationError('No tiene acceso a esa sucursal.')
         return sucursal
 
@@ -288,6 +289,7 @@ class NotaTrabajoListSerializer(serializers.ModelSerializer):
     proforma_id = serializers.IntegerField(read_only=True)
     sucursal_id = serializers.SerializerMethodField()
     sucursal_name = serializers.SerializerMethodField()
+    sucursal_activa = serializers.SerializerMethodField()
     car_model_name = serializers.SerializerMethodField()
     car_brand_name = serializers.SerializerMethodField()
     instalador_name = serializers.SerializerMethodField()
@@ -299,11 +301,15 @@ class NotaTrabajoListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'proforma_id', 'name', 'car_model_name', 'car_brand_name', 'car_plate', 'instaladar',
             'instalador_name', 'codigo_garantia', 'entrada_vehiculo', 'salida_vehiculo',
-            'sucursal_id', 'sucursal_name', 'is_close', 'status', 'status_label', 'nota_venta',
+            'sucursal_id', 'sucursal_name', 'sucursal_activa', 'is_close', 'status', 'status_label', 'nota_venta',
         ]
 
     def get_sucursal_id(self, obj):
         return obj.proforma.sucursal_id if obj.proforma_id else None
+
+    def get_sucursal_activa(self, obj):
+        proforma = obj.proforma
+        return proforma.sucursal.enable_to_install_windows_film if proforma is not None and proforma.sucursal_id else None
 
     def get_sucursal_name(self, obj):
         proforma = obj.proforma
@@ -409,6 +415,7 @@ class NotaVentaListSerializer(serializers.ModelSerializer):
     proforma_id = serializers.SerializerMethodField()
     sucursal_id = serializers.SerializerMethodField()
     sucursal_name = serializers.SerializerMethodField()
+    sucursal_activa = serializers.SerializerMethodField()
     work_status = serializers.CharField(source='nota_trabajo.status', read_only=True)
     work_status_label = serializers.CharField(source='nota_trabajo.get_status_display', read_only=True)
 
@@ -417,6 +424,7 @@ class NotaVentaListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'nota_trabajo_id', 'proforma_id', 'name', 'ci_nit', 'total_price', 'created_on',
             'status', 'status_label', 'work_status', 'work_status_label', 'sucursal_id', 'sucursal_name',
+            'sucursal_activa',
         ]
 
     def _proforma(self, obj):
@@ -432,6 +440,10 @@ class NotaVentaListSerializer(serializers.ModelSerializer):
     def get_sucursal_name(self, obj):
         proforma = self._proforma(obj)
         return proforma.sucursal.name if proforma is not None and proforma.sucursal_id else None
+
+    def get_sucursal_activa(self, obj):
+        proforma = self._proforma(obj)
+        return proforma.sucursal.enable_to_install_windows_film if proforma is not None and proforma.sucursal_id else None
 
 
 class NotaVentaDetailSerializer(NotaVentaListSerializer):

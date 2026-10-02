@@ -1,7 +1,10 @@
 """Tests de alcance por sucursal y filtros de Inventario (TASK-almacen-permisos-
 sucursal-filtros). Ver ADR-almacen-permisos-sucursal-filtros-alcance-inventario:
 el usuario solo ve/agrega/edita inventario de sus sucursales habilitadas
-(admin: todas), y el listado se filtra por ?sucursal= y ?window_film=.
+(el grupo admin tampoco tiene excepcion; solo el superusuario ve todo), una
+sucursal inactiva es de solo lectura, y el listado se filtra por ?sucursal= y
+?window_film= (ADR-inventario-alcance-sucursal-django-admin-alcance-lectura-
+escritura).
 """
 from decimal import Decimal
 
@@ -52,24 +55,42 @@ class InventarioListAlcanceTest(_AlcanceBase):
     def test_user_sees_all_own_sucursales_and_not_foreign_ones(self):
         self.assertEqual(self.get_ids(), {self.inv_a1.id, self.inv_b2.id})
 
-    def test_admin_sees_every_sucursal(self):
+    def test_superuser_sees_every_sucursal(self):
+        _, superuser_token, _ = helpers.create_superuser_with_token()
+
+        ids = self.get_ids(token=superuser_token)
+
+        self.assertTrue({self.inv_a1.id, self.inv_b2.id, self.inv_c1.id} <= ids)
+
+    def test_admin_group_sees_only_assigned_sucursales(self):
+        admin, admin_token, _ = helpers.create_staff_user_with_token()
+        helpers.add_user_to_group(admin, 'admin')
+        sucursal_admin = helpers.create_sucursal(admin)
+        inv_admin = helpers.create_inventario(sucursal=sucursal_admin, bobina=self.reel_1)
+
+        self.assertEqual(self.get_ids(token=admin_token), {inv_admin.id})
+
+    def test_admin_group_without_sucursal_sees_nothing(self):
         admin, admin_token, _ = helpers.create_staff_user_with_token()
         helpers.add_user_to_group(admin, 'admin')
 
-        ids = self.get_ids(token=admin_token)
-
-        self.assertTrue({self.inv_a1.id, self.inv_b2.id, self.inv_c1.id} <= ids)
+        self.assertEqual(self.get_ids(token=admin_token), set())
 
     def test_user_without_sucursal_sees_empty_list(self):
         _, lonely_token, _ = helpers.create_staff_user_with_token()
 
         self.assertEqual(self.get_ids(token=lonely_token), set())
 
-    def test_disabled_sucursal_is_not_in_scope(self):
+    def test_disabled_sucursal_stays_visible_and_is_flagged(self):
         self.sucursal_b.enable_to_install_windows_film = False
         self.sucursal_b.save(update_fields=['enable_to_install_windows_film'])
 
-        self.assertEqual(self.get_ids(), {self.inv_a1.id})
+        response = self.client.get(INVENTARIO_URL, **_auth(self.token))
+        rows = {row['id']: row for row in response.json()}
+
+        self.assertEqual(set(rows), {self.inv_a1.id, self.inv_b2.id})
+        self.assertTrue(rows[self.inv_a1.id]['sucursal_activa'])
+        self.assertFalse(rows[self.inv_b2.id]['sucursal_activa'])
 
     def test_filter_by_own_sucursal(self):
         self.assertEqual(self.get_ids(f'?sucursal={self.sucursal_a.id}'), {self.inv_a1.id})
@@ -162,17 +183,51 @@ class InventarioDetalleAlcanceTest(_AlcanceBase):
 
         self.assertEqual(response.status_code, 403)
 
-    def test_admin_can_patch_any_row(self):
+    def test_superuser_can_patch_any_row(self):
+        _, superuser_token, _ = helpers.create_superuser_with_token()
+
+        response = self.client.patch(
+            f'{INVENTARIO_URL}/{self.inv_c1.id}/', {'to_install': '25.00'},
+            content_type='application/json', **_auth(superuser_token),
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+
+    def test_admin_group_cannot_patch_foreign_row(self):
         admin, admin_token, _ = helpers.create_staff_user_with_token()
         helpers.add_user_to_group(admin, 'admin')
         helpers.grant_permission(admin, 'product', 'change_inventario')
+        helpers.create_sucursal(admin)
 
         response = self.client.patch(
             f'{INVENTARIO_URL}/{self.inv_c1.id}/', {'to_install': '25.00'},
             content_type='application/json', **_auth(admin_token),
         )
 
-        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.status_code, 404)
+
+    def test_patch_row_of_disabled_sucursal_is_409_but_get_works(self):
+        self.sucursal_b.enable_to_install_windows_film = False
+        self.sucursal_b.save(update_fields=['enable_to_install_windows_film'])
+
+        self.assertEqual(self.client.get(f'{INVENTARIO_URL}/{self.inv_b2.id}/', **_auth(self.token)).status_code, 200)
+        response = self._patch(self.inv_b2)
+
+        self.assertEqual(response.status_code, 409, response.content)
+        self.inv_b2.refresh_from_db()
+        self.assertNotEqual(self.inv_b2.to_install, Decimal('25.00'))
+
+    def test_toggle_row_of_disabled_sucursal_is_409(self):
+        self.sucursal_b.enable_to_install_windows_film = False
+        self.sucursal_b.save(update_fields=['enable_to_install_windows_film'])
+        self.inv_b2.to_install = Decimal('0.00')
+        self.inv_b2.save(update_fields=['to_install'])
+
+        response = self._patch(self.inv_b2, {'is_active': False}, 'toggle-active/')
+
+        self.assertEqual(response.status_code, 409, response.content)
+        self.inv_b2.refresh_from_db()
+        self.assertTrue(self.inv_b2.is_active)
 
 
 class InventarioCreateAlcanceTest(_AlcanceBase):
@@ -219,12 +274,24 @@ class InventarioCreateAlcanceTest(_AlcanceBase):
 
         self.assertEqual(response.status_code, 400)
 
-    def test_admin_can_create_in_any_enabled_sucursal(self):
+    def test_superuser_can_create_in_any_enabled_sucursal(self):
+        _, superuser_token, _ = helpers.create_superuser_with_token()
+
+        self.assertEqual(self._post(self.sucursal_c, superuser_token).status_code, 201)
+
+    def test_admin_group_cannot_create_in_foreign_sucursal(self):
         admin, admin_token, _ = helpers.create_staff_user_with_token()
         helpers.add_user_to_group(admin, 'admin')
         helpers.grant_permission(admin, 'product', 'add_inventario')
+        helpers.create_sucursal(admin)
 
-        self.assertEqual(self._post(self.sucursal_c, admin_token).status_code, 201)
+        self.assertEqual(self._post(self.sucursal_c, admin_token).status_code, 400)
+
+    def test_create_in_disabled_own_sucursal_is_400(self):
+        self.sucursal_b.enable_to_install_windows_film = False
+        self.sucursal_b.save(update_fields=['enable_to_install_windows_film'])
+
+        self.assertEqual(self._post(self.sucursal_b).status_code, 400)
 
     def test_create_without_permission_is_forbidden_even_in_own_sucursal(self):
         _, token, _ = helpers.create_staff_user_with_token()
@@ -246,21 +313,30 @@ class AlmacenSucursalesViewTest(_AlcanceBase):
     def test_user_gets_only_own_enabled_sucursales(self):
         self.assertEqual(self._names(self.token), {self.sucursal_a.id, self.sucursal_b.id})
 
-    def test_disabled_sucursal_is_excluded(self):
+    def test_disabled_sucursal_is_listed_as_inactive(self):
         self.sucursal_b.enable_to_install_windows_film = False
         self.sucursal_b.save(update_fields=['enable_to_install_windows_film'])
 
-        self.assertEqual(self._names(self.token), {self.sucursal_a.id})
+        response = self.client.get(self.URL, **_auth(self.token))
+        activa = {row['id']: row['activa'] for row in response.json()}
 
-    def test_admin_gets_every_enabled_sucursal(self):
+        self.assertEqual(activa, {self.sucursal_a.id: True, self.sucursal_b.id: False})
+
+    def test_superuser_gets_every_sucursal(self):
+        _, superuser_token, _ = helpers.create_superuser_with_token()
+
+        self.assertTrue({self.sucursal_a.id, self.sucursal_b.id, self.sucursal_c.id} <= self._names(superuser_token))
+
+    def test_admin_group_gets_only_assigned_sucursales(self):
         admin, admin_token, _ = helpers.create_staff_user_with_token()
         helpers.add_user_to_group(admin, 'admin')
+        sucursal_admin = helpers.create_sucursal(admin)
 
-        self.assertTrue({self.sucursal_a.id, self.sucursal_b.id, self.sucursal_c.id} <= self._names(admin_token))
+        self.assertEqual(self._names(admin_token), {sucursal_admin.id})
 
     def test_response_shape(self):
         response = self.client.get(self.URL, **_auth(self.token))
-        self.assertEqual(set(response.json()[0].keys()), {'id', 'name'})
+        self.assertEqual(set(response.json()[0].keys()), {'id', 'name', 'activa'})
 
     def test_non_staff_is_forbidden(self):
         _, token, _ = helpers.create_staff_user_with_token(is_staff=False)

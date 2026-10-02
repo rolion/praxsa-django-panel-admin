@@ -445,8 +445,9 @@ class InventarioTest(TestCase):
     def test_list_hides_inactive_by_default(self):
         admin, token, _ = helpers.create_staff_user_with_token()
         helpers.add_user_to_group(admin, 'admin')
-        active = helpers.create_inventario()
-        inactive = helpers.create_inventario(to_install=Decimal('0.00'))
+        sucursal = helpers.create_sucursal(admin)
+        active = helpers.create_inventario(sucursal=sucursal)
+        inactive = helpers.create_inventario(sucursal=sucursal, to_install=Decimal('0.00'))
         inactive.is_active = False
         inactive.save(update_fields=['is_active'])
 
@@ -459,7 +460,7 @@ class InventarioTest(TestCase):
     def test_list_include_inactive_shows_them(self):
         admin, token, _ = helpers.create_staff_user_with_token()
         helpers.add_user_to_group(admin, 'admin')
-        inactive = helpers.create_inventario(to_install=Decimal('0.00'))
+        inactive = helpers.create_inventario(sucursal=helpers.create_sucursal(admin), to_install=Decimal('0.00'))
         inactive.is_active = False
         inactive.save(update_fields=['is_active'])
 
@@ -763,8 +764,9 @@ class AlmacenRolePermissionTest(TestCase):
         _grant_almacen_write_permissions(admin_user)
         lamina = helpers.create_window_film()
         reel = helpers.create_window_film_reel()
-        inv = helpers.create_inventario()
-        empty_inv = helpers.create_inventario(to_install=Decimal('0.00'))
+        sucursal = helpers.create_sucursal(admin_user)  # el admin opera solo en su sucursal asignada
+        inv = helpers.create_inventario(sucursal=sucursal)
+        empty_inv = helpers.create_inventario(sucursal=sucursal, to_install=Decimal('0.00'))
 
         post_lamina = self.client.post(
             '/product/almacen/laminas', {'name': 'Nueva', 'description': 'x'},

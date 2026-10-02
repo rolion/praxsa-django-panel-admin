@@ -63,6 +63,7 @@ class InventarioSerializer(serializers.ModelSerializer):
     toggle-active dedicado."""
 
     sucursal_name = serializers.CharField(source='sucursal.name', read_only=True)
+    sucursal_activa = serializers.BooleanField(source='sucursal.enable_to_install_windows_film', read_only=True)
     window_film_name = serializers.CharField(source='bobina.window_film.name', read_only=True)
     bobina_width = serializers.DecimalField(
         source='bobina.width', max_digits=10, decimal_places=2, read_only=True
@@ -72,7 +73,7 @@ class InventarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = inventario
         fields = [
-            'id', 'sucursal', 'sucursal_name', 'bobina', 'window_film_name', 'bobina_width',
+            'id', 'sucursal', 'sucursal_name', 'sucursal_activa', 'bobina', 'window_film_name', 'bobina_width',
             'quantity', 'to_install', 'installed', 'original_length', 'date',
             'numero_referencia', 'precio_compra_mtr_lineal', 'precio_venta_mtr_lineal',
             'nro_lote', 'is_active',
@@ -152,7 +153,7 @@ class InventarioCreateSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if request is None:
             raise serializers.ValidationError('No se pudo verificar la sucursal del usuario.')
-        if not User_Helper().get_sucursales_in_scope(request.user).filter(pk=value.pk).exists():
+        if not User_Helper().get_writable_sucursales(request.user).filter(pk=value.pk).exists():
             raise serializers.ValidationError('Clave primaria invalida: la sucursal no esta disponible para este usuario.')
         return value
 

@@ -49,7 +49,7 @@ class PrecioVentaSucursalSerializer(serializers.ModelSerializer):
     def validate_sucursal(self, value):
         request = self.context.get('request')
         if request is not None:
-            in_scope = User_Helper().get_sucursales_in_scope(request.user)
+            in_scope = User_Helper().get_writable_sucursales(request.user)
             if not in_scope.filter(pk=value.pk).exists():
                 raise serializers.ValidationError('La sucursal no está disponible para tu usuario.')
         return value

@@ -86,8 +86,25 @@ class AlcanceTest(TestCase):
             respuesta = get(self.client, self.a_token, endpoint, sucursal=self.b_suc.id)
             self.assertEqual(respuesta.status_code, 404, endpoint)
 
-    def test_admin_ve_todo_y_puede_filtrar_por_sucursal(self):
+    def test_admin_solo_ve_su_sucursal(self):
+        admin, token, sucursal = make_user(group='admin')
+        propia, _ = helpers.create_full_proforma(admin, sucursal=sucursal)
+        self.assertEqual(self.ids_recientes(token), [propia.id])
+        self.assertEqual(get(self.client, token, 'kpis', sucursal=self.a_suc.id).status_code, 404)
+
+    def test_admin_sin_sucursal_no_ve_nada(self):
         _, token, _ = make_user(group='admin', sucursal=False)
+        self.assertEqual(self.ids_recientes(token), [])
+        self.assertTrue(get(self.client, token, 'kpis').json()['sin_sucursal'])
+
+    def test_sucursal_inactiva_se_ve_si_se_elige_pero_no_entra_en_todas(self):
+        self.a_suc.enable_to_install_windows_film = False
+        self.a_suc.save(update_fields=['enable_to_install_windows_film'])
+        self.assertEqual(self.ids_recientes(self.a_token), [])
+        self.assertEqual(self.ids_recientes(self.a_token, sucursal=self.a_suc.id), [self.proforma_a.id])
+
+    def test_superusuario_ve_todo_y_puede_filtrar_por_sucursal(self):
+        _, token, _ = helpers.create_superuser_with_token()
         self.assertCountEqual(self.ids_recientes(token), [self.proforma_a.id, self.proforma_b.id])
         self.assertEqual(self.ids_recientes(token, sucursal=self.b_suc.id), [self.proforma_b.id])
         kpis = get(self.client, token, 'kpis').json()
