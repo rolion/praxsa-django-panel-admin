@@ -1,6 +1,6 @@
 # TASK-actualizar-dependencias-django-seguridad: Actualizar Django y dependencias con observaciones de seguridad
 
-**Etapa actual:** PLANNING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** NO
 **Rama:** task/TASK-actualizar-dependencias-django-seguridad
@@ -12,6 +12,8 @@
 | 2026-10-02 | (nuevo) → INVESTIGATION | Task creado | delivery-investigate |
 | 2026-10-02 | ARCHITECTURE → PLANNING | ADR de ruta de actualización (4.2.30 y luego 5.2 LTS sobre Python 3.12) registrado | delivery-architect |
 | 2026-10-02 | PLANNING → PLANNING | Plan v1 escrito y PR abierto; espera confirmación del usuario (alcance Etapa A, entorno de producción real) antes de pasar a ENGINEERING | delivery-plan |
+| 2026-10-02 | PLANNING → ENGINEERING | El usuario invocó delivery-engineer (las preguntas abiertas del plan no se respondieron; se siguió el alcance por defecto: solo Etapa A) | delivery-engineer |
+| 2026-10-02 | ENGINEERING → REVIEW | Implementación completa (requirements + nota de procedimiento pip-audit); pendientes declarados en Implementación | delivery-engineer |
 
 ## Investigación
 
@@ -76,7 +78,24 @@ _No aplica_
 - [PLAN-2026-10-02-actualizar-dependencias-django-seguridad](../plans/PLAN-2026-10-02-actualizar-dependencias-django-seguridad.md) (v1) — alcance: solo Etapa A del ADR (Django 4.2.30 + parches). Etapa B (Django 5.2 / Python 3.12) = TASK posterior. Pendiente de confirmación del usuario (2 preguntas abiertas en el plan).
 
 ## Implementación
-_Pendiente_
+Alcance: solo Etapa A del ADR. Archivos: `praxsa_manager/requirements-3.8.10.txt` y `docs/deployment-v2.md` (bullet de procedimiento `pip-audit` en el Security checklist). Sin cambios de código, Dockerfiles ni settings.
+
+Versiones elegidas = las más altas que el resolvedor de pip instala en Python 3.8 (la imagen más restrictiva), solo para paquetes con relevancia de seguridad:
+`Django 4.2.1→4.2.30`, `gunicorn 20.1.0→23.0.0`, `Pillow 10.0.1→10.4.0`, `requests 2.31.0→2.32.4`, `urllib3 2.0.3→2.2.3`, `sqlparse 0.4.4→0.5.5`, `certifi 2023.5.7→2026.7.22`, `idna 3.4→3.15`, `asgiref 3.6.0→3.8.1`, `bleach 6.0.0→6.1.0`, `reportlab 4.0.5→4.4.3`. El resto (DRF, django-filter, django-tinymce, martor, cors-headers, etc.) no se tocó, para no cambiar comportamiento sin necesidad.
+
+Autoverificación del engineer (no es el Quality Gate; la evidencia formal es de `delivery-review`):
+- Línea base antes del cambio (venv local, Python 3.10, Django 4.2.1): `manage.py test` → 618 tests OK.
+- Después (venv aislado, Python 3.10.0, Django 4.2.30): 618 tests OK; `makemigrations --check --dry-run` → "No changes detected"; `manage.py check` solo el warning `staticfiles.W004` (directorio `static/` inexistente en el worktree, no relacionado).
+- `pip install -r` + `pip check` limpios en `python:3.8-alpine` y `python:3.10-alpine` (Django 4.2.30, Pillow 10.4.0 en ambas).
+- Build OK de `Dockerfile.v2` (target `web`), `praxsa_manager/Dockerfile.prod`, `praxsa_manager/Dockerfile.stg` y `Dockerfile` raíz (este falló una vez en `apk update` por red y pasó al reintentar). En la imagen v2: `gunicorn --check-config` OK (gunicorn 23.0.0) y `manage.py check` sin issues.
+- Humo directo: Pillow (crear/verificar PNG), reportlab (generar PDF mínimo), bleach.
+
+**No realizado / pendiente:**
+- `pip-audit` antes/después **no se ejecutó**: es una dependencia/herramienta nueva que requiere confirmación del usuario. Por eso no hay lista objetiva de CVE cerrados ni de los que quedan.
+- Smoke manual del admin en el stack v2 (proformas, pagos, reportes) **no se hizo**; `product/helper/pdf.py` (reportlab) no tiene tests automatizados y solo se probó reportlab de forma aislada.
+- Las 2 preguntas abiertas del plan (dividir en dos tasks; qué compose corre producción) siguen sin respuesta.
+
+**Limitaciones conocidas (deuda, no resuelta acá):** Python 3.8 limita versiones; por ejemplo Pillow queda en 10.4.0 y urllib3 en 2.2.3 aunque existen líneas más nuevas solo para Python ≥3.9/3.10 (no verifiqué qué CVE cierran). Pasan a la Etapa B. Además: `praxsa_manager/docker-compose.prod.yml:5-8` declara `context: .` con `dockerfile: Dockerfile`, pero ese `Dockerfile` está en la raíz del repo y no en `praxsa_manager/`; tal como está parece no construir (hecho observado, no confirmado en ejecución).
 
 ## Review
 _Pendiente_
