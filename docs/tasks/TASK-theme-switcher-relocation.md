@@ -1,6 +1,6 @@
 # TASK-theme-switcher-relocation: Mover el cambio light/dark del Setting Panel a un botón en el header
 
-**Etapa actual:** ENGINEERING
+**Etapa actual:** REVIEW
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** NO
 **Rama:** `claude/theme-switcher-relocation-4d2c5c` (asignada por el entorno)
@@ -13,6 +13,7 @@
 | 2026-10-02 | INVESTIGATION (sin cambio) | Usuario resolvió dos preguntas abiertas: modo global completo; botón solo en staff | delivery-investigate |
 | 2026-10-02 | INVESTIGATION → PLANNING | Veredicto NEEDS_PLAN, diseño NO; sin arquitectura requerida | delivery-plan |
 | 2026-10-02 | PLANNING → ENGINEERING | Plan v1 escrito (ThemeService nuevo, botón en header, retiro del panel, specs y doc); PR abierto sobre la rama asignada por el entorno | delivery-plan |
+| 2026-10-02 | ENGINEERING → REVIEW | Implementación completa según plan v1 | delivery-engineer |
 
 ## Investigación
 
@@ -85,7 +86,14 @@ _No aplica según veredicto_
 Hallazgo adicional del plan: `LocalStorageService` antepone el prefijo `light_`/`dark_` al leer, pero el panel escribe claves crudas (`theme`, `menuOption`, `choose_skin`), por lo que hoy el tema no se recupera al recargar. El `ThemeService` nuevo lee y escribe las claves crudas de forma consistente.
 
 ## Implementación
-_Pendiente_
+Según plan v1, sin desvíos:
+- Nuevo `core/service/theme.service.ts` (+ spec): `applyMode`, `applySaved`, `toggle`, signal `isDark`; claves crudas `theme`/`menuOption`/`choose_skin`; limpia las siete clases `theme-*`.
+- `header.component.{html,ts}`: botón luna/sol (`fas fa-moon`/`fa-sun`) entre fullscreen y el dropdown de usuario, solo si `!minimal()`; el header de staff aplica `applySaved()` y el `minimal()` fuerza light sin persistir. Se retiró código muerto (`RightSidebarService`, `toggleRightSidebar`, `isOpenSidebar`, `LocalStorageService`).
+- Eliminados `layout/right-sidebar/` y `core/service/rightsidebar.service.ts`; `main-layout` ya no monta `app-right-sidebar`; `core/index.ts` exporta `ThemeService`.
+- `docs/frontend/panel_admin/reference.md` actualizado.
+- Verificación propia (no es el Quality Gate): `ng build` OK; `ng test` 465 OK / 13 FAILED, todos "should create" de componentes ajenos a este cambio (AdvanceTable, Blank, Dashboard2, First1-3, Footer, Page404/500, Second1-2, Signup, Third1); no se comparó contra master. Specs nuevos de `ThemeService` y `HeaderComponent` (botón de tema) pasan. Verificado en navegador con sesión staff simulada: alterna light/dark con el icono correcto, persiste tras recargar, y `/calculadora` queda en light sin escribir `theme`.
+
+Deuda técnica señalada (fuera de alcance): SCSS inerte del panel (`_settingSidebar.scss`, reglas `.settingSidebar` en skins/rtl) e imágenes `light.png`/`dark.png`; `auth-layout` sigue leyendo el tema con el prefijo de `LocalStorageService`.
 
 ## Review
 _Pendiente_

@@ -39,9 +39,8 @@ panel_admin/src/app/
 ├── layout/
 │   ├── app-layout/          # auth-layout (login) vs main-layout (resto)
 │   ├── footer/
-│   ├── header/
+│   ├── header/                # incluye el botón luna/sol light/dark (ThemeService, core/service/theme.service.ts)
 │   ├── page-loader/          # spinner (ngx-spinner)
-│   ├── right-sidebar/         # sidebar de configuración de tema
 │   └── sidebar/                # menú lateral principal
 └── multilevel/               # demo de menú anidado (first1/first2/first3/secondlevel/thirdlevel)
 ```

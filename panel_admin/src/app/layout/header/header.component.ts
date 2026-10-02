@@ -13,7 +13,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { NgbDropdown, NgbDropdownToggle, NgbDropdownMenu } from '@ng-bootstrap/ng-bootstrap';
 import { FeatherModule } from 'angular-feather';
-import { AuthService, InConfiguration, LanguageService, LocalStorageService, RightSidebarService } from '@core';
+import { AuthService, InConfiguration, LanguageService, ThemeService } from '@core';
 import { ConfigService } from '@config/config.service';
 import { AccesoModalService } from '../../cliente/acceso-modal.service';
 import { AccesoMode } from '../../cliente/cliente.model';
@@ -30,13 +30,11 @@ import { AccesoMode } from '../../cliente/cliente.model';
         NgbDropdownMenu,
         RouterLink,
         RouterLinkActive,
-    ],
-    providers: [RightSidebarService]
+    ]
 })
 export class HeaderComponent implements OnInit, AfterViewInit {
   public config!: InConfiguration;
   isNavbarCollapsed = true;
-  isOpenSidebar?: boolean;
   docElement?: HTMLElement;
   isFullScreen = false;
   /** Variante sin sidebar (layout minimo): muestra el logo y oculta el toggle del menu lateral. */
@@ -45,11 +43,10 @@ export class HeaderComponent implements OnInit, AfterViewInit {
   private document = inject(DOCUMENT);
   private renderer = inject(Renderer2);
   public elementRef = inject(ElementRef);
-  private rightSidebarService = inject(RightSidebarService);
   private configService = inject(ConfigService);
   private authService = inject(AuthService);
   private router = inject(Router);
-  private storageService = inject(LocalStorageService);
+  private themeService = inject(ThemeService);
   // Instanciarlo aplica el idioma inicial (navegador/localStorage) que usa el sidebar.
   private languageService = inject(LanguageService);
   private accesoModal = inject(AccesoModalService);
@@ -58,33 +55,18 @@ export class HeaderComponent implements OnInit, AfterViewInit {
   private session = toSignal(this.authService.currentUser, { initialValue: this.authService.currentUserValue });
   isLoggedIn = computed(() => !!this.session()?.token);
   isStaff = computed(() => this.isLoggedIn() && this.session()?.isStaff === true);
+  isDark = this.themeService.isDark;
 
   ngOnInit() {
     this.config = this.configService.configData;
     this.docElement = this.document.documentElement;
   }
   ngAfterViewInit() {
-    // set theme on startup
-    if (this.storageService.has('theme')) {
-      this.renderer.removeClass(this.document.body, this.config.layout.variant);
-      this.renderer.addClass(
-        this.document.body,
-        this.storageService.get('theme') as string
-      );
+    // El cliente (layout minimo) siempre va en claro y no persiste; el staff recupera su modo guardado.
+    if (this.minimal()) {
+      this.themeService.applyMode('light', false);
     } else {
-      this.renderer.addClass(this.document.body, this.config.layout.variant);
-    }
-
-    if (this.storageService.has('menuOption')) {
-      this.renderer.addClass(
-        this.document.body,
-        this.storageService.get('menuOption') as string
-      );
-    } else {
-      this.renderer.addClass(
-        this.document.body,
-        this.config.layout.sidebar.backgroundColor + '-sidebar'
-      );
+      this.themeService.applySaved();
     }
 
     if (localStorage.getItem('sidebar_status')) {
@@ -138,14 +120,8 @@ export class HeaderComponent implements OnInit, AfterViewInit {
       }
     }
   }
-  public toggleRightSidebar(): void {
-    this.rightSidebarService.sidebarState.subscribe((isRunning) => {
-      this.isOpenSidebar = isRunning;
-    });
-
-    this.rightSidebarService.setRightSidebar(
-      (this.isOpenSidebar = !this.isOpenSidebar)
-    );
+  toggleTheme(): void {
+    this.themeService.toggle();
   }
   logout() {
     const wasStaff = this.authService.isStaff;
