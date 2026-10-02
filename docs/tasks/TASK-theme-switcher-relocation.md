@@ -4,7 +4,7 @@
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** NO
 **Rama:** `claude/theme-switcher-relocation-4d2c5c` (asignada por el entorno)
-**Pull Request:** _sin abrir todavía_
+**Pull Request:** [#65](https://github.com/rolion/praxsa-django-panel-admin/pull/65)
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
