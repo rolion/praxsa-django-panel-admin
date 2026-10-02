@@ -38,7 +38,7 @@
           <i-feather name="maximize"></i-feather>
         </a>
       </li>
-        <li><a class="nav-link nav-link-lg collapse-btn" role="button" (click)="toggleTheme()"
+        <li><a class="nav-link nav-link-lg collapse-btn theme-toggle" role="button" (click)="toggleTheme()"
           [attr.aria-label]="isDark() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
           [title]="isDark() ? 'Modo claro' : 'Modo oscuro'">
           <i class="fas" [class.fa-moon]="!isDark()" [class.fa-sun]="isDark()"></i>
