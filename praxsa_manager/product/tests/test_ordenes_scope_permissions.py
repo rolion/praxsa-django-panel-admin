@@ -57,9 +57,9 @@ class ScopeTest(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn('sucursal', response.json())
 
-    def test_admin_group_sees_everything_and_can_use_any_sucursal(self):
-        admin, token = make_staff(group='admin')
-        headers = auth(token)
+    def test_superuser_sees_everything_and_can_use_any_sucursal(self):
+        _, superuser_token, _ = helpers.create_superuser_with_token()
+        headers = auth(superuser_token)
         ids = sorted(r['id'] for r in self.client.get(PROFORMAS, **headers).json())
         self.assertEqual(ids, sorted([self.proforma_a, self.proforma_b]))
         self.assertEqual(len(self.client.get(NOTAS, **headers).json()), 1)
@@ -68,9 +68,25 @@ class ScopeTest(TestCase):
         )
         self.assertEqual(response.status_code, 201, response.content)
 
-    def test_admin_group_match_is_case_insensitive(self):
-        _, token = make_staff(group='Admin')
-        self.assertEqual(len(self.client.get(PROFORMAS, **auth(token)).json()), 2)
+    def test_admin_group_sees_and_uses_only_its_assigned_sucursal(self):
+        admin, token = make_staff(group='admin')
+        self.a['sucursal'].empleado.add(admin)
+        headers = auth(token)
+        ids = [r['id'] for r in self.client.get(PROFORMAS, **headers).json()]
+        self.assertEqual(ids, [self.proforma_a])
+        self.assertEqual(self.client.get(f'{PROFORMAS}/{self.proforma_b}/', **headers).status_code, 404)
+        response = self.client.post(
+            PROFORMAS, metro_lineal_payload(self.b), content_type='application/json', **headers
+        )
+        self.assertEqual(response.status_code, 400, response.content)
+        self.assertIn('sucursal', response.json())
+
+    def test_admin_group_without_sucursal_sees_nothing_regardless_of_case(self):
+        for group in ('admin', 'Admin'):
+            _, token = make_staff(group=group)
+            headers = auth(token)
+            self.assertEqual(self.client.get(PROFORMAS, **headers).json(), [])
+            self.assertEqual(self.client.get(NOTAS, **headers).json(), [])
 
     def test_user_with_two_sucursales_sees_both(self):
         user = self.a['user']
@@ -84,10 +100,21 @@ class ScopeTest(TestCase):
         self.assertEqual(self.client.get(NOTAS, **auth(token)).json(), [])
         self.assertEqual(self.client.get('/product/ordenes/catalogo/sucursales', **auth(token)).json(), [])
 
-    def test_disabled_sucursal_is_out_of_scope(self):
+    def test_disabled_sucursal_stays_readable_but_is_not_writable(self):
         self.a['sucursal'].enable_to_install_windows_film = False
         self.a['sucursal'].save()
-        self.assertEqual(self.client.get(PROFORMAS, **auth(self.a['token'])).json(), [])
+        headers = auth(self.a['token'])
+
+        rows = self.client.get(PROFORMAS, **headers).json()
+        self.assertEqual([r['id'] for r in rows], [self.proforma_a])
+        self.assertFalse(rows[0]['sucursal_activa'])
+        catalog = self.client.get('/product/ordenes/catalogo/sucursales', **headers).json()
+        self.assertEqual([(c['id'], c['activa']) for c in catalog], [(self.a['sucursal'].id, False)])
+
+        response = self.client.post(
+            PROFORMAS, instalacion_payload(self.a), content_type='application/json', **headers
+        )
+        self.assertEqual(response.status_code, 400, response.content)
 
 
 class PermissionsTest(TestCase):

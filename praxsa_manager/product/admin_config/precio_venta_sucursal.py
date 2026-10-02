@@ -7,7 +7,9 @@ from django.contrib import messages
 from ..models import Sucursal, Window_Film, precio_venta_sucursal
 from ..Forms.precio_venta_sucursal_form import PrecioVentaSucursalForm
 from ..business.precio_venta import Precio_Venta_Business
-class PrecioVentaSucursalAdmin(admin.ModelAdmin):
+from ..helper.user import User_Helper
+from .sucursal_scope import SucursalWritableAdminMixin
+class PrecioVentaSucursalAdmin(SucursalWritableAdminMixin, admin.ModelAdmin):
     list_display = ['sucursal', 
                     'lamina',
                     'width',
@@ -18,11 +20,9 @@ class PrecioVentaSucursalAdmin(admin.ModelAdmin):
     precio_venta = Precio_Venta_Business()
     
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        user = request.user
-        sucursales = Sucursal.objects.prefetch_related('empleado')
-        sucursales = sucursales.filter(empleado__id = user.id, enable_to_install_windows_film = True).select_related()
+        # Sucursales donde el usuario puede escribir: asignadas y activas (el superusuario, todas las activas).
+        sucursales = User_Helper().get_writable_sucursales(request.user)
         if db_field.name == "sucursal":
-            # Filtrar sucursales (por ejemplo, solo las activas)
             kwargs["queryset"] = sucursales
             
         if db_field.name == 'lamina':

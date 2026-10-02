@@ -3,7 +3,8 @@ ADR-dashboard-taller-laminas-api-agregados-alcance y -definiciones-metricas.
 
 Reglas:
 - El alcance por sucursal sale SIEMPRE de los metodos `get_panel_*` existentes
-  (admin ve todo; el resto, sus sucursales habilitadas; sin sucursal, nada).
+  (sucursales asignadas al usuario; solo el superusuario ve todo; sin sucursal,
+  nada). Sin sucursal elegida, "Todas" = las activas de su alcance.
 - Las ventas cobradas se toman de `Reportes_Business` (`pagos_cobrados`,
   `filtrar_pagos`): `cobrado = pago.monto`, igual que Ventas Diarias. No se
   calculan costos ni utilidad aqui.
@@ -88,17 +89,26 @@ class Dashboard_Business:
             and not self.user_helper.has_assigned_sucursal(user)
         )
 
+    def _sucursal_ids(self, user, sucursal_id):
+        """[sucursal elegida] o, sin elegir, las sucursales activas del alcance
+        del usuario (las inactivas solo se ven si se eligen explicitamente)."""
+        if sucursal_id is not None:
+            return [sucursal_id]
+        return self.user_helper.get_writable_sucursal_ids(user)
+
     def _proformas(self, user, sucursal_id):
         qs = Proforma_Business().get_panel_proforma_queryset(user, Proforma_Header.objects.all())
-        return qs.filter(sucursal_id=sucursal_id) if sucursal_id is not None else qs
+        return qs.filter(sucursal_id__in=self._sucursal_ids(user, sucursal_id))
 
     def _notas(self, user, sucursal_id):
         qs = Orden_Trabajo_Business().get_panel_nota_queryset(user, Nota_trabajo.objects.all())
-        return qs.filter(proforma__sucursal_id=sucursal_id) if sucursal_id is not None else qs
+        return qs.filter(proforma__sucursal_id__in=self._sucursal_ids(user, sucursal_id))
 
     def _pagos(self, user, desde, hasta, sucursal_id):
         qs = self.pago_business.get_panel_pago_queryset(user, self.reportes.pagos_cobrados())
-        return self.reportes.filtrar_pagos(qs, desde=desde, hasta=hasta, sucursal_id=sucursal_id).order_by()
+        return self.reportes.filtrar_pagos(
+            qs, desde=desde, hasta=hasta, sucursal_ids=self._sucursal_ids(user, sucursal_id)
+        ).order_by()
 
     def _inventario(self, user, sucursal_id):
         qs = inventario.objects.filter(

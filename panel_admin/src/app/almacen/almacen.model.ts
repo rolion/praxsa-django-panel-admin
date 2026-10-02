@@ -21,6 +21,8 @@ export interface AppInventario {
   id: number;
   sucursal: number;
   sucursal_name: string;
+  /** false = sucursal inactiva: la fila se ve pero no se modifica (409 en el servidor). */
+  sucursal_activa: boolean;
   bobina: number;
   window_film_name: string;
   bobina_width: string;
@@ -82,4 +84,11 @@ export interface PrecioSucursalPayload {
 export interface AppSucursal {
   id: number;
   name: string;
+  /** false = sucursal inactiva (solo lectura). Ausente si el servidor no la informa. */
+  activa?: boolean;
+}
+
+/** Nombre de la sucursal para selectores y listados; marca las inactivas. */
+export function sucursalLabel(sucursal: Pick<AppSucursal, 'name' | 'activa'>): string {
+  return sucursal.activa === false ? `${sucursal.name} (inactiva)` : sucursal.name;
 }

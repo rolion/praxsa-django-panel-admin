@@ -12,7 +12,7 @@ import { InventarioListComponent } from './inventario-list.component';
 
 const sampleRows: AppInventario[] = [
   {
-    id: 1, sucursal: 1, sucursal_name: 'Central', bobina: 1, window_film_name: 'Carbon 20%',
+    id: 1, sucursal: 1, sucursal_name: 'Central', sucursal_activa: true, bobina: 1, window_film_name: 'Carbon 20%',
     bobina_width: '1.50', quantity: 1, to_install: '50.00', installed: '0.00',
     original_length: '50.00', date: '2026-09-01T00:00:00Z', numero_referencia: 1,
     precio_compra_mtr_lineal: '80.00', precio_venta_mtr_lineal: '120.00', nro_lote: 'L1',
@@ -111,11 +111,41 @@ describe('InventarioListComponent', () => {
     expect(component.sucursalPlaceholder).toBe('Todas mis sucursales');
   });
 
-  it('un admin ve "Todas las sucursales"', () => {
+  it('un admin tampoco ve "Todas las sucursales": el alcance sale de las sucursales asignadas', () => {
     loginAs(httpMock, authService, ['admin']);
     createComponent(twoSucursales);
 
-    expect(component.sucursalPlaceholder).toBe('Todas las sucursales');
+    expect(component.sucursalPlaceholder).toBe('Todas mis sucursales');
+  });
+
+  it('marca las sucursales inactivas en el selector', () => {
+    createComponent([{ id: 1, name: 'Central', activa: true }, { id: 2, name: 'Norte', activa: false }]);
+
+    expect(component.sucursalLabel(component.sucursales[0])).toBe('Central');
+    expect(component.sucursalLabel(component.sucursales[1])).toBe('Norte (inactiva)');
+  });
+
+  it('con alguna sucursal activa se puede crear; con todas inactivas solo consultar', () => {
+    loginAs(httpMock, authService, ['almacen'], ['product.add_inventario', 'product.change_inventario']);
+    createComponent([{ id: 1, name: 'Central', activa: true }, { id: 2, name: 'Norte', activa: false }]);
+    expect(component.hasActiveSucursal).toBe(true);
+    expect(component.canCreate).toBe(true);
+  });
+
+  it('solo sucursales inactivas: oculta el alta y avisa', () => {
+    loginAs(httpMock, authService, ['almacen'], ['product.add_inventario']);
+    createComponent([{ id: 2, name: 'Norte', activa: false }]);
+
+    expect(component.onlyInactiveSucursales).toBe(true);
+    expect(component.canCreate).toBe(false);
+  });
+
+  it('las filas de una sucursal inactiva no se pueden editar ni eliminar', () => {
+    loginAs(httpMock, authService, ['almacen'], ['product.change_inventario']);
+    createComponent();
+
+    expect(component.canEditRow({ ...sampleRows[0], sucursal_activa: true })).toBe(true);
+    expect(component.canEditRow({ ...sampleRows[0], sucursal_activa: false })).toBe(false);
   });
 
   it('sin sucursales en alcance muestra el aviso y oculta el alta', () => {

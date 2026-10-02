@@ -15,27 +15,19 @@ class Inventario_Business:
         self.user_helper = User_Helper()
 
     def get_panel_inventario_queryset(self, user, qs):
-        """Alcance de inventario para el reporte de utilidad del Django Admin: admin
-        ve todo; el resto, todas sus sucursales habilitadas (a diferencia del metodo
-        legado, que usa solo la primera); sin sucursal, ninguno."""
+        """Alcance de inventario (API del panel, reportes y Django Admin): las
+        filas de todas las sucursales asignadas al usuario (activas o no,
+        alcance de lectura); solo el superusuario ve todo; sin sucursal,
+        ninguna. Ver ADR-inventario-alcance-sucursal-django-admin-alcance-
+        lectura-escritura."""
         if self.user_helper.can_view_all_sucursales(user):
             return qs
-        return qs.filter(sucursal_id__in=self.user_helper.get_enabled_sucursal_ids(user))
+        return qs.filter(sucursal_id__in=self.user_helper.get_readable_sucursal_ids(user))
 
     def get_inventario_queryset_by_role(self, user, qs):
-        try:
-            if self.user_helper.can_view_all_sucursales(user):
-                return qs
-            sucursales = Sucursal.objects.prefetch_related('empleado')
-            sucursales = sucursales.filter(empleado__id = user.id, enable_to_install_windows_film = True)
-            if len(sucursales) > 0:
-                qs_result = qs.filter(sucursal__id = sucursales[0].id)
-            else:
-                qs_result = qs.none()
-            return qs_result
-        except Exception as e:
-            self.log_errors.error(f'algo salio mal, Inventario_Business - get_inventario_queryset_by_role {e}')
-            return qs.none()
+        """Legado del Django Admin (reporte de almacen): delega en el alcance del
+        panel. Sigue devolviendo un queryset vacio, nunca None, sin sucursal."""
+        return self.get_panel_inventario_queryset(user, qs)
 
     def get_inventory_by_sucursal(self, sucursal):
         q = inventario.objects.select_related("bobina","bobina__window_film", "sucursal")

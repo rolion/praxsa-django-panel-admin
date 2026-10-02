@@ -12,6 +12,7 @@ from ..business.inventario import Inventario_Business
 from django.contrib import messages
 from ..helper.user import User_Helper
 from ..helper.proforma import Proforma_Helper
+from .sucursal_scope import SucursalWritableAdminMixin
 from django.db import transaction
 from ..helper.pdf import PDFService
 from django.http import FileResponse
@@ -56,7 +57,7 @@ class SalesDetailInLine(admin.TabularInline):
         js=('product/sales_event.js',)
         
     
-class ProformaAdmin(admin.ModelAdmin):
+class ProformaAdmin(SucursalWritableAdminMixin, admin.ModelAdmin):
     log_errors = logging.getLogger('django_admin')
     log_debug= logging.getLogger('debug')
     
@@ -138,6 +139,8 @@ class ProformaAdmin(admin.ModelAdmin):
         self.proforma_business.recalculate_total_price(form.instance)
 
     def has_change_permission(self, request: HttpRequest, obj=None):
+        if not self.sucursal_writable_for(request, obj):
+            return False
         if obj is None:
             return True
         if obj.is_close == False:

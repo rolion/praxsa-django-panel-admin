@@ -114,14 +114,18 @@ class Reportes_Business:
             _condicion_cobrada('proforma_header__'), inventario_id__isnull=False).values('inventario_id')
         return qs.filter(Q(pk__in=con_movimientos) | Q(pk__in=legado))
 
-    def filtrar_pagos(self, qs, desde=None, hasta=None, sucursal_id=None, sales_type=None, tipo_pago=None):
+    def filtrar_pagos(self, qs, desde=None, hasta=None, sucursal_id=None, sales_type=None, tipo_pago=None,
+                      sucursal_ids=None):
         """Filtros del reporte sobre un queryset de `pago`. Fechas locales (USE_TZ=False),
-        ambos extremos inclusive."""
+        ambos extremos inclusive. `sucursal_ids` (lista) tiene prioridad sobre
+        `sucursal_id` (un id); sin ninguno no se filtra por sucursal."""
         if desde is not None:
             qs = qs.filter(created_on__date__gte=desde)
         if hasta is not None:
             qs = qs.filter(created_on__date__lte=hasta)
-        if sucursal_id is not None:
+        if sucursal_ids is not None:
+            qs = qs.filter(nota_venta__nota_trabajo__proforma__sucursal_id__in=sucursal_ids)
+        elif sucursal_id is not None:
             qs = qs.filter(nota_venta__nota_trabajo__proforma__sucursal_id=sucursal_id)
         if sales_type:
             qs = qs.filter(nota_venta__nota_trabajo__proforma__sales_type=sales_type)

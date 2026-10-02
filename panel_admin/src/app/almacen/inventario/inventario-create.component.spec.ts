@@ -182,6 +182,35 @@ describe('InventarioCreateComponent', () => {
     });
   });
 
+  it('solo ofrece las sucursales activas (las inactivas son de solo lectura)', () => {
+    const fixture = createAndLoad([
+      { id: 1, name: 'Central', activa: true },
+      { id: 2, name: 'Norte', activa: false },
+      { id: 3, name: 'Sur', activa: true },
+    ]);
+    const component = fixture.componentInstance;
+
+    expect(component.sucursales.map((s) => s.id)).toEqual([1, 3]);
+    expect(component.form.get('sucursal')?.value).toBeNull();
+  });
+
+  it('con una sola activa (y otra inactiva) la deja preseleccionada y bloqueada', () => {
+    const fixture = createAndLoad([
+      { id: 1, name: 'Central', activa: true },
+      { id: 2, name: 'Norte', activa: false },
+    ]);
+
+    expect(fixture.componentInstance.form.get('sucursal')?.value).toBe(1);
+    expect(fixture.componentInstance.form.get('sucursal')?.disabled).toBe(true);
+  });
+
+  it('sin sucursales activas avisa y no hay nada que elegir', () => {
+    const fixture = createAndLoad([{ id: 2, name: 'Norte', activa: false }]);
+
+    expect(fixture.componentInstance.withoutActiveSucursales).toBe(true);
+    expect(fixture.componentInstance.sucursales).toEqual([]);
+  });
+
   it('con varias sucursales las ofrece todas y no preselecciona ninguna', () => {
     const fixture = createAndLoad(twoSucursales);
     const component = fixture.componentInstance;

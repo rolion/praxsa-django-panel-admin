@@ -18,31 +18,26 @@ class Orden_Trabajo_Business:
         self.user_helper = User_Helper()
 
     def get_nota_queryset_by_role(self, user, qs):
-        try:
-            sucursales = Sucursal.objects.prefetch_related('empleado')
-            sucursales = sucursales.filter(empleado__id = user.id, enable_to_install_windows_film = True)
-            if len(sucursales) > 0:
-                qs_result = qs.select_related('proforma','proforma__sucursal','instaladar', 'proforma__car_model_id__car_brand_id')
-                qs_result = qs_result.filter(proforma__sucursal__id = sucursales[0].id, proforma__is_delete = False)
-            else:
-                qs_result = None
-            return qs_result
-        except Exception as e:
-            print('algo salio mal, Orden_Trabajo_Business - get_nota_queryset_by_role', str(e))
+        """Legado del Django Admin: delega en el alcance del panel. Conserva el
+        contrato de devolver None cuando el usuario no tiene sucursal, que los
+        ModelAdmin usan para mostrar "Asigne una sucursal al usuario"."""
+        if not self.user_helper.can_view_all_sucursales(user) and not self.user_helper.has_assigned_sucursal(user):
             return None
-        
+        return self.get_panel_nota_queryset(user, qs)
+
     def get_panel_nota_queryset(self, user, qs):
-        """Alcance de notas de trabajo para el panel (API `ordenes/notas-trabajo`).
-        Metodo nuevo, sin tocar los legados: admin ve todas las de proformas no
-        borradas; el resto, las de todas sus sucursales habilitadas; sin
-        sucursal, ninguna. Ver ADR-modulo-ordenes-proforma-nota-trabajo-alcance-permisos."""
+        """Alcance de notas de trabajo para el panel (API `ordenes/notas-trabajo`):
+        las de proformas no borradas de las sucursales asignadas al usuario
+        (activas o no, alcance de lectura); solo el superusuario ve todas; sin
+        sucursal, ninguna. Ver ADR-inventario-alcance-sucursal-django-admin-
+        alcance-lectura-escritura."""
         qs = qs.filter(proforma__is_delete=False).select_related(
             'proforma', 'proforma__sucursal', 'proforma__car_model_id',
             'instaladar', 'car_model', 'car_model__car_brand_id', 'responsable', 'nota_venta',
         )
         if self.user_helper.can_view_all_sucursales(user):
             return qs
-        return qs.filter(proforma__sucursal_id__in=self.user_helper.get_enabled_sucursal_ids(user))
+        return qs.filter(proforma__sucursal_id__in=self.user_helper.get_readable_sucursal_ids(user))
 
     def get_finish_nota_queryset(self, user, qs, solo_terminadas=True):
         try:
@@ -52,12 +47,9 @@ class Orden_Trabajo_Business:
                 qs_result = qs_result.filter(status=estados.NT_TERMINADO)
             if self.user_helper.can_view_all_sucursales(user):
                 return qs_result
-            sucursales = Sucursal.objects.prefetch_related('empleado')
-            sucursales = sucursales.filter(empleado__id = user.id, enable_to_install_windows_film = True)
-            if len(sucursales) > 0:
-                qs_result = qs_result.filter(proforma__sucursal__id = sucursales[0].id)
-            else:
-                qs_result = None
+            if not self.user_helper.has_assigned_sucursal(user):
+                return None
+            qs_result = qs_result.filter(proforma__sucursal_id__in=self.user_helper.get_readable_sucursal_ids(user))
             return qs_result
         except Exception as e:
             print('algo salio mal, Orden_Trabajo_Business - get_finish_nota_queryset', str(e))

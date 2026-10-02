@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { DatatableComponent, NgxDatatableModule } from '@swimlane/ngx-datatable';
 import { Observable } from 'rxjs';
 import { ReporteBase } from '../reporte-base';
+import { SucursalMultiselectComponent } from '../sucursal-multiselect.component';
 import { inicioMesIso } from '../reportes.filtros';
 import { ReporteFiltros, UtilidadReport, UtilidadVentaRow } from '../reportes.model';
 import { ReportesService } from '../reportes.service';
@@ -15,7 +16,7 @@ import { ReportesService } from '../reportes.service';
 @Component({
   selector: 'app-utilidad',
   standalone: true,
-  imports: [RouterLink, ReactiveFormsModule, NgxDatatableModule],
+  imports: [RouterLink, ReactiveFormsModule, NgxDatatableModule, SucursalMultiselectComponent],
   templateUrl: './utilidad.component.html',
 })
 export class UtilidadComponent extends ReporteBase<UtilidadReport> implements OnInit {

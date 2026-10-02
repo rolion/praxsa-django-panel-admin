@@ -46,16 +46,30 @@ export class ProformaViewComponent implements OnInit {
     return this.proforma?.sales_type === SALES_TYPE_INSTALACION;
   }
 
+  /** La sucursal esta inactiva: la proforma se ve pero no se modifica. */
+  get sucursalInactiva(): boolean {
+    return this.proforma?.sucursal_activa === false;
+  }
+
   get canEdit(): boolean {
-    return !!this.proforma && this.proforma.status === 'proforma' && this.authService.hasPermission('change_proforma_header');
+    return (
+      !!this.proforma && this.proforma.status === 'proforma' && !this.sucursalInactiva &&
+      this.authService.hasPermission('change_proforma_header')
+    );
   }
 
   get canGenerateNota(): boolean {
-    return !!this.proforma && this.proforma.status === 'proforma' && this.authService.hasPermission('add_nota_trabajo');
+    return (
+      !!this.proforma && this.proforma.status === 'proforma' && !this.sucursalInactiva &&
+      this.authService.hasPermission('add_nota_trabajo')
+    );
   }
 
   get canAnular(): boolean {
-    return !!this.proforma && this.proforma.status === 'proforma' && this.authService.hasPermission('delete_proforma_header');
+    return (
+      !!this.proforma && this.proforma.status === 'proforma' && !this.sucursalInactiva &&
+      this.authService.hasPermission('delete_proforma_header')
+    );
   }
 
   ngOnInit(): void {

@@ -284,6 +284,17 @@ describe('NotaVentaViewComponent', () => {
     expect(component.canPay).toBe(false);
   });
 
+  it('una sucursal inactiva se ve pero no se cobra ni se anula', () => {
+    create(venta(), ['product.add_pago', 'product.delete_nota_venta']);
+    expect(component.canPay).toBe(true);
+    expect(component.canAnular).toBe(true);
+
+    component.nota = venta({ sucursal_activa: false });
+    expect(component.sucursalInactiva).toBe(true);
+    expect(component.canPay).toBe(false);
+    expect(component.canAnular).toBe(false);
+  });
+
   it('hides the cobro actions without permissions', () => {
     create(venta());
     expect(component.canPay).toBe(false);

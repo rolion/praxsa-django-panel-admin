@@ -88,7 +88,7 @@ def _sucursal_in_scope_or_404(user, raw_sucursal_id):
         sucursal_id = int(raw_sucursal_id)
     except (TypeError, ValueError):
         raise NotFound('Sucursal no encontrada.')
-    if not User_Helper().get_sucursales_in_scope(user).filter(pk=sucursal_id).exists():
+    if not User_Helper().get_readable_sucursales(user).filter(pk=sucursal_id).exists():
         raise NotFound('Sucursal no encontrada.')
     return sucursal_id
 
@@ -145,6 +145,10 @@ class ProformaDetailView(generics.RetrieveUpdateAPIView):
             'items__car_part', 'items__window_film'
         )
 
+    def update(self, request, *args, **kwargs):
+        User_Helper().require_sucursal_writable(request.user, self.get_object().sucursal_id)
+        return super().update(request, *args, **kwargs)
+
     def perform_update(self, serializer):
         if serializer.instance.status != estados_globales.estado_proforma:
             raise Conflict('La proforma está aprobada o anulada (ya no es vigente) y no se puede editar.')
@@ -161,8 +165,8 @@ class ProformaGenerateNotaView(APIView):
     def post(self, request, pk):
         if not request.user.has_perm('product.add_nota_trabajo'):
             return Response(status=status.HTTP_403_FORBIDDEN)
-        if not _proformas_in_scope(request.user).filter(pk=pk).exists():
-            raise NotFound('Proforma no encontrada.')
+        proforma_en_alcance = _get_in_scope_or_404(_proformas_in_scope(request.user), pk, 'Proforma')
+        User_Helper().require_sucursal_writable(request.user, proforma_en_alcance.sucursal_id)
         try:
             with transaction.atomic():
                 proforma = Proforma_Header.objects.select_for_update().get(pk=pk)
@@ -250,6 +254,10 @@ class NotaTrabajoDetailView(generics.RetrieveUpdateAPIView):
     def get_queryset(self):
         return _notas_in_scope(self.request.user)
 
+    def update(self, request, *args, **kwargs):
+        User_Helper().require_sucursal_writable(request.user, self.get_object().proforma.sucursal_id)
+        return super().update(request, *args, **kwargs)
+
     def perform_update(self, serializer):
         nota = serializer.instance
         if nota.status != estados.NT_EN_PROCESO:
@@ -265,7 +273,8 @@ class ProformaAnularView(APIView):
 
     def post(self, request, pk):
         _forbid_without_perm(request.user, 'delete_proforma_header')
-        _get_in_scope_or_404(_proformas_in_scope(request.user), pk, 'Proforma')
+        proforma_en_alcance = _get_in_scope_or_404(_proformas_in_scope(request.user), pk, 'Proforma')
+        User_Helper().require_sucursal_writable(request.user, proforma_en_alcance.sucursal_id)
         _transition(Orden_Estado_Business().anular_proforma, Proforma_Header.objects.get(pk=pk))
         proforma = _proformas_in_scope(request.user).prefetch_related('items__car_part', 'items__window_film').get(pk=pk)
         return Response(ProformaDetailSerializer(proforma).data, status=status.HTTP_200_OK)
@@ -283,6 +292,7 @@ class _NotaTrabajoActionView(APIView):
     def post(self, request, pk):
         _forbid_without_perm(request.user, self.permission_codename)
         nota = _get_in_scope_or_404(_notas_in_scope(request.user), pk, 'Nota de trabajo')
+        User_Helper().require_sucursal_writable(request.user, nota.proforma.sucursal_id)
         _transition(getattr(Orden_Estado_Business(), self.service_method), nota)
         nota = _notas_in_scope(request.user).get(pk=pk)
         return Response(NotaTrabajoDetailSerializer(nota).data, status=status.HTTP_200_OK)
@@ -351,6 +361,7 @@ class _NotaVentaActionView(APIView):
     def post(self, request, pk):
         _forbid_without_perm(request.user, self.permission_codename)
         nota_venta = _get_in_scope_or_404(_notas_venta_in_scope(request.user), pk, 'Nota de venta')
+        User_Helper().require_sucursal_writable(request.user, nota_venta.nota_trabajo.proforma.sucursal_id)
         _transition(self.run, request, nota_venta)
         nota_venta = _notas_venta_in_scope(request.user).get(pk=pk)
         return Response(NotaVentaDetailSerializer(nota_venta).data, status=status.HTTP_200_OK)
@@ -388,14 +399,19 @@ class NotaVentaAnularView(_NotaVentaActionView):
 
 
 class OrdenesSucursalesView(APIView):
-    """Sucursales que el usuario puede usar en Ordenes."""
+    """Sucursales del alcance de lectura del usuario en Ordenes (asignadas, activas
+    o no; todas para el superusuario). `activa` permite al panel ofrecer solo las
+    activas en los formularios de alta."""
 
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = _STAFF_ONLY
 
     def get(self, request):
-        sucursales = User_Helper().get_sucursales_in_scope(request.user)
-        return Response([{'id': s.id, 'name': s.name, 'address': s.address} for s in sucursales])
+        sucursales = User_Helper().get_readable_sucursales(request.user)
+        return Response([
+            {'id': s.id, 'name': s.name, 'address': s.address, 'activa': s.enable_to_install_windows_film}
+            for s in sucursales
+        ])
 
 
 class OrdenesBobinasView(APIView):

@@ -28,10 +28,14 @@ from ..models import (
 class CanViewAllSucursalesTest(TestCase):
     helper = User_Helper()
 
-    def test_admin_ve_todo(self):
+    def test_superusuario_ve_todo(self):
+        user, _, _ = helpers.create_superuser_with_token()
+        self.assertTrue(self.helper.can_view_all_sucursales(user))
+
+    def test_grupo_admin_ya_no_ve_todo(self):
         user, _ = helpers.create_user_with_token()
         helpers.add_user_to_group(user, 'Admin')
-        self.assertTrue(self.helper.can_view_all_sucursales(user))
+        self.assertFalse(self.helper.can_view_all_sucursales(user))
 
     def test_caja_no_ve_todo(self):
         user, _ = helpers.create_user_with_token()
@@ -51,9 +55,8 @@ class CanViewAllSucursalesTest(TestCase):
 class PagoBusinessQuerysetByRoleTest(TestCase):
     business = Pago_Business()
 
-    def test_admin_ve_pagos_de_todas_las_sucursales(self):
-        admin_user, _ = helpers.create_user_with_token()
-        helpers.add_user_to_group(admin_user, 'Admin')
+    def test_superusuario_ve_pagos_de_todas_las_sucursales(self):
+        admin_user, _, _ = helpers.create_superuser_with_token()
         owner_a, _ = helpers.create_user_with_token()
         sucursal_a = helpers.create_sucursal(owner_a)
         owner_b, _ = helpers.create_user_with_token()
@@ -104,9 +107,8 @@ class PagoBusinessQuerysetByRoleTest(TestCase):
 class InventarioBusinessQuerysetByRoleTest(TestCase):
     business = Inventario_Business()
 
-    def test_admin_ve_inventario_de_todas_las_sucursales(self):
-        admin_user, _ = helpers.create_user_with_token()
-        helpers.add_user_to_group(admin_user, 'Admin')
+    def test_superusuario_ve_inventario_de_todas_las_sucursales(self):
+        admin_user, _, _ = helpers.create_superuser_with_token()
         owner_a, _ = helpers.create_user_with_token()
         sucursal_a = helpers.create_sucursal(owner_a)
         owner_b, _ = helpers.create_user_with_token()
@@ -162,9 +164,8 @@ class InventarioBusinessQuerysetByRoleTest(TestCase):
 class OrdenTrabajoBusinessFinishNotaQuerysetTest(TestCase):
     business = Orden_Trabajo_Business()
 
-    def test_admin_ve_notas_de_todas_las_sucursales(self):
-        admin_user, _ = helpers.create_user_with_token()
-        helpers.add_user_to_group(admin_user, 'Admin')
+    def test_superusuario_ve_notas_de_todas_las_sucursales(self):
+        admin_user, _, _ = helpers.create_superuser_with_token()
         owner_a, _ = helpers.create_user_with_token()
         sucursal_a = helpers.create_sucursal(owner_a)
         owner_b, _ = helpers.create_user_with_token()

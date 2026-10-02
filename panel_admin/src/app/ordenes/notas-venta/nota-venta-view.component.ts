@@ -43,13 +43,22 @@ export class NotaVentaViewComponent implements OnInit {
     return this.nota ? anularBlockReason(this.nota) : '';
   }
 
+  /** La sucursal esta inactiva: la nota se ve pero no se cobra ni se anula. */
+  get sucursalInactiva(): boolean {
+    return this.nota?.sucursal_activa === false;
+  }
+
   get canPay(): boolean {
-    return !!this.nota && this.nota.status === 'por_cobrar' && this.authService.hasPermission('add_pago');
+    return (
+      !!this.nota && this.nota.status === 'por_cobrar' && !this.sucursalInactiva &&
+      this.authService.hasPermission('add_pago')
+    );
   }
 
   get canAnularPago(): boolean {
     return (
       !!this.nota &&
+      !this.sucursalInactiva &&
       this.nota.status === 'pagada' &&
       !!this.nota.pago &&
       !this.nota.pago.cerrado &&
@@ -58,7 +67,10 @@ export class NotaVentaViewComponent implements OnInit {
   }
 
   get canAnular(): boolean {
-    return !!this.nota && this.nota.status === 'por_cobrar' && this.authService.hasPermission('delete_nota_venta');
+    return (
+      !!this.nota && this.nota.status === 'por_cobrar' && !this.sucursalInactiva &&
+      this.authService.hasPermission('delete_nota_venta')
+    );
   }
 
   ngOnInit(): void {

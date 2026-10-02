@@ -460,6 +460,20 @@ describe('NotaTrabajoViewComponent - estados y acciones', () => {
     expect(component.terminarBlockReason).toBe('');
   });
 
+  it('una sucursal inactiva se ve pero no se edita ni se cambia de estado', () => {
+    setup(['product.change_nota_trabajo', 'product.delete_nota_trabajo']);
+    expect(component.canEdit).toBe(true);
+    expect(component.canTerminar).toBe(true);
+    expect(component.canAnular).toBe(true);
+
+    component.nota = nota({ sucursal_activa: false });
+    expect(component.sucursalInactiva).toBe(true);
+    expect(component.canEdit).toBe(false);
+    expect(component.canTerminar).toBe(false);
+    expect(component.canCorregir).toBe(false);
+    expect(component.canAnular).toBe(false);
+  });
+
   it('terminar, corregir and anular follow permission and state', () => {
     setup([]);
     expect(component.canTerminar).toBe(false);

@@ -8,7 +8,7 @@ from ..helper.user import User_Helper
 
 def sucursal_en_alcance_filter(path, title='Sucursal'):
     """Filtro de sucursal cuyas opciones son solo las sucursales disponibles para
-    el usuario (todas las habilitadas para Admin, las suyas para el resto).
+    el usuario (las asignadas al usuario, activas o no; todas solo para el superusuario).
     `path` es la ruta al campo FK de sucursal desde el modelo del admin."""
 
     class SucursalEnAlcanceFilter(admin.SimpleListFilter):
@@ -16,7 +16,7 @@ def sucursal_en_alcance_filter(path, title='Sucursal'):
         parameter_name = 'sucursal'
 
         def lookups(self, request, model_admin):
-            return [(s.id, s.name) for s in User_Helper().get_sucursales_in_scope(request.user)]
+            return [(s.id, s.name) for s in User_Helper().get_readable_sucursales(request.user)]
 
         def queryset(self, request, queryset):
             if self.value():

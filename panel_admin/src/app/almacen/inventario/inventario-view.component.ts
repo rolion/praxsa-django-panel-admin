@@ -19,8 +19,13 @@ export class InventarioViewComponent implements OnInit {
   loading = true;
   errorMessage = '';
 
+  /** Gestionar: permiso `change_inventario` y sucursal de la fila activa. */
   get canManage(): boolean {
-    return this.authService.hasPermission('change_inventario');
+    return this.authService.hasPermission('change_inventario') && this.inventario?.sucursal_activa !== false;
+  }
+
+  get sucursalInactiva(): boolean {
+    return this.inventario?.sucursal_activa === false;
   }
 
   ngOnInit(): void {

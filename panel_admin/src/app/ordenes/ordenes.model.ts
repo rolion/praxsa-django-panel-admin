@@ -31,6 +31,8 @@ export interface AppProforma {
   name: string;
   sucursal: number | null;
   sucursal_name: string | null;
+  /** false = sucursal inactiva: se ve pero no se modifica (409 en el servidor). */
+  sucursal_activa?: boolean;
   car_model_name: string | null;
   car_brand_name: string | null;
   car_plate: string | null;
@@ -92,6 +94,8 @@ export interface AppNotaTrabajo {
   salida_vehiculo: string | null;
   sucursal_id: number | null;
   sucursal_name: string | null;
+  /** false = sucursal inactiva: se ve pero no se modifica (409 en el servidor). */
+  sucursal_activa?: boolean;
   is_close: boolean;
   status: NotaTrabajoStatus;
   status_label: string;
@@ -127,6 +131,8 @@ export interface OrdenSucursal {
   id: number;
   name: string;
   address: string;
+  /** false = sucursal inactiva (solo lectura); ausente si el servidor no la informa. */
+  activa?: boolean;
 }
 
 export interface OrdenInstalador {
@@ -159,6 +165,8 @@ export interface AppNotaVenta {
   work_status_label: string;
   sucursal_id: number | null;
   sucursal_name: string | null;
+  /** false = sucursal inactiva: se ve pero no se modifica (409 en el servidor). */
+  sucursal_activa?: boolean;
 }
 
 export interface AppNotaVentaDetail extends AppNotaVenta {

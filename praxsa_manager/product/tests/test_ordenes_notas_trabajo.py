@@ -136,6 +136,7 @@ class NotaTrabajoTest(TestCase):
     def test_requires_change_permission_and_no_create_or_delete(self):
         from .ordenes_helpers import make_staff
         user, token = make_staff(permissions=(), group='admin')
+        self.nota.proforma.sucursal.empleado.add(user)  # el admin solo ve sus sucursales asignadas
         self.assertEqual(
             self.client.patch(self.url, {'observaciones': 'x'}, content_type='application/json', **auth(token)).status_code,
             403,

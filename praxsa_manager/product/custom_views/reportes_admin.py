@@ -41,16 +41,31 @@ class _ReporteView(APIView):
             raise ValidationError({'detail': str(error)})
         return params
 
+    def _sucursal_ids(self, request, params):
+        """Sucursales a consultar (ADR-...-filtro-multisucursal-reportes): las pedidas
+        (`sucursal` y/o `sucursales`), todas dentro del alcance de lectura del usuario
+        (404 si alguna no lo esta); sin pedir ninguna, "Todas" = las sucursales
+        activas de su alcance."""
+        user_helper = User_Helper()
+        pedidas = list(params.get('sucursales') or [])
+        if params.get('sucursal') is not None:
+            pedidas.append(params['sucursal'])
+        pedidas = list(dict.fromkeys(pedidas))
+        if not pedidas:
+            return user_helper.get_writable_sucursal_ids(request.user)
+        visibles = user_helper.get_readable_sucursales(request.user).filter(id__in=pedidas).count()
+        if visibles != len(pedidas):
+            raise NotFound('Sucursal no encontrada.')
+        return pedidas
+
     def _ventas(self, request, params):
         """(negocio, ventas calculadas, sin_sucursal) dentro del alcance del usuario."""
         user_helper = User_Helper()
-        sucursal_id = params.get('sucursal')
-        if sucursal_id is not None and not user_helper.get_sucursales_in_scope(request.user).filter(id=sucursal_id).exists():
-            raise NotFound('Sucursal no encontrada.')
+        sucursal_ids = self._sucursal_ids(request, params)
         business = Reportes_Business()
         pagos = Pago_Business().get_panel_pago_queryset(request.user, business.pagos_cobrados())
         pagos = business.filtrar_pagos(
-            pagos, desde=params['desde'], hasta=params['hasta'], sucursal_id=sucursal_id,
+            pagos, desde=params['desde'], hasta=params['hasta'], sucursal_ids=sucursal_ids,
             sales_type=params.get('sales_type'), tipo_pago=params.get('tipo_pago'),
         )
         sin_sucursal = not user_helper.can_view_all_sucursales(request.user) and not user_helper.has_assigned_sucursal(request.user)

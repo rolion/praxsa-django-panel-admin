@@ -63,6 +63,20 @@ describe('ProformaViewComponent', () => {
     expect(component.isInstalacion).toBe(false);
   });
 
+  it('una sucursal inactiva se ve pero no se edita, aprueba ni anula', () => {
+    login(['product.change_proforma_header', 'product.add_nota_trabajo', 'product.delete_proforma_header']);
+    create(detail());
+    expect(component.canEdit).toBe(true);
+    expect(component.canGenerateNota).toBe(true);
+    expect(component.canAnular).toBe(true);
+
+    component.proforma = detail({ sucursal_activa: false });
+    expect(component.sucursalInactiva).toBe(true);
+    expect(component.canEdit).toBe(false);
+    expect(component.canGenerateNota).toBe(false);
+    expect(component.canAnular).toBe(false);
+  });
+
   it('renders the detail in an ngx-datatable with a totals summary row', () => {
     const data = detail({
       sales_type: 'venta_instalacion',
