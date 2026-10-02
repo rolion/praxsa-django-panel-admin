@@ -1,6 +1,6 @@
 # TASK-almacen-permisos-sucursal-filtros: Almacén — alcance por sucursal en bobinas e inventario, y filtros de lámina/sucursal
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** task/TASK-almacen-permisos-sucursal-filtros
@@ -15,6 +15,7 @@
 | 2026-10-02 | PLANNING → ENGINEERING | Plan v1 escrito y PR abierto; queda a la espera de la aprobación humana del plan y de la respuesta a las 3 preguntas abiertas antes de implementar | delivery-plan |
 | 2026-10-02 | ENGINEERING → REVIEW | Implementación completa de los pasos 1 a 9 del plan v1; el paso 10 (verificación manual en vivo) queda para review/usuario | delivery-engineer |
 | 2026-10-02 | DESIGN → ARCHITECTURE | DDR de filtros y selector de sucursal registrado; veredicto NEEDS_ARCHITECTURE | delivery-design |
+| 2026-10-02 | REVIEW → PUBLISH | Quality Gate PASS: 618 tests backend OK, specs almacén 48 OK, build y lint OK; 2 hallazgos Low no bloqueantes; verificación manual en vivo (paso 10) no ejecutada | delivery-review |
 
 ## Investigación
 
@@ -138,7 +139,14 @@ Pasos 1 a 9 del [plan v1](../plans/PLAN-2026-10-02-almacen-permisos-sucursal-fil
 - **Pendiente:** verificación manual en vivo (paso 10 del plan: admin, usuario de 1 sucursal, de 2, sin permisos y sin sucursal; intento directo por API a una fila ajena) — no ejecutada por el engineer.
 
 ## Review
-_Pendiente_
+**Resultado: PASS** (Quality Gate, 2026-10-02, delivery-review; sesión nueva, sin contexto previo de la implementación).
+
+- Backend: `manage.py test product` 618 OK; `makemigrations --check --dry-run` sin cambios.
+- Panel: specs de `almacen/` 48 OK; `ng build` OK; `ng lint` OK. Suite completa del panel: 13 fallos `should create` de componentes demo, idénticos a `origin/master` (13 fallos en el baseline, 465 OK) → preexistentes, no atribuibles a este cambio.
+- Cobertura frontend (global): statements 78.38 %, branches 72.19 %. Backend: `coverage.py` no instalado, verificación manual (30 tests nuevos cubren listado, filtros, detalle/PATCH/toggle, alta y endpoint de sucursales).
+- Seguridad: `bandit`/`safety` no instalados (verificación no realizada); `npm audit --omit=dev` reporta 3 vulnerabilidades (1 moderada, 2 altas: echarts, lodash) en dependencias que este PR no toca.
+- Verificación manual en vivo (paso 10 del plan): **no ejecutada** por la revisión; queda recomendada antes de fusionar (admin, 1 sucursal, 2 sucursales, sin permisos, sin sucursal; intento directo por API a fila ajena).
+- Issues abiertos (Low, no bloquean): [REV-01](../reviews/REV-2026-10-02-almacen-permisos-sucursal-filtros-01.md) (error de carga de sucursales se muestra como "sin sucursales"), [REV-02](../reviews/REV-2026-10-02-almacen-permisos-sucursal-filtros-02.md) (rama sin `request` del serializer sin test).
 
 ## Publicación
 _Pendiente_
