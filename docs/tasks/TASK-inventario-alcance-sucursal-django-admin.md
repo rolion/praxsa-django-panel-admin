@@ -1,6 +1,6 @@
 # TASK-inventario-alcance-sucursal-django-admin: Inventario — choque entre el alcance por sucursal y la regla "solo las sucursales asignadas a su cuenta"
 
-**Etapa actual:** REVIEW
+**Etapa actual:** PUBLISH
 **Veredicto de complejidad:** NEEDS_ARCHITECTURE
 **Diseño requerido:** SI
 **Rama:** task/TASK-inventario-alcance-sucursal-django-admin
@@ -17,6 +17,7 @@
 | 2026-10-02 | (sin cambio de etapa) | Usuario define sucursales inactivas: lectura sí, escritura no; reportes con multiselect | delivery-investigate |
 | 2026-10-02 | (sin cambio de etapa) | El usuario aclara con captura que la regla aplica también al grupo admin; se agrega el hecho G como choque principal | delivery-investigate |
 | 2026-10-02 | ENGINEERING → REVIEW | Implementación completa de los pasos 1 a 15 del plan v1, incluida verificación manual en vivo con base temporal; desvíos menores documentados; pendiente de Quality Gate independiente | delivery-engineer |
+| 2026-10-02 | REVIEW → PUBLISH | Quality Gate PASS: 685 tests backend OK, ng lint y ng build OK, panel 501 OK + 13 fallos preexistentes de componentes demo; 1 hallazgo Low abierto (REV-01) | delivery-review |
 
 ## Investigación
 
@@ -193,7 +194,13 @@ Pasos 1 a 15 del [plan v1](../plans/PLAN-2026-10-02-inventario-alcance-sucursal-
 
 
 ## Review
-_Pendiente_
+**Resultado: PASS** (revisión en sesión nueva, sin contexto de la implementación; evidencia en el PR #68, secciones Testing y Review).
+- Backend: `manage.py test product` → Ran 685 tests, OK. `makemigrations --check --dry-run` → No changes detected.
+- Panel: `ng lint` OK; `ng build` OK; `ng test --code-coverage` → 501 SUCCESS, 13 FAILED (los 13 `should create` de componentes demo, no tocados por el diff). Cobertura global: Statements 80.53%, Branches 74.95%, Functions 76.93%, Lines 80.43%.
+- Seguridad: `npm audit --omit=dev` → 3 vulnerabilidades (lodash-es, xlsx) preexistentes; `package.json` no está en el diff. En backend no hay bandit/safety/flake8/ruff/mypy instalados: verificación no realizada (no se instalaron).
+- Cobertura backend: verificación manual (no hay coverage.py); cada pieza nueva (helper, guard 409, mixin, reportes `sucursales`, `sucursal_activa`, `InventoryAdmin` sin estado, `PagosAdmin.save_model`) tiene tests.
+- E2E: no corresponde por plan. No repetí la verificación manual en vivo del engineer (no ejecutada en esta revisión).
+- Issues abiertos: [REV-2026-10-02-inventario-alcance-sucursal-django-admin-01](../reviews/REV-2026-10-02-inventario-alcance-sucursal-django-admin-01.md) (Low, IMPLEMENTATION, no bloquea).
 
 ## Publicación
 _Pendiente_
