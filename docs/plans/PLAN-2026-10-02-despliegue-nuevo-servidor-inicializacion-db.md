@@ -1,4 +1,4 @@
-# PLAN-2026-10-02-despliegue-nuevo-servidor-inicializacion-db (v1)
+# PLAN-2026-10-02-despliegue-nuevo-servidor-inicializacion-db (v2)
 
 **Task:** TASK-despliegue-nuevo-servidor-inicializacion-db
 **DDRs relacionados:** Ninguno
@@ -21,7 +21,7 @@ Ver `docs/tasks/TASK-despliegue-nuevo-servidor-inicializacion-db.md` (investigac
 - Ningún comando ni migración crea los grupos; `asignar_permisos_*` fallan si faltan (`product/management/commands/asignar_permisos_estados.py:47-52`).
 
 ## Expected behavior
-`docker compose -f docker-compose.v2.yml up -d --build` levanta `db`, `web`, `nginx`, `adminer` sin recursos creados a mano; luego `scripts/init-v2.sh` (manual) aplica migraciones y siembra datos de forma idempotente. Por IP o dominio futuro: `/admin/` (Django), `/panel/` (SPA), `/calculadora` → `/panel/#/calculadora`, `/adminer/` (login con credenciales de Postgres), `/static/` y `/media/`. Reconstruir imágenes no requiere destruir volúmenes. El despliegue actual no cambia.
+`docker compose -f docker-compose.v2.yml up -d --build` levanta `db`, `web`, `nginx`, `adminer` sin recursos creados a mano; luego `scripts/init-v2.sh` (manual) aplica migraciones y siembra datos de forma idempotente. Por IP o dominio futuro: `/admin/` (Django), `/panel/` (SPA), `/calculadora` → `/panel/calculadora`, `/adminer/` (login con credenciales de Postgres), `/static/` y `/media/`. Reconstruir imágenes no requiere destruir volúmenes. El despliegue actual no cambia.
 
 ## Architecture considerations
 Resumen de los ADR (no se re-derivan):
@@ -43,9 +43,9 @@ Resumen de los ADR (no se re-derivan):
 - Target `web`: desde `backend`, `gunicorn` (puerto 5000), sin migraciones ni seed.
 - Target `nginx`: `nginx` + `nginx.conf.v2` + `COPY --from=static` (a `/praxsa_manager/staticfiles`) + `COPY --from=panel` (a `/usr/share/nginx/html/panel`).
 
-**nginx.conf.v2:** un solo `server` en :80: `/admin/`, `/product/`, `/tinymce/`, `/api-auth/` → `web:5000` (con `X-Forwarded-*`; `$forwarded_proto` como en `nginx.conf.prod:12-15`); `/static/` y `/media/` por alias; `/panel/` con `try_files` a `/panel/index.html`; `/adminer/` → `adminer:8080/` (quita prefijo); `= /calculadora` y `/calculadora/` → 302 a `/panel/#/calculadora`; `= /` → 302 a `/panel/`.
+**nginx.conf.v2:** un solo `server` en :80: `/admin/`, `/product/`, `/tinymce/`, `/api-auth/` → `web:5000` (con `X-Forwarded-*`; `$forwarded_proto` como en `nginx.conf.prod:12-15`); `/static/` y `/media/` por alias; `/panel/` con `try_files $uri $uri/ /panel/index.html` (fallback necesario para recargar rutas profundas sin `#`); `/adminer/` → `adminer:8080/` (quita prefijo); `= /calculadora` y `/calculadora/` → 302 a `/panel/calculadora`; `= /` → 302 a `/panel/`.
 
-**panel_admin:** `src/environments/environment.prod.ts` con `production: true`, `apiUrl: ''`, mismo `whatsappNumber`; `fileReplacements` en la configuración `production` de `angular.json`.
+**panel_admin:** se quita `HashLocationStrategy` (rutas sin `#`: `/panel/calculadora`, `/panel/users`, ...; Angular usa `PathLocationStrategy` por defecto); `src/environments/environment.prod.ts` con `production: true`, `apiUrl: ''`, mismo `whatsappNumber`; `fileReplacements` en la configuración `production` de `angular.json`.
 
 **Django:** `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`, `CORS_ORIGIN_WHITELIST` con `env.list(NOMBRE, default=<lista actual>)`.
 
@@ -69,7 +69,8 @@ No se modifican `docker-compose.prod/stg/dev.yml`, `Dockerfile*` existentes, `ng
 
 ## Implementation steps
 1. **settings por entorno:** reemplazar las 3 listas por `env.list(..., default=[valores actuales])`. Verificar que sin las variables el resultado es idéntico (comparación de listas antes/después).
-2. **`panel_admin` producción:** crear `environment.prod.ts` y `fileReplacements`; confirmar con `ng build --configuration production --base-href /panel/` que el build pasa y que `index.html` genera `<base href="/panel/">` y las rutas a `assets/i18n/` resuelven bajo `/panel/`.
+2. **`panel_admin` sin `#`:** quitar el proveedor `{ provide: LocationStrategy, useClass: HashLocationStrategy }` y su import de `panel_admin/src/app/app.config.ts` (ya verificado que no hay enlaces `/#/` ni `location.hash` en `src/`); revisar los specs que dependan de la URL con `#` y ajustar. Verificación local con un servidor estático con fallback a `index.html`: abrir y **recargar** `/panel/authentication/signin`, `/panel/calculadora` y una ruta lazy profunda (p. ej. `/panel/users`); el navegador no debe mostrar 404 ni pantalla en blanco.
+2b. **`panel_admin` producción:** crear `environment.prod.ts` y `fileReplacements`; confirmar con `ng build --configuration production --base-href /panel/` que el build pasa y que `index.html` genera `<base href="/panel/">` y las rutas a `assets/i18n/` resuelven bajo `/panel/`.
 3. **`.dockerignore` raíz y `.gitignore`:** excluir todo `.env*` real del contexto (el contexto raíz incluye `praxsa_manager/.env`, que no debe viajar al daemon ni a ninguna capa). Agregar `praxsa_manager/.env-v2` al `.gitignore`.
 4. **`exportar_catalogo_seed`** y generación de `product/seed_data/catalogo.json` desde la BD local (marcas, modelos por marca, ítems, modelo-ítem; claves por nombre; ordenado; `ensure_ascii=False`; decimales como string; omite y reporta filas con ítem nulo). Revisar el JSON a mano (conteos esperados: 33/155/9/12; sin datos de prueba) antes de commitearlo.
 5. **`inicializar_datos`** con el orden y reglas del ADR de seed: validar `DEFAULT_PASSWORD`/`--password` con `AUTH_PASSWORD_VALIDATORS` antes de escribir; grupos únicos (`Admin`, `Almacen`, `Caja`, `Vendedor`); `call_command` de los tres `asignar_permisos_*`; sucursales (`Santa Cruz`: Av. Ovidio Barbery entre 4to. y 5to anillo, 3352139; `La Paz`: Calle Angel Pacheco - Obrajes, 78512440); usuarios `superadmin` (superusuario, staff, ambas sucursales, grupo `Admin`), `admin1` (staff, grupo `Admin`, Santa Cruz), `admin2` (staff, grupo `Admin`, La Paz) con `set_password` solo al crear; `Profile` vacío por usuario; instaladores `instalador 1` (Santa Cruz) e `instalador 2` (La Paz), teléfono `3554432`; catálogo desde el JSON; las 10 láminas (Apéndice A); bobinas 0.5 m/440 y 1 m/880, `length` 20, para `CRYSTALLINE-70`; inventario por sucursal × bobina (`quantity` 1, `to_install` 20, `original_length` 20, `date` = ahora). `--dry-run` reporta sin escribir; todo en `transaction.atomic()`.
@@ -85,7 +86,7 @@ No se modifican `docker-compose.prod/stg/dev.yml`, `Dockerfile*` existentes, `ng
   - `inicializar_datos`: sin `DEFAULT_PASSWORD` ni `--password` → `CommandError` y cero escrituras; con la variable → crea 4 grupos únicos, 2 sucursales con datos exactos, 3 usuarios con flags correctos (`is_staff` para todos, `is_superuser` solo `superadmin`) y membresía a sucursales (`superadmin` en ambas), contraseña verificable con `check_password`, 2 instaladores con su sucursal y teléfono, 10 láminas con descripción, 2 bobinas (ancho/precio/largo) y 4 inventarios con `to_install`=20, `original_length`=20, `quantity`=1; **segunda ejecución sin duplicados** (conteos iguales); `--dry-run` sin escrituras; `--password` tiene precedencia; contraseña que no pasa los validadores → error sin escrituras; usuario existente conserva su contraseña salvo `--password`; los permisos de `asignar_permisos_*` quedan asignados al grupo `Admin`; atomicidad (un fallo posterior no deja datos parciales, simulado con un `JSON` de catálogo inválido).
   - Catálogo: carga mínima desde un JSON de prueba (marca/modelo/ítem/modelo-ítem), nombres únicos respetados, repetir no duplica.
   - `exportar_catalogo_seed`: escribe JSON estable (dos corridas idénticas), omite ítem nulo con reporte, no escribe en BD.
-- **Frontend:** sin specs nuevos (solo configuración de build); se valida con `ng build --configuration production` y `ng lint` no se ve afectado por un archivo de entorno.
+- **Frontend:** sin specs nuevos; se ejecuta la suite existente de `panel_admin` (`ng test`) y se compara con el estado de `master` (hay fallas preexistentes de la plantilla, ver `docs/tasks/TASK-pricing-calculator-screen.md`) para confirmar que quitar `HashLocationStrategy` no introduce fallas nuevas; se valida con `ng build --configuration production` y `ng lint` no se ve afectado por un archivo de entorno.
 - **Infra (manual, scripteado con `curl` en el criterio de aceptación):** build, arranque, rutas, estáticos y seed idempotente.
 - **E2E (Playwright): NO.** No cambia ningún flujo de usuario ni UI; los riesgos son de build/enrutamiento/datos y se cubren con tests de comandos y una verificación de humo por `curl`. Agregar Playwright sería una dependencia nueva sin valor proporcional.
 
@@ -95,7 +96,7 @@ No se modifican `docker-compose.prod/stg/dev.yml`, `Dockerfile*` existentes, `ng
 - `docker compose -f docker-compose.v2.yml up -d --build` levanta los 4 servicios sin crear red ni volúmenes a mano; `docker volume ls` muestra solo `postgres_v2` y `media_v2` para este stack.
 - `scripts/init-v2.sh` aborta con mensaje claro sin `DEFAULT_PASSWORD`; con ella migra y siembra; una **segunda ejecución** no cambia los conteos.
 - Datos tras el seed: 4 grupos; 2 sucursales; `superadmin` (superusuario, 2 sucursales), `admin1`, `admin2` (staff, grupo Admin, 1 sucursal c/u); 2 instaladores; 33 marcas, 155 modelos, 9 ítems, 12 modelo-ítem; 10 láminas; 2 bobinas de `CRYSTALLINE-70` y 4 filas de inventario de 20 m.
-- Por HTTP en el host nuevo: `/admin/login/` responde 200 con CSS (`/static/admin/css/base.css` 200); `/panel/` carga la SPA y su login funciona contra `/product/api-panel-admin-token-auth/`; `/calculadora` redirige a `/panel/#/calculadora` y la calculadora lista el catálogo; `/adminer/` abre el login y permite ver la BD con las credenciales de Postgres; una imagen subida a `/media/` sobrevive a `docker compose ... up -d --build`.
+- Por HTTP en el host nuevo: `/admin/login/` responde 200 con CSS (`/static/admin/css/base.css` 200); `/panel/` carga la SPA y su login funciona contra `/product/api-panel-admin-token-auth/`; `/calculadora` redirige a `/panel/calculadora` (sin `#`) y la calculadora lista el catálogo; recargar `/panel/calculadora` y `/panel/users` (con sesión staff) no da 404; `/adminer/` abre el login y permite ver la BD con las credenciales de Postgres; una imagen subida a `/media/` sobrevive a `docker compose ... up -d --build`.
 - Reconstruir `web` y `nginx` **no** requiere borrar ningún volumen.
 - `praxsa_manager/.env` no está presente en ninguna capa de las imágenes (`docker history`/inspección del contexto).
 - Los archivos de despliegue actual (`docker-compose.prod.yml`, `Dockerfile.prod`, `nginx.conf.prod`, etc.) no tienen diferencias en el diff.
@@ -103,8 +104,8 @@ No se modifican `docker-compose.prod/stg/dev.yml`, `Dockerfile*` existentes, `ng
 ## Risks
 - **Docker no disponible en la sesión** (ocurrió en el task de imágenes): el paso 11 y varios criterios pueden quedar sin verificar; se declarará explícitamente en el PR, no como PASS silencioso.
 - **`collectstatic` en build exige variables ficticias:** si `settings.py` agrega lecturas de entorno nuevas sin default, el build falla; mitigación: etapa `static` documentada y cubierta por el build en el paso 11.
-- **Angular 21 requiere Node reciente** (se propone node 22; no verificado contra `package.json`/engines); mitigación: probar el build en el paso 2.
-- **`base href /panel/` + `HashLocationStrategy`:** no verificado que todos los assets y el lazy loading resuelvan bajo `/panel/`; mitigación: verificar en el paso 2 y en la verificación manual.
+- **Angular 21 / Node 22:** **verificado localmente (2026-10-02)** con Node 22.12: `ng build --configuration production --base-href /panel/` compila y deja `<base href="/panel/">`; servido bajo `/panel/` carga JS, CSS, fuentes, logo e i18n con 200 (solo falló la API en `localhost:8000`, esperado). Falta repetirlo dentro de Docker (imagen `node:22-alpine`) y con rutas sin `#`. Nota para Windows/Git Bash: usar `MSYS_NO_PATHCONV=1` al pasar `--base-href /panel/` (si no, Git Bash lo convierte en una ruta `C:/Program Files/Git/panel/`; no afecta a Docker/Linux).
+- **Rutas sin `#` y recarga:** sin el fallback de nginx a `index.html`, recargar `/panel/users` daría 404; mitigación: `try_files` en nginx y verificación de recarga en pasos 2 y 11. Riesgo de enlaces absolutos escritos a mano fuera del router: no se encontraron en `src/`.
 - **Adminer sobre HTTP expuesto:** credenciales de Postgres en claro; mitigación documental (restringir por firewall) hasta tener TLS; aceptado por el usuario.
 - **Catálogo local puede contener datos de prueba o diferir de lo esperado:** se revisa el JSON antes de commitearlo; no hay mitigación automática.
 - **Supuestos sin confirmar** (ver "Out of scope / preguntas abiertas").
@@ -112,7 +113,7 @@ No se modifican `docker-compose.prod/stg/dev.yml`, `Dockerfile*` existentes, `ng
 - **`pip install` de `psycopg2` y `Pillow` en Alpine** sin wheel puede requerir paquetes del sistema (ya cubiertos por el `Dockerfile.prod` actual: gcc, libc-dev, postgresql-dev); no verificado con el build nuevo.
 
 ## Out of scope
-- `proforma/` (queda sin uso y sin borrar), TLS/dominio, migrar datos de producción, límites de memoria definitivos, basic auth para Adminer, rutas sin `#` en `panel_admin`.
+- `proforma/` (queda sin uso y sin borrar), TLS/dominio, migrar datos de producción, límites de memoria definitivos, basic auth para Adminer, enrutado del lado del servidor distinto al `try_files` (SSR/prerender).
 - **Preguntas abiertas / supuestos a confirmar** (no bloquean el plan; se implementan como están y se corrigen si el usuario dice otra cosa):
   1. `superadmin` además va en el grupo `Admin` (el pedido solo dice "superusuario").
   2. `address` de los instaladores = dirección de su sucursal (no se dio dirección).
@@ -135,3 +136,6 @@ Nombre → `Window_Film.name`; texto → `Window_Film.description`.
 8. `CRYSTALLINE-40` — CRYSTALLINE 40. Excelente rendimiento de rechazo de calor prácticamente transparente, bloquea hasta el 99% de la luz ultravioleta (UV) para brindar protección solar para usted y sus pasajeros. Ofrece un deslumbramiento reducido de la luz solar para que pueda ver mejor y concentrarse más en la carretera.
 9. `CRYSTALLINE-70` — CRYSTALLINE 70. (mismo texto que la 8, con "CRYSTALLINE 70.")
 10. `FX-HP 15` — FX-HP 15. Excelente rendimiento de rechazo de calor con un elegante acabado, bloquea hasta el 99% de la luz ultravioleta (UV) para brindar protección solar para usted y sus pasajeros. Ofrece un deslumbramiento reducido de la luz solar para que pueda ver mejor y concentrarse más en la carretera.
+
+## Changelog
+- **v2** (2026-10-02): se quita `HashLocationStrategy` en `panel_admin` (URLs sin `#`), `/calculadora` redirige a `/panel/calculadora`, nginx necesita fallback `try_files` para recargas, y se registra la verificación local del build con `--base-href /panel/` (Node 22.12, carga correcta bajo `/panel/`). Solicitado por el usuario durante la revisión del plan v1.
