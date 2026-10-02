@@ -4,7 +4,7 @@
 **Veredicto de complejidad:** NEEDS_PLAN
 **Diseño requerido:** NO
 **Rama:** `claude/panel-admin-vulnerabilities-4a1058` (asignada por el entorno)
-**Pull Request:** _sin abrir todavía_
+**Pull Request:** [#69](https://github.com/rolion/praxsa-django-panel-admin/pull/69)
 
 ## Historial de transiciones
 | Fecha (UTC) | Transición | Motivo | Origen |
